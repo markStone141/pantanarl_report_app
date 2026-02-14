@@ -157,6 +157,17 @@ button {
   cursor: pointer;
 }
 
+.btn-inline {
+  width: auto;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+.btn-danger {
+  background: #cc3f3f;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

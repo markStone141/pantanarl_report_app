@@ -25,24 +25,59 @@
             <tr><th>Table</th><th>主な項目</th></tr>
           </thead>
           <tbody>
-            <tr><td>Department</td><td>name</td></tr>
-            <tr><td>Member</td><td>name, status, target_for_month, target_for_period, active_period</td></tr>
-            <tr><td>Report</td><td>member, department, date, amount, count, location_or_store</td></tr>
-            <tr><td>TargetForMonth</td><td>is_active, month, un, wv, style_minamimachida, style_kohoku</td></tr>
-            <tr><td>TargetForPeriod</td><td>is_active, start, end, un, wv, style_minamimachida, style_kohoku</td></tr>
-            <tr><td>PerformanceSummary</td><td>date, un_total, wv_total, style_total</td></tr>
+            <tr><td>Department</td><td>id, name</td></tr>
+            <tr><td>Member</td><td>id, name, status</td></tr>
+            <tr><td>MemberDepartment</td><td>member_id, department_id（複数部署対応）</td></tr>
+            <tr><td>Period</td><td>id, period_key(YYYY-MM-seq), name(第一次路程), start_date, end_date, status</td></tr>
+            <tr><td>DailyDepartmentReport</td><td>department_id, date, submitted_by, submitted_at, total_count, total_amount</td></tr>
+            <tr><td>MemberReport</td><td>member_id, department_id, date, count, amount, location_or_store</td></tr>
+            <tr><td>DepartmentMonthTarget</td><td>department_id, month, target_count, target_amount, set_by_admin</td></tr>
+            <tr><td>DepartmentPeriodTarget</td><td>department_id, period_id, target_count, target_amount, set_by_admin</td></tr>
+            <tr><td>MemberMonthTarget</td><td>member_id, month, target_count, target_amount, set_by_member</td></tr>
+            <tr><td>MemberPeriodTarget</td><td>member_id, period_id, target_count, target_amount, set_by_member</td></tr>
+            <tr><td>ReminderLog</td><td>department_id, date, sent_to, sent_at, status</td></tr>
+            <tr><td>PerformanceSummary（View）</td><td>date, department, total_count, total_amount, achievement_rate</td></tr>
           </tbody>
         </table>
       </article>
 
       <article class="card">
         <h3>リレーション方針</h3>
-        <p><strong>Member ↔ Department:</strong> 多対多（複数部署所属の可能性に対応）</p>
-        <p><strong>Report:</strong> 日次データの中心。責任者は画面で一括入力し、保存時にメンバー単位レコードへ分割登録。</p>
-        <p><strong>PerformanceSummary:</strong> 日次で UN/WV/Style をまとめる中間集計テーブルとして運用可能。</p>
-        <p><strong>Target:</strong> 月次と路程を分離して、全体・個人目標どちらも参照可能にする。</p>
+        <p><strong>Member ↔ Department:</strong> `MemberDepartment` で多対多を管理。</p>
+        <p><strong>DailyDepartmentReport + MemberReport:</strong> 責任者は一括入力し、保存時に個人レコードへ分割登録。</p>
+        <p><strong>Period:</strong> 第一次/第二次路程を管理し、月初ごとに sequence をリセット。</p>
+        <p><strong>Target:</strong> 全体目標（管理者）と個人目標（本人）を、月次/路程で分離管理。</p>
         <div class="note">URLは `/report/un` 形式推奨（REST的に整理しやすい）</div>
       </article>
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+      <h3>TODO（路程管理）</h3>
+      <table>
+        <tbody>
+          <tr><th>運用ルール</th><td>路程名は「第一次路程」「第二次路程」... を使用し、月初に再び第一次へ戻す。</td></tr>
+          <tr><th>月跨ぎ対応</th><td>月を跨ぐ場合は「開始日の月」に所属させる（例: 2/27-3/4 は2月の第一次路程）。</td></tr>
+          <tr><th>識別子案</th><td>`period_key = YYYY-MM-seq` 例: `2026-02-1`。</td></tr>
+          <tr><th>必要テーブル</th><td>`periods`, `period_targets`, `member_period_targets` を追加検討。</td></tr>
+          <tr><th>制約</th><td>同一部署の路程期間重複を禁止。進行中（active）は原則1つ。</td></tr>
+          <tr><th>管理画面TODO</th><td>路程作成（開始日/終了日/目標）と、現在路程の達成率表示を追加。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+      <h3>TODO（目標管理ルール）</h3>
+      <table>
+        <tbody>
+          <tr><th>全体目標（月）</th><td>管理者が設定・更新する。部署単位で保持。</td></tr>
+          <tr><th>全体目標（路程）</th><td>管理者が設定・更新する。部署と路程キーで保持。</td></tr>
+          <tr><th>個人目標（月）</th><td>本人が設定・更新する。自分以外は編集不可。</td></tr>
+          <tr><th>個人目標（路程）</th><td>本人が設定・更新する。自分以外は編集不可。</td></tr>
+          <tr><th>テーブル案</th><td>`department_month_targets`, `department_period_targets`, `member_month_targets`, `member_period_targets`。</td></tr>
+          <tr><th>権限ルール</th><td>`admin` は全体目標編集可、`member/viewer` は自分の個人目標のみ編集可。</td></tr>
+          <tr><th>UI分担</th><td>管理者ページ=全体目標管理、個人ページ=個人目標管理（実績は閲覧のみ）。</td></tr>
+        </tbody>
+      </table>
     </section>
   </div>
 </body>
