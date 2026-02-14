@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>部署別 個人実績一覧 | 管理者ページ</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <div>
+        <strong id="page-title">部署別 個人実績一覧</strong>
+        <div class="muted" style="color: #e1f1f5;">行をタップすると個人ページへ遷移</div>
+      </div>
+      <nav>
+        <a href="admin.html">管理者ページ</a>
+        <a href="index.html" class="logout-link">ログアウト</a>
+      </nav>
+    </header>
+
+    <section class="card" style="margin-top: 16px;">
+      <div class="row">
+        <h3 id="list-title">当日の個人実績</h3>
+        <span class="badge">対象日: <span id="target-date">----</span></span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>メンバー</th><th>件数</th><th>金額(円)</th><th>達成率</th><th>詳細</th></tr>
+        </thead>
+        <tbody id="member-rows"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const dataset = {
+        un: {
+          label: "UN",
+          rows: [
+            { key: "ishii", name: "石井", count: 4, amount: 120000, rate: "82%" },
+            { key: "tanaka", name: "田中", count: 5, amount: 145000, rate: "78%" },
+            { key: "sasaki", name: "佐々木", count: 3, amount: 87000, rate: "71%" }
+          ]
+        },
+        wv: {
+          label: "WV",
+          rows: [
+            { key: "sato", name: "佐藤", count: 3, amount: 96000, rate: "74%" },
+            { key: "suzuki", name: "鈴木", count: 4, amount: 118000, rate: "70%" },
+            { key: "takahashi", name: "高橋", count: 2, amount: 64000, rate: "63%" }
+          ]
+        },
+        style1: {
+          label: "Style1",
+          rows: [
+            { key: "yamada", name: "山田", count: 3, amount: 42000, rate: "76%" },
+            { key: "watanabe", name: "渡辺", count: 3, amount: 39000, rate: "72%" },
+            { key: "kobayashi", name: "小林", count: 2, amount: 28000, rate: "68%" }
+          ]
+        }
+      };
+
+      function pad(v) {
+        return String(v).padStart(2, "0");
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const dept = params.get("dept");
+      const selected = dataset[dept];
+      if (!selected) {
+        alert("部署データが見つかりません。管理者ページに戻ります。");
+        window.location.href = "admin.html";
+        return;
+      }
+
+      const now = new Date();
+      const dateText = now.getFullYear() + "/" + pad(now.getMonth() + 1) + "/" + pad(now.getDate());
+      document.getElementById("target-date").textContent = dateText;
+      document.getElementById("page-title").textContent = selected.label + " 個人実績一覧";
+      document.getElementById("list-title").textContent = selected.label + " の当日個人実績";
+
+      const tbody = document.getElementById("member-rows");
+      selected.rows.forEach(function (row) {
+        const memberPageKey = dept + "_" + row.key;
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td>" + row.name + "</td>" +
+          "<td>" + row.count + "</td>" +
+          "<td>" + row.amount + "</td>" +
+          "<td>" + row.rate + "</td>" +
+          "<td><a href=\"member.html?member=" + row.key + "\">個人ページへ</a></td>";
+        tbody.appendChild(tr);
+      });
+    })();
+  </script>
+</body>
+</html>
