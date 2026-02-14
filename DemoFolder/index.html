@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>報告アプリ デモ | ログイン</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="login-wrap">
+    <section class="card login-card">
+      <h2>報告アプリ（デモ）</h2>
+      <p class="muted">ID値そのもので遷移先を判定。ログインから報告完了まで5分以内を想定。</p>
+      <label for="login-id">ログインID</label>
+      <input id="login-id" placeholder="un_report / un_ishii / ... / admin" />
+
+      <label for="password">パスワード</label>
+      <input id="password" type="password" placeholder="共通パスワード（デモ）" />
+
+      <div style="margin-top: 14px;"></div>
+      <button id="login-btn" type="button">ログイン</button>
+
+      <div class="note" style="margin-top: 14px;">
+        デモ仕様: `*_report` は責任者報告、`*_名前` は個人成績確認、`admin` は管理者
+      </div>
+    </section>
+  </main>
+  <script>
+    (function () {
+      const routes = {
+        un_report: "report-un.html",
+        wv_report: "report-wv.html",
+        style1_report: "report-style1.html",
+        style2_report: "report-style2.html",
+        un_ishii: "member.html?member=ishii",
+        un_tanaka: "member.html?member=tanaka",
+        wv_sato: "member.html?member=sato",
+        style1_yamada: "member.html?member=yamada",
+        style2_nakamura: "member.html?member=nakamura",
+        admin: "admin.html"
+      };
+
+      const idInput = document.getElementById("login-id");
+      const loginBtn = document.getElementById("login-btn");
+
+      function login() {
+        const key = idInput.value.trim().toLowerCase();
+        if (routes[key]) {
+          window.location.href = routes[key];
+          return;
+        }
+        alert("IDが未登録です。例: un_report / un_ishii / wv_sato / admin");
+      }
+
+      loginBtn.addEventListener("click", login);
+      idInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") login();
+      });
+    })();
+  </script>
+</body>
+</html>

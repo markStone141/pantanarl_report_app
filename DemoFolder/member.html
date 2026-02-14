@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>個人成績ページ | 報告アプリ デモ</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <div>
+        <strong id="member-title">個人成績ページ</strong>
+        <div class="muted" style="color: #e1f1f5;">閲覧用ID: 実績は閲覧のみ、個人目標のみ編集可能</div>
+      </div>
+      <nav>
+        <a href="index.html" class="logout-link">ログアウト</a>
+      </nav>
+    </header>
+
+    <section class="grid grid-2" style="margin-top: 16px;">
+      <article class="card">
+        <h3>本日の実績（閲覧のみ）</h3>
+        <table>
+          <tbody>
+            <tr><th>部署</th><td id="v-dept">-</td></tr>
+            <tr><th>氏名</th><td id="v-name">-</td></tr>
+            <tr><th>件数</th><td id="v-count">-</td></tr>
+            <tr><th>金額</th><td id="v-amount">-</td></tr>
+            <tr><th>月達成率</th><td id="v-month-rate">-</td></tr>
+            <tr><th>路程達成率</th><td id="v-period-rate">-</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card">
+        <h3>個人目標（入力可能）</h3>
+        <p class="muted">ここだけ編集可。保存時は個人目標テーブルに反映する想定。</p>
+        <label for="target-month">月目標（件数）</label>
+        <input id="target-month" type="number" />
+
+        <label for="target-period">路程目標（件数）</label>
+        <input id="target-period" type="number" />
+
+        <label for="target-memo">目標メモ</label>
+        <input id="target-memo" placeholder="例: 1日1件を継続" />
+
+        <button type="button" id="save-target" style="margin-top: 10px;">個人目標を保存（デモ）</button>
+      </article>
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+      <h3>推移イメージ（閲覧のみ）</h3>
+      <table>
+        <thead>
+          <tr><th>日付</th><th>件数</th><th>金額(円)</th></tr>
+        </thead>
+        <tbody id="history-body">
+          <tr><td>2026-02-12</td><td>1</td><td>3200</td></tr>
+          <tr><td>2026-02-13</td><td>2</td><td>6500</td></tr>
+          <tr><td>2026-02-14</td><td>1</td><td>3000</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const members = {
+        ishii: {
+          dept: "UN",
+          name: "石井",
+          count: 25,
+          amount: 75000,
+          monthRate: "78%",
+          periodRate: "73%",
+          targetMonth: 32,
+          targetPeriod: 80,
+          memo: "現場共有を丁寧に"
+        },
+        tanaka: {
+          dept: "UN",
+          name: "田中",
+          count: 21,
+          amount: 68000,
+          monthRate: "71%",
+          periodRate: "69%",
+          targetMonth: 30,
+          targetPeriod: 75,
+          memo: "朝の準備を前倒し"
+        },
+        sato: {
+          dept: "WV",
+          name: "佐藤",
+          count: 19,
+          amount: 64000,
+          monthRate: "68%",
+          periodRate: "65%",
+          targetMonth: 28,
+          targetPeriod: 70,
+          memo: "現場移動を最適化"
+        },
+        yamada: {
+          dept: "Style1",
+          name: "山田",
+          count: 17,
+          amount: 51000,
+          monthRate: "74%",
+          periodRate: "71%",
+          targetMonth: 24,
+          targetPeriod: 60,
+          memo: "成約率を1pt向上"
+        },
+        nakamura: {
+          dept: "Style2",
+          name: "中村",
+          count: 16,
+          amount: 49000,
+          monthRate: "70%",
+          periodRate: "67%",
+          targetMonth: 23,
+          targetPeriod: 58,
+          memo: "丁寧接客を徹底"
+        }
+      };
+
+      const params = new URLSearchParams(window.location.search);
+      const memberKey = params.get("member");
+      const data = members[memberKey];
+
+      if (!data) {
+        alert("メンバー情報が見つかりません。ログイン画面に戻ります。");
+        window.location.href = "index.html";
+        return;
+      }
+
+      document.getElementById("member-title").textContent = data.name + " さんの個人成績";
+      document.getElementById("v-dept").textContent = data.dept;
+      document.getElementById("v-name").textContent = data.name;
+      document.getElementById("v-count").textContent = data.count + "件";
+      document.getElementById("v-amount").textContent = "¥" + data.amount.toLocaleString();
+      document.getElementById("v-month-rate").textContent = data.monthRate;
+      document.getElementById("v-period-rate").textContent = data.periodRate;
+
+      document.getElementById("target-month").value = data.targetMonth;
+      document.getElementById("target-period").value = data.targetPeriod;
+      document.getElementById("target-memo").value = data.memo;
+
+      document.getElementById("save-target").addEventListener("click", function () {
+        alert("個人目標を保存しました（デモ）。\n※実績データは編集不可です。");
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>報告アプリ デモ | 共通ダッシュボード</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <div>
+        <strong>共通ダッシュボード</strong>
+        <div class="muted" style="color: #e1f1f5;">部署切替なし。実績確認に集中するシンプル画面</div>
+      </div>
+      <nav>
+        <a href="admin.html">管理者ページ</a>
+        <a href="index.html" class="logout-link">ログアウト</a>
+        <a href="model-view.html">設計イメージ</a>
+      </nav>
+    </header>
+
+    <section class="grid grid-3" style="margin-top: 16px;">
+      <article class="card">
+        <div class="row"><h3>UN 実績</h3><span class="badge">本日</span></div>
+        <div class="kpi">12 件</div>
+        <p class="muted">合計金額: ¥352,000</p>
+        <div class="progress"><span style="width: 71%;"></span></div>
+        <p class="muted">月目標達成率: 71%</p>
+      </article>
+
+      <article class="card">
+        <div class="row"><h3>WV 実績</h3><span class="badge">本日</span></div>
+        <div class="kpi">9 件</div>
+        <p class="muted">合計金額: ¥278,000</p>
+        <div class="progress"><span style="width: 64%;"></span></div>
+        <p class="muted">月目標達成率: 64%</p>
+      </article>
+
+      <article class="card">
+        <div class="row"><h3>Style 実績</h3><span class="badge">本日</span></div>
+        <div class="kpi">14 件</div>
+        <p class="muted">合計金額: ¥189,000</p>
+        <div class="progress"><span style="width: 82%;"></span></div>
+        <p class="muted">月目標達成率: 82%</p>
+      </article>
+    </section>
+
+    <section class="grid grid-2" style="margin-top: 16px;">
+      <article class="card">
+        <h3>目標サマリー（全体）</h3>
+        <table>
+          <thead>
+            <tr><th>区分</th><th>月目標</th><th>路程目標</th><th>達成率</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>UN</td><td>180件</td><td>450件</td><td class="ok">71%</td></tr>
+            <tr><td>WV</td><td>150件</td><td>390件</td><td class="ok">64%</td></tr>
+            <tr><td>Style(南町田)</td><td>120件</td><td>280件</td><td class="ok">79%</td></tr>
+            <tr><td>Style(港北)</td><td>90件</td><td>210件</td><td class="ok">86%</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card">
+        <h3>班目標・スローガン</h3>
+        <p><strong>班目標:</strong> 全体達成率 75%以上 / クレーム率 2%未満</p>
+        <p><strong>今月スローガン:</strong> 「早く・正確に・気持ちよく」</p>
+        <p class="muted">個人目標は Member ごとに設定し、月次・路程の2軸で管理する想定です。</p>
+        <div class="note">運用方針: ログイン後は自部署の報告ページのみ表示。5分以内完了を優先。</div>
+      </article>
+    </section>
+
+    <p class="footer">Demo UI only - static HTML</p>
+  </div>
+</body>
+</html>

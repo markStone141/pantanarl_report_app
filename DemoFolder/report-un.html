@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UN 報告フォーム</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <strong>UN 報告フォーム</strong>
+      <nav>
+        <a href="dashboard.html">ダッシュボード</a>
+        <a href="index.html" class="logout-link">ログアウト</a>
+      </nav>
+    </header>
+
+    <section class="card" style="margin-top: 16px;">
+      <h3>入力項目（UN / 責任者まとめ報告）</h3>
+      <p class="muted">責任者が部署全員分を一括入力。保存時はメンバーごとに分割して登録する想定。</p>
+      <div class="grid grid-2">
+        <div>
+          <label>報告日</label>
+          <input type="date" value="2026-02-14" />
+        </div>
+        <div>
+          <label>責任者</label>
+          <input value="UN責任者（ログインユーザー）" readonly />
+        </div>
+      </div>
+      <label style="margin-top: 12px;">メンバー別入力</label>
+      <table>
+        <thead>
+          <tr><th>メンバー</th><th>件数</th><th>金額(円)</th><th>現場名</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>石井</td><td>1</td><td>3000</td><td>二子玉川</td></tr>
+          <tr><td>田中</td><td>2</td><td>9000</td><td>自由が丘</td></tr>
+          <tr><td>佐々木</td><td>1</td><td>4200</td><td>武蔵小杉</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 10px;">
+        <label>全体メモ</label>
+        <input placeholder="本日の共有事項" />
+      </div>
+      <div style="margin-top: 14px;"><button>部署分を一括保存（デモ）</button></div>
+    </section>
+  </div>
+</body>
+</html>

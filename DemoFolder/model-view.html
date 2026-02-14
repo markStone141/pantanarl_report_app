@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DB設計イメージ</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <strong>DB設計イメージ（説明用）</strong>
+      <nav>
+        <a href="dashboard.html">ダッシュボード</a>
+        <a href="admin.html">管理者ページ</a>
+        <a href="index.html" class="logout-link">ログアウト</a>
+      </nav>
+    </header>
+
+    <section class="grid grid-2" style="margin-top: 16px;">
+      <article class="card">
+        <h3>主要テーブル</h3>
+        <table>
+          <thead>
+            <tr><th>Table</th><th>主な項目</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Department</td><td>name</td></tr>
+            <tr><td>Member</td><td>name, status, target_for_month, target_for_period, active_period</td></tr>
+            <tr><td>Report</td><td>member, department, date, amount, count, location_or_store</td></tr>
+            <tr><td>TargetForMonth</td><td>is_active, month, un, wv, style_minamimachida, style_kohoku</td></tr>
+            <tr><td>TargetForPeriod</td><td>is_active, start, end, un, wv, style_minamimachida, style_kohoku</td></tr>
+            <tr><td>PerformanceSummary</td><td>date, un_total, wv_total, style_total</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card">
+        <h3>リレーション方針</h3>
+        <p><strong>Member ↔ Department:</strong> 多対多（複数部署所属の可能性に対応）</p>
+        <p><strong>Report:</strong> 日次データの中心。責任者は画面で一括入力し、保存時にメンバー単位レコードへ分割登録。</p>
+        <p><strong>PerformanceSummary:</strong> 日次で UN/WV/Style をまとめる中間集計テーブルとして運用可能。</p>
+        <p><strong>Target:</strong> 月次と路程を分離して、全体・個人目標どちらも参照可能にする。</p>
+        <div class="note">URLは `/report/un` 形式推奨（REST的に整理しやすい）</div>
+      </article>
+    </section>
+  </div>
+</body>
+</html>

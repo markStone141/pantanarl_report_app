@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>管理者ページ | 報告アプリ デモ</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <div>
+        <strong>管理者ページ</strong>
+        <div class="muted" style="color: #e1f1f5;">全体状況の確認、日次メール、目標管理を1画面で実行</div>
+      </div>
+      <nav>
+        <a href="dashboard.html">ダッシュボード</a>
+        <a href="model-view.html">設計イメージ</a>
+        <a href="index.html" class="logout-link">ログアウト</a>
+      </nav>
+    </header>
+
+    <section class="card" style="margin-top: 16px;">
+      <div class="row">
+        <h3>全体成績（リアルタイム表示デモ）</h3>
+        <span class="badge">最終更新: <span id="last-updated">--:--:--</span></span>
+      </div>
+      <div class="grid grid-3" style="margin-top: 12px;">
+        <article class="card">
+          <h3>UN</h3>
+          <div class="kpi" id="kpi-un-count">12件</div>
+          <p class="muted" id="kpi-un-amount">¥352,000</p>
+          <div class="progress"><span id="kpi-un-rate" style="width: 71%;"></span></div>
+          <p class="muted">達成率 71%</p>
+        </article>
+        <article class="card">
+          <h3>WV</h3>
+          <div class="kpi" id="kpi-wv-count">9件</div>
+          <p class="muted" id="kpi-wv-amount">¥278,000</p>
+          <div class="progress"><span id="kpi-wv-rate" style="width: 64%;"></span></div>
+          <p class="muted">達成率 64%</p>
+        </article>
+        <article class="card">
+          <h3>Style</h3>
+          <div class="kpi" id="kpi-style-count">14件</div>
+          <p class="muted" id="kpi-style-amount">¥189,000</p>
+          <div class="progress"><span id="kpi-style-rate" style="width: 82%;"></span></div>
+          <p class="muted">達成率 82%</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="grid grid-2" style="margin-top: 16px;">
+      <article class="card">
+        <h3>日次まとめメール</h3>
+        <p class="muted">ボタンで当日の実績入りテンプレートを生成し、一言コメントを足して送信。</p>
+        <button type="button" id="build-mail">実績入りテンプレートを作成</button>
+        <label for="mail-comment">一言コメント</label>
+        <input id="mail-comment" placeholder="例: 明日も安全第一で進めましょう" />
+        <label for="mail-body">メール本文（確認用）</label>
+        <textarea id="mail-body" placeholder="テンプレート作成ボタンで本文が入ります"></textarea>
+        <button type="button" id="send-mail" style="margin-top: 8px;">この内容で送信（デモ）</button>
+      </article>
+
+      <article class="card">
+        <h3>目標管理</h3>
+        <label>月目標（件数）</label>
+        <div class="grid grid-2">
+          <input value="UN 180" />
+          <input value="WV 150" />
+          <input value="Style1 120" />
+          <input value="Style2 90" />
+        </div>
+        <label>路程目標（件数）</label>
+        <div class="grid grid-2">
+          <input value="UN 450" />
+          <input value="WV 390" />
+          <input value="Style1 280" />
+          <input value="Style2 210" />
+        </div>
+        <div style="margin-top: 10px;"><button type="button">目標を更新（デモ）</button></div>
+      </article>
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+      <h3>メンバー成績の可視化</h3>
+      <table>
+        <thead>
+          <tr><th>部署</th><th>メンバー</th><th>件数</th><th>金額(円)</th><th>達成率</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>UN</td><td>石井</td><td>25</td><td>75000</td><td><div class="bar-track"><span style="width: 78%;"></span></div></td></tr>
+          <tr><td>UN</td><td>田中</td><td>21</td><td>68000</td><td><div class="bar-track"><span style="width: 71%;"></span></div></td></tr>
+          <tr><td>WV</td><td>佐藤</td><td>19</td><td>64000</td><td><div class="bar-track"><span style="width: 68%;"></span></div></td></tr>
+          <tr><td>Style1</td><td>山田</td><td>17</td><td>51000</td><td><div class="bar-track"><span style="width: 74%;"></span></div></td></tr>
+          <tr><td>Style2</td><td>中村</td><td>16</td><td>49000</td><td><div class="bar-track"><span style="width: 70%;"></span></div></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <p class="footer">Admin demo page - static HTML</p>
+  </div>
+
+  <script>
+    (function () {
+      const updatedEl = document.getElementById("last-updated");
+      const mailBodyEl = document.getElementById("mail-body");
+      const mailCommentEl = document.getElementById("mail-comment");
+
+      function pad(v) {
+        return String(v).padStart(2, "0");
+      }
+
+      function nowTime() {
+        const d = new Date();
+        return pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+      }
+
+      function buildMailBody() {
+        const today = new Date();
+        const dateText =
+          today.getFullYear() + "/" + pad(today.getMonth() + 1) + "/" + pad(today.getDate());
+
+        const lines = [
+          "件名: 日次実績報告 " + dateText,
+          "",
+          "【本日の全体実績】",
+          "UN: 12件 / ¥352,000 / 達成率71%",
+          "WV: 9件 / ¥278,000 / 達成率64%",
+          "Style: 14件 / ¥189,000 / 達成率82%",
+          "",
+          "【共有コメント】",
+          mailCommentEl.value.trim() || "（コメント未入力）",
+          "",
+          "以上、よろしくお願いいたします。"
+        ];
+
+        mailBodyEl.value = lines.join("\n");
+      }
+
+      document.getElementById("build-mail").addEventListener("click", buildMailBody);
+      document.getElementById("send-mail").addEventListener("click", function () {
+        if (!mailBodyEl.value.trim()) {
+          buildMailBody();
+        }
+        alert("デモ送信しました。\n（実装時はここでメールAPIを呼び出します）");
+      });
+
+      updatedEl.textContent = nowTime();
+      setInterval(function () {
+        updatedEl.textContent = nowTime();
+      }, 1000);
+    })();
+  </script>
+</body>
+</html>
