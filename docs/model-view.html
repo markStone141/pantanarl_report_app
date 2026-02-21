@@ -28,6 +28,8 @@
             <tr><td>Department</td><td>id, name</td></tr>
             <tr><td>Member</td><td>id, name, status</td></tr>
             <tr><td>MemberDepartment</td><td>member_id, department_id（複数部署対応）</td></tr>
+            <tr><td>Team</td><td>department_id, name, leader_member_id, is_active</td></tr>
+            <tr><td>TeamMember</td><td>team_id, member_id, role(leader/member), joined_at, left_at</td></tr>
             <tr><td>Period</td><td>id, period_key(YYYY-MM-seq), name(第一次路程), start_date, end_date, status</td></tr>
             <tr><td>DailyDepartmentReport</td><td>department_id, date, submitted_by, submitted_at, total_count, total_amount</td></tr>
             <tr><td>MemberReport</td><td>member_id, department_id, date, count, amount, location_or_store</td></tr>
@@ -36,6 +38,11 @@
             <tr><td>MemberMonthTarget</td><td>member_id, month, target_count, target_amount, set_by_member</td></tr>
             <tr><td>MemberPeriodTarget</td><td>member_id, period_id, target_count, target_amount, set_by_member</td></tr>
             <tr><td>ReminderLog</td><td>department_id, date, sent_to, sent_at, status</td></tr>
+            <tr><td>EmailRecipient</td><td>name, email, purpose, priority, is_active</td></tr>
+            <tr><td>EmailSendLog</td><td>date, recipients, subject, body_snapshot, sent_by, sent_at, status</td></tr>
+            <tr><td>TalkPost</td><td>author_member_id, department_id, title, body, visibility, tags, created_at</td></tr>
+            <tr><td>TalkComment</td><td>post_id, author_member_id, body, created_at</td></tr>
+            <tr><td>TalkReaction</td><td>post_id, member_id, type(like/bookmark), created_at</td></tr>
             <tr><td>PerformanceSummary（View）</td><td>date, department, total_count, total_amount, achievement_rate</td></tr>
           </tbody>
         </table>
@@ -61,6 +68,8 @@
           <tr><th>必要テーブル</th><td>`periods`, `period_targets`, `member_period_targets` を追加検討。</td></tr>
           <tr><th>制約</th><td>同一部署の路程期間重複を禁止。進行中（active）は原則1つ。</td></tr>
           <tr><th>管理画面TODO</th><td>路程作成（開始日/終了日/目標）と、現在路程の達成率表示を追加。</td></tr>
+          <tr><th>班編成管理</th><td>班名作成、班長1名選択、班員複数選択を管理者ページで実装する。</td></tr>
+          <tr><th>情報交換機能</th><td>トーク投稿一覧・投稿作成・コメント・いいね/保存を実装し、知見共有に活用する。</td></tr>
         </tbody>
       </table>
     </section>
@@ -77,6 +86,25 @@
           <tr><th>権限ルール</th><td>`admin` は全体目標編集可、`member/viewer` は自分の個人目標のみ編集可。</td></tr>
           <tr><th>UI分担</th><td>管理者ページ=全体目標管理、個人ページ=個人目標管理（実績は閲覧のみ）。</td></tr>
           <tr><th>月次自動切替</th><td>月が切り替わったら表示対象を自動で当月へ変更し、前月までの目標・実績は過去ログ（Summary）へ自動移行する。</td></tr>
+          <tr><th>メール送信先管理</th><td>管理者が送信先メールアドレスを追加/無効化/優先順管理できるようにする。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+      <h3>今後の実装フロー（推奨順）</h3>
+      <table>
+        <tbody>
+          <tr><th>Step 1（最優先）</th><td>認証・権限の基盤実装（`report` / `viewer` / `admin`）。</td></tr>
+          <tr><th>Step 2</th><td>責任者の一括報告保存（`DailyDepartmentReport` + `MemberReport` 分割登録）。</td></tr>
+          <tr><th>Step 3</th><td>管理者トップ実装（提出状況一覧、未提出表示、日報メール生成）。</td></tr>
+          <tr><th>Step 4</th><td>目標・路程設定実装（月目標、路程分割、路程目標、過去月Summary）。</td></tr>
+          <tr><th>Step 5</th><td>個人ページ実装（実績閲覧 + 個人目標入力）。</td></tr>
+          <tr><th>Step 6</th><td>リマインド機能（未提出部署への通知、送信履歴管理）。</td></tr>
+          <tr><th>Step 7</th><td>メール連携強化（送信先管理、送信履歴、テンプレート管理）。</td></tr>
+          <tr><th>Step 8</th><td>分析機能（Summary集計、月次比較、路程別達成率推移）。</td></tr>
+          <tr><th>Step 9</th><td>情報交換機能（投稿・コメント・リアクション、部署/全体公開設定）。</td></tr>
+          <tr><th>技術方針</th><td>当面は Django Template + Alpine.js。必要時にWebSocketやSPA化を検討。</td></tr>
         </tbody>
       </table>
     </section>

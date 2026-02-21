@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>送信先管理 | 管理者ページ</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <div>
+        <strong>日報メール 送信先管理</strong>
+        <div class="muted" style="color: #e1f1f5;">Gmail送信先アドレスを管理（追加・有効/無効・並び順）</div>
+      </div>
+      <nav>
+        <a href="admin.html">管理者ページ</a>
+        <a href="model-view.html">設計イメージ</a>
+        <a href="index.html" class="logout-link">ログアウト</a>
+      </nav>
+    </header>
+
+    <section class="card" style="margin-top: 16px;">
+      <h3>登録済み送信先</h3>
+      <table>
+        <thead>
+          <tr><th>用途</th><th>表示名</th><th>メールアドレス</th><th>状態</th><th>優先順</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>社内ピッチ</td>
+            <td>本部共有</td>
+            <td>pitch-team@example.com</td>
+            <td><span class="badge">active</span></td>
+            <td>1</td>
+            <td>
+              <button class="btn-inline" type="button" onclick="alert('宛先を編集（デモ）')">編集</button>
+              <button class="btn-inline btn-danger" type="button" onclick="alert('宛先を無効化（デモ）')">無効化</button>
+            </td>
+          </tr>
+          <tr>
+            <td>社内ピッチ</td>
+            <td>管理部</td>
+            <td>admin-room@example.com</td>
+            <td><span class="badge">active</span></td>
+            <td>2</td>
+            <td>
+              <button class="btn-inline" type="button" onclick="alert('宛先を編集（デモ）')">編集</button>
+              <button class="btn-inline btn-danger" type="button" onclick="alert('宛先を無効化（デモ）')">無効化</button>
+            </td>
+          </tr>
+          <tr>
+            <td>予備</td>
+            <td>旧連絡先</td>
+            <td>legacy@example.com</td>
+            <td><span class="badge" style="background:#f0f0f0;color:#555;">inactive</span></td>
+            <td>99</td>
+            <td>
+              <button class="btn-inline" type="button" onclick="alert('宛先を編集（デモ）')">編集</button>
+              <button class="btn-inline" type="button" onclick="alert('宛先を再有効化（デモ）')">再有効化</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+      <h3>送信先を追加</h3>
+      <div class="grid grid-2">
+        <div>
+          <label>用途</label>
+          <select>
+            <option>社内ピッチ</option>
+            <option>管理部共有</option>
+            <option>その他</option>
+          </select>
+        </div>
+        <div>
+          <label>表示名</label>
+          <input placeholder="例: 本部共有" />
+        </div>
+        <div>
+          <label>メールアドレス</label>
+          <input type="email" placeholder="sample@example.com" />
+        </div>
+        <div>
+          <label>優先順</label>
+          <input type="number" value="3" />
+        </div>
+      </div>
+      <div style="margin-top: 10px;"><button type="button">送信先を追加（デモ）</button></div>
+      <div class="note" style="margin-top: 10px;">運用案: 有効な送信先のみ日報送信時にTOへ展開し、変更履歴は別ログへ保存。</div>
+    </section>
+
+    <p class="footer">Email recipient settings demo page - static HTML</p>
+  </div>
+</body>
+</html>

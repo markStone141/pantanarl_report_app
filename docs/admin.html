@@ -16,6 +16,7 @@
       <nav>
         <a href="dashboard.html">ダッシュボード</a>
         <a href="target-settings.html">目標・路程設定</a>
+        <a href="email-settings.html">送信先管理</a>
         <a href="model-view.html">設計イメージ</a>
         <a href="index.html" class="logout-link">ログアウト</a>
       </nav>
@@ -52,6 +53,14 @@
           <p class="muted" id="kpi-un-amount">¥352,000</p>
           <div class="progress"><span id="kpi-un-rate" style="width: 71%;"></span></div>
           <p class="muted">達成率 71%</p>
+          <label style="margin-top: 8px;">個人内訳</label>
+          <table>
+            <tbody>
+              <tr><td>石井</td><td>4件</td><td>¥120,000</td></tr>
+              <tr><td>田中</td><td>5件</td><td>¥145,000</td></tr>
+              <tr><td>佐々木</td><td>3件</td><td>¥87,000</td></tr>
+            </tbody>
+          </table>
         </article>
         <article class="card">
           <h3>WV</h3>
@@ -59,6 +68,14 @@
           <p class="muted" id="kpi-wv-amount">¥278,000</p>
           <div class="progress"><span id="kpi-wv-rate" style="width: 64%;"></span></div>
           <p class="muted">達成率 64%</p>
+          <label style="margin-top: 8px;">個人内訳</label>
+          <table>
+            <tbody>
+              <tr><td>佐藤</td><td>3件</td><td>¥96,000</td></tr>
+              <tr><td>鈴木</td><td>4件</td><td>¥118,000</td></tr>
+              <tr><td>高橋</td><td>2件</td><td>¥64,000</td></tr>
+            </tbody>
+          </table>
         </article>
         <article class="card">
           <h3>Style</h3>
@@ -66,6 +83,14 @@
           <p class="muted" id="kpi-style-amount">¥189,000</p>
           <div class="progress"><span id="kpi-style-rate" style="width: 82%;"></span></div>
           <p class="muted">達成率 82%</p>
+          <label style="margin-top: 8px;">個人内訳</label>
+          <table>
+            <tbody>
+              <tr><td>山田</td><td>3件</td><td>¥42,000</td></tr>
+              <tr><td>渡辺</td><td>3件</td><td>¥39,000</td></tr>
+              <tr><td>小林</td><td>2件</td><td>¥28,000</td></tr>
+            </tbody>
+          </table>
         </article>
       </div>
     </section>
@@ -74,12 +99,16 @@
       <article class="card">
         <h3>日次まとめメール</h3>
         <p class="muted">ボタンで当日の実績入りテンプレートを生成し、一言コメントを足して送信。</p>
+        <p class="muted">送信先は「送信先管理」ページで編集可能。</p>
         <button type="button" id="build-mail">実績入りテンプレートを作成</button>
         <label for="mail-comment">一言コメント</label>
         <input id="mail-comment" placeholder="例: 明日も安全第一で進めましょう" />
         <label for="mail-body">メール本文（確認用）</label>
         <textarea id="mail-body" placeholder="テンプレート作成ボタンで本文が入ります"></textarea>
         <button type="button" id="send-mail" style="margin-top: 8px;">この内容で送信（デモ）</button>
+        <div style="margin-top: 8px;">
+          <a href="email-settings.html"><button type="button">送信先メールアドレスを管理</button></a>
+        </div>
       </article>
 
       <article class="card">
