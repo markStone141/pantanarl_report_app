@@ -7,7 +7,7 @@
   <header class="topbar">
     <div>
       <strong>管理者ページ</strong>
-      <div class="muted" style="color: #e1f1f5;">報告データを確認し、日次メールや目標管理に利用します</div>
+      <div class="muted" style="color: #e1f1f5;">報告データを確認し、日次メールや目標管理に活用します</div>
     </div>
     <nav>
       <a href="{% url 'dashboard_index' %}">ダッシュボード</a>
@@ -34,20 +34,14 @@
           <td>{{ row.label }}</td>
           <td>{{ row.reporter_name }}</td>
           <td>{{ row.submitted_time }}</td>
-          <td>
-            {% if row.status == "提出済" %}
-            <span class="badge">提出済</span>
-            {% else %}
-            <span class="badge">未提出</span>
-            {% endif %}
-          </td>
+          <td><span class="badge">{{ row.status }}</span></td>
           <td>{{ row.count }}</td>
           <td>{{ row.amount }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    <div class="note" style="margin-top: 10px;">最新の報告送信データを表示しています。</div>
+    <div class="note" style="margin-top: 10px;">当日の最新送信データを反映しています。</div>
   </section>
 
   <section class="card" style="margin-top: 16px;">
@@ -61,6 +55,23 @@
         <h3>{{ card.title }}</h3>
         <div class="kpi">{{ card.count }} 件</div>
         <p class="muted">¥ {{ card.amount }}</p>
+        <label style="margin-top: 8px;">個人内訳</label>
+        <table>
+          <thead>
+            <tr><th>メンバー</th><th>件数</th><th>金額(円)</th></tr>
+          </thead>
+          <tbody>
+            {% for row in card.members %}
+            <tr>
+              <td>{{ row.member_name }}</td>
+              <td>{{ row.count }}</td>
+              <td>{{ row.amount }}</td>
+            </tr>
+            {% empty %}
+            <tr><td>-</td><td>-</td><td>-</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </article>
       {% endfor %}
     </div>
