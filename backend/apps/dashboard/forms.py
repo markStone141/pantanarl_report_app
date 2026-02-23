@@ -1,6 +1,6 @@
 from django import forms
 
-from apps.accounts.models import Department, Member
+from apps.accounts.models import Department
 
 
 class MemberRegistrationForm(forms.Form):
@@ -17,7 +17,6 @@ class MemberRegistrationForm(forms.Form):
     password = forms.CharField(
         label="パスワード",
         max_length=128,
-        required=False,
         widget=forms.PasswordInput(attrs={"placeholder": "パスワード"}),
     )
     departments = forms.ModelMultipleChoiceField(
@@ -30,18 +29,12 @@ class MemberRegistrationForm(forms.Form):
 
 class DepartmentForm(forms.Form):
     name = forms.CharField(
-        label="表示名",
+        label="部署名",
         max_length=64,
-        widget=forms.TextInput(attrs={"placeholder": "例: UN①"}),
+        widget=forms.TextInput(attrs={"placeholder": "例: UN"}),
     )
     code = forms.CharField(
         label="部署コード",
         max_length=32,
         widget=forms.TextInput(attrs={"placeholder": "例: UN / WV / STYLE1"}),
-    )
-    default_reporter = forms.ModelChoiceField(
-        label="デフォルト責任者",
-        required=False,
-        queryset=Member.objects.none(),
-        empty_label="未設定",
     )

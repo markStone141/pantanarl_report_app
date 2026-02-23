@@ -1,31 +1,86 @@
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.reports.models import DailyDepartmentReport
 from .forms import DepartmentForm, MemberRegistrationForm
 
 
 def dashboard_index(request: HttpRequest) -> HttpResponse:
-    return render(request, "dashboard/admin.html")
+    today = timezone.localdate()
+    target_departments = [
+        ("UN", "UN"),
+        ("WV", "WV"),
+        ("STYLE1", "Style1"),
+        ("STYLE2", "Style2"),
+    ]
+
+    latest_reports_qs = (
+        DailyDepartmentReport.objects.filter(
+            department__code__in=[code for code, _ in target_departments]
+        )
+        .select_related("department", "reporter")
+        .order_by("department__code", "-report_date", "-created_at")
+    )
+    latest_by_code = {}
+    for report in latest_reports_qs:
+        code = report.department.code
+        if code not in latest_by_code:
+            latest_by_code[code] = report
+
+    submission_rows = []
+    for code, label in target_departments:
+        report = latest_by_code.get(code)
+        if report:
+            submission_rows.append(
+                {
+                    "label": label,
+                    "reporter_name": report.reporter.name if report.reporter else "-",
+                    "submitted_time": timezone.localtime(report.created_at).strftime("%H:%M"),
+                    "status": "提出済",
+                    "count": report.total_count,
+                    "amount": report.followup_count,
+                }
+            )
+        else:
+            submission_rows.append(
+                {
+                    "label": label,
+                    "reporter_name": "-",
+                    "submitted_time": "-",
+                    "status": "未提出",
+                    "count": "-",
+                    "amount": "-",
+                }
+            )
+
+    daily_totals = {}
+    today_reports = DailyDepartmentReport.objects.filter(report_date=today)
+    for code, _ in target_departments:
+        dept_reports = today_reports.filter(department__code=code)
+        daily_totals[code] = {
+            "count": sum(r.total_count for r in dept_reports),
+            "amount": sum(r.followup_count for r in dept_reports),
+        }
+    style_count = daily_totals["STYLE1"]["count"] + daily_totals["STYLE2"]["count"]
+    style_amount = daily_totals["STYLE1"]["amount"] + daily_totals["STYLE2"]["amount"]
+
+    context = {
+        "submission_rows": submission_rows,
+        "today_str": today.strftime("%Y/%m/%d"),
+        "kpi_cards": [
+            {"title": "UN", "count": daily_totals["UN"]["count"], "amount": daily_totals["UN"]["amount"]},
+            {"title": "WV", "count": daily_totals["WV"]["count"], "amount": daily_totals["WV"]["amount"]},
+            {"title": "Style", "count": style_count, "amount": style_amount},
+        ],
+    }
+    return render(request, "dashboard/admin.html", context)
 
 
 def _member_form(*, data=None, initial=None) -> MemberRegistrationForm:
     form = MemberRegistrationForm(data=data, initial=initial)
     form.fields["departments"].queryset = Department.objects.filter(is_active=True)
-    return form
-
-
-def _department_form(*, data=None, initial=None, edit_department=None) -> DepartmentForm:
-    form = DepartmentForm(data=data, initial=initial)
-    if edit_department:
-        reporter_ids = Member.objects.filter(
-            department_links__department=edit_department
-        ).values_list("id", flat=True)
-        form.fields["default_reporter"].queryset = Member.objects.filter(
-            id__in=reporter_ids
-        ).order_by("name")
-    else:
-        form.fields["default_reporter"].queryset = Member.objects.none()
     return form
 
 
@@ -43,7 +98,6 @@ def member_settings(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             login_id = form.cleaned_data["login_id"].strip().lower()
             departments = form.cleaned_data["departments"]
-            input_password = form.cleaned_data["password"]
             duplicate_query = Member.objects.filter(login_id=login_id)
             if edit_member_id and edit_member_id.isdigit():
                 duplicate_query = duplicate_query.exclude(id=int(edit_member_id))
@@ -55,30 +109,14 @@ def member_settings(request: HttpRequest) -> HttpResponse:
                     member = get_object_or_404(Member, id=int(edit_member_id))
                     member.name = form.cleaned_data["name"].strip()
                     member.login_id = login_id
-                    update_fields = ["name", "login_id"]
-                    if input_password:
-                        member.password = input_password
-                        update_fields.append("password")
-                    member.save(update_fields=update_fields)
+                    member.password = form.cleaned_data["password"]
+                    member.save(update_fields=["name", "login_id", "password"])
                     status_message = f"{member.name}（{member.login_id}）を更新しました。"
                 else:
-                    if not input_password:
-                        form.add_error("password", "新規登録時はパスワードが必須です。")
-                        members = Member.objects.prefetch_related("department_links")
-                        return render(
-                            request,
-                            "dashboard/member_settings.html",
-                            {
-                                "form": form,
-                                "members": members,
-                                "edit_member": edit_member,
-                                "status_message": status_message,
-                            },
-                        )
                     member = Member.objects.create(
                         name=form.cleaned_data["name"].strip(),
                         login_id=login_id,
-                        password=input_password,
+                        password=form.cleaned_data["password"],
                     )
                     status_message = f"{member.name}（{member.login_id}）を登録しました。"
 
@@ -103,6 +141,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
                 initial={
                     "name": edit_member.name,
                     "login_id": edit_member.login_id,
+                    "password": edit_member.password,
                     "departments": list(
                         edit_member.department_links.values_list("department_id", flat=True)
                     ),
@@ -144,12 +183,9 @@ def department_settings(request: HttpRequest) -> HttpResponse:
 
     if request.method == "POST":
         edit_department_id = request.POST.get("edit_department_id")
-        if edit_department_id and edit_department_id.isdigit():
-            edit_department = Department.objects.filter(id=int(edit_department_id)).first()
-        form = _department_form(data=request.POST, edit_department=edit_department)
+        form = DepartmentForm(request.POST)
         if form.is_valid():
             code = form.cleaned_data["code"].strip().upper()
-            default_reporter = form.cleaned_data["default_reporter"]
             duplicate_query = Department.objects.filter(code=code)
             if edit_department_id and edit_department_id.isdigit():
                 duplicate_query = duplicate_query.exclude(id=int(edit_department_id))
@@ -159,52 +195,29 @@ def department_settings(request: HttpRequest) -> HttpResponse:
             else:
                 if edit_department_id and edit_department_id.isdigit():
                     department = get_object_or_404(Department, id=int(edit_department_id))
-                    if default_reporter and not MemberDepartment.objects.filter(
-                        member=default_reporter,
-                        department=department,
-                    ).exists():
-                        form.add_error(
-                            "default_reporter",
-                            "この責任者は選択中の部署に所属していません。",
-                        )
-                        departments = Department.objects.all()
-                        return render(
-                            request,
-                            "dashboard/department_settings.html",
-                            {
-                                "form": form,
-                                "departments": departments,
-                                "edit_department": edit_department,
-                                "status_message": status_message,
-                            },
-                        )
                     department.name = form.cleaned_data["name"].strip()
                     department.code = code
-                    department.default_reporter = default_reporter
-                    department.save(update_fields=["name", "code", "default_reporter"])
+                    department.save(update_fields=["name", "code"])
                     status_message = f"{department.name}（{department.code}）を更新しました。"
                 else:
                     department = Department.objects.create(
                         name=form.cleaned_data["name"].strip(),
                         code=code,
-                        default_reporter=None,
                         is_active=True,
                     )
                     status_message = f"{department.name}（{department.code}）を追加しました。"
-                form = _department_form()
+                form = DepartmentForm()
                 edit_department = None
     else:
         if edit_department:
-            form = _department_form(
+            form = DepartmentForm(
                 initial={
                     "name": edit_department.name,
                     "code": edit_department.code,
-                    "default_reporter": edit_department.default_reporter_id,
-                },
-                edit_department=edit_department,
+                }
             )
         else:
-            form = _department_form()
+            form = DepartmentForm()
 
     departments = Department.objects.all()
     return render(

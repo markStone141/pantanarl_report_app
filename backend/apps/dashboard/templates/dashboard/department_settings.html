@@ -7,7 +7,7 @@
   <header class="topbar">
     <div>
       <strong>部署管理</strong>
-      <div class="muted" style="color: #e1f1f5;">部署を追加・編集・削除して、報告画面の表示候補を管理（表示名/コード）</div>
+      <div class="muted" style="color: #e1f1f5;">部署を追加・編集・削除して、報告画面の表示候補を管理</div>
     </div>
     <nav>
       <a href="{% url 'dashboard_index' %}">管理者ページ</a>
@@ -37,17 +37,6 @@
         <div class="error-text">{{ form.code.errors|striptags }}</div>
         {% endif %}
 
-        <label for="id_default_reporter">{{ form.default_reporter.label }}</label>
-        {{ form.default_reporter }}
-        {% if form.default_reporter.errors %}
-        <div class="error-text">{{ form.default_reporter.errors|striptags }}</div>
-        {% endif %}
-        {% if edit_department %}
-        <div class="muted" style="margin-top: 6px;">この部署に所属するメンバーのみ選択できます。</div>
-        {% else %}
-        <div class="muted" style="margin-top: 6px;">部署作成後に、編集画面で設定できます。</div>
-        {% endif %}
-
         <button type="submit" style="margin-top: 12px;">
           {% if edit_department %}部署を更新{% else %}部署を追加{% endif %}
         </button>
@@ -66,14 +55,13 @@
       {% if departments %}
       <table>
         <thead>
-          <tr><th>表示名</th><th>コード</th><th>デフォルト責任者</th><th>操作</th></tr>
+          <tr><th>部署名</th><th>部署コード</th><th>操作</th></tr>
         </thead>
         <tbody>
           {% for department in departments %}
           <tr>
             <td>{{ department.name }}</td>
             <td>{{ department.code }}</td>
-            <td>{% if department.default_reporter %}{{ department.default_reporter.name }}{% else %}-{% endif %}</td>
             <td>
               <a class="btn-inline" href="{% url 'department_settings' %}?edit={{ department.id }}">編集</a>
               <form method="post" action="{% url 'department_delete' department.id %}" style="display:inline;" onsubmit="return confirm('この部署を削除します。よろしいですか？');">

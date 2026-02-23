@@ -14,78 +14,143 @@
   </header>
 
   <section class="card" style="margin-top: 16px;">
-    <h3>入力項目（{{ dept_code }}）</h3>
-    <p class="muted">責任者が部署全員分を一括入力。保存時はメンバーごとに分割して登録する想定。</p>
+    <h3>報告入力 ({{ dept_code }})</h3>
+    <p class="muted">メンバー・金額・件数・{{ location_label }}を行追加しながら入力できます。</p>
 
-    <div class="grid grid-2">
-      <div>
-        <label>報告日</label>
-        <input type="date" />
-      </div>
-      <div>
-        <label>責任者</label>
-        <select>
-          <option value="">選択してください</option>
-          {% for member in members %}
-          <option value="{{ member.id }}" {% if default_reporter_id and member.id == default_reporter_id %}selected{% endif %}>{{ member.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-    </div>
+    {% if submitted %}
+    <div class="note" style="margin-top: 10px;">報告を送信しました。</div>
+    {% endif %}
 
-    <label style="margin-top: 12px;">メンバー別入力</label>
-    <table>
-      <thead>
-        <tr>
-          <th>メンバー</th>
-          <th>件数</th>
-          <th>金額(円)</th>
-          <th>{{ location_label }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>
-            <select>
-              <option value="">選択してください</option>
-              {% for member in members %}
-              <option value="{{ member.id }}">{{ member.name }}</option>
-              {% endfor %}
-            </select>
-          </td>
-          <td><input type="number" placeholder="0" /></td>
-          <td><input type="number" placeholder="0" /></td>
-          <td><input placeholder="{% if location_value %}{{ location_value }}{% else %}{{ location_label }}{% endif %}" value="{{ location_value }}" {% if location_value %}readonly{% endif %} /></td>
-        </tr>
-        <tr>
-          <td>
-            <select>
-              <option value="">選択してください</option>
-              {% for member in members %}
-              <option value="{{ member.id }}">{{ member.name }}</option>
-              {% endfor %}
-            </select>
-          </td>
-          <td><input type="number" placeholder="0" /></td>
-          <td><input type="number" placeholder="0" /></td>
-          <td><input placeholder="{% if location_value %}{{ location_value }}{% else %}{{ location_label }}{% endif %}" value="{{ location_value }}" {% if location_value %}readonly{% endif %} /></td>
-        </tr>
-      </tbody>
-    </table>
-    {% if not members %}
+    {% if row_errors %}
     <div class="note" style="margin-top: 10px;">
-      この部署に所属するメンバーが未設定です。管理者ページのメンバー登録で所属部署を設定してください。
+      {% for e in row_errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
     </div>
     {% endif %}
 
-    <div style="margin-top: 10px;">
-      <label>全体メモ</label>
-      <input placeholder="本日の共有事項" />
-    </div>
+    <form method="post" style="margin-top: 12px;">
+      {% csrf_token %}
 
-    <div style="margin-top: 14px;">
-      <button type="button">部署分を一括保存（デモ）</button>
+      <div class="grid grid-2">
+        <div>
+          <label for="{{ form.report_date.id_for_label }}">{{ form.report_date.label }}</label>
+          {{ form.report_date }}
+        </div>
+        <div>
+          <label for="{{ form.reporter.id_for_label }}">{{ form.reporter.label }}</label>
+          {{ form.reporter }}
+        </div>
+      </div>
+
+      <label style="margin-top: 12px;">メンバー別入力</label>
+      <table>
+        <thead>
+          <tr>
+            <th>メンバー</th>
+            <th>金額(円)</th>
+            <th>件数</th>
+            <th>{{ location_label }}</th>
+          </tr>
+        </thead>
+        <tbody id="member-rows">
+          {% for row in row_values %}
+          <tr>
+            <td>
+              <select name="member_ids">
+                <option value="">選択してください</option>
+                {% for member in members %}
+                <option value="{{ member.id }}" {% if row.member_id == member.id|stringformat:"s" %}selected{% endif %}>{{ member.name }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td><input type="number" min="0" name="amounts" value="{{ row.amount|default:'0' }}" /></td>
+            <td><input type="number" min="0" name="counts" value="{{ row.count|default:'0' }}" /></td>
+            <td><input name="locations" value="{{ row.location }}" {% if fixed_location %}readonly{% endif %} /></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div style="margin-top: 10px;">
+        <button type="button" id="add-row" class="btn-inline">行を追加</button>
+      </div>
+
+      {% if not members %}
+      <div class="note" style="margin-top: 10px;">
+        この部門に所属するメンバーが未設定です。管理者ページのメンバー設定で所属部門を設定してください。
+      </div>
+      {% endif %}
+
+      <div style="margin-top: 10px;">
+        <label for="{{ form.memo.id_for_label }}">{{ form.memo.label }}</label>
+        {{ form.memo }}
+      </div>
+
+      <div style="margin-top: 14px;">
+        <button type="submit">部署分を一括送信</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card" style="margin-top: 16px;">
+    <div class="row">
+      <h3>直近の送信履歴</h3>
+      <span class="badge">{{ dept_code }}</span>
     </div>
+    <table style="margin-top: 8px;">
+      <thead>
+        <tr>
+          <th>報告日</th>
+          <th>責任者</th>
+          <th>件数合計</th>
+          <th>金額合計(円)</th>
+          <th>メモ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for report in recent_reports %}
+        <tr>
+          <td>{{ report.report_date }}</td>
+          <td>{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
+          <td>{{ report.total_count }}</td>
+          <td>{{ report.followup_count }}</td>
+          <td>{{ report.memo|default:"-" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5">まだ送信データがありません。</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </section>
 </div>
+
+<script>
+  (function () {
+    const rows = document.getElementById("member-rows");
+    const addButton = document.getElementById("add-row");
+    const fixedLocation = "{{ fixed_location|escapejs }}";
+
+    if (!rows || !addButton) return;
+
+    addButton.addEventListener("click", function () {
+      const firstRow = rows.querySelector("tr");
+      if (!firstRow) return;
+      const clone = firstRow.cloneNode(true);
+      clone.querySelectorAll("select").forEach(function (el) {
+        el.selectedIndex = 0;
+      });
+      clone.querySelectorAll("input").forEach(function (el) {
+        if (el.name === "amounts" || el.name === "counts") {
+          el.value = "0";
+        } else if (el.name === "locations") {
+          el.value = fixedLocation;
+        } else {
+          el.value = "";
+        }
+      });
+      rows.appendChild(clone);
+    });
+  })();
+</script>
 {% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}保存報告一覧 | Report App{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header class="topbar">
+    <strong>保存報告一覧</strong>
+    <nav>
+      <a href="{% url 'report_index' %}">報告一覧へ戻る</a>
+      <a href="{% url 'dashboard_index' %}">管理者ページ</a>
+      <a href="{% url 'home' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+
+  <section class="card" style="margin-top: 16px;">
+    <h3>送信済みデータ (新しい順)</h3>
+    <table style="margin-top: 10px;">
+      <thead>
+        <tr>
+          <th>報告日</th>
+          <th>部門</th>
+          <th>責任者</th>
+          <th>件数合計</th>
+          <th>金額合計(円)</th>
+          <th>現場</th>
+          <th>メモ</th>
+          <th>登録日時</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for report in reports %}
+        <tr>
+          <td>{{ report.report_date }}</td>
+          <td>{{ report.department.code }}</td>
+          <td>{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
+          <td>{{ report.total_count }}</td>
+          <td>{{ report.followup_count }}</td>
+          <td>{{ report.location|default:"-" }}</td>
+          <td>{{ report.memo|default:"-" }}</td>
+          <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        <tr>
+          <td colspan="8" style="background: #fafcfd;">
+            <strong>明細:</strong>
+            {% for line in report.lines.all %}
+              {% if not forloop.first %} / {% endif %}
+              {% if line.member %}{{ line.member.name }}{% else %}未設定{% endif %}
+              (金額 {{ line.amount }}円, 件数 {{ line.count }}, 現場 {{ line.location|default:"-" }})
+            {% empty %}
+              明細なし
+            {% endfor %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8">まだ保存データがありません。</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}
