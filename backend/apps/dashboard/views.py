@@ -47,6 +47,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
                     "status": "提出済",
                     "count": total_count,
                     "amount": total_amount,
+                    "report_id": latest.id,
                 }
             )
         else:
@@ -58,6 +59,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
                     "status": "未提出",
                     "count": "-",
                     "amount": "-",
+                    "report_id": None,
                 }
             )
 

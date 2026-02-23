@@ -26,7 +26,7 @@
     </div>
     <table>
       <thead>
-        <tr><th>部署</th><th>責任者</th><th>提出時刻</th><th>ステータス</th><th>件数</th><th>金額(円)</th></tr>
+        <tr><th>部署</th><th>責任者</th><th>提出時刻</th><th>ステータス</th><th>件数</th><th>金額(円)</th><th>修正</th></tr>
       </thead>
       <tbody>
         {% for row in submission_rows %}
@@ -37,6 +37,13 @@
           <td><span class="badge">{{ row.status }}</span></td>
           <td>{{ row.count }}</td>
           <td>{{ row.amount }}</td>
+          <td>
+            {% if row.report_id %}
+            <a href="{% url 'report_edit' row.report_id %}"><button type="button" class="btn-inline">修正</button></a>
+            {% else %}
+            -
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>

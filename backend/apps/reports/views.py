@@ -1,5 +1,5 @@
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
@@ -7,6 +7,9 @@ from apps.accounts.models import Department, Member
 
 from .forms import ReportSubmissionForm
 from .models import DailyDepartmentReport, DailyDepartmentReportLine
+
+
+ALLOWED_EDIT_REDIRECTS = {"dashboard_index", "report_history"}
 
 
 def report_index(request: HttpRequest) -> HttpResponse:
@@ -20,6 +23,26 @@ def report_history(request: HttpRequest) -> HttpResponse:
         .order_by("-report_date", "-created_at")[:100]
     )
     return render(request, "reports/report_history.html", {"reports": reports})
+
+
+def report_edit(request: HttpRequest, report_id: int) -> HttpResponse:
+    report = get_object_or_404(
+        DailyDepartmentReport.objects.select_related("department", "reporter"),
+        id=report_id,
+    )
+    redirect_target = request.GET.get("next") or request.POST.get("next") or "dashboard_index"
+    if redirect_target not in ALLOWED_EDIT_REDIRECTS:
+        redirect_target = "dashboard_index"
+
+    return _render_report_form(
+        request,
+        dept_code=report.department.code,
+        title=f"{report.department.code} 報告フォーム",
+        location_label="現場",
+        fixed_location=_fixed_location_by_code(report.department.code),
+        editing_report=report,
+        redirect_target=redirect_target,
+    )
 
 
 def _members_for_department(department_code: str):
@@ -39,6 +62,14 @@ def _resolve_department(*, code: str, label: str) -> Department:
     if department:
         return department
     return Department.objects.create(code=code, name=label)
+
+
+def _fixed_location_by_code(dept_code: str) -> str:
+    if dept_code == "STYLE1":
+        return "石巻方面"
+    if dept_code == "STYLE2":
+        return "郡山方面"
+    return ""
 
 
 def _build_row_values(*, request: HttpRequest, fixed_location: str):
@@ -101,6 +132,25 @@ def _parse_rows(*, rows, allowed_member_ids):
     return parsed_rows, row_errors
 
 
+def _build_initial_rows_from_report(report: DailyDepartmentReport, fixed_location: str):
+    rows = []
+    for line in report.lines.select_related("member").all():
+        rows.append(
+            {
+                "member_id": str(line.member_id) if line.member_id else "",
+                "amount": str(line.amount),
+                "count": str(line.count),
+                "location": fixed_location or line.location,
+            }
+        )
+    if not rows:
+        rows = [
+            {"member_id": "", "amount": "0", "count": "0", "location": fixed_location},
+            {"member_id": "", "amount": "0", "count": "0", "location": fixed_location},
+        ]
+    return rows
+
+
 def _render_report_form(
     request: HttpRequest,
     *,
@@ -108,6 +158,8 @@ def _render_report_form(
     title: str,
     location_label: str,
     fixed_location: str = "",
+    editing_report: DailyDepartmentReport | None = None,
+    redirect_target: str = "dashboard_index",
 ) -> HttpResponse:
     department = _department_by_code(dept_code)
     members = _members_for_department(dept_code)
@@ -115,33 +167,50 @@ def _render_report_form(
 
     row_values = []
     row_errors = []
+    is_edit = editing_report is not None
 
     if request.method == "POST":
         form = ReportSubmissionForm(request.POST, members=members)
         row_values = _build_row_values(request=request, fixed_location=fixed_location)
         allowed_member_ids = set(members.values_list("id", flat=True))
-        parsed_rows, row_errors = _parse_rows(
-            rows=row_values,
-            allowed_member_ids=allowed_member_ids,
-        )
+        parsed_rows, row_errors = _parse_rows(rows=row_values, allowed_member_ids=allowed_member_ids)
 
         if form.is_valid() and not row_errors:
             department = _resolve_department(code=dept_code, label=dept_code)
             total_count = sum(row["count"] for row in parsed_rows)
             total_amount = sum(row["amount"] for row in parsed_rows)
-            fallback_location = next(
-                (row["location"] for row in parsed_rows if row["location"]),
-                "",
-            )
-            report = DailyDepartmentReport.objects.create(
-                department=department,
-                report_date=form.cleaned_data["report_date"],
-                reporter=form.cleaned_data["reporter"],
-                total_count=total_count,
-                followup_count=total_amount,
-                location=fallback_location,
-                memo=form.cleaned_data["memo"].strip(),
-            )
+            fallback_location = next((row["location"] for row in parsed_rows if row["location"]), "")
+
+            if editing_report:
+                report = editing_report
+                report.report_date = form.cleaned_data["report_date"]
+                report.reporter = form.cleaned_data["reporter"]
+                report.total_count = total_count
+                report.followup_count = total_amount
+                report.location = fallback_location
+                report.memo = form.cleaned_data["memo"].strip()
+                report.save(
+                    update_fields=[
+                        "report_date",
+                        "reporter",
+                        "total_count",
+                        "followup_count",
+                        "location",
+                        "memo",
+                    ]
+                )
+                report.lines.all().delete()
+            else:
+                report = DailyDepartmentReport.objects.create(
+                    department=department,
+                    report_date=form.cleaned_data["report_date"],
+                    reporter=form.cleaned_data["reporter"],
+                    total_count=total_count,
+                    followup_count=total_amount,
+                    location=fallback_location,
+                    memo=form.cleaned_data["memo"].strip(),
+                )
+
             member_map = {member.id: member for member in members}
             DailyDepartmentReportLine.objects.bulk_create(
                 [
@@ -155,20 +224,33 @@ def _render_report_form(
                     for row in parsed_rows
                 ]
             )
+
+            if editing_report:
+                return redirect(redirect_target)
             return redirect(f"{reverse(request.resolver_match.view_name)}?submitted=1")
     else:
-        initial = {"report_date": timezone.localdate()}
-        if default_reporter_id:
-            initial["reporter"] = default_reporter_id
-        form = ReportSubmissionForm(initial=initial, members=members)
-        row_values = [
-            {"member_id": "", "amount": "0", "count": "0", "location": fixed_location},
-            {"member_id": "", "amount": "0", "count": "0", "location": fixed_location},
-        ]
+        if editing_report:
+            form = ReportSubmissionForm(
+                initial={
+                    "report_date": editing_report.report_date,
+                    "reporter": editing_report.reporter_id,
+                    "memo": editing_report.memo,
+                },
+                members=members,
+            )
+            row_values = _build_initial_rows_from_report(editing_report, fixed_location)
+        else:
+            initial = {"report_date": timezone.localdate()}
+            if default_reporter_id:
+                initial["reporter"] = default_reporter_id
+            form = ReportSubmissionForm(initial=initial, members=members)
+            row_values = [
+                {"member_id": "", "amount": "0", "count": "0", "location": fixed_location},
+                {"member_id": "", "amount": "0", "count": "0", "location": fixed_location},
+            ]
 
     recent_reports = (
-        DailyDepartmentReport.objects.filter(department__code=dept_code)
-        .select_related("reporter")[:10]
+        DailyDepartmentReport.objects.filter(department__code=dept_code).select_related("reporter")[:10]
     )
 
     return render(
@@ -185,6 +267,9 @@ def _render_report_form(
             "row_errors": row_errors,
             "recent_reports": recent_reports,
             "submitted": request.GET.get("submitted") == "1",
+            "is_edit": is_edit,
+            "editing_report": editing_report,
+            "redirect_target": redirect_target,
         },
     )
 

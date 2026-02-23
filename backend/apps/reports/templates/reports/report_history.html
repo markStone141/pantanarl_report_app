@@ -26,6 +26,7 @@
           <th>現場</th>
           <th>メモ</th>
           <th>登録日時</th>
+          <th>修正</th>
         </tr>
       </thead>
       <tbody>
@@ -39,9 +40,14 @@
           <td>{{ report.location|default:"-" }}</td>
           <td>{{ report.memo|default:"-" }}</td>
           <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+          <td>
+            <a href="{% url 'report_edit' report.id %}?next=report_history">
+              <button type="button" class="btn-inline">修正</button>
+            </a>
+          </td>
         </tr>
         <tr>
-          <td colspan="8" style="background: #fafcfd;">
+          <td colspan="9" style="background: #fafcfd;">
             <strong>明細:</strong>
             {% for line in report.lines.all %}
               {% if not forloop.first %} / {% endif %}
@@ -54,7 +60,7 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="8">まだ保存データがありません。</td>
+          <td colspan="9">まだ保存データがありません。</td>
         </tr>
         {% endfor %}
       </tbody>
