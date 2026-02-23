@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}報告画面一覧 | Report App{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header class="topbar">
+    <div>
+      <strong>報告画面一覧</strong>
+      <div class="muted" style="color: #e1f1f5;">責任者IDごとに該当フォームへ遷移</div>
+    </div>
+    <nav>
+      <a href="{% url 'home' %}">ログイン</a>
+      <a href="{% url 'dashboard_index' %}">管理者ページ</a>
+      <a href="{% url 'home' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+
+  <section class="grid grid-2" style="margin-top: 16px;">
+    <article class="card">
+      <h3>部署別報告フォーム</h3>
+      <p class="muted">どのフォームも「責任者が部署全員分を一括入力」する前提です。</p>
+      <div class="grid grid-2">
+        <a href="{% url 'report_un' %}"><button type="button">UN 報告へ</button></a>
+        <a href="{% url 'report_wv' %}"><button type="button">WV 報告へ</button></a>
+        <a href="{% url 'report_style1' %}"><button type="button">Style1 報告へ</button></a>
+        <a href="{% url 'report_style2' %}"><button type="button">Style2 報告へ</button></a>
+      </div>
+    </article>
+  </section>
+</div>
+{% endblock %}

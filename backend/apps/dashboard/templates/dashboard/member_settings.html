@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}メンバー登録 | 報告アプリ{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header class="topbar">
+    <div>
+      <strong>メンバー登録</strong>
+      <div class="muted" style="color: #e1f1f5;">名前 / ログインID / パスワードを設定（現時点はデモ登録）</div>
+    </div>
+    <nav>
+      <a href="{% url 'dashboard_index' %}">管理者ページ</a>
+      <a href="{% url 'home' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+
+  <section class="grid grid-2" style="margin-top: 16px;">
+    <article class="card">
+      <h3>{% if edit_member %}メンバー編集{% else %}新規メンバー登録{% endif %}</h3>
+      <form method="post">
+        {% csrf_token %}
+        {% if edit_member %}
+        <input type="hidden" name="edit_member_id" value="{{ edit_member.id }}" />
+        {% endif %}
+
+        <label for="id_name">{{ form.name.label }}</label>
+        {{ form.name }}
+        {% if form.name.errors %}
+        <div class="error-text">{{ form.name.errors|striptags }}</div>
+        {% endif %}
+
+        <label for="id_login_id">{{ form.login_id.label }}</label>
+        {{ form.login_id }}
+        {% if form.login_id.errors %}
+        <div class="error-text">{{ form.login_id.errors|striptags }}</div>
+        {% endif %}
+
+        <label for="id_password">{{ form.password.label }}</label>
+        {{ form.password }}
+        {% if form.password.errors %}
+        <div class="error-text">{{ form.password.errors|striptags }}</div>
+        {% endif %}
+
+        <button type="submit" style="margin-top: 12px;">
+          {% if edit_member %}メンバーを更新{% else %}メンバーを登録{% endif %}
+        </button>
+        {% if edit_member %}
+        <a href="{% url 'member_settings' %}" style="display:block;margin-top:8px;">編集をキャンセル</a>
+        {% endif %}
+      </form>
+    </article>
+
+    <article class="card">
+      <h3>現在のメンバー</h3>
+      {% if status_message %}
+      <div class="note" style="margin-bottom: 10px;">
+        {{ status_message }}
+      </div>
+      {% endif %}
+
+      {% if members %}
+      <table>
+        <thead>
+          <tr><th>名前</th><th>ログインID</th><th>登録日時</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          {% for member in members %}
+          <tr>
+            <td>{{ member.name }}</td>
+            <td>{{ member.login_id }}</td>
+            <td>{{ member.created_at|date:"Y-m-d H:i" }}</td>
+            <td>
+              <a class="btn-inline" href="{% url 'member_settings' %}?edit={{ member.id }}">編集</a>
+              <form method="post" action="{% url 'member_delete' member.id %}" style="display:inline;" onsubmit="return confirm('このメンバーを削除します。よろしいですか？');">
+                {% csrf_token %}
+                <button class="btn-inline btn-danger" type="submit">削除</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="muted">まだメンバーは登録されていません。</p>
+      {% endif %}
+    </article>
+  </section>
+</div>
+{% endblock %}
