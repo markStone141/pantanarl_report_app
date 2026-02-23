@@ -11,6 +11,7 @@
     </div>
     <nav>
       <a href="{% url 'dashboard_index' %}">管理者ページ</a>
+      <a href="{% url 'department_settings' %}">部署管理</a>
       <a href="{% url 'home' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
@@ -42,6 +43,12 @@
         <div class="error-text">{{ form.password.errors|striptags }}</div>
         {% endif %}
 
+        <label>{{ form.departments.label }}</label>
+        {{ form.departments }}
+        {% if form.departments.errors %}
+        <div class="error-text">{{ form.departments.errors|striptags }}</div>
+        {% endif %}
+
         <button type="submit" style="margin-top: 12px;">
           {% if edit_member %}メンバーを更新{% else %}メンバーを登録{% endif %}
         </button>
@@ -62,13 +69,20 @@
       {% if members %}
       <table>
         <thead>
-          <tr><th>名前</th><th>ログインID</th><th>登録日時</th><th>操作</th></tr>
+          <tr><th>名前</th><th>ログインID</th><th>所属部署</th><th>登録日時</th><th>操作</th></tr>
         </thead>
         <tbody>
           {% for member in members %}
           <tr>
             <td>{{ member.name }}</td>
             <td>{{ member.login_id }}</td>
+            <td>
+              {% for link in member.department_links.all %}
+                {{ link.department.name }}{% if not forloop.last %}, {% endif %}
+              {% empty %}
+                -
+              {% endfor %}
+            </td>
             <td>{{ member.created_at|date:"Y-m-d H:i" }}</td>
             <td>
               <a class="btn-inline" href="{% url 'member_settings' %}?edit={{ member.id }}">編集</a>

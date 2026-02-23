@@ -40,19 +40,38 @@
       </thead>
       <tbody>
         <tr>
-          <td><input placeholder="メンバー名" /></td>
+          <td>
+            <select>
+              <option value="">選択してください</option>
+              {% for member in members %}
+              <option value="{{ member.id }}">{{ member.name }}</option>
+              {% endfor %}
+            </select>
+          </td>
           <td><input type="number" placeholder="0" /></td>
           <td><input type="number" placeholder="0" /></td>
           <td><input placeholder="{% if location_value %}{{ location_value }}{% else %}{{ location_label }}{% endif %}" value="{{ location_value }}" {% if location_value %}readonly{% endif %} /></td>
         </tr>
         <tr>
-          <td><input placeholder="メンバー名" /></td>
+          <td>
+            <select>
+              <option value="">選択してください</option>
+              {% for member in members %}
+              <option value="{{ member.id }}">{{ member.name }}</option>
+              {% endfor %}
+            </select>
+          </td>
           <td><input type="number" placeholder="0" /></td>
           <td><input type="number" placeholder="0" /></td>
           <td><input placeholder="{% if location_value %}{{ location_value }}{% else %}{{ location_label }}{% endif %}" value="{{ location_value }}" {% if location_value %}readonly{% endif %} /></td>
         </tr>
       </tbody>
     </table>
+    {% if not members %}
+    <div class="note" style="margin-top: 10px;">
+      この部署に所属するメンバーが未設定です。管理者ページのメンバー登録で所属部署を設定してください。
+    </div>
+    {% endif %}
 
     <div style="margin-top: 10px;">
       <label>全体メモ</label>
