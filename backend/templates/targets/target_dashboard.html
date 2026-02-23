@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}目標ダッシュボード | 管理者ページ{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header class="topbar">
+    <div>
+      <strong>目標ダッシュボード</strong>
+      <div class="muted" style="color: #e1f1f5;">現在の月目標と路程目標を確認できます</div>
+    </div>
+    <nav>
+      <a href="{% url 'dashboard_index' %}">管理者ページ</a>
+      <a href="{% url 'target_month_settings' %}">月目標編集</a>
+      <a href="{% url 'target_period_settings' %}">路程目標編集</a>
+      <a href="{% url 'home' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+
+  <section class="card" style="margin-top: 16px;">
+    <div class="row">
+      <h3>現在の月目標</h3>
+      <span class="badge">{{ current_month_label }}</span>
+    </div>
+    <table style="margin-top: 10px;">
+      <thead>
+        <tr><th>部署</th><th>目標件数</th><th>目標金額(円)</th></tr>
+      </thead>
+      <tbody>
+        {% for row in month_targets %}
+        <tr>
+          <td>{{ row.department }}</td>
+          <td>{{ row.count }}</td>
+          <td>{{ row.amount }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="margin-top: 10px;">
+      <a href="{% url 'target_month_settings' %}"><button type="button">月目標編集ページへ</button></a>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top: 16px;">
+    <div class="row">
+      <h3>現在の路程目標</h3>
+      <span class="badge">{{ current_period_label }}</span>
+    </div>
+    <table style="margin-top: 10px;">
+      <thead>
+        <tr><th>部署</th><th>目標件数</th><th>目標金額(円)</th></tr>
+      </thead>
+      <tbody>
+        {% for row in period_targets %}
+        <tr>
+          <td>{{ row.department }}</td>
+          <td>{{ row.count }}</td>
+          <td>{{ row.amount }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="margin-top: 10px;">
+      <a href="{% url 'target_period_settings' %}"><button type="button">路程目標編集ページへ</button></a>
+    </div>
+  </section>
+</div>
+{% endblock %}
