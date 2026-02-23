@@ -4,6 +4,13 @@ from django.db import models
 class Department(models.Model):
     code = models.CharField(max_length=32, unique=True)
     name = models.CharField(max_length=64)
+    default_reporter = models.ForeignKey(
+        "Member",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="default_department_links",
+    )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

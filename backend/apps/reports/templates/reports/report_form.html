@@ -24,7 +24,12 @@
       </div>
       <div>
         <label>責任者</label>
-        <input value="{{ leader_label }}" readonly />
+        <select>
+          <option value="">選択してください</option>
+          {% for member in members %}
+          <option value="{{ member.id }}" {% if default_reporter_id and member.id == default_reporter_id %}selected{% endif %}>{{ member.name }}</option>
+          {% endfor %}
+        </select>
       </div>
     </div>
 

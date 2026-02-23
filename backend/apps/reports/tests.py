@@ -18,3 +18,19 @@ class ReportMemberFilteringTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "UN担当")
         self.assertNotContains(response, "WV担当")
+
+    def test_report_un_marks_default_reporter_as_selected(self):
+        un = Department.objects.create(name="UN", code="UN")
+        reporter = Member.objects.create(name="責任者", login_id="leader_un", password="x")
+        MemberDepartment.objects.create(member=reporter, department=un)
+        un.default_reporter = reporter
+        un.save(update_fields=["default_reporter"])
+
+        response = self.client.get(reverse("report_un"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            f'<option value="{reporter.id}" selected>{reporter.name}</option>',
+            html=True,
+        )

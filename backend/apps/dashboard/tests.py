@@ -67,6 +67,37 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(member.password, "new_pw")
         self.assertContains(response, "更新しました")
 
+    def test_edit_member_keeps_password_when_blank(self):
+        member = Member.objects.create(name="旧名", login_id="old_keep", password="keep_pw")
+
+        response = self.client.post(
+            reverse("member_settings"),
+            {
+                "edit_member_id": str(member.id),
+                "name": "更新名",
+                "login_id": "old_keep",
+                "password": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        member.refresh_from_db()
+        self.assertEqual(member.password, "keep_pw")
+
+    def test_register_member_requires_password(self):
+        response = self.client.post(
+            reverse("member_settings"),
+            {
+                "name": "パスワードなし",
+                "login_id": "no_pw_user",
+                "password": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "新規登録時はパスワードが必須です")
+        self.assertFalse(Member.objects.filter(login_id="no_pw_user").exists())
+
     def test_delete_member_removes_record(self):
         member = Member.objects.create(name="削除対象", login_id="del_id", password="pw")
 
@@ -123,3 +154,42 @@ class MemberSettingsViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "UN")
+
+
+class DepartmentSettingsViewTests(TestCase):
+    def setUp(self):
+        self.un = Department.objects.create(name="UN", code="UN")
+        self.member_a = Member.objects.create(name="責任者A", login_id="a", password="pw")
+        self.member_b = Member.objects.create(name="責任者B", login_id="b", password="pw")
+        MemberDepartment.objects.create(member=self.member_a, department=self.un)
+
+    def test_update_department_sets_default_reporter(self):
+        response = self.client.post(
+            reverse("department_settings"),
+            {
+                "edit_department_id": str(self.un.id),
+                "name": "UN",
+                "code": "UN",
+                "default_reporter": str(self.member_a.id),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.un.refresh_from_db()
+        self.assertEqual(self.un.default_reporter_id, self.member_a.id)
+
+    def test_update_department_rejects_non_member_as_default_reporter(self):
+        response = self.client.post(
+            reverse("department_settings"),
+            {
+                "edit_department_id": str(self.un.id),
+                "name": "UN",
+                "code": "UN",
+                "default_reporter": str(self.member_b.id),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "候補にありません")
+        self.un.refresh_from_db()
+        self.assertIsNone(self.un.default_reporter_id)
