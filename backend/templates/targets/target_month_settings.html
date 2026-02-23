@@ -1,74 +1,74 @@
 {% extends "base.html" %}
 
-{% block title %}月目標編集 | 管理者ページ{% endblock %}
+{% block title %}月目標設定 | 管理者ページ{% endblock %}
 
 {% block content %}
 <div class="container">
   <header class="topbar">
     <div>
-      <strong>月目標編集</strong>
-      <div class="muted" style="color: #e1f1f5;">月次の目標件数・目標金額を部署単位で設定</div>
+      <strong>月目標設定</strong>
+      <div class="muted" style="color: #e1f1f5;">部門ごとの目標件数と目標金額を月単位で保存します。</div>
     </div>
     <nav>
       <a href="{% url 'target_index' %}">目標ダッシュボード</a>
-      <a href="{% url 'target_period_settings' %}">路程目標編集</a>
+      <a href="{% url 'target_period_settings' %}">路程設定</a>
       <a href="{% url 'home' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
 
   <section class="card" style="margin-top: 16px;">
-    <h3>月目標（全体）</h3>
-    <div class="row">
-      <span class="badge">現在表示: <span id="month-label">2026年2月度目標</span></span>
-      <input id="month-selector" type="month" value="2026-02" style="max-width: 180px;" />
-    </div>
-    <p class="muted">部署名は固定ラベル。入力欄は目標数値のみ。毎月1日に表示対象を当月へ自動切替する想定。</p>
-    <table>
-      <thead>
-        <tr><th>部署</th><th>目標件数</th><th>目標金額(円)</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>UN</td><td><input type="number" value="180" /></td><td><input type="number" value="280000" /></td></tr>
-        <tr><td>WV</td><td><input type="number" value="150" /></td><td><input type="number" value="180000" /></td></tr>
-        <tr><td>Style1</td><td><input type="number" value="120" /></td><td><input type="number" value="400000" /></td></tr>
-        <tr><td>Style2</td><td><input type="number" value="90" /></td><td><input type="number" value="450000" /></td></tr>
-      </tbody>
-    </table>
-    <div style="margin-top: 10px;"><button type="button">月目標を保存（デモ）</button></div>
+    <h3>月目標入力</h3>
+    {% if saved %}
+    <div class="notice" style="margin: 10px 0;">月目標を保存しました。</div>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save_month_targets" />
+      <div class="row">
+        <span class="badge">対象月: {{ selected_month_label }}</span>
+        <input name="month" type="month" value="{{ selected_month }}" style="max-width: 180px;" />
+      </div>
+
+      <table style="margin-top: 10px;">
+        <thead>
+          <tr><th>部門</th><th>目標件数</th><th>目標金額</th></tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td>{{ row.label }}</td>
+            <td><input type="number" min="0" name="count_{{ row.code }}" value="{{ row.count }}" /></td>
+            <td><input type="number" min="0" name="amount_{{ row.code }}" value="{{ row.amount }}" /></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div style="margin-top: 10px;"><button type="submit">月目標を保存</button></div>
+    </form>
   </section>
 
   <section class="card" style="margin-top: 16px;">
-    <h3>未来月の先行設定</h3>
-    <p class="muted">翌月以降の目標を先に登録可能。月初に自動で有効化する想定。</p>
+    <h3>過去の月目標（件数）</h3>
+    {% if recent_month_rows %}
     <table>
       <thead>
-        <tr><th>対象月</th><th>UN</th><th>WV</th><th>Style1</th><th>Style2</th><th>状態</th><th>操作</th></tr>
+        <tr><th>対象月</th><th>UN</th><th>WV</th><th>Style1</th><th>Style2</th></tr>
       </thead>
       <tbody>
-        <tr><td>2026-03</td><td>190</td><td>160</td><td>130</td><td>95</td><td><span class="badge">planned</span></td><td><button class="btn-inline" type="button">編集</button></td></tr>
-        <tr><td>2026-04</td><td>200</td><td>165</td><td>135</td><td>100</td><td><span class="badge">planned</span></td><td><button class="btn-inline" type="button">編集</button></td></tr>
+        {% for row in recent_month_rows %}
+        <tr>
+          <td>{{ row.month_label }}</td>
+          <td>{{ row.UN }}</td>
+          <td>{{ row.WV }}</td>
+          <td>{{ row.STYLE1 }}</td>
+          <td>{{ row.STYLE2 }}</td>
+        </tr>
+        {% endfor %}
       </tbody>
     </table>
-    <div style="margin-top: 10px;"><button type="button">未来月目標を追加（デモ）</button></div>
+    {% else %}
+    <p class="muted">保存済みの月目標はまだありません。</p>
+    {% endif %}
   </section>
 </div>
-
-<script>
-  (function () {
-    const monthInput = document.getElementById("month-selector");
-    const monthLabel = document.getElementById("month-label");
-
-    function updateLabel(value) {
-      if (!value) return;
-      const parts = value.split("-");
-      monthLabel.textContent = Number(parts[0]) + "年" + Number(parts[1]) + "月度目標";
-    }
-
-    monthInput.addEventListener("change", function () {
-      updateLabel(monthInput.value);
-    });
-
-    updateLabel(monthInput.value);
-  })();
-</script>
 {% endblock %}

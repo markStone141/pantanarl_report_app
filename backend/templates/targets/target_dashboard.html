@@ -7,12 +7,12 @@
   <header class="topbar">
     <div>
       <strong>目標ダッシュボード</strong>
-      <div class="muted" style="color: #e1f1f5;">現在の月目標と路程目標を確認できます</div>
+      <div class="muted" style="color: #e1f1f5;">現在の月目標と路程目標を確認できます。</div>
     </div>
     <nav>
       <a href="{% url 'dashboard_index' %}">管理者ページ</a>
-      <a href="{% url 'target_month_settings' %}">月目標編集</a>
-      <a href="{% url 'target_period_settings' %}">路程目標編集</a>
+      <a href="{% url 'target_month_settings' %}">月目標設定</a>
+      <a href="{% url 'target_period_settings' %}">路程設定</a>
       <a href="{% url 'home' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
@@ -24,12 +24,12 @@
     </div>
     <table style="margin-top: 10px;">
       <thead>
-        <tr><th>部署</th><th>目標件数</th><th>目標金額(円)</th></tr>
+        <tr><th>部門</th><th>目標件数</th><th>目標金額</th></tr>
       </thead>
       <tbody>
         {% for row in month_targets %}
         <tr>
-          <td>{{ row.department }}</td>
+          <td>{{ row.label }}</td>
           <td>{{ row.count }}</td>
           <td>{{ row.amount }}</td>
         </tr>
@@ -37,7 +37,7 @@
       </tbody>
     </table>
     <div style="margin-top: 10px;">
-      <a href="{% url 'target_month_settings' %}"><button type="button">月目標編集ページへ</button></a>
+      <a href="{% url 'target_month_settings' %}"><button type="button">月目標設定ページへ</button></a>
     </div>
   </section>
 
@@ -48,12 +48,12 @@
     </div>
     <table style="margin-top: 10px;">
       <thead>
-        <tr><th>部署</th><th>目標件数</th><th>目標金額(円)</th></tr>
+        <tr><th>部門</th><th>目標件数</th><th>目標金額</th></tr>
       </thead>
       <tbody>
         {% for row in period_targets %}
         <tr>
-          <td>{{ row.department }}</td>
+          <td>{{ row.label }}</td>
           <td>{{ row.count }}</td>
           <td>{{ row.amount }}</td>
         </tr>
@@ -61,7 +61,7 @@
       </tbody>
     </table>
     <div style="margin-top: 10px;">
-      <a href="{% url 'target_period_settings' %}"><button type="button">路程目標編集ページへ</button></a>
+      <a href="{% url 'target_period_settings' %}"><button type="button">路程設定ページへ</button></a>
     </div>
   </section>
 </div>
