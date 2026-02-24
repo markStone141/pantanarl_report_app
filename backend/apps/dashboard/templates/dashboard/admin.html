@@ -63,7 +63,6 @@
   <section class="card" style="margin-top: 16px;">
     <div class="row">
       <h3>本日の部門別実績</h3>
-      <span class="badge">リアルタイム</span>
     </div>
     <div class="grid grid-3" style="margin-top: 12px;">
       {% for card in kpi_cards %}
@@ -119,7 +118,10 @@
       <textarea id="mail-comment" placeholder="コメントを入力"></textarea>
       <label for="mail-body">メール本文（コピー用）</label>
       <textarea id="mail-body" placeholder="ここに本文が出力されます"></textarea>
-      <button type="button" id="copy-mail" style="margin-top: 8px;">本文をコピー</button>
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <button type="button" id="preview-mail">全文プレビュー</button>
+        <button type="button" id="copy-mail">本文をコピー</button>
+      </div>
     </article>
 
     <article class="card">
@@ -177,25 +179,41 @@
   </section>
 </div>
 
+<div id="mail-preview-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 9999; padding: 24px;">
+  <div style="background: #fff; width: min(960px, 96vw); height: min(90vh, 900px); margin: 0 auto; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #dde6eb;">
+      <strong>メール本文プレビュー</strong>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" id="copy-mail-preview" class="btn-inline">コピー</button>
+        <button type="button" id="close-mail-preview" class="btn-inline">閉じる</button>
+      </div>
+    </div>
+    <div style="padding: 12px 16px; overflow: auto; flex: 1;">
+      <pre id="mail-preview-content" style="margin: 0; white-space: pre-wrap; word-break: break-word; font-family: Meiryo, sans-serif; font-size: 14px; line-height: 1.6;"></pre>
+    </div>
+  </div>
+</div>
+
 {{ mail_template_payload|json_script:"mail-template-data" }}
 <script>
   (function () {
     function buildSectionLines(section, periodName, periodRange) {
       const lines = [];
+      const amountLabel = section.code && section.code.indexOf("STYLE") === 0 ? "金額" : "支援額";
       lines.push(section.heading + "（" + section.name + "）");
       lines.push("全体");
-      lines.push("件数" + section.daily_count + "件、支援額" + section.daily_amount_text);
+      lines.push("件数" + section.daily_count + "件、" + amountLabel + section.daily_amount_text);
       lines.push("");
       if (section.member_lines.length) {
         section.member_lines.forEach(function (row) {
           lines.push(row.name);
-          lines.push("件数" + row.count + "件、支援額" + row.amount_text);
+          lines.push("件数" + row.count + "件、" + amountLabel + row.amount_text);
         });
       } else {
         lines.push("個人成績データなし");
       }
       lines.push("");
-      lines.push(periodName + "（" + periodRange + "）");
+      lines.push("【" + periodName + "（" + periodRange + "）】");
       if (section.period_lines.length) {
         section.period_lines.forEach(function (line) {
           lines.push(line);
@@ -203,7 +221,7 @@
       } else {
         lines.push("路程目標データなし");
       }
-      lines.push("月間目標達成率");
+      lines.push("【月間目標達成率】");
       if (section.month_lines.length) {
         section.month_lines.forEach(function (line) {
           lines.push(line);
@@ -214,15 +232,7 @@
       return lines;
     }
 
-    const payloadEl = document.getElementById("mail-template-data");
-    const payload = payloadEl ? JSON.parse(payloadEl.textContent) : null;
-    const buildBtn = document.getElementById("build-mail");
-    const copyBtn = document.getElementById("copy-mail");
-    const commentEl = document.getElementById("mail-comment");
-    const bodyEl = document.getElementById("mail-body");
-    if (!payload || !buildBtn || !copyBtn || !commentEl || !bodyEl) return;
-
-    buildBtn.addEventListener("click", function () {
+    function buildMailBody(payload, commentValue) {
       const lines = [];
       payload.sections.forEach(function (section, idx) {
         buildSectionLines(section, payload.period_name, payload.period_range).forEach(function (line) {
@@ -234,8 +244,56 @@
       lines.push("UN全体 " + payload.un_wv_summary.actual_text + "/" + payload.un_wv_summary.target_text + " 達成率" + payload.un_wv_summary.rate);
       lines.push("");
       lines.push("コメント");
-      lines.push(commentEl.value.trim() || "（コメント未入力）");
-      bodyEl.value = lines.join("\n");
+      lines.push((commentValue || "").trim() || "（コメント未入力）");
+      return lines.join("\n");
+    }
+
+    const payloadEl = document.getElementById("mail-template-data");
+    const payload = payloadEl ? JSON.parse(payloadEl.textContent) : null;
+    const buildBtn = document.getElementById("build-mail");
+    const previewBtn = document.getElementById("preview-mail");
+    const copyBtn = document.getElementById("copy-mail");
+    const commentEl = document.getElementById("mail-comment");
+    const bodyEl = document.getElementById("mail-body");
+    const modalEl = document.getElementById("mail-preview-modal");
+    const closeModalBtn = document.getElementById("close-mail-preview");
+    const copyPreviewBtn = document.getElementById("copy-mail-preview");
+    const previewContent = document.getElementById("mail-preview-content");
+    if (!payload || !buildBtn || !previewBtn || !copyBtn || !commentEl || !bodyEl || !modalEl || !closeModalBtn || !copyPreviewBtn || !previewContent) return;
+
+    function openPreview() {
+      if (!bodyEl.value.trim()) {
+        alert("先にテンプレートを生成してください。");
+        return;
+      }
+      previewContent.textContent = bodyEl.value;
+      modalEl.style.display = "block";
+    }
+
+    function closePreview() {
+      modalEl.style.display = "none";
+    }
+
+    buildBtn.addEventListener("click", function () {
+      bodyEl.value = buildMailBody(payload, commentEl.value);
+      openPreview();
+    });
+
+    previewBtn.addEventListener("click", openPreview);
+    closeModalBtn.addEventListener("click", closePreview);
+    copyPreviewBtn.addEventListener("click", async function () {
+      if (!bodyEl.value.trim()) return;
+      try {
+        await navigator.clipboard.writeText(bodyEl.value);
+        alert("本文をコピーしました。");
+      } catch (e) {
+        bodyEl.select();
+        document.execCommand("copy");
+        alert("本文をコピーしました。");
+      }
+    });
+    modalEl.addEventListener("click", function (e) {
+      if (e.target === modalEl) closePreview();
     });
 
     copyBtn.addEventListener("click", async function () {
