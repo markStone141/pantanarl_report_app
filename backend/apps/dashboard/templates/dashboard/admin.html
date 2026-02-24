@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}管理者ページ | 報告アプリ{% endblock %}
+{% block title %}管理者ページ | Report App{% endblock %}
 
 {% block content %}
 <div class="container">
   <header class="topbar">
     <div>
       <strong>管理者ページ</strong>
-      <div class="muted" style="color: #e1f1f5;">報告データを確認し、日次メールや目標管理に活用します</div>
+      <div class="muted" style="color: #e1f1f5;">提出状況、部門実績、目標管理を確認できます。</div>
     </div>
     <nav>
       <a href="{% url 'dashboard_index' %}">ダッシュボード</a>
-      <a href="{% url 'member_settings' %}">メンバー登録</a>
+      <a href="{% url 'member_settings' %}">メンバー管理</a>
       <a href="{% url 'department_settings' %}">部署管理</a>
       <a href="{% url 'target_index' %}">目標・路程設定</a>
-      <a href="{% url 'report_history' %}">保存報告一覧</a>
+      <a href="{% url 'report_history' %}">保存済み報告一覧</a>
       <a href="{% url 'home' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
@@ -26,7 +26,7 @@
     </div>
     <table>
       <thead>
-        <tr><th>部署</th><th>責任者</th><th>提出時刻</th><th>ステータス</th><th>件数</th><th>金額(円)</th><th>修正</th></tr>
+        <tr><th>部署</th><th>担当者</th><th>提出時刻</th><th>ステータス</th><th>件数</th><th>金額</th><th>修正</th></tr>
       </thead>
       <tbody>
         {% for row in submission_rows %}
@@ -48,7 +48,6 @@
         {% endfor %}
       </tbody>
     </table>
-    <div class="note" style="margin-top: 10px;">当日の最新送信データを反映しています。</div>
   </section>
 
   <section class="card" style="margin-top: 16px;">
@@ -62,10 +61,10 @@
         <h3>{{ card.title }}</h3>
         <div class="kpi">{{ card.count }} 件</div>
         <p class="muted">¥ {{ card.amount }}</p>
-        <label style="margin-top: 8px;">個人内訳</label>
+        <label style="margin-top: 8px;">個人成績</label>
         <table>
           <thead>
-            <tr><th>メンバー</th><th>件数</th><th>金額(円)</th></tr>
+            <tr><th>メンバー</th><th>件数</th><th>金額</th></tr>
           </thead>
           <tbody>
             {% for row in card.members %}
@@ -84,29 +83,47 @@
     </div>
   </section>
 
-  <section class="grid grid-2" style="margin-top: 16px;">
+  <section style="margin-top: 16px; display: grid; gap: 16px;">
     <article class="card">
       <h3>日次まとめメール</h3>
-      <p class="muted">ボタンでテンプレートを作成し、一言コメントを追記できます。</p>
-      <button type="button" id="build-mail">実績入りテンプレートを作成</button>
-      <label for="mail-comment">一言コメント</label>
+      <p class="muted">テンプレートを作成して、コメントを加えて利用できます。</p>
+      <button type="button" id="build-mail">テンプレート作成</button>
+      <label for="mail-comment">コメント</label>
       <input id="mail-comment" placeholder="コメントを入力" />
       <label for="mail-body">メール本文（確認用）</label>
-      <textarea id="mail-body" placeholder="テンプレート作成ボタンで本文が入ります"></textarea>
-      <button type="button" id="send-mail" style="margin-top: 8px;">この内容で送信（デモ）</button>
+      <textarea id="mail-body" placeholder="ここに本文が出力されます"></textarea>
+      <button type="button" id="send-mail" style="margin-top: 8px;">送信（デモ）</button>
     </article>
 
     <article class="card">
       <h3>目標管理</h3>
-      <p class="muted">詳細設定は専用ページで管理します。</p>
+      <p class="muted">対象月: {{ target_month_summary }} [{{ target_month_status }}] / 現在路程: {{ target_period_summary }} [{{ target_period_status }}]</p>
       <table>
         <thead>
-          <tr><th>区分</th><th>現在値</th></tr>
+          <tr>
+            <th>部署</th>
+            <th>月目標</th>
+            <th>月累計実績</th>
+            <th>月達成率</th>
+            <th>路程目標</th>
+            <th>路程累計実績</th>
+            <th>路程達成率</th>
+          </tr>
         </thead>
         <tbody>
-          <tr><td>月目標（全体）</td><td>-</td></tr>
-          <tr><td>路程目標（全体）</td><td>-</td></tr>
-          <tr><td>現在路程</td><td>-</td></tr>
+          {% for row in target_progress_rows %}
+          <tr>
+            <td>{{ row.label }}</td>
+            <td>{{ row.month_target }}</td>
+            <td>{{ row.month_actual }}</td>
+            <td>{{ row.month_rate }}</td>
+            <td>{{ row.period_target }}</td>
+            <td>{{ row.period_actual }}</td>
+            <td>{{ row.period_rate }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7">目標データがありません。</td></tr>
+          {% endfor %}
         </tbody>
       </table>
     </article>
@@ -123,16 +140,16 @@
       const lines = [
         "件名: 日次報告",
         "",
-        "【共有コメント】",
+        "【本日のコメント】",
         mailCommentEl.value.trim() || "（コメント未入力）",
         "",
         "以上、よろしくお願いいたします。",
       ];
-      mailBodyEl.value = lines.join("\n");
+      mailBodyEl.value = lines.join("\\n");
     });
 
     document.getElementById("send-mail").addEventListener("click", function () {
-      alert("デモ送信しました。\n（実装時はここでメールAPIを呼び出します）");
+      alert("送信しました。（デモ）");
     });
   })();
 </script>

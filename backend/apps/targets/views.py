@@ -7,7 +7,16 @@ from django.utils import timezone
 
 from apps.accounts.models import Department
 
-from .models import DepartmentMonthTarget, DepartmentPeriodTarget, Period
+from .models import (
+    MonthTargetMetricValue,
+    Period,
+    PeriodTargetMetricValue,
+    TargetMetric,
+    TARGET_STATUS_ACTIVE,
+    TARGET_STATUS_CHOICES,
+    TARGET_STATUS_FINISHED,
+    TARGET_STATUS_PLANNED,
+)
 
 TARGET_DEPARTMENTS = [
     ("UN", "UN"),
@@ -16,7 +25,15 @@ TARGET_DEPARTMENTS = [
     ("STYLE2", "Style2"),
 ]
 
+DEFAULT_METRICS_BY_DEPT = {
+    "UN": [("count", "件数", "件"), ("amount", "金額", "円")],
+    "WV": [("cs_count", "CS件数", "件"), ("refugee_count", "難民支援件数", "件")],
+    "STYLE1": [("amount", "金額", "円")],
+    "STYLE2": [("amount", "金額", "円")],
+}
+
 PERIOD_SEQUENCE_OPTIONS = list(range(1, 11))
+STATUS_OPTIONS = [{"value": value, "label": value} for value, _ in TARGET_STATUS_CHOICES]
 
 
 def _month_value_from_date(value: date) -> str:
@@ -25,14 +42,12 @@ def _month_value_from_date(value: date) -> str:
 
 def _month_start(month_value: str | None) -> date:
     if not month_value:
-        today = timezone.localdate()
-        return today.replace(day=1)
+        return timezone.localdate().replace(day=1)
     try:
         year_str, month_str = month_value.split("-", 1)
         return date(int(year_str), int(month_str), 1)
     except (TypeError, ValueError):
-        today = timezone.localdate()
-        return today.replace(day=1)
+        return timezone.localdate().replace(day=1)
 
 
 def _to_int(value: str | None) -> int:
@@ -50,44 +65,117 @@ def _department_by_code(*, code: str, label: str) -> Department:
     return Department.objects.create(code=code, name=label)
 
 
-def _month_target_rows(target_month: date):
-    existing = {
-        target.department.code: target
-        for target in DepartmentMonthTarget.objects.filter(target_month=target_month).select_related("department")
-    }
-    rows = []
+def _ensure_default_metrics() -> None:
+    for dept_code, dept_label in TARGET_DEPARTMENTS:
+        department = _department_by_code(code=dept_code, label=dept_label)
+        for order, (metric_code, metric_label, metric_unit) in enumerate(
+            DEFAULT_METRICS_BY_DEPT[dept_code],
+            start=1,
+        ):
+            TargetMetric.objects.update_or_create(
+                department=department,
+                code=metric_code,
+                defaults={
+                    "label": metric_label,
+                    "unit": metric_unit,
+                    "display_order": order,
+                    "is_active": True,
+                },
+            )
+
+
+def _department_configs():
+    _ensure_default_metrics()
+    configs = []
     for code, label in TARGET_DEPARTMENTS:
-        target = existing.get(code)
-        rows.append(
+        department = _department_by_code(code=code, label=label)
+        metrics = list(
+            TargetMetric.objects.filter(department=department, is_active=True).order_by("display_order", "id")
+        )
+        configs.append(
             {
                 "code": code,
                 "label": label,
-                "count": target.target_count if target else 0,
-                "amount": target.target_amount if target else 0,
+                "department": department,
+                "metrics": metrics,
             }
         )
-    return rows
+    return configs
 
 
-def _period_target_rows(period: Period | None):
-    if not period:
-        return [{"code": code, "label": label, "count": 0, "amount": 0} for code, label in TARGET_DEPARTMENTS]
-    existing = {
-        target.department.code: target
-        for target in DepartmentPeriodTarget.objects.filter(period=period).select_related("department")
+def _month_status(target_month: date, today: date | None = None) -> str:
+    base = today or timezone.localdate()
+    current_month = base.replace(day=1)
+    if target_month == current_month:
+        return TARGET_STATUS_ACTIVE
+    if target_month > current_month:
+        return TARGET_STATUS_PLANNED
+    return TARGET_STATUS_FINISHED
+
+
+def _period_status(start_date: date, end_date: date, today: date | None = None) -> str:
+    base = today or timezone.localdate()
+    if start_date <= base <= end_date:
+        return TARGET_STATUS_ACTIVE
+    if base < start_date:
+        return TARGET_STATUS_PLANNED
+    return TARGET_STATUS_FINISHED
+
+
+def _build_month_rows(*, target_month: date, configs):
+    values = {
+        value.metric_id: value.value
+        for value in MonthTargetMetricValue.objects.filter(
+            target_month=target_month,
+            metric__is_active=True,
+        ).select_related("metric")
     }
     rows = []
-    for code, label in TARGET_DEPARTMENTS:
-        target = existing.get(code)
-        rows.append(
-            {
-                "code": code,
-                "label": label,
-                "count": target.target_count if target else 0,
-                "amount": target.target_amount if target else 0,
-            }
-        )
+    for config in configs:
+        metric_rows = []
+        for metric in config["metrics"]:
+            metric_rows.append(
+                {
+                    "id": metric.id,
+                    "label": metric.label,
+                    "unit": metric.unit,
+                    "value": values.get(metric.id, 0),
+                    "input_name": f"metric_{metric.id}",
+                }
+            )
+        rows.append({"label": config["label"], "metrics": metric_rows})
     return rows
+
+
+def _build_period_rows(*, period: Period | None, configs):
+    values = {}
+    if period:
+        values = {
+            value.metric_id: value.value
+            for value in PeriodTargetMetricValue.objects.filter(
+                period=period,
+                metric__is_active=True,
+            ).select_related("metric")
+        }
+    rows = []
+    for config in configs:
+        metric_rows = []
+        for metric in config["metrics"]:
+            metric_rows.append(
+                {
+                    "id": metric.id,
+                    "label": metric.label,
+                    "unit": metric.unit,
+                    "value": values.get(metric.id, 0),
+                    "input_name": f"metric_{metric.id}",
+                }
+            )
+        rows.append({"label": config["label"], "metrics": metric_rows})
+    return rows
+
+
+def _period_name(*, month: date, sequence: int) -> str:
+    return f"{month.year}年度{month.month}月 第{sequence}次路程"
 
 
 def _period_label(period: Period | None) -> str:
@@ -97,63 +185,115 @@ def _period_label(period: Period | None) -> str:
 
 
 def _sequence_from_period_name(name: str) -> int:
-    match = re.match(r"^第(\d+)次路程$", name)
+    match = re.search(r"第(\d+)次路程", name)
     if not match:
         return 1
     return int(match.group(1))
 
 
-def target_index(request: HttpRequest) -> HttpResponse:
-    current_month = (
-        DepartmentMonthTarget.objects.order_by("-target_month").values_list("target_month", flat=True).first()
+def _month_history_rows(selected_month: date | None = None):
+    months = (
+        MonthTargetMetricValue.objects.order_by("-target_month")
+        .values_list("target_month", flat=True)
+        .distinct()
     )
-    if not current_month:
-        current_month = timezone.localdate().replace(day=1)
-    current_period = Period.objects.order_by("-month", "start_date", "id").first()
+    rows = []
+    month_set = set(months)
+    if selected_month:
+        month_set.add(selected_month)
+    for month in sorted(month_set, reverse=True):
+        rows.append(
+            {
+                "month": month,
+                "month_label": f"{month.year}年{month.month}月",
+                "status": _month_status(month),
+                "month_param": _month_value_from_date(month),
+            }
+        )
+    return rows
 
+
+def _period_history_rows():
+    rows = []
+    for period in Period.objects.order_by("-month", "start_date", "id"):
+        rows.append(
+            {
+                "id": period.id,
+                "name": period.name,
+                "status": _period_status(period.start_date, period.end_date),
+                "month_label": f"{period.month.year}年{period.month.month}月",
+                "range_label": f"{period.start_date:%Y/%m/%d} - {period.end_date:%Y/%m/%d}",
+            }
+        )
+    return rows
+
+
+def _current_month() -> date:
+    today_month = timezone.localdate().replace(day=1)
+    if MonthTargetMetricValue.objects.filter(target_month=today_month).exists():
+        return today_month
+    latest = MonthTargetMetricValue.objects.order_by("-target_month").values_list("target_month", flat=True).first()
+    if latest:
+        return latest
+    return today_month
+
+
+def _current_period() -> Period | None:
+    today = timezone.localdate()
+    active = Period.objects.filter(start_date__lte=today, end_date__gte=today).order_by("-month", "start_date", "id").first()
+    if active:
+        return active
+    return Period.objects.order_by("-month", "start_date", "id").first()
+
+
+def target_index(request: HttpRequest) -> HttpResponse:
+    configs = _department_configs()
+    current_month = _current_month()
+    current_period = _current_period()
     return render(
         request,
         "targets/target_dashboard.html",
         {
             "current_month_label": f"{current_month.year}年{current_month.month}月",
+            "current_month_status": _month_status(current_month),
             "current_period_label": _period_label(current_period),
-            "month_targets": _month_target_rows(current_month),
-            "period_targets": _period_target_rows(current_period),
+            "current_period_status": _period_status(current_period.start_date, current_period.end_date)
+            if current_period
+            else TARGET_STATUS_PLANNED,
+            "month_rows": _build_month_rows(target_month=current_month, configs=configs),
+            "period_rows": _build_period_rows(period=current_period, configs=configs),
+            "month_history_rows": _month_history_rows(),
+            "period_history_rows": _period_history_rows(),
         },
     )
 
 
 def target_month_settings(request: HttpRequest) -> HttpResponse:
-    month_param = request.GET.get("month")
-    selected_month = _month_start(month_param)
+    configs = _department_configs()
+    selected_month = _month_start(request.GET.get("month"))
 
     if request.method == "POST" and request.POST.get("action") == "save_month_targets":
         selected_month = _month_start(request.POST.get("month"))
-        for code, label in TARGET_DEPARTMENTS:
-            department = _department_by_code(code=code, label=label)
-            DepartmentMonthTarget.objects.update_or_create(
-                department=department,
-                target_month=selected_month,
-                defaults={
-                    "target_count": _to_int(request.POST.get(f"count_{code}")),
-                    "target_amount": _to_int(request.POST.get(f"amount_{code}")),
-                },
-            )
+        status = _month_status(selected_month)
+        for config in configs:
+            for metric in config["metrics"]:
+                MonthTargetMetricValue.objects.update_or_create(
+                    department=config["department"],
+                    target_month=selected_month,
+                    metric=metric,
+                    defaults={
+                        "value": _to_int(request.POST.get(f"metric_{metric.id}")),
+                        "status": status,
+                    },
+                )
         return redirect(f"{request.path}?month={_month_value_from_date(selected_month)}&saved=1")
 
-    all_months = (
-        DepartmentMonthTarget.objects.order_by("-target_month").values_list("target_month", flat=True).distinct()[:6]
-    )
-    recent_month_rows = []
-    for month in all_months:
-        row = {"month_label": f"{month.year}年{month.month}月"}
-        values = {
-            target.department.code: target.target_count
-            for target in DepartmentMonthTarget.objects.filter(target_month=month).select_related("department")
-        }
-        for code, _ in TARGET_DEPARTMENTS:
-            row[code] = values.get(code, 0)
-        recent_month_rows.append(row)
+    history_rows = _month_history_rows()
+    month_switch_options = [{"value": row["month_param"], "label": row["month_label"]} for row in history_rows]
+    if not month_switch_options:
+        month_switch_options = [
+            {"value": _month_value_from_date(selected_month), "label": f"{selected_month.year}年{selected_month.month}月"}
+        ]
 
     return render(
         request,
@@ -161,14 +301,18 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
         {
             "selected_month": _month_value_from_date(selected_month),
             "selected_month_label": f"{selected_month.year}年{selected_month.month}月",
-            "rows": _month_target_rows(selected_month),
-            "recent_month_rows": recent_month_rows,
+            "selected_status": _month_status(selected_month),
+            "status_options": STATUS_OPTIONS,
+            "rows": _build_month_rows(target_month=selected_month, configs=configs),
+            "history_rows": _month_history_rows(selected_month),
+            "month_switch_options": month_switch_options,
             "saved": request.GET.get("saved") == "1",
         },
     )
 
 
 def target_period_settings(request: HttpRequest) -> HttpResponse:
+    configs = _department_configs()
     selected_period = None
     period_id = request.GET.get("period")
     if period_id and period_id.isdigit():
@@ -201,62 +345,77 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
                     elif start_date > end_date:
                         form_error = "開始日は終了日以前を指定してください。"
                     else:
-                        name = f"第{sequence}次路程"
+                        name = _period_name(month=period_month, sequence=sequence)
+                        status = _period_status(start_date, end_date)
                         if edit_id and edit_id.isdigit():
                             selected_period = get_object_or_404(Period, id=int(edit_id))
+                            duplicate_period = (
+                                Period.objects.filter(month=period_month, name=name).exclude(id=selected_period.id).first()
+                            )
+                            if duplicate_period:
+                                selected_period = duplicate_period
                             selected_period.month = period_month
                             selected_period.name = name
+                            selected_period.status = status
                             selected_period.start_date = start_date
                             selected_period.end_date = end_date
                             selected_period.save(
-                                update_fields=["month", "name", "start_date", "end_date", "updated_at"]
+                                update_fields=["month", "name", "status", "start_date", "end_date", "updated_at"]
                             )
                         else:
-                            selected_period = Period.objects.create(
+                            selected_period, _ = Period.objects.update_or_create(
                                 month=period_month,
                                 name=name,
-                                start_date=start_date,
-                                end_date=end_date,
+                                defaults={
+                                    "status": status,
+                                    "start_date": start_date,
+                                    "end_date": end_date,
+                                },
                             )
                         period_saved = True
+
         elif action == "save_period_targets":
             selected_id = request.POST.get("selected_period_id")
             if selected_id and selected_id.isdigit():
                 selected_period = get_object_or_404(Period, id=int(selected_id))
-                for code, label in TARGET_DEPARTMENTS:
-                    department = _department_by_code(code=code, label=label)
-                    DepartmentPeriodTarget.objects.update_or_create(
-                        period=selected_period,
-                        department=department,
-                        defaults={
-                            "target_count": _to_int(request.POST.get(f"count_{code}")),
-                            "target_amount": _to_int(request.POST.get(f"amount_{code}")),
-                        },
-                    )
+                for config in configs:
+                    for metric in config["metrics"]:
+                        PeriodTargetMetricValue.objects.update_or_create(
+                            period=selected_period,
+                            department=config["department"],
+                            metric=metric,
+                            defaults={"value": _to_int(request.POST.get(f"metric_{metric.id}"))},
+                        )
                 target_saved = True
             else:
                 form_error = "対象の路程を選択してください。"
 
     if not selected_period:
-        selected_period = Period.objects.order_by("-month", "start_date", "id").first()
+        selected_period = _current_period()
 
-    periods = Period.objects.order_by("-month", "start_date", "id")
     selected_month = timezone.localdate().replace(day=1)
     selected_sequence = 1
+    selected_status = TARGET_STATUS_PLANNED
     selected_start = ""
     selected_end = ""
     selected_id = ""
     if selected_period:
         selected_month = selected_period.month
         selected_sequence = _sequence_from_period_name(selected_period.name)
+        selected_status = _period_status(selected_period.start_date, selected_period.end_date)
         selected_start = selected_period.start_date.isoformat()
         selected_end = selected_period.end_date.isoformat()
         selected_id = str(selected_period.id)
 
+    periods = Period.objects.order_by("-month", "start_date", "id")
     period_options = [
         {
             "id": period.id,
-            "label": f"{period.name} ({period.start_date:%Y/%m/%d} - {period.end_date:%Y/%m/%d})",
+            "label": (
+                f"{period.name} "
+                f"[{_period_status(period.start_date, period.end_date)}] "
+                f"({period.start_date:%Y/%m/%d} - {period.end_date:%Y/%m/%d})"
+            ),
         }
         for period in periods
     ]
@@ -267,16 +426,19 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
         {
             "selected_period": selected_period,
             "selected_period_label": _period_label(selected_period),
-            "rows": _period_target_rows(selected_period),
+            "rows": _build_period_rows(period=selected_period, configs=configs),
             "period_options": period_options,
             "period_sequence_options": PERIOD_SEQUENCE_OPTIONS,
+            "status_options": STATUS_OPTIONS,
             "form_month": _month_value_from_date(selected_month),
             "form_sequence": selected_sequence,
+            "form_status": selected_status,
             "form_start_date": selected_start,
             "form_end_date": selected_end,
             "form_edit_period_id": selected_id,
             "period_saved": period_saved or request.GET.get("period_saved") == "1",
             "target_saved": target_saved or request.GET.get("target_saved") == "1",
             "form_error": form_error,
+            "history_rows": _period_history_rows(),
         },
     )

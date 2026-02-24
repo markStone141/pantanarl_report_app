@@ -1,26 +1,31 @@
 {% extends "base.html" %}
 
-{% block title %}部署管理 | 報告アプリ{% endblock %}
+{% block title %}部署管理 | 管理者ページ{% endblock %}
 
 {% block content %}
 <div class="container">
   <header class="topbar">
     <div>
       <strong>部署管理</strong>
-      <div class="muted" style="color: #e1f1f5;">部署を追加・編集・削除して、報告画面の表示候補を管理</div>
+      <div class="muted" style="color: #e1f1f5;">部署設定と、部署ごとの目標指標を管理します。</div>
     </div>
     <nav>
       <a href="{% url 'dashboard_index' %}">管理者ページ</a>
-      <a href="{% url 'member_settings' %}">メンバー登録</a>
+      <a href="{% url 'member_settings' %}">メンバー管理</a>
       <a href="{% url 'home' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
+
+  {% if status_message %}
+  <div class="note" style="margin-top: 12px;">{{ status_message }}</div>
+  {% endif %}
 
   <section class="grid grid-2" style="margin-top: 16px;">
     <article class="card">
       <h3>{% if edit_department %}部署編集{% else %}新規部署追加{% endif %}</h3>
       <form method="post">
         {% csrf_token %}
+        <input type="hidden" name="action" value="save_department" />
         {% if edit_department %}
         <input type="hidden" name="edit_department_id" value="{{ edit_department.id }}" />
         {% endif %}
@@ -54,10 +59,6 @@
 
     <article class="card">
       <h3>現在の部署</h3>
-      {% if status_message %}
-      <div class="note" style="margin-bottom: 10px;">{{ status_message }}</div>
-      {% endif %}
-
       {% if departments %}
       <table>
         <thead>
@@ -70,6 +71,7 @@
             <td>{{ department.code }}</td>
             <td>
               <a class="btn-inline" href="{% url 'department_settings' %}?edit={{ department.id }}">編集</a>
+              <a class="btn-inline" href="{% url 'department_settings' %}?metric_department={{ department.id }}">指標</a>
               <form method="post" action="{% url 'department_delete' department.id %}" style="display:inline;" onsubmit="return confirm('この部署を削除します。よろしいですか？');">
                 {% csrf_token %}
                 <button class="btn-inline btn-danger" type="submit">削除</button>
@@ -81,6 +83,109 @@
       </table>
       {% else %}
       <p class="muted">まだ部署は登録されていません。</p>
+      {% endif %}
+    </article>
+  </section>
+
+  <section class="grid grid-2" style="margin-top: 16px;">
+    <article class="card">
+      <h3>目標指標{% if selected_metric_department %} ({{ selected_metric_department.name }}){% endif %}</h3>
+      <form method="get" style="margin-bottom: 10px;">
+        <label for="metric_department">対象部署</label>
+        <select id="metric_department" name="metric_department" onchange="this.form.submit()">
+          {% for department in departments %}
+          <option value="{{ department.id }}" {% if selected_metric_department and selected_metric_department.id == department.id %}selected{% endif %}>
+            {{ department.name }} ({{ department.code }})
+          </option>
+          {% endfor %}
+        </select>
+      </form>
+
+      {% if selected_metric_department %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_metric" />
+        <input type="hidden" name="metric_department_id" value="{{ selected_metric_department.id }}" />
+        {% if edit_metric %}
+        <input type="hidden" name="edit_metric_id" value="{{ edit_metric.id }}" />
+        {% endif %}
+
+        <label for="id_label">{{ metric_form.label.label }}</label>
+        {{ metric_form.label }}
+        {% if metric_form.label.errors %}
+        <div class="error-text">{{ metric_form.label.errors|striptags }}</div>
+        {% endif %}
+
+        <label for="id_code">{{ metric_form.code.label }}</label>
+        {{ metric_form.code }}
+        {% if metric_form.code.errors %}
+        <div class="error-text">{{ metric_form.code.errors|striptags }}</div>
+        {% endif %}
+
+        <label for="id_unit">{{ metric_form.unit.label }}</label>
+        {{ metric_form.unit }}
+        {% if metric_form.unit.errors %}
+        <div class="error-text">{{ metric_form.unit.errors|striptags }}</div>
+        {% endif %}
+
+        <label for="id_display_order">{{ metric_form.display_order.label }}</label>
+        {{ metric_form.display_order }}
+        {% if metric_form.display_order.errors %}
+        <div class="error-text">{{ metric_form.display_order.errors|striptags }}</div>
+        {% endif %}
+
+        <label for="id_is_active">{{ metric_form.is_active.label }}</label>
+        {{ metric_form.is_active }}
+        {% if metric_form.is_active.errors %}
+        <div class="error-text">{{ metric_form.is_active.errors|striptags }}</div>
+        {% endif %}
+
+        {% if metric_form.non_field_errors %}
+        <div class="error-text">{{ metric_form.non_field_errors|striptags }}</div>
+        {% endif %}
+
+        <button type="submit" style="margin-top: 12px;">
+          {% if edit_metric %}指標を更新{% else %}指標を追加{% endif %}
+        </button>
+        {% if edit_metric %}
+        <a href="{% url 'department_settings' %}?metric_department={{ selected_metric_department.id }}" style="display:block;margin-top:8px;">編集をキャンセル</a>
+        {% endif %}
+      </form>
+      {% else %}
+      <p class="muted">部署がありません。先に部署を登録してください。</p>
+      {% endif %}
+    </article>
+
+    <article class="card">
+      <h3>登録済み指標</h3>
+      {% if metrics %}
+      <table>
+        <thead>
+          <tr><th>指標名</th><th>コード</th><th>単位</th><th>表示順</th><th>有効</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          {% for metric in metrics %}
+          <tr>
+            <td>{{ metric.label }}</td>
+            <td>{{ metric.code }}</td>
+            <td>{{ metric.unit|default:"-" }}</td>
+            <td>{{ metric.display_order }}</td>
+            <td>{% if metric.is_active %}有効{% else %}無効{% endif %}</td>
+            <td>
+              <a class="btn-inline" href="{% url 'department_settings' %}?metric_department={{ selected_metric_department.id }}&edit_metric={{ metric.id }}">編集</a>
+              <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="toggle_metric" />
+                <input type="hidden" name="metric_id" value="{{ metric.id }}" />
+                <button class="btn-inline" type="submit">{% if metric.is_active %}無効化{% else %}有効化{% endif %}</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="muted">この部署の指標はまだありません。</p>
       {% endif %}
     </article>
   </section>

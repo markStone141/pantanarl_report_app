@@ -7,7 +7,7 @@
   <header class="topbar">
     <div>
       <strong>路程設定</strong>
-      <div class="muted" style="color: #e1f1f5;">路程マスタと路程別目標を管理します。</div>
+      <div class="muted" style="color: #e1f1f5;">路程目標の入力と状態管理を行います。</div>
     </div>
     <nav>
       <a href="{% url 'target_index' %}">目標ダッシュボード</a>
@@ -30,7 +30,7 @@
       <input type="hidden" name="edit_period_id" value="{{ form_edit_period_id }}" />
       <div class="grid grid-2">
         <div>
-          <label>対象月</label>
+          <label>対象年月</label>
           <input type="month" name="period_month" value="{{ form_month }}" required />
         </div>
         <div>
@@ -40,6 +40,10 @@
             <option value="{{ value }}" {% if form_sequence == value %}selected{% endif %}>第{{ value }}次</option>
             {% endfor %}
           </select>
+        </div>
+        <div>
+          <label>状態（自動）</label>
+          <div class="badge" style="margin-top: 8px; display: inline-block;">{{ form_status }}</div>
         </div>
         <div>
           <label>開始日</label>
@@ -79,22 +83,47 @@
         </div>
       </div>
 
-      <table style="margin-top: 10px;">
-        <thead>
-          <tr><th>部門</th><th>目標件数</th><th>目標金額</th></tr>
-        </thead>
-        <tbody>
-          {% for row in rows %}
-          <tr>
-            <td>{{ row.label }}</td>
-            <td><input type="number" min="0" name="count_{{ row.code }}" value="{{ row.count }}" /></td>
-            <td><input type="number" min="0" name="amount_{{ row.code }}" value="{{ row.amount }}" /></td>
-          </tr>
+      {% for row in rows %}
+      <div style="margin-top: 12px; padding: 10px; border: 1px solid #d4e2ea; border-radius: 8px;">
+        <strong>{{ row.label }}</strong>
+        <div class="grid grid-2" style="margin-top: 8px;">
+          {% for metric in row.metrics %}
+          <div>
+            <label>{{ metric.label }}</label>
+            <input type="number" min="0" name="{{ metric.input_name }}" value="{{ metric.value }}" />
+            <div class="muted">{{ metric.unit }}</div>
+          </div>
           {% endfor %}
-        </tbody>
-      </table>
-      <div style="margin-top: 10px;"><button type="submit">路程目標を保存</button></div>
+        </div>
+      </div>
+      {% endfor %}
+
+      <div style="margin-top: 12px;"><button type="submit">路程目標を保存</button></div>
     </form>
+  </section>
+
+  <section class="card" style="margin-top: 16px;">
+    <h3>作成済み路程目標一覧</h3>
+    {% if history_rows %}
+    <table>
+      <thead>
+        <tr><th>対象月</th><th>路程名</th><th>期間</th><th>状態</th><th>操作</th></tr>
+      </thead>
+      <tbody>
+        {% for row in history_rows %}
+        <tr>
+          <td>{{ row.month_label }}</td>
+          <td>{{ row.name }}</td>
+          <td>{{ row.range_label }}</td>
+          <td>{{ row.status }}</td>
+          <td><a class="btn-inline" href="{% url 'target_period_settings' %}?period={{ row.id }}">表示</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">作成済みの路程目標はありません。</p>
+    {% endif %}
   </section>
 </div>
 {% endblock %}

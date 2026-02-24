@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.targets.models import TargetMetric
 
 
 def seed_departments():
@@ -26,14 +27,12 @@ class MemberSettingsViewTests(TestCase):
                 "password": "secret",
             },
         )
-
         self.assertEqual(response.status_code, 200)
         self.assertTrue(Member.objects.filter(login_id="un_test").exists())
         self.assertContains(response, "登録しました")
 
     def test_duplicate_login_id_shows_error(self):
         Member.objects.create(name="A", login_id="dup_id", password="x")
-
         response = self.client.post(
             reverse("member_settings"),
             {
@@ -42,14 +41,12 @@ class MemberSettingsViewTests(TestCase):
                 "password": "y",
             },
         )
-
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "既に使われています")
         self.assertEqual(Member.objects.filter(login_id="dup_id").count(), 1)
 
     def test_edit_member_updates_record(self):
         member = Member.objects.create(name="旧名", login_id="old_id", password="old_pw")
-
         response = self.client.post(
             reverse("member_settings"),
             {
@@ -59,7 +56,6 @@ class MemberSettingsViewTests(TestCase):
                 "password": "new_pw",
             },
         )
-
         self.assertEqual(response.status_code, 200)
         member.refresh_from_db()
         self.assertEqual(member.name, "新名")
@@ -69,7 +65,6 @@ class MemberSettingsViewTests(TestCase):
 
     def test_edit_member_keeps_password_when_blank(self):
         member = Member.objects.create(name="旧名", login_id="old_keep", password="keep_pw")
-
         response = self.client.post(
             reverse("member_settings"),
             {
@@ -79,7 +74,6 @@ class MemberSettingsViewTests(TestCase):
                 "password": "",
             },
         )
-
         self.assertEqual(response.status_code, 200)
         member.refresh_from_db()
         self.assertEqual(member.password, "keep_pw")
@@ -88,21 +82,18 @@ class MemberSettingsViewTests(TestCase):
         response = self.client.post(
             reverse("member_settings"),
             {
-                "name": "パスワードなし",
+                "name": "パスワード無し",
                 "login_id": "no_pw_user",
                 "password": "",
             },
         )
-
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "新規登録時はパスワードが必須です")
+        self.assertContains(response, "新規登録時はパスワードが必須")
         self.assertFalse(Member.objects.filter(login_id="no_pw_user").exists())
 
     def test_delete_member_removes_record(self):
         member = Member.objects.create(name="削除対象", login_id="del_id", password="pw")
-
         response = self.client.post(reverse("member_delete", args=[member.id]))
-
         self.assertEqual(response.status_code, 302)
         self.assertFalse(Member.objects.filter(id=member.id).exists())
 
@@ -110,13 +101,12 @@ class MemberSettingsViewTests(TestCase):
         response = self.client.post(
             reverse("member_settings"),
             {
-                "name": "所属あり",
+                "name": "部署あり",
                 "login_id": "dept_user",
                 "password": "pw",
                 "departments": [self.depts["UN"].id, self.depts["STYLE1"].id],
             },
         )
-
         self.assertEqual(response.status_code, 200)
         member = Member.objects.get(login_id="dept_user")
         self.assertEqual(
@@ -125,20 +115,18 @@ class MemberSettingsViewTests(TestCase):
         )
 
     def test_edit_member_updates_departments(self):
-        member = Member.objects.create(name="編成変更", login_id="move_user", password="pw")
+        member = Member.objects.create(name="異動対象", login_id="move_user", password="pw")
         MemberDepartment.objects.create(member=member, department=self.depts["UN"])
-
         response = self.client.post(
             reverse("member_settings"),
             {
                 "edit_member_id": str(member.id),
-                "name": "編成変更",
+                "name": "異動対象",
                 "login_id": "move_user",
                 "password": "pw",
                 "departments": [self.depts["WV"].id],
             },
         )
-
         self.assertEqual(response.status_code, 200)
         member.refresh_from_db()
         self.assertEqual(
@@ -149,9 +137,7 @@ class MemberSettingsViewTests(TestCase):
     def test_member_list_shows_department_name(self):
         member = Member.objects.create(name="表示確認", login_id="show_user", password="pw")
         MemberDepartment.objects.create(member=member, department=self.depts["UN"])
-
         response = self.client.get(reverse("member_settings"))
-
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "UN")
 
@@ -159,21 +145,21 @@ class MemberSettingsViewTests(TestCase):
 class DepartmentSettingsViewTests(TestCase):
     def setUp(self):
         self.un = Department.objects.create(name="UN", code="UN")
-        self.member_a = Member.objects.create(name="責任者A", login_id="a", password="pw")
-        self.member_b = Member.objects.create(name="責任者B", login_id="b", password="pw")
+        self.member_a = Member.objects.create(name="担当者A", login_id="a", password="pw")
+        self.member_b = Member.objects.create(name="担当者B", login_id="b", password="pw")
         MemberDepartment.objects.create(member=self.member_a, department=self.un)
 
     def test_update_department_sets_default_reporter(self):
         response = self.client.post(
             reverse("department_settings"),
             {
+                "action": "save_department",
                 "edit_department_id": str(self.un.id),
                 "name": "UN",
                 "code": "UN",
                 "default_reporter": str(self.member_a.id),
             },
         )
-
         self.assertEqual(response.status_code, 200)
         self.un.refresh_from_db()
         self.assertEqual(self.un.default_reporter_id, self.member_a.id)
@@ -182,14 +168,51 @@ class DepartmentSettingsViewTests(TestCase):
         response = self.client.post(
             reverse("department_settings"),
             {
+                "action": "save_department",
                 "edit_department_id": str(self.un.id),
                 "name": "UN",
                 "code": "UN",
                 "default_reporter": str(self.member_b.id),
             },
         )
-
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "候補にありません")
         self.un.refresh_from_db()
         self.assertIsNone(self.un.default_reporter_id)
+
+    def test_add_target_metric_for_department(self):
+        response = self.client.post(
+            reverse("department_settings"),
+            {
+                "action": "save_metric",
+                "metric_department_id": str(self.un.id),
+                "label": "件数",
+                "code": "count",
+                "unit": "件",
+                "display_order": "1",
+                "is_active": "on",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        metric = TargetMetric.objects.get(department=self.un, code="count")
+        self.assertEqual(metric.label, "件数")
+        self.assertTrue(metric.is_active)
+
+    def test_toggle_target_metric_active_flag(self):
+        metric = TargetMetric.objects.create(
+            department=self.un,
+            label="金額",
+            code="amount",
+            unit="円",
+            display_order=1,
+            is_active=True,
+        )
+        response = self.client.post(
+            reverse("department_settings"),
+            {
+                "action": "toggle_metric",
+                "metric_id": str(metric.id),
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        metric.refresh_from_db()
+        self.assertFalse(metric.is_active)

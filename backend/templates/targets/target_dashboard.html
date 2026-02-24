@@ -7,7 +7,7 @@
   <header class="topbar">
     <div>
       <strong>目標ダッシュボード</strong>
-      <div class="muted" style="color: #e1f1f5;">現在の月目標と路程目標を確認できます。</div>
+      <div class="muted" style="color: #e1f1f5;">現在適用中の月目標・路程目標を確認できます。</div>
     </div>
     <nav>
       <a href="{% url 'dashboard_index' %}">管理者ページ</a>
@@ -20,49 +20,78 @@
   <section class="card" style="margin-top: 16px;">
     <div class="row">
       <h3>現在の月目標</h3>
-      <span class="badge">{{ current_month_label }}</span>
+      <span class="badge">{{ current_month_label }} / {{ current_month_status }}</span>
     </div>
-    <table style="margin-top: 10px;">
+    {% for row in month_rows %}
+    <div style="margin-top: 10px; padding: 10px; border: 1px solid #d4e2ea; border-radius: 8px;">
+      <strong>{{ row.label }}</strong>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
+        {% for metric in row.metrics %}
+        <span class="badge">{{ metric.label }}: {{ metric.value }}{{ metric.unit }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="card" style="margin-top: 16px;">
+    <h3>作成済み月目標</h3>
+    {% if month_history_rows %}
+    <table>
       <thead>
-        <tr><th>部門</th><th>目標件数</th><th>目標金額</th></tr>
+        <tr><th>対象月</th><th>状態</th></tr>
       </thead>
       <tbody>
-        {% for row in month_targets %}
+        {% for row in month_history_rows %}
         <tr>
-          <td>{{ row.label }}</td>
-          <td>{{ row.count }}</td>
-          <td>{{ row.amount }}</td>
+          <td>{{ row.month_label }}</td>
+          <td>{{ row.status }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    <div style="margin-top: 10px;">
-      <a href="{% url 'target_month_settings' %}"><button type="button">月目標設定ページへ</button></a>
-    </div>
+    {% else %}
+    <p class="muted">月目標はまだありません。</p>
+    {% endif %}
   </section>
 
   <section class="card" style="margin-top: 16px;">
     <div class="row">
       <h3>現在の路程目標</h3>
-      <span class="badge">{{ current_period_label }}</span>
+      <span class="badge">{{ current_period_label }} / {{ current_period_status }}</span>
     </div>
-    <table style="margin-top: 10px;">
+    {% for row in period_rows %}
+    <div style="margin-top: 10px; padding: 10px; border: 1px solid #d4e2ea; border-radius: 8px;">
+      <strong>{{ row.label }}</strong>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
+        {% for metric in row.metrics %}
+        <span class="badge">{{ metric.label }}: {{ metric.value }}{{ metric.unit }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="card" style="margin-top: 16px;">
+    <h3>作成済み路程目標</h3>
+    {% if period_history_rows %}
+    <table>
       <thead>
-        <tr><th>部門</th><th>目標件数</th><th>目標金額</th></tr>
+        <tr><th>対象月</th><th>路程名</th><th>状態</th></tr>
       </thead>
       <tbody>
-        {% for row in period_targets %}
+        {% for row in period_history_rows %}
         <tr>
-          <td>{{ row.label }}</td>
-          <td>{{ row.count }}</td>
-          <td>{{ row.amount }}</td>
+          <td>{{ row.month_label }}</td>
+          <td>{{ row.name }}</td>
+          <td>{{ row.status }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    <div style="margin-top: 10px;">
-      <a href="{% url 'target_period_settings' %}"><button type="button">路程設定ページへ</button></a>
-    </div>
+    {% else %}
+    <p class="muted">路程目標はまだありません。</p>
+    {% endif %}
   </section>
 </div>
 {% endblock %}

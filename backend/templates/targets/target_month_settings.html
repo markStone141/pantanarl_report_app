@@ -7,7 +7,7 @@
   <header class="topbar">
     <div>
       <strong>月目標設定</strong>
-      <div class="muted" style="color: #e1f1f5;">部門ごとの目標件数と目標金額を月単位で保存します。</div>
+      <div class="muted" style="color: #e1f1f5;">月目標の入力と状態管理を行います。</div>
     </div>
     <nav>
       <a href="{% url 'target_index' %}">目標ダッシュボード</a>
@@ -24,51 +24,67 @@
     <form method="post">
       {% csrf_token %}
       <input type="hidden" name="action" value="save_month_targets" />
-      <div class="row">
-        <span class="badge">対象月: {{ selected_month_label }}</span>
-        <input name="month" type="month" value="{{ selected_month }}" style="max-width: 180px;" />
+      <div class="grid grid-2">
+        <div>
+          <label>対象月</label>
+          <input name="month" type="month" value="{{ selected_month }}" />
+        </div>
+        <div>
+          <label>状態（自動）</label>
+          <div class="badge" style="margin-top: 8px; display: inline-block;">{{ selected_status }}</div>
+        </div>
+      </div>
+      <div style="margin-top: 8px;">
+        <label for="month-switch">作成済み月に切替</label>
+        <select id="month-switch" onchange="if(this.value){location.href='{% url 'target_month_settings' %}?month='+this.value;}">
+          {% for option in month_switch_options %}
+          <option value="{{ option.value }}" {% if selected_month == option.value %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
       </div>
 
-      <table style="margin-top: 10px;">
-        <thead>
-          <tr><th>部門</th><th>目標件数</th><th>目標金額</th></tr>
-        </thead>
-        <tbody>
-          {% for row in rows %}
-          <tr>
-            <td>{{ row.label }}</td>
-            <td><input type="number" min="0" name="count_{{ row.code }}" value="{{ row.count }}" /></td>
-            <td><input type="number" min="0" name="amount_{{ row.code }}" value="{{ row.amount }}" /></td>
-          </tr>
+      {% for row in rows %}
+      <div style="margin-top: 12px; padding: 10px; border: 1px solid #d4e2ea; border-radius: 8px;">
+        <strong>{{ row.label }}</strong>
+        <div class="grid grid-2" style="margin-top: 8px;">
+          {% for metric in row.metrics %}
+          <div>
+            <label>{{ metric.label }}</label>
+            <input type="number" min="0" name="{{ metric.input_name }}" value="{{ metric.value }}" />
+            <div class="muted">{{ metric.unit }}</div>
+          </div>
           {% endfor %}
-        </tbody>
-      </table>
-      <div style="margin-top: 10px;"><button type="submit">月目標を保存</button></div>
+        </div>
+      </div>
+      {% endfor %}
+      <div style="margin-top: 12px;"><button type="submit">月目標を保存</button></div>
     </form>
   </section>
 
   <section class="card" style="margin-top: 16px;">
-    <h3>過去の月目標（件数）</h3>
-    {% if recent_month_rows %}
+    <h3>作成済み月目標一覧</h3>
     <table>
       <thead>
-        <tr><th>対象月</th><th>UN</th><th>WV</th><th>Style1</th><th>Style2</th></tr>
+        <tr><th>対象月</th><th>状態</th><th>操作</th></tr>
       </thead>
       <tbody>
-        {% for row in recent_month_rows %}
+        {% if history_rows %}
+        {% for row in history_rows %}
         <tr>
           <td>{{ row.month_label }}</td>
-          <td>{{ row.UN }}</td>
-          <td>{{ row.WV }}</td>
-          <td>{{ row.STYLE1 }}</td>
-          <td>{{ row.STYLE2 }}</td>
+          <td>{{ row.status }}</td>
+          <td><a class="btn-inline" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">表示</a></td>
         </tr>
         {% endfor %}
+        {% else %}
+        <tr>
+          <td>{{ selected_month_label }}</td>
+          <td>{{ selected_status }}</td>
+          <td><span class="muted">未保存</span></td>
+        </tr>
+        {% endif %}
       </tbody>
     </table>
-    {% else %}
-    <p class="muted">保存済みの月目標はまだありません。</p>
-    {% endif %}
   </section>
 </div>
 {% endblock %}

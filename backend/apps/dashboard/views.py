@@ -1,11 +1,73 @@
+from datetime import timedelta
+
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
 from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
+from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 
-from .forms import DepartmentForm, MemberRegistrationForm
+from .forms import DepartmentForm, MemberRegistrationForm, TargetMetricForm
+
+
+def _period_status(*, today, start_date, end_date) -> str:
+    if start_date <= today <= end_date:
+        return "active"
+    if today < start_date:
+        return "planned"
+    return "finished"
+
+
+def _metric_actual_value(*, metric_code, total_count, total_amount):
+    if metric_code in {"count", "cs_count", "refugee_count"}:
+        return total_count
+    if metric_code == "amount":
+        return total_amount
+    return 0
+
+
+def _collect_actual_totals(*, start_date, end_date, target_codes):
+    lines = (
+        DailyDepartmentReportLine.objects.filter(
+            report__report_date__gte=start_date,
+            report__report_date__lte=end_date,
+            report__department__code__in=target_codes,
+        )
+        .select_related("report__department")
+        .values("report__department__code", "count", "amount")
+    )
+    totals = {code: {"count": 0, "amount": 0} for code in target_codes}
+    for line in lines:
+        code = line["report__department__code"]
+        totals[code]["count"] += line["count"]
+        totals[code]["amount"] += line["amount"]
+    return totals
+
+
+def _format_metric_triples(*, metrics, target_values, actual_totals):
+    if not metrics:
+        return "-", "-", "-"
+    target_parts = []
+    actual_parts = []
+    rate_parts = []
+    for metric in metrics:
+        label = metric.label
+        unit = metric.unit or ""
+        target = target_values.get(metric.id, 0)
+        actual = _metric_actual_value(
+            metric_code=metric.code,
+            total_count=actual_totals["count"],
+            total_amount=actual_totals["amount"],
+        )
+        if target > 0:
+            rate = f"{(actual / target) * 100:.1f}%"
+        else:
+            rate = "-"
+        target_parts.append(f"{label} {target}{unit}")
+        actual_parts.append(f"{label} {actual}{unit}")
+        rate_parts.append(f"{label} {rate}")
+    return " / ".join(target_parts), " / ".join(actual_parts), " / ".join(rate_parts)
 
 
 def dashboard_index(request: HttpRequest) -> HttpResponse:
@@ -44,7 +106,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
                     "label": label,
                     "reporter_name": latest.reporter.name if latest.reporter else "-",
                     "submitted_time": timezone.localtime(latest.created_at).strftime("%H:%M"),
-                    "status": "提出済",
+                    "status": "提出済み",
                     "count": total_count,
                     "amount": total_amount,
                     "report_id": latest.id,
@@ -103,6 +165,123 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
     style_count = daily_totals["STYLE1"]["count"] + daily_totals["STYLE2"]["count"]
     style_amount = daily_totals["STYLE1"]["amount"] + daily_totals["STYLE2"]["amount"]
 
+    current_month = today.replace(day=1)
+    if not MonthTargetMetricValue.objects.filter(target_month=current_month).exists():
+        latest_month = (
+            MonthTargetMetricValue.objects.order_by("-target_month")
+            .values_list("target_month", flat=True)
+            .first()
+        )
+        if latest_month:
+            current_month = latest_month
+
+    month_target_rows = list(
+        MonthTargetMetricValue.objects.filter(
+            target_month=current_month,
+            metric__is_active=True,
+            department__code__in=target_codes,
+        )
+        .order_by("department__code", "metric__display_order", "id")
+        .values("department__code", "metric_id", "value")
+    )
+    month_target_values_by_code = {code: {} for code in target_codes}
+    for row in month_target_rows:
+        month_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
+
+    if current_month == today.replace(day=1):
+        month_status = "active"
+    elif current_month > today.replace(day=1):
+        month_status = "planned"
+    else:
+        month_status = "finished"
+
+    current_period = (
+        Period.objects.filter(start_date__lte=today, end_date__gte=today)
+        .order_by("-month", "start_date", "id")
+        .first()
+    )
+    if not current_period:
+        current_period = Period.objects.order_by("-month", "start_date", "id").first()
+
+    if current_period:
+        period_rows = list(
+            PeriodTargetMetricValue.objects.filter(
+                period=current_period,
+                metric__is_active=True,
+                department__code__in=target_codes,
+            )
+            .order_by("department__code", "metric__display_order", "id")
+            .values("department__code", "metric_id", "value")
+        )
+        period_target_values_by_code = {code: {} for code in target_codes}
+        for row in period_rows:
+            period_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
+        current_period_label = current_period.name
+        period_status = _period_status(
+            today=today,
+            start_date=current_period.start_date,
+            end_date=current_period.end_date,
+        )
+        period_start = current_period.start_date
+        period_end = current_period.end_date
+    else:
+        current_period_label = "-"
+        period_status = "-"
+        period_target_values_by_code = {code: {} for code in target_codes}
+        period_start = today
+        period_end = today
+
+    month_start = current_month
+    if current_month.month == 12:
+        month_end = current_month.replace(year=current_month.year + 1, month=1, day=1) - timedelta(days=1)
+    else:
+        month_end = current_month.replace(month=current_month.month + 1, day=1) - timedelta(days=1)
+
+    month_actual_totals_by_code = _collect_actual_totals(
+        start_date=month_start,
+        end_date=month_end,
+        target_codes=target_codes,
+    )
+    period_actual_totals_by_code = _collect_actual_totals(
+        start_date=period_start,
+        end_date=period_end,
+        target_codes=target_codes,
+    )
+
+    metrics_by_code = {}
+    for code, label in target_departments:
+        department = Department.objects.filter(code=code).first()
+        if department:
+            metrics_by_code[code] = list(
+                TargetMetric.objects.filter(department=department, is_active=True).order_by("display_order", "id")
+            )
+        else:
+            metrics_by_code[code] = []
+
+    target_progress_rows = []
+    for code, label in target_departments:
+        month_target_text, month_actual_text, month_rate_text = _format_metric_triples(
+            metrics=metrics_by_code[code],
+            target_values=month_target_values_by_code.get(code, {}),
+            actual_totals=month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+        )
+        period_target_text, period_actual_text, period_rate_text = _format_metric_triples(
+            metrics=metrics_by_code[code],
+            target_values=period_target_values_by_code.get(code, {}),
+            actual_totals=period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+        )
+        target_progress_rows.append(
+            {
+                "label": label,
+                "month_target": month_target_text,
+                "month_actual": month_actual_text,
+                "month_rate": month_rate_text,
+                "period_target": period_target_text,
+                "period_actual": period_actual_text,
+                "period_rate": period_rate_text,
+            }
+        )
+
     context = {
         "today_str": today.strftime("%Y/%m/%d"),
         "submission_rows": submission_rows,
@@ -126,6 +305,12 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
                 "members": member_rows_for(["STYLE1", "STYLE2"]),
             },
         ],
+        "target_month_summary": f"{current_month.year}/{current_month.month}",
+        "target_month_status": month_status,
+        "target_period_summary": current_period_label,
+        "target_period_status": period_status,
+        "current_period_label": current_period_label,
+        "target_progress_rows": target_progress_rows,
     }
     return render(request, "dashboard/admin.html", context)
 
@@ -139,13 +324,15 @@ def _member_form(*, data=None, initial=None) -> MemberRegistrationForm:
 def _department_form(*, data=None, initial=None, edit_department=None) -> DepartmentForm:
     form = DepartmentForm(data=data, initial=initial)
     if edit_department:
-        reporter_ids = Member.objects.filter(
-            department_links__department=edit_department
-        ).values_list("id", flat=True)
+        reporter_ids = Member.objects.filter(department_links__department=edit_department).values_list("id", flat=True)
         form.fields["default_reporter"].queryset = Member.objects.filter(id__in=reporter_ids).order_by("name")
     else:
         form.fields["default_reporter"].queryset = Member.objects.none()
     return form
+
+
+def _target_metric_form(*, data=None, initial=None) -> TargetMetricForm:
+    return TargetMetricForm(data=data, initial=initial)
 
 
 def member_settings(request: HttpRequest) -> HttpResponse:
@@ -224,7 +411,6 @@ def member_settings(request: HttpRequest) -> HttpResponse:
             form = _member_form()
 
     members = Member.objects.prefetch_related("department_links")
-
     return render(
         request,
         "dashboard/member_settings.html",
@@ -249,73 +435,165 @@ def member_delete(request: HttpRequest, member_id: int) -> HttpResponse:
 def department_settings(request: HttpRequest) -> HttpResponse:
     status_message = None
     edit_department = None
+    selected_metric_department = None
+    edit_metric = None
 
     edit_id = request.GET.get("edit")
     if edit_id and edit_id.isdigit():
         edit_department = Department.objects.filter(id=int(edit_id)).first()
 
-    if request.method == "POST":
-        edit_department_id = request.POST.get("edit_department_id")
-        if edit_department_id and edit_department_id.isdigit():
-            edit_department = Department.objects.filter(id=int(edit_department_id)).first()
-        form = _department_form(data=request.POST, edit_department=edit_department)
-        if form.is_valid():
-            code = form.cleaned_data["code"].strip().upper()
-            default_reporter = form.cleaned_data["default_reporter"]
-            duplicate_query = Department.objects.filter(code=code)
-            if edit_department_id and edit_department_id.isdigit():
-                duplicate_query = duplicate_query.exclude(id=int(edit_department_id))
+    metric_department_id = request.GET.get("metric_department")
+    if metric_department_id and metric_department_id.isdigit():
+        selected_metric_department = Department.objects.filter(id=int(metric_department_id)).first()
+    if not selected_metric_department:
+        selected_metric_department = edit_department or Department.objects.order_by("code").first()
 
-            if duplicate_query.exists():
-                form.add_error("code", "この部門コードは既に使われています。")
-            else:
-                if edit_department_id and edit_department_id.isdigit():
-                    department = get_object_or_404(Department, id=int(edit_department_id))
-                    if default_reporter and not MemberDepartment.objects.filter(
-                        member=default_reporter,
-                        department=department,
-                    ).exists():
-                        form.add_error("default_reporter", "この責任者は選択中の部門に所属していません。")
-                        departments = Department.objects.all()
-                        return render(
-                            request,
-                            "dashboard/department_settings.html",
-                            {
-                                "form": form,
-                                "departments": departments,
-                                "edit_department": edit_department,
-                                "status_message": status_message,
-                            },
-                        )
-                    department.name = form.cleaned_data["name"].strip()
-                    department.code = code
-                    department.default_reporter = default_reporter
-                    department.save(update_fields=["name", "code", "default_reporter"])
-                    status_message = f"{department.name}（{department.code}）を更新しました。"
-                else:
-                    department = Department.objects.create(
-                        name=form.cleaned_data["name"].strip(),
-                        code=code,
-                        default_reporter=None,
-                        is_active=True,
-                    )
-                    status_message = f"{department.name}（{department.code}）を登録しました。"
-                form = _department_form()
-                edit_department = None
-    else:
-        if edit_department:
-            form = _department_form(
+    form = _department_form(
+        initial={
+            "name": edit_department.name,
+            "code": edit_department.code,
+            "default_reporter": edit_department.default_reporter_id,
+        }
+        if edit_department
+        else None,
+        edit_department=edit_department,
+    )
+    metric_form = _target_metric_form(initial={"display_order": 1, "is_active": True})
+
+    edit_metric_id = request.GET.get("edit_metric")
+    if edit_metric_id and edit_metric_id.isdigit() and selected_metric_department:
+        edit_metric = TargetMetric.objects.filter(
+            id=int(edit_metric_id),
+            department=selected_metric_department,
+        ).first()
+        if edit_metric:
+            metric_form = _target_metric_form(
                 initial={
-                    "name": edit_department.name,
-                    "code": edit_department.code,
-                    "default_reporter": edit_department.default_reporter_id,
-                },
-                edit_department=edit_department,
+                    "label": edit_metric.label,
+                    "code": edit_metric.code,
+                    "unit": edit_metric.unit,
+                    "display_order": edit_metric.display_order,
+                    "is_active": edit_metric.is_active,
+                }
             )
-        else:
-            form = _department_form()
+
+    if request.method == "POST":
+        action = request.POST.get("action") or "save_department"
+        if action == "save_department":
+            edit_department_id = request.POST.get("edit_department_id")
+            if edit_department_id and edit_department_id.isdigit():
+                edit_department = Department.objects.filter(id=int(edit_department_id)).first()
+            form = _department_form(data=request.POST, edit_department=edit_department)
+            if form.is_valid():
+                code = form.cleaned_data["code"].strip().upper()
+                default_reporter = form.cleaned_data["default_reporter"]
+                duplicate_query = Department.objects.filter(code=code)
+                if edit_department_id and edit_department_id.isdigit():
+                    duplicate_query = duplicate_query.exclude(id=int(edit_department_id))
+
+                if duplicate_query.exists():
+                    form.add_error("code", "この部署コードは既に使われています。")
+                else:
+                    if edit_department_id and edit_department_id.isdigit():
+                        department = get_object_or_404(Department, id=int(edit_department_id))
+                        if default_reporter and not MemberDepartment.objects.filter(
+                            member=default_reporter,
+                            department=department,
+                        ).exists():
+                            form.add_error("default_reporter", "この担当者は選択中の部署に所属していません。")
+                        else:
+                            department.name = form.cleaned_data["name"].strip()
+                            department.code = code
+                            department.default_reporter = default_reporter
+                            department.save(update_fields=["name", "code", "default_reporter"])
+                            status_message = f"{department.name}（{department.code}）を更新しました。"
+                            edit_department = None
+                            form = _department_form()
+                    else:
+                        department = Department.objects.create(
+                            name=form.cleaned_data["name"].strip(),
+                            code=code,
+                            default_reporter=None,
+                            is_active=True,
+                        )
+                        status_message = f"{department.name}（{department.code}）を登録しました。"
+                        edit_department = None
+                        form = _department_form()
+
+        if action == "save_metric":
+            metric_department_id = request.POST.get("metric_department_id")
+            selected_metric_department = (
+                Department.objects.filter(id=int(metric_department_id)).first()
+                if metric_department_id and metric_department_id.isdigit()
+                else None
+            )
+            edit_metric_id = request.POST.get("edit_metric_id")
+            edit_metric = (
+                TargetMetric.objects.filter(id=int(edit_metric_id)).first()
+                if edit_metric_id and edit_metric_id.isdigit()
+                else None
+            )
+            metric_form = _target_metric_form(data=request.POST)
+            if not selected_metric_department:
+                metric_form.add_error(None, "部署を選択してください。")
+            elif metric_form.is_valid():
+                metric_code = metric_form.cleaned_data["code"].strip().lower()
+                duplicate_query = TargetMetric.objects.filter(
+                    department=selected_metric_department,
+                    code=metric_code,
+                )
+                if edit_metric:
+                    duplicate_query = duplicate_query.exclude(id=edit_metric.id)
+
+                if duplicate_query.exists():
+                    metric_form.add_error("code", "この指標コードは既に使われています。")
+                else:
+                    if edit_metric:
+                        edit_metric.department = selected_metric_department
+                        edit_metric.label = metric_form.cleaned_data["label"].strip()
+                        edit_metric.code = metric_code
+                        edit_metric.unit = metric_form.cleaned_data["unit"].strip()
+                        edit_metric.display_order = metric_form.cleaned_data["display_order"]
+                        edit_metric.is_active = metric_form.cleaned_data["is_active"]
+                        edit_metric.save(
+                            update_fields=[
+                                "department",
+                                "label",
+                                "code",
+                                "unit",
+                                "display_order",
+                                "is_active",
+                                "updated_at",
+                            ]
+                        )
+                        status_message = "目標指標を更新しました。"
+                    else:
+                        TargetMetric.objects.create(
+                            department=selected_metric_department,
+                            label=metric_form.cleaned_data["label"].strip(),
+                            code=metric_code,
+                            unit=metric_form.cleaned_data["unit"].strip(),
+                            display_order=metric_form.cleaned_data["display_order"],
+                            is_active=metric_form.cleaned_data["is_active"],
+                        )
+                        status_message = "目標指標を追加しました。"
+                    metric_form = _target_metric_form(initial={"display_order": 1, "is_active": True})
+                    edit_metric = None
+
+        if action == "toggle_metric":
+            metric_id = request.POST.get("metric_id")
+            if metric_id and metric_id.isdigit():
+                metric = get_object_or_404(TargetMetric, id=int(metric_id))
+                metric.is_active = not metric.is_active
+                metric.save(update_fields=["is_active", "updated_at"])
+                selected_metric_department = metric.department
+                status_message = "目標指標の有効状態を更新しました。"
 
     departments = Department.objects.all()
+    metrics = TargetMetric.objects.none()
+    if selected_metric_department:
+        metrics = TargetMetric.objects.filter(department=selected_metric_department).order_by("display_order", "id")
+
     return render(
         request,
         "dashboard/department_settings.html",
@@ -324,6 +602,10 @@ def department_settings(request: HttpRequest) -> HttpResponse:
             "departments": departments,
             "edit_department": edit_department,
             "status_message": status_message,
+            "metric_form": metric_form,
+            "metrics": metrics,
+            "selected_metric_department": selected_metric_department,
+            "edit_metric": edit_metric,
         },
     )
 
