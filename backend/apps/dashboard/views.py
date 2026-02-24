@@ -25,7 +25,9 @@ from .forms import DepartmentForm, MemberRegistrationForm, TargetMetricForm
 
 @require_roles(ROLE_ADMIN)
 def dashboard_index(request: HttpRequest) -> HttpResponse:
-    today = timezone.localdate()
+    real_today = timezone.localdate()
+    selected_mode = "prev" if request.GET.get("mode") == "prev" else "today"
+    today = real_today - timedelta(days=1) if selected_mode == "prev" else real_today
     target_departments = list(
         Department.objects.filter(is_active=True)
         .order_by("code")
@@ -504,8 +506,8 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         }
 
     mail_template_payload_map = {
-        "today": build_mail_template_payload(today),
-        "prev": build_mail_template_payload(today - timedelta(days=1)),
+        "today": build_mail_template_payload(real_today),
+        "prev": build_mail_template_payload(real_today - timedelta(days=1)),
     }
 
     context = {
@@ -519,6 +521,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         "current_period_label": current_period_label,
         "target_progress_rows": target_progress_rows,
         "mail_template_payload_map": mail_template_payload_map,
+        "selected_mode": selected_mode,
     }
     return render(request, "dashboard/admin.html", context)
 

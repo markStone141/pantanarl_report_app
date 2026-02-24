@@ -19,6 +19,14 @@
   </header>
 
   <section class="card" style="margin-top: 16px;">
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
+      <a href="{% url 'dashboard_index' %}?mode=today" class="department-button" style="width:auto; {% if selected_mode == 'today' %}{% else %}background:#fff; color:var(--brand); border:1px solid var(--brand);{% endif %}">本日表示</a>
+      <a href="{% url 'dashboard_index' %}?mode=prev" class="department-button" style="width:auto; {% if selected_mode == 'prev' %}{% else %}background:#fff; color:var(--brand); border:1px solid var(--brand);{% endif %}">前日表示</a>
+      <span class="badge">表示日: {{ today_str }}</span>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top: 16px;">
     <h3>メール本文作成</h3>
     <div style="display:flex; gap:8px; margin-top: 8px; align-items: center; flex-wrap: wrap;">
       <button type="button" id="mail-mode-today" class="btn-inline">本日</button>
@@ -274,7 +282,7 @@
     ) return;
 
     let generatedBody = "";
-    let selectedMode = "today";
+    let selectedMode = "{{ selected_mode|default:'today' }}" === "prev" ? "prev" : "today";
 
     function getPayload() {
       return payloadMap[selectedMode] || payloadMap.today || payloadMap.prev || null;
