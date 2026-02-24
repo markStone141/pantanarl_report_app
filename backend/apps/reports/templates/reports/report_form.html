@@ -58,7 +58,7 @@
       </div>
 
       <label style="margin-top: 12px;">メンバー別入力</label>
-      <table>
+      <table class="mobile-card-table">
         <thead>
           <tr>
             <th>メンバー</th>
@@ -77,7 +77,7 @@
         <tbody id="member-rows">
           {% for row in row_values %}
           <tr>
-            <td>
+            <td data-label="メンバー">
               <select name="member_ids">
                 <option value="">選択してください</option>
                 {% for member in members %}
@@ -85,15 +85,15 @@
                 {% endfor %}
               </select>
             </td>
-            <td><input type="number" min="0" name="amounts" value="{{ row.amount|default:'0' }}"></td>
+            <td data-label="金額(円)"><input type="number" min="0" name="amounts" value="{{ row.amount|default:'0' }}"></td>
             {% if split_counts %}
-            <td><input type="number" min="0" name="cs_counts" value="{{ row.cs_count|default:'0' }}"></td>
-            <td><input type="number" min="0" name="refugee_counts" value="{{ row.refugee_count|default:'0' }}"></td>
+            <td data-label="CS件数"><input type="number" min="0" name="cs_counts" value="{{ row.cs_count|default:'0' }}"></td>
+            <td data-label="難民件数"><input type="number" min="0" name="refugee_counts" value="{{ row.refugee_count|default:'0' }}"></td>
             {% else %}
-            <td><input type="number" min="0" name="counts" value="{{ row.count|default:'0' }}"></td>
+            <td data-label="件数"><input type="number" min="0" name="counts" value="{{ row.count|default:'0' }}"></td>
             {% endif %}
             {% if show_location %}
-            <td><input name="locations" value="{{ row.location }}"></td>
+            <td data-label="{{ location_label }}"><input name="locations" value="{{ row.location }}"></td>
             {% endif %}
           </tr>
           {% endfor %}
@@ -126,7 +126,7 @@
       <h3>直近の送信履歴</h3>
       <span class="badge">{{ dept_name }}</span>
     </div>
-    <table style="margin-top: 8px;">
+    <table class="mobile-card-table" style="margin-top: 8px;">
       <thead>
         <tr>
           <th>報告日</th>
@@ -144,16 +144,16 @@
       <tbody>
         {% for report in recent_reports %}
         <tr>
-          <td>{{ report.report_date }}</td>
-          <td>{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
+          <td data-label="報告日">{{ report.report_date }}</td>
+          <td data-label="責任者">{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
           {% if split_counts %}
-          <td>{{ report.cs_count_total|default_if_none:0 }}</td>
-          <td>{{ report.refugee_count_total|default_if_none:0 }}</td>
+          <td data-label="CS件数合計">{{ report.cs_count_total|default_if_none:0 }}</td>
+          <td data-label="難民件数合計">{{ report.refugee_count_total|default_if_none:0 }}</td>
           {% else %}
-          <td>{{ report.total_count }}</td>
+          <td data-label="件数合計">{{ report.total_count }}</td>
           {% endif %}
-          <td>{{ report.followup_count }}</td>
-          <td>{{ report.memo|default:"-" }}</td>
+          <td data-label="金額合計(円)">{{ report.followup_count }}</td>
+          <td data-label="メモ">{{ report.memo|default:"-" }}</td>
         </tr>
         {% empty %}
         <tr>
