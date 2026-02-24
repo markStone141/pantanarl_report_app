@@ -190,6 +190,24 @@ button {
   background: #cc3f3f;
 }
 
+.department-button-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.department-button {
+  display: inline-block;
+  white-space: nowrap;
+  text-align: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  border: 1px solid var(--brand);
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -5,6 +7,7 @@ from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, require_roles
 from apps.accounts.models import Department, Member
+from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 
 from .forms import ReportSubmissionForm
 from .models import DailyDepartmentReport, DailyDepartmentReportLine
@@ -17,6 +20,277 @@ REPORT_ROUTE_BY_DEPARTMENT_CODE = {
     "STYLE1": "report_style1",
     "STYLE2": "report_style2",
 }
+
+
+def _period_status(*, today, start_date, end_date) -> str:
+    if start_date <= today <= end_date:
+        return "active"
+    if today < start_date:
+        return "planned"
+    return "finished"
+
+
+def _metric_actual_value(*, metric_code, total_count, total_amount):
+    if metric_code in {"count", "cs_count", "refugee_count"}:
+        return total_count
+    if metric_code == "amount":
+        return total_amount
+    return 0
+
+
+def _collect_actual_totals(*, start_date, end_date, target_codes):
+    lines = (
+        DailyDepartmentReportLine.objects.filter(
+            report__report_date__gte=start_date,
+            report__report_date__lte=end_date,
+            report__department__code__in=target_codes,
+        )
+        .select_related("report__department")
+        .values("report__department__code", "count", "amount")
+    )
+    totals = {code: {"count": 0, "amount": 0} for code in target_codes}
+    for line in lines:
+        code = line["report__department__code"]
+        totals[code]["count"] += line["count"]
+        totals[code]["amount"] += line["amount"]
+    return totals
+
+
+def _format_metric_triples(*, metrics, target_values, actual_totals):
+    if not metrics:
+        return "-", "-", "-"
+    target_parts = []
+    actual_parts = []
+    rate_parts = []
+    for metric in metrics:
+        label = metric.label
+        unit = metric.unit or ""
+        target = target_values.get(metric.id, 0)
+        actual = _metric_actual_value(
+            metric_code=metric.code,
+            total_count=actual_totals["count"],
+            total_amount=actual_totals["amount"],
+        )
+        rate = f"{(actual / target) * 100:.1f}%" if target > 0 else "-"
+        target_parts.append(f"{label} {target}{unit}")
+        actual_parts.append(f"{label} {actual}{unit}")
+        rate_parts.append(f"{label} {rate}")
+    return " / ".join(target_parts), " / ".join(actual_parts), " / ".join(rate_parts)
+
+
+def _dashboard_cards_context():
+    today = timezone.localdate()
+    target_departments = list(
+        Department.objects.filter(is_active=True)
+        .order_by("code")
+        .values_list("code", "name")
+    )
+    target_codes = [code for code, _ in target_departments]
+
+    today_reports_query = DailyDepartmentReport.objects.filter(
+        report_date=today,
+    ).select_related("department", "reporter")
+    if target_codes:
+        today_reports_query = today_reports_query.filter(department__code__in=target_codes)
+    else:
+        today_reports_query = today_reports_query.none()
+    today_reports = today_reports_query.order_by("department__code", "-created_at")
+
+    latest_by_code = {}
+    for report in today_reports:
+        if report.department.code not in latest_by_code:
+            latest_by_code[report.department.code] = report
+
+    submission_rows = []
+    for code, label in target_departments:
+        dept_reports = [r for r in today_reports if r.department.code == code]
+        total_count = sum(r.total_count for r in dept_reports)
+        total_amount = sum(r.followup_count for r in dept_reports)
+        latest = latest_by_code.get(code)
+        if latest:
+            submission_rows.append(
+                {
+                    "label": label,
+                    "reporter_name": latest.reporter.name if latest.reporter else "-",
+                    "submitted_time": timezone.localtime(latest.created_at).strftime("%H:%M"),
+                    "status": "提出済",
+                    "count": total_count,
+                    "amount": total_amount,
+                    "report_id": latest.id,
+                }
+            )
+        else:
+            submission_rows.append(
+                {
+                    "label": label,
+                    "reporter_name": "-",
+                    "submitted_time": "-",
+                    "status": "未提出",
+                    "count": "-",
+                    "amount": "-",
+                    "report_id": None,
+                }
+            )
+
+    daily_totals = {}
+    for code, _ in target_departments:
+        dept_reports = today_reports.filter(department__code=code)
+        daily_totals[code] = {
+            "count": sum(r.total_count for r in dept_reports),
+            "amount": sum(r.followup_count for r in dept_reports),
+        }
+
+    lines_query = DailyDepartmentReportLine.objects.filter(
+        report__report_date=today,
+    ).select_related("member", "report__department")
+    if target_codes:
+        lines_query = lines_query.filter(report__department__code__in=target_codes)
+    else:
+        lines_query = lines_query.none()
+    member_totals = {code: {} for code in target_codes}
+    for line in lines_query:
+        code = line.report.department.code
+        member_name = line.member.name if line.member else "未設定"
+        if member_name not in member_totals[code]:
+            member_totals[code][member_name] = {"member_name": member_name, "count": 0, "amount": 0}
+        member_totals[code][member_name]["count"] += line.count
+        member_totals[code][member_name]["amount"] += line.amount
+
+    def member_rows_for(code):
+        rows = list(member_totals[code].values())
+        return sorted(rows, key=lambda x: (-x["amount"], -x["count"], x["member_name"]))
+
+    current_month = today.replace(day=1)
+    if not MonthTargetMetricValue.objects.filter(target_month=current_month).exists():
+        latest_month = (
+            MonthTargetMetricValue.objects.order_by("-target_month")
+            .values_list("target_month", flat=True)
+            .first()
+        )
+        if latest_month:
+            current_month = latest_month
+
+    month_target_rows = list(
+        MonthTargetMetricValue.objects.filter(
+            target_month=current_month,
+            metric__is_active=True,
+            department__code__in=target_codes,
+        )
+        .order_by("department__code", "metric__display_order", "id")
+        .values("department__code", "metric_id", "value")
+    )
+    month_target_values_by_code = {code: {} for code in target_codes}
+    for row in month_target_rows:
+        month_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
+
+    if current_month == today.replace(day=1):
+        month_status = "active"
+    elif current_month > today.replace(day=1):
+        month_status = "planned"
+    else:
+        month_status = "finished"
+
+    current_period = (
+        Period.objects.filter(start_date__lte=today, end_date__gte=today)
+        .order_by("-month", "start_date", "id")
+        .first()
+    )
+    if not current_period:
+        current_period = Period.objects.order_by("-month", "start_date", "id").first()
+
+    if current_period:
+        period_rows = list(
+            PeriodTargetMetricValue.objects.filter(
+                period=current_period,
+                metric__is_active=True,
+                department__code__in=target_codes,
+            )
+            .order_by("department__code", "metric__display_order", "id")
+            .values("department__code", "metric_id", "value")
+        )
+        period_target_values_by_code = {code: {} for code in target_codes}
+        for row in period_rows:
+            period_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
+        period_status = _period_status(today=today, start_date=current_period.start_date, end_date=current_period.end_date)
+        period_start = current_period.start_date
+        period_end = current_period.end_date
+        current_period_label = current_period.name
+    else:
+        period_target_values_by_code = {code: {} for code in target_codes}
+        period_status = "-"
+        period_start = today
+        period_end = today
+        current_period_label = "-"
+
+    month_start = current_month
+    if current_month.month == 12:
+        month_end = current_month.replace(year=current_month.year + 1, month=1, day=1) - timedelta(days=1)
+    else:
+        month_end = current_month.replace(month=current_month.month + 1, day=1) - timedelta(days=1)
+
+    month_actual_totals_by_code = _collect_actual_totals(
+        start_date=month_start,
+        end_date=month_end,
+        target_codes=target_codes,
+    )
+    period_actual_totals_by_code = _collect_actual_totals(
+        start_date=period_start,
+        end_date=period_end,
+        target_codes=target_codes,
+    )
+
+    metrics_by_code = {}
+    for code, _ in target_departments:
+        department = Department.objects.filter(code=code).first()
+        metrics_by_code[code] = list(
+            TargetMetric.objects.filter(department=department, is_active=True).order_by("display_order", "id")
+        ) if department else []
+
+    target_progress_rows = []
+    for code, label in target_departments:
+        month_target_text, month_actual_text, month_rate_text = _format_metric_triples(
+            metrics=metrics_by_code[code],
+            target_values=month_target_values_by_code.get(code, {}),
+            actual_totals=month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+        )
+        period_target_text, period_actual_text, period_rate_text = _format_metric_triples(
+            metrics=metrics_by_code[code],
+            target_values=period_target_values_by_code.get(code, {}),
+            actual_totals=period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+        )
+        target_progress_rows.append(
+            {
+                "label": label,
+                "month_target": month_target_text,
+                "month_actual": month_actual_text,
+                "month_rate": month_rate_text,
+                "period_target": period_target_text,
+                "period_actual": period_actual_text,
+                "period_rate": period_rate_text,
+            }
+        )
+
+    kpi_cards = []
+    for code, label in target_departments:
+        kpi_cards.append(
+            {
+                "title": label,
+                "count": daily_totals[code]["count"],
+                "amount": daily_totals[code]["amount"],
+                "members": member_rows_for(code),
+            }
+        )
+
+    return {
+        "today_str": today.strftime("%Y/%m/%d"),
+        "submission_rows": submission_rows,
+        "kpi_cards": kpi_cards,
+        "target_month_summary": f"{current_month.year}/{current_month.month}",
+        "target_month_status": month_status,
+        "target_period_summary": current_period_label,
+        "target_period_status": period_status,
+        "target_progress_rows": target_progress_rows,
+    }
 
 
 @require_roles(ROLE_REPORT, ROLE_ADMIN)
@@ -35,11 +309,9 @@ def report_index(request: HttpRequest) -> HttpResponse:
         }
         for code, url_name in REPORT_ROUTE_BY_DEPARTMENT_CODE.items()
     ]
-    return render(
-        request,
-        "reports/report_index.html",
-        {"department_buttons": department_buttons},
-    )
+    context = {"department_buttons": department_buttons}
+    context.update(_dashboard_cards_context())
+    return render(request, "reports/report_index.html", context)
 
 
 @require_roles(ROLE_ADMIN)
