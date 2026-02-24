@@ -16,9 +16,12 @@
   <section style="margin-top: 16px;">
     <article class="card">
       <h3>部門別報告フォーム</h3>
-      <div style="display: grid; gap: 10px; margin-top: 10px;">
+      <div style="display: grid; gap: 12px; margin-top: 10px;">
         {% for button in department_buttons %}
-        <a href="{% url button.url_name %}" class="department-button" style="width: 100%;">{{ button.name }} 報告へ</a>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <a href="{{ button.today_url }}" class="department-button">{{ button.name }} 本日分</a>
+          <a href="{{ button.prev_url }}" class="department-button" style="background:#ffffff; color: var(--brand); border:1px solid var(--brand);">{{ button.name }} 前日分</a>
+        </div>
         {% empty %}
         <p class="muted">表示できる報告部署がありません。</p>
         {% endfor %}
@@ -84,7 +87,7 @@
       <summary style="cursor: pointer;">月目標（詳細）</summary>
       <table style="margin-top: 8px;">
         <thead>
-          <tr><th>部署</th><th>目標</th><th>累計実績</th><th>達成率</th></tr>
+          <tr><th>部署</th><th>月目標</th><th>月累計実績</th><th>達成率</th></tr>
         </thead>
         <tbody>
           {% for row in target_progress_rows %}
@@ -105,7 +108,7 @@
       <summary style="cursor: pointer;">路程目標（詳細）</summary>
       <table style="margin-top: 8px;">
         <thead>
-          <tr><th>部署</th><th>目標</th><th>累計実績</th><th>達成率</th></tr>
+          <tr><th>部署</th><th>路程目標</th><th>路程累計実績</th><th>達成率</th></tr>
         </thead>
         <tbody>
           {% for row in target_progress_rows %}

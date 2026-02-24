@@ -295,7 +295,8 @@ def report_index(request: HttpRequest) -> HttpResponse:
     department_buttons = [
         {
             "name": department_map.get(code, code),
-            "url_name": url_name,
+            "today_url": reverse(url_name),
+            "prev_url": f"{reverse(url_name)}?mode=prev",
         }
         for code, url_name in REPORT_ROUTE_BY_DEPARTMENT_CODE.items()
     ]
@@ -466,6 +467,14 @@ def _build_initial_rows_from_report(report: DailyDepartmentReport):
     return rows
 
 
+def _selected_report_date(request: HttpRequest):
+    today = timezone.localdate()
+    mode = request.GET.get("mode")
+    if mode == "prev":
+        return today - timedelta(days=1), "prev"
+    return today, "today"
+
+
 def _render_report_form(
     request: HttpRequest,
     *,
@@ -480,6 +489,7 @@ def _render_report_form(
     department = _department_by_code(dept_code)
     members = _members_for_department(dept_code)
     default_reporter_id = department.default_reporter_id if department else None
+    selected_date, selected_mode = _selected_report_date(request)
 
     row_values = []
     row_errors = []
@@ -552,7 +562,7 @@ def _render_report_form(
 
             if editing_report:
                 return redirect(redirect_target)
-            return redirect(f"{reverse(request.resolver_match.view_name)}?submitted=1")
+            return redirect(f"{reverse(request.resolver_match.view_name)}?submitted=1&mode={selected_mode}")
     else:
         if editing_report:
             form = ReportSubmissionForm(
@@ -568,7 +578,7 @@ def _render_report_form(
                 for row in row_values:
                     row["location"] = ""
         else:
-            initial = {"report_date": timezone.localdate()}
+            initial = {"report_date": selected_date}
             if default_reporter_id:
                 initial["reporter"] = default_reporter_id
             form = ReportSubmissionForm(initial=initial, members=members)
@@ -579,7 +589,7 @@ def _render_report_form(
     recent_reports = (
         DailyDepartmentReport.objects.filter(
             department__code=dept_code,
-            report_date=timezone.localdate(),
+            report_date=selected_date,
         )
         .select_related("reporter")
         .annotate(
@@ -617,6 +627,8 @@ def _render_report_form(
             "editing_report": editing_report,
             "redirect_target": redirect_target,
             "current_view_name": request.resolver_match.view_name if request.resolver_match else "",
+            "selected_mode": selected_mode,
+            "recent_reports_date": selected_date.strftime("%Y/%m/%d"),
         },
     )
 

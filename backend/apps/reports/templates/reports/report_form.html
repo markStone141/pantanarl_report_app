@@ -123,8 +123,8 @@
 
   <section class="card" style="margin-top: 16px;">
     <div class="row">
-      <h3>本日の送信履歴</h3>
-      <span class="badge">{{ dept_name }}</span>
+      <h3>送信履歴（{{ recent_reports_date }}）</h3>
+      <span class="badge">{{ dept_name }} / {% if selected_mode == "prev" %}前日分{% else %}本日分{% endif %}</span>
     </div>
     <table class="stacked-card-table" style="margin-top: 8px;">
       <thead>

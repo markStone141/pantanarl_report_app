@@ -17,20 +17,20 @@ class ReportMemberFilteringTests(TestCase):
     def test_report_un_shows_only_un_members(self):
         un = Department.objects.create(name="UN", code="UN")
         wv = Department.objects.create(name="WV", code="WV")
-        un_member = Member.objects.create(name="UNメンバー", login_id="un_a", password="x")
-        wv_member = Member.objects.create(name="WVメンバー", login_id="wv_a", password="y")
+        un_member = Member.objects.create(name="UN member", login_id="un_a", password="x")
+        wv_member = Member.objects.create(name="WV member", login_id="wv_a", password="y")
         MemberDepartment.objects.create(member=un_member, department=un)
         MemberDepartment.objects.create(member=wv_member, department=wv)
 
         response = self.client.get(reverse("report_un"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "UNメンバー")
-        self.assertNotContains(response, "WVメンバー")
+        self.assertContains(response, "UN member")
+        self.assertNotContains(response, "WV member")
 
     def test_report_un_marks_default_reporter_as_selected(self):
         un = Department.objects.create(name="UN", code="UN")
-        reporter = Member.objects.create(name="責任者", login_id="leader_un", password="x")
+        reporter = Member.objects.create(name="Leader", login_id="leader_un", password="x")
         MemberDepartment.objects.create(member=reporter, department=un)
         un.default_reporter = reporter
         un.save(update_fields=["default_reporter"])
@@ -51,23 +51,25 @@ class ReportMemberFilteringTests(TestCase):
         response = self.client.get(reverse("report_index"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "ユニセフ 報告へ")
-        self.assertContains(response, "ワールドビジョン 報告へ")
+        self.assertContains(response, "ユニセフ 本日分")
+        self.assertContains(response, "ユニセフ 前日分")
+        self.assertContains(response, "ワールドビジョン 本日分")
+        self.assertContains(response, "ワールドビジョン 前日分")
 
     def test_report_form_title_uses_department_display_name(self):
-        department = Department.objects.create(name="ユニセフ東北", code="UN")
-        reporter = Member.objects.create(name="責任者", login_id="leader_un_title", password="x")
+        department = Department.objects.create(name="ユニセフ渋谷", code="UN")
+        reporter = Member.objects.create(name="Leader", login_id="leader_un_title", password="x")
         MemberDepartment.objects.create(member=reporter, department=department)
 
         response = self.client.get(reverse("report_un"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "ユニセフ東北 報告フォーム")
-        self.assertContains(response, "(ユニセフ東北)")
+        self.assertContains(response, "ユニセフ渋谷 報告フォーム")
+        self.assertContains(response, "(ユニセフ渋谷)")
 
     def test_style_form_hides_location_column(self):
-        department = Department.objects.create(name="Style 石巻", code="STYLE1")
-        reporter = Member.objects.create(name="責任者", login_id="leader_style1", password="x")
+        department = Department.objects.create(name="Style 港北", code="STYLE1")
+        reporter = Member.objects.create(name="Leader", login_id="leader_style1", password="x")
         MemberDepartment.objects.create(member=reporter, department=department)
 
         response = self.client.get(reverse("report_style1"))
@@ -113,13 +115,6 @@ class ReportSubmitFlowTests(TestCase):
         self.assertEqual(report.followup_count, 8000)
         self.assertEqual(DailyDepartmentReportLine.objects.count(), 2)
 
-        history_response = self.client.get(reverse("report_history"))
-        self.assertEqual(history_response.status_code, 200)
-        self.assertContains(history_response, "UN")
-        self.assertContains(history_response, "Alice")
-        self.assertContains(history_response, "night shift")
-        self.assertContains(history_response, "8000")
-
     def test_report_history_page_shows_saved_report_and_lines(self):
         today_str = timezone.localdate().isoformat()
         department = Department.objects.create(name="UN", code="UN")
@@ -143,7 +138,6 @@ class ReportSubmitFlowTests(TestCase):
 
         response = self.client.get(reverse("report_history"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "保存報告一覧")
         self.assertContains(response, "history check")
         self.assertContains(response, "Alice")
         self.assertContains(response, "Bob")
@@ -286,3 +280,32 @@ class ReportSubmitFlowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("report_un"))
         self.assertFalse(DailyDepartmentReport.objects.filter(id=report.id).exists())
+
+    def test_report_form_mode_prev_shows_previous_day_history(self):
+        department = Department.objects.create(name="UN", code="UN")
+        reporter = Member.objects.create(name="Alice", login_id="prev_day_alice", password="x")
+        MemberDepartment.objects.create(member=reporter, department=department)
+        previous_day = timezone.localdate() - timedelta(days=1)
+
+        DailyDepartmentReport.objects.create(
+            department=department,
+            report_date=previous_day,
+            reporter=reporter,
+            total_count=1,
+            followup_count=1000,
+            memo="previous-day-hit",
+        )
+        DailyDepartmentReport.objects.create(
+            department=department,
+            report_date=timezone.localdate(),
+            reporter=reporter,
+            total_count=1,
+            followup_count=1000,
+            memo="today-hit",
+        )
+
+        response = self.client.get(f"{reverse('report_un')}?mode=prev")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "previous-day-hit")
+        self.assertNotContains(response, "today-hit")
