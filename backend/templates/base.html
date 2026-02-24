@@ -9,6 +9,43 @@
 </head>
 <body>
   {% block content %}{% endblock %}
+  <script>
+    (function () {
+      const topbars = document.querySelectorAll(".topbar");
+      topbars.forEach(function (topbar, idx) {
+        const nav = topbar.querySelector("nav");
+        if (!nav || nav.classList.contains("menu-collapsible")) return;
+
+        nav.classList.add("menu-collapsible");
+        const toggleBtn = document.createElement("button");
+        toggleBtn.type = "button";
+        toggleBtn.className = "btn-inline topbar-menu-toggle";
+        toggleBtn.textContent = "☰";
+        toggleBtn.setAttribute("aria-label", "メニューを開く");
+        toggleBtn.setAttribute("aria-expanded", "false");
+        toggleBtn.setAttribute("aria-controls", "topbar-menu-" + idx);
+        nav.id = "topbar-menu-" + idx;
+
+        toggleBtn.addEventListener("click", function () {
+          const isOpen = topbar.classList.toggle("menu-open");
+          toggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+          toggleBtn.textContent = isOpen ? "✕" : "☰";
+          toggleBtn.setAttribute("aria-label", isOpen ? "メニューを閉じる" : "メニューを開く");
+        });
+
+        nav.addEventListener("click", function (e) {
+          if (e.target && e.target.tagName === "A") {
+            topbar.classList.remove("menu-open");
+            toggleBtn.setAttribute("aria-expanded", "false");
+            toggleBtn.textContent = "☰";
+            toggleBtn.setAttribute("aria-label", "メニューを開く");
+          }
+        });
+
+        topbar.insertBefore(toggleBtn, nav);
+      });
+    })();
+  </script>
 </body>
 </html>
 

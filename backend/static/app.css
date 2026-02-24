@@ -37,15 +37,68 @@ a {
   padding: 16px 20px;
   border-radius: 14px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: flex-start;
   gap: 12px;
+  position: relative;
+  flex-wrap: wrap;
+}
+
+.topbar > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.topbar > strong,
+.topbar > div:first-child > strong {
+  display: block;
+  font-size: 1.2rem;
+  line-height: 1.25;
 }
 
 .topbar nav {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.topbar-menu-toggle {
+  width: auto !important;
+  min-width: 42px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin-left: auto;
+  transition: background-color .2s ease, transform .2s ease;
+}
+
+.topbar-menu-toggle:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.topbar.menu-open .topbar-menu-toggle {
+  background: rgba(255, 255, 255, 0.30);
+  transform: scale(1.02);
+}
+
+.topbar nav.menu-collapsible {
+  display: none;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.topbar.menu-open nav.menu-collapsible {
+  display: flex;
 }
 
 .topbar nav a {
@@ -276,6 +329,11 @@ th {
   width: min(460px, 95vw);
 }
 
+.login-card h2 {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+}
+
 .footer {
   text-align: center;
   color: #6a7a85;
@@ -293,23 +351,77 @@ th {
   overflow-x: auto;
 }
 
+.stacked-card-table thead {
+  display: none;
+}
+
+.stacked-card-table,
+.stacked-card-table tbody,
+.stacked-card-table tr,
+.stacked-card-table td {
+  display: block;
+  width: 100%;
+}
+
+.stacked-card-table tr {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #fafcfd;
+}
+
+.stacked-card-table td {
+  border: 0;
+  padding: 8px 0;
+}
+
+.stacked-card-table td[data-label]::before {
+  content: attr(data-label);
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
 @media (max-width: 768px) {
   .container {
     width: min(1100px, 96vw);
     margin: 14px auto 20px;
   }
 
+  .login-wrap {
+    min-height: 100dvh;
+    padding: 14px;
+    align-items: start;
+    padding-top: 8vh;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .login-card h2 {
+    font-size: 1.28rem;
+  }
+
   .topbar {
     padding: 12px 12px 10px;
     border-radius: 12px;
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: flex-start;
   }
 
   .topbar nav {
     overflow-x: auto;
     flex-wrap: nowrap;
     padding-bottom: 4px;
+  }
+
+  .topbar > strong,
+  .topbar > div:first-child > strong {
+    font-size: 1.26rem;
   }
 
   .topbar nav a {

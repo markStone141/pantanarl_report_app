@@ -7,7 +7,6 @@
   <header class="topbar">
     <div>
       <strong>報告画面一覧</strong>
-      <div class="muted" style="color: #e1f1f5;">ログイン後に報告する部署を選択してください。</div>
     </div>
     <nav>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
@@ -17,10 +16,9 @@
   <section style="margin-top: 16px;">
     <article class="card">
       <h3>部門別報告フォーム</h3>
-      <p class="muted">担当部署のボタンから報告フォームへ移動します。</p>
-      <div class="department-button-row">
+      <div style="display: grid; gap: 10px; margin-top: 10px;">
         {% for button in department_buttons %}
-        <a href="{% url button.url_name %}" class="department-button">{{ button.name }} 報告へ</a>
+        <a href="{% url button.url_name %}" class="department-button" style="width: 100%;">{{ button.name }} 報告へ</a>
         {% empty %}
         <p class="muted">表示できる報告部署がありません。</p>
         {% endfor %}
@@ -29,90 +27,50 @@
   </section>
 
   <section class="card" style="margin-top: 16px;">
-    <div class="row">
-      <h3>提出状況一覧</h3>
-      <span class="badge">対象日: {{ today_str }}</span>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>部署</th>
-          <th>担当者</th>
-          <th>提出時刻</th>
-          <th>ステータス</th>
-          <th>件数</th>
-          <th>件数内訳</th>
-          <th>金額</th>
-          <th>修正</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in submission_rows %}
-        <tr>
-          <td>{{ row.label }}</td>
-          <td>{{ row.reporter_name }}</td>
-          <td>{{ row.submitted_time }}</td>
-          <td><span class="badge">{{ row.status }}</span></td>
-          <td>{{ row.count }}</td>
-          <td>{% if row.has_split_counts %}CS {{ row.cs_count }} / 難民 {{ row.refugee_count }}{% else %}-{% endif %}</td>
-          <td>{{ row.amount }}</td>
-          <td>
-            {% if row.report_id %}
-            <a href="{% url 'report_edit' row.report_id %}"><button type="button" class="btn-inline">修正</button></a>
-            {% else %}
-            -
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </section>
-
-  <section class="card" style="margin-top: 16px;">
-    <div class="row">
-      <h3>本日の部門別実績</h3>
-    </div>
+    <h3>本日の部門別実績</h3>
     <div class="grid grid-3" style="margin-top: 12px;">
       {% for card in kpi_cards %}
       <article class="card">
         <h3>{{ card.title }}</h3>
         <div class="kpi">¥ {{ card.amount }}</div>
         {% if card.has_split_counts %}
-        <p class="muted">CS {{ card.cs_count }} / 難民 {{ card.refugee_count }}</p>
+        <p class="muted">件数: CS {{ card.cs_count }} / 難民 {{ card.refugee_count }}</p>
         {% else %}
-        <p class="muted">{{ card.count }} 件</p>
+        <p class="muted">件数: {{ card.count }}</p>
         {% endif %}
-        <label style="margin-top: 8px;">個人成績</label>
-        <table>
-          <thead>
-            {% if card.has_split_counts %}
-            <tr><th>メンバー</th><th>CS</th><th>難民</th><th>金額</th></tr>
-            {% else %}
-            <tr><th>メンバー</th><th>件数</th><th>金額</th></tr>
-            {% endif %}
-          </thead>
-          <tbody>
-            {% for row in card.members %}
-            <tr>
-              <td>{{ row.member_name }}</td>
+
+        <details style="margin-top: 8px;">
+          <summary style="cursor: pointer;">個人成績を表示</summary>
+          <table style="margin-top: 8px;">
+            <thead>
               {% if card.has_split_counts %}
-              <td>{{ row.cs_count }}</td>
-              <td>{{ row.refugee_count }}</td>
+              <tr><th>メンバー</th><th>CS</th><th>難民</th><th>金額</th></tr>
               {% else %}
-              <td>{{ row.count }}</td>
+              <tr><th>メンバー</th><th>件数</th><th>金額</th></tr>
               {% endif %}
-              <td>{{ row.amount }}</td>
-            </tr>
-            {% empty %}
-            {% if card.has_split_counts %}
-            <tr><td>-</td><td>-</td><td>-</td><td>-</td></tr>
-            {% else %}
-            <tr><td>-</td><td>-</td><td>-</td></tr>
-            {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for member in card.members %}
+              <tr>
+                <td>{{ member.member_name }}</td>
+                {% if card.has_split_counts %}
+                <td>{{ member.cs_count }}</td>
+                <td>{{ member.refugee_count }}</td>
+                {% else %}
+                <td>{{ member.count }}</td>
+                {% endif %}
+                <td>{{ member.amount }}</td>
+              </tr>
+              {% empty %}
+              {% if card.has_split_counts %}
+              <tr><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+              {% else %}
+              <tr><td>-</td><td>-</td><td>-</td></tr>
+              {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </details>
       </article>
       {% endfor %}
     </div>
@@ -122,53 +80,47 @@
     <h3>目標管理</h3>
     <p class="muted">対象月: {{ target_month_summary }} [{{ target_month_status }}] / 現在路程: {{ target_period_summary }} [{{ target_period_status }}]</p>
 
-    <h4 style="margin: 12px 0 8px;">月目標</h4>
-    <table>
-      <thead>
-        <tr>
-          <th>部署</th>
-          <th>月目標</th>
-          <th>月累計実績</th>
-          <th>達成率</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in target_progress_rows %}
-        <tr>
-          <td>{{ row.label }}</td>
-          <td>{{ row.month_target }}</td>
-          <td>{{ row.month_actual }}</td>
-          <td>{{ row.month_rate }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4">目標データがありません。</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <details style="margin-top: 10px;">
+      <summary style="cursor: pointer;">月目標（詳細）</summary>
+      <table style="margin-top: 8px;">
+        <thead>
+          <tr><th>部署</th><th>目標</th><th>累計実績</th><th>達成率</th></tr>
+        </thead>
+        <tbody>
+          {% for row in target_progress_rows %}
+          <tr>
+            <td>{{ row.label }}</td>
+            <td>{{ row.month_target }}</td>
+            <td>{{ row.month_actual }}</td>
+            <td>{{ row.month_rate }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4">目標データがありません。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </details>
 
-    <h4 style="margin: 16px 0 8px;">路程目標</h4>
-    <table>
-      <thead>
-        <tr>
-          <th>部署</th>
-          <th>路程目標</th>
-          <th>路程累計実績</th>
-          <th>達成率</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in target_progress_rows %}
-        <tr>
-          <td>{{ row.label }}</td>
-          <td>{{ row.period_target }}</td>
-          <td>{{ row.period_actual }}</td>
-          <td>{{ row.period_rate }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4">目標データがありません。</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <details style="margin-top: 10px;">
+      <summary style="cursor: pointer;">路程目標（詳細）</summary>
+      <table style="margin-top: 8px;">
+        <thead>
+          <tr><th>部署</th><th>目標</th><th>累計実績</th><th>達成率</th></tr>
+        </thead>
+        <tbody>
+          {% for row in target_progress_rows %}
+          <tr>
+            <td>{{ row.label }}</td>
+            <td>{{ row.period_target }}</td>
+            <td>{{ row.period_actual }}</td>
+            <td>{{ row.period_rate }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4">目標データがありません。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </details>
   </section>
 </div>
 {% endblock %}

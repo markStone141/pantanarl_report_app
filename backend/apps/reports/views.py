@@ -361,7 +361,7 @@ def _build_row_values(*, request: HttpRequest):
     cs_counts = request.POST.getlist("cs_counts")
     refugee_counts = request.POST.getlist("refugee_counts")
     locations = request.POST.getlist("locations")
-    size = max(len(member_ids), len(amounts), len(counts), len(cs_counts), len(refugee_counts), len(locations), 2)
+    size = max(len(member_ids), len(amounts), len(counts), len(cs_counts), len(refugee_counts), len(locations), 1)
     rows = []
     for i in range(size):
         rows.append(
@@ -444,7 +444,6 @@ def _build_initial_rows_from_report(report: DailyDepartmentReport):
         )
     if not rows:
         rows = [
-            {"member_id": "", "amount": "0", "count": "0", "cs_count": "0", "refugee_count": "0", "location": ""},
             {"member_id": "", "amount": "0", "count": "0", "cs_count": "0", "refugee_count": "0", "location": ""},
         ]
     return rows
@@ -557,7 +556,6 @@ def _render_report_form(
                 initial["reporter"] = default_reporter_id
             form = ReportSubmissionForm(initial=initial, members=members)
             row_values = [
-                {"member_id": "", "amount": "0", "count": "0", "cs_count": "0", "refugee_count": "0", "location": ""},
                 {"member_id": "", "amount": "0", "count": "0", "cs_count": "0", "refugee_count": "0", "location": ""},
             ]
 
