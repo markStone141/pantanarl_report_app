@@ -11,11 +11,35 @@ from .models import DailyDepartmentReport, DailyDepartmentReportLine
 
 
 ALLOWED_EDIT_REDIRECTS = {"dashboard_index", "report_history"}
+REPORT_ROUTE_BY_DEPARTMENT_CODE = {
+    "UN": "report_un",
+    "WV": "report_wv",
+    "STYLE1": "report_style1",
+    "STYLE2": "report_style2",
+}
 
 
 @require_roles(ROLE_REPORT, ROLE_ADMIN)
 def report_index(request: HttpRequest) -> HttpResponse:
-    return render(request, "reports/report_index.html")
+    department_map = {
+        department.code: department.name
+        for department in Department.objects.filter(
+            is_active=True,
+            code__in=REPORT_ROUTE_BY_DEPARTMENT_CODE.keys(),
+        )
+    }
+    department_buttons = [
+        {
+            "name": department_map.get(code, code),
+            "url_name": url_name,
+        }
+        for code, url_name in REPORT_ROUTE_BY_DEPARTMENT_CODE.items()
+    ]
+    return render(
+        request,
+        "reports/report_index.html",
+        {"department_buttons": department_buttons},
+    )
 
 
 @require_roles(ROLE_ADMIN)
@@ -41,9 +65,9 @@ def report_edit(request: HttpRequest, report_id: int) -> HttpResponse:
     return _render_report_form(
         request,
         dept_code=report.department.code,
-        title=f"{report.department.code} 報告フォーム",
+        title=f"{report.department.name} 報告フォーム",
         location_label="現場",
-        fixed_location=_fixed_location_by_code(report.department.code),
+        show_location=report.department.code not in {"STYLE1", "STYLE2"},
         editing_report=report,
         redirect_target=redirect_target,
     )
@@ -68,15 +92,7 @@ def _resolve_department(*, code: str, label: str) -> Department:
     return Department.objects.create(code=code, name=label)
 
 
-def _fixed_location_by_code(dept_code: str) -> str:
-    if dept_code == "STYLE1":
-        return "石巻方面"
-    if dept_code == "STYLE2":
-        return "郡山方面"
-    return ""
-
-
-def _build_row_values(*, request: HttpRequest, fixed_location: str):
+def _build_row_values(*, request: HttpRequest):
     member_ids = request.POST.getlist("member_ids")
     amounts = request.POST.getlist("amounts")
     counts = request.POST.getlist("counts")
@@ -89,7 +105,7 @@ def _build_row_values(*, request: HttpRequest, fixed_location: str):
                 "member_id": member_ids[i] if i < len(member_ids) else "",
                 "amount": amounts[i] if i < len(amounts) else "0",
                 "count": counts[i] if i < len(counts) else "0",
-                "location": fixed_location or (locations[i] if i < len(locations) else ""),
+                "location": locations[i] if i < len(locations) else "",
             }
         )
     return rows
@@ -136,7 +152,7 @@ def _parse_rows(*, rows, allowed_member_ids):
     return parsed_rows, row_errors
 
 
-def _build_initial_rows_from_report(report: DailyDepartmentReport, fixed_location: str):
+def _build_initial_rows_from_report(report: DailyDepartmentReport):
     rows = []
     for line in report.lines.select_related("member").all():
         rows.append(
@@ -144,13 +160,13 @@ def _build_initial_rows_from_report(report: DailyDepartmentReport, fixed_locatio
                 "member_id": str(line.member_id) if line.member_id else "",
                 "amount": str(line.amount),
                 "count": str(line.count),
-                "location": fixed_location or line.location,
+                "location": line.location,
             }
         )
     if not rows:
         rows = [
-            {"member_id": "", "amount": "0", "count": "0", "location": fixed_location},
-            {"member_id": "", "amount": "0", "count": "0", "location": fixed_location},
+            {"member_id": "", "amount": "0", "count": "0", "location": ""},
+            {"member_id": "", "amount": "0", "count": "0", "location": ""},
         ]
     return rows
 
@@ -161,7 +177,7 @@ def _render_report_form(
     dept_code: str,
     title: str,
     location_label: str,
-    fixed_location: str = "",
+    show_location: bool = True,
     editing_report: DailyDepartmentReport | None = None,
     redirect_target: str = "dashboard_index",
 ) -> HttpResponse:
@@ -175,8 +191,11 @@ def _render_report_form(
 
     if request.method == "POST":
         form = ReportSubmissionForm(request.POST, members=members)
-        row_values = _build_row_values(request=request, fixed_location=fixed_location)
+        row_values = _build_row_values(request=request)
         allowed_member_ids = set(members.values_list("id", flat=True))
+        if not show_location:
+            for row in row_values:
+                row["location"] = ""
         parsed_rows, row_errors = _parse_rows(rows=row_values, allowed_member_ids=allowed_member_ids)
 
         if form.is_valid() and not row_errors:
@@ -242,34 +261,46 @@ def _render_report_form(
                 },
                 members=members,
             )
-            row_values = _build_initial_rows_from_report(editing_report, fixed_location)
+            row_values = _build_initial_rows_from_report(editing_report)
+            if not show_location:
+                for row in row_values:
+                    row["location"] = ""
         else:
             initial = {"report_date": timezone.localdate()}
             if default_reporter_id:
                 initial["reporter"] = default_reporter_id
             form = ReportSubmissionForm(initial=initial, members=members)
             row_values = [
-                {"member_id": "", "amount": "0", "count": "0", "location": fixed_location},
-                {"member_id": "", "amount": "0", "count": "0", "location": fixed_location},
+                {"member_id": "", "amount": "0", "count": "0", "location": ""},
+                {"member_id": "", "amount": "0", "count": "0", "location": ""},
             ]
 
     recent_reports = (
         DailyDepartmentReport.objects.filter(department__code=dept_code).select_related("reporter")[:10]
     )
+    if form.is_bound:
+        selected_reporter_id = str(form.data.get("reporter", "") or "")
+        memo_value = form.data.get("memo", "") or ""
+    else:
+        selected_reporter_id = str(form.initial.get("reporter", "") or "")
+        memo_value = form.initial.get("memo", "") or ""
 
     return render(
         request,
         "reports/report_form.html",
         {
             "dept_code": dept_code,
+            "dept_name": department.name if department else dept_code,
             "title": title,
             "location_label": location_label,
-            "fixed_location": fixed_location,
+            "show_location": show_location,
             "form": form,
             "members": members,
             "row_values": row_values,
             "row_errors": row_errors,
             "recent_reports": recent_reports,
+            "selected_reporter_id": selected_reporter_id,
+            "memo_value": memo_value,
             "submitted": request.GET.get("submitted") == "1",
             "is_edit": is_edit,
             "editing_report": editing_report,
@@ -280,41 +311,45 @@ def _render_report_form(
 
 @require_roles(ROLE_REPORT, ROLE_ADMIN)
 def report_un(request: HttpRequest) -> HttpResponse:
+    department = _department_by_code("UN")
     return _render_report_form(
         request,
         dept_code="UN",
-        title="UN 報告フォーム",
+        title=f"{department.name if department else 'UN'} 報告フォーム",
         location_label="現場",
     )
 
 
 @require_roles(ROLE_REPORT, ROLE_ADMIN)
 def report_wv(request: HttpRequest) -> HttpResponse:
+    department = _department_by_code("WV")
     return _render_report_form(
         request,
         dept_code="WV",
-        title="WV 報告フォーム",
+        title=f"{department.name if department else 'WV'} 報告フォーム",
         location_label="現場",
     )
 
 
 @require_roles(ROLE_REPORT, ROLE_ADMIN)
 def report_style1(request: HttpRequest) -> HttpResponse:
+    department = _department_by_code("STYLE1")
     return _render_report_form(
         request,
         dept_code="STYLE1",
-        title="Style1 報告フォーム",
+        title=f"{department.name if department else 'Style1'} 報告フォーム",
         location_label="現場",
-        fixed_location="石巻方面",
+        show_location=False,
     )
 
 
 @require_roles(ROLE_REPORT, ROLE_ADMIN)
 def report_style2(request: HttpRequest) -> HttpResponse:
+    department = _department_by_code("STYLE2")
     return _render_report_form(
         request,
         dept_code="STYLE2",
-        title="Style2 報告フォーム",
+        title=f"{department.name if department else 'Style2'} 報告フォーム",
         location_label="現場",
-        fixed_location="郡山方面",
+        show_location=False,
     )

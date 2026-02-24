@@ -8,14 +8,18 @@
     <strong>{{ title }}</strong>
     <nav>
       <a href="{% url 'report_index' %}">報告一覧</a>
-      <a href="{% url 'dashboard_index' %}">管理者ページ</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
 
   <section class="card" style="margin-top: 16px;">
-    <h3>{% if is_edit %}報告修正{% else %}報告入力{% endif %} ({{ dept_code }})</h3>
+    <h3>{% if is_edit %}報告修正{% else %}報告入力{% endif %} ({{ dept_name }})</h3>
+
+    {% if show_location %}
     <p class="muted">メンバー・金額・件数・{{ location_label }}を行追加しながら入力できます。</p>
+    {% else %}
+    <p class="muted">メンバー・金額・件数を行追加しながら入力できます。{{ location_label }}は固定です。</p>
+    {% endif %}
 
     {% if submitted %}
     <div class="note" style="margin-top: 10px;">報告を送信しました。</div>
@@ -31,7 +35,7 @@
     </div>
     {% endif %}
 
-    <form method="post" style="margin-top: 12px;">
+    <form method="post" style="margin-top: 12px;" autocomplete="off">
       {% csrf_token %}
       {% if is_edit %}
       <input type="hidden" name="next" value="{{ redirect_target }}">
@@ -44,7 +48,12 @@
         </div>
         <div>
           <label for="{{ form.reporter.id_for_label }}">{{ form.reporter.label }}</label>
-          {{ form.reporter }}
+          <select name="reporter" id="id_reporter">
+            <option value="">選択してください</option>
+            {% for member in members %}
+            <option value="{{ member.id }}" {% if selected_reporter_id == member.id|stringformat:'s' %}selected{% endif %}>{{ member.name }}</option>
+            {% endfor %}
+          </select>
         </div>
       </div>
 
@@ -55,7 +64,9 @@
             <th>メンバー</th>
             <th>金額(円)</th>
             <th>件数</th>
+            {% if show_location %}
             <th>{{ location_label }}</th>
+            {% endif %}
           </tr>
         </thead>
         <tbody id="member-rows">
@@ -69,9 +80,11 @@
                 {% endfor %}
               </select>
             </td>
-            <td><input type="number" min="0" name="amounts" value="{{ row.amount|default:'0' }}" /></td>
-            <td><input type="number" min="0" name="counts" value="{{ row.count|default:'0' }}" /></td>
-            <td><input name="locations" value="{{ row.location }}" {% if fixed_location %}readonly{% endif %} /></td>
+            <td><input type="number" min="0" name="amounts" value="{{ row.amount|default:'0' }}"></td>
+            <td><input type="number" min="0" name="counts" value="{{ row.count|default:'0' }}"></td>
+            {% if show_location %}
+            <td><input name="locations" value="{{ row.location }}"></td>
+            {% endif %}
           </tr>
           {% endfor %}
         </tbody>
@@ -89,7 +102,7 @@
 
       <div style="margin-top: 10px;">
         <label for="{{ form.memo.id_for_label }}">{{ form.memo.label }}</label>
-        {{ form.memo }}
+        <textarea name="memo" rows="3" id="id_memo">{{ memo_value }}</textarea>
       </div>
 
       <div style="margin-top: 14px;">
@@ -101,7 +114,7 @@
   <section class="card" style="margin-top: 16px;">
     <div class="row">
       <h3>直近の送信履歴</h3>
-      <span class="badge">{{ dept_code }}</span>
+      <span class="badge">{{ dept_name }}</span>
     </div>
     <table style="margin-top: 8px;">
       <thead>
@@ -136,7 +149,6 @@
   (function () {
     const rows = document.getElementById("member-rows");
     const addButton = document.getElementById("add-row");
-    const fixedLocation = "{{ fixed_location|escapejs }}";
 
     if (!rows || !addButton) return;
 
@@ -150,8 +162,6 @@
       clone.querySelectorAll("input").forEach(function (el) {
         if (el.name === "amounts" || el.name === "counts") {
           el.value = "0";
-        } else if (el.name === "locations") {
-          el.value = fixedLocation;
         } else {
           el.value = "";
         }

@@ -75,20 +75,23 @@ def _format_metric_triples(*, metrics, target_values, actual_totals):
 @require_roles(ROLE_ADMIN)
 def dashboard_index(request: HttpRequest) -> HttpResponse:
     today = timezone.localdate()
-    target_codes = ["UN", "WV", "STYLE1", "STYLE2"]
-    department_name_map = {
-        dept.code: dept.name for dept in Department.objects.filter(code__in=target_codes)
-    }
-    target_departments = [(code, department_name_map.get(code, code)) for code in target_codes]
+    target_departments = list(
+        Department.objects.filter(is_active=True)
+        .order_by("code")
+        .values_list("code", "name")
+    )
+    target_codes = [code for code, _ in target_departments]
 
-    today_reports = (
-        DailyDepartmentReport.objects.filter(
-            report_date=today,
+    today_reports_query = DailyDepartmentReport.objects.filter(
+        report_date=today,
+    ).select_related("department", "reporter")
+    if target_codes:
+        today_reports_query = today_reports_query.filter(
             department__code__in=target_codes,
         )
-        .select_related("department", "reporter")
-        .order_by("department__code", "-created_at")
-    )
+    else:
+        today_reports_query = today_reports_query.none()
+    today_reports = today_reports_query.order_by("department__code", "-created_at")
 
     latest_by_code = {}
     for report in today_reports:
@@ -134,13 +137,14 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             "amount": sum(r.followup_count for r in dept_reports),
         }
 
-    lines = (
-        DailyDepartmentReportLine.objects.filter(
-            report__report_date=today,
-            report__department__code__in=target_codes,
-        )
-        .select_related("member", "report__department")
-    )
+    lines_query = DailyDepartmentReportLine.objects.filter(
+        report__report_date=today,
+    ).select_related("member", "report__department")
+    if target_codes:
+        lines_query = lines_query.filter(report__department__code__in=target_codes)
+    else:
+        lines_query = lines_query.none()
+    lines = lines_query
     member_totals = {code: {} for code in target_codes}
     for line in lines:
         code = line.report.department.code
@@ -324,95 +328,6 @@ def _department_form(*, data=None, initial=None, edit_department=None) -> Depart
 
 def _target_metric_form(*, data=None, initial=None) -> TargetMetricForm:
     return TargetMetricForm(data=data, initial=initial)
-
-
-@require_roles(ROLE_ADMIN)
-def member_settings(request: HttpRequest) -> HttpResponse:
-    status_message = None
-    edit_member = None
-
-    edit_id = request.GET.get("edit")
-    if edit_id and edit_id.isdigit():
-        edit_member = Member.objects.filter(id=int(edit_id)).first()
-
-    if request.method == "POST":
-        edit_member_id = request.POST.get("edit_member_id")
-        form = _member_form(data=request.POST)
-        if form.is_valid():
-            login_id = form.cleaned_data["login_id"].strip().lower()
-            departments = form.cleaned_data["departments"]
-            input_password = form.cleaned_data["password"]
-            duplicate_query = Member.objects.filter(login_id=login_id)
-            if edit_member_id and edit_member_id.isdigit():
-                duplicate_query = duplicate_query.exclude(id=int(edit_member_id))
-
-            if duplicate_query.exists():
-                form.add_error("login_id", "このログインIDは既に使われています。")
-            else:
-                if edit_member_id and edit_member_id.isdigit():
-                    member = get_object_or_404(Member, id=int(edit_member_id))
-                    member.name = form.cleaned_data["name"].strip()
-                    member.login_id = login_id
-                    update_fields = ["name", "login_id"]
-                    if input_password:
-                        member.password = input_password
-                        update_fields.append("password")
-                    member.save(update_fields=update_fields)
-                    status_message = f"{member.name}（{member.login_id}）を更新しました。"
-                else:
-                    if not input_password:
-                        form.add_error("password", "新規登録時はパスワードが必須です。")
-                        members = Member.objects.prefetch_related("department_links")
-                        return render(
-                            request,
-                            "dashboard/member_settings.html",
-                            {
-                                "form": form,
-                                "members": members,
-                                "edit_member": edit_member,
-                                "status_message": status_message,
-                            },
-                        )
-                    member = Member.objects.create(
-                        name=form.cleaned_data["name"].strip(),
-                        login_id=login_id,
-                        password=input_password,
-                    )
-                    status_message = f"{member.name}（{member.login_id}）を登録しました。"
-
-                MemberDepartment.objects.filter(member=member).exclude(department__in=departments).delete()
-                existing_departments = set(
-                    MemberDepartment.objects.filter(member=member).values_list("department_id", flat=True)
-                )
-                for dept in departments:
-                    if dept.id not in existing_departments:
-                        MemberDepartment.objects.create(member=member, department=dept)
-
-                form = _member_form()
-                edit_member = None
-    else:
-        if edit_member:
-            form = _member_form(
-                initial={
-                    "name": edit_member.name,
-                    "login_id": edit_member.login_id,
-                    "departments": list(edit_member.department_links.values_list("department_id", flat=True)),
-                }
-            )
-        else:
-            form = _member_form()
-
-    members = Member.objects.prefetch_related("department_links")
-    return render(
-        request,
-        "dashboard/member_settings.html",
-        {
-            "form": form,
-            "members": members,
-            "edit_member": edit_member,
-            "status_message": status_message,
-        },
-    )
 
 
 @require_roles(ROLE_ADMIN)

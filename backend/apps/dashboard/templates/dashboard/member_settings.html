@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}メンバー登録 | 報告アプリ{% endblock %}
+{% block title %}メンバー管理 | Report App{% endblock %}
 
 {% block content %}
 <div class="container">
   <header class="topbar">
     <div>
-      <strong>メンバー登録</strong>
-      <div class="muted" style="color: #e1f1f5;">名前 / ログインID / パスワードを設定（現時点はデモ登録）</div>
+      <strong>メンバー管理</strong>
+      <div class="muted" style="color: #e1f1f5;">名前と所属部署を管理します。</div>
     </div>
     <nav>
       <a href="{% url 'dashboard_index' %}">管理者ページ</a>
@@ -29,18 +29,6 @@
         {{ form.name }}
         {% if form.name.errors %}
         <div class="error-text">{{ form.name.errors|striptags }}</div>
-        {% endif %}
-
-        <label for="id_login_id">{{ form.login_id.label }}</label>
-        {{ form.login_id }}
-        {% if form.login_id.errors %}
-        <div class="error-text">{{ form.login_id.errors|striptags }}</div>
-        {% endif %}
-
-        <label for="id_password">{{ form.password.label }}</label>
-        {{ form.password }}
-        {% if form.password.errors %}
-        <div class="error-text">{{ form.password.errors|striptags }}</div>
         {% endif %}
 
         <label>{{ form.departments.label }}</label>
@@ -69,13 +57,12 @@
       {% if members %}
       <table>
         <thead>
-          <tr><th>名前</th><th>ログインID</th><th>所属部署</th><th>登録日時</th><th>操作</th></tr>
+          <tr><th>名前</th><th>所属部署</th><th>登録日時</th><th>操作</th></tr>
         </thead>
         <tbody>
           {% for member in members %}
           <tr>
             <td>{{ member.name }}</td>
-            <td>{{ member.login_id }}</td>
             <td>
               {% for link in member.department_links.all %}
                 {{ link.department.name }}{% if not forloop.last %}, {% endif %}

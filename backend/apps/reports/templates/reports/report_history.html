@@ -33,7 +33,7 @@
         {% for report in reports %}
         <tr>
           <td>{{ report.report_date }}</td>
-          <td>{{ report.department.code }}</td>
+          <td>{{ report.department.name }}</td>
           <td>{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
           <td>{{ report.total_count }}</td>
           <td>{{ report.followup_count }}</td>

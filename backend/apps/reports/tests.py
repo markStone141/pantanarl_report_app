@@ -44,6 +44,38 @@ class ReportMemberFilteringTests(TestCase):
             html=True,
         )
 
+    def test_report_index_uses_department_display_name_for_buttons(self):
+        Department.objects.create(name="ユニセフ", code="UN")
+        Department.objects.create(name="ワールドビジョン", code="WV")
+
+        response = self.client.get(reverse("report_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ユニセフ 報告へ")
+        self.assertContains(response, "ワールドビジョン 報告へ")
+
+    def test_report_form_title_uses_department_display_name(self):
+        department = Department.objects.create(name="ユニセフ東北", code="UN")
+        reporter = Member.objects.create(name="責任者", login_id="leader_un_title", password="x")
+        MemberDepartment.objects.create(member=reporter, department=department)
+
+        response = self.client.get(reverse("report_un"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ユニセフ東北 報告フォーム")
+        self.assertContains(response, "(ユニセフ東北)")
+
+    def test_style_form_hides_location_column(self):
+        department = Department.objects.create(name="Style 石巻", code="STYLE1")
+        reporter = Member.objects.create(name="責任者", login_id="leader_style1", password="x")
+        MemberDepartment.objects.create(member=reporter, department=department)
+
+        response = self.client.get(reverse("report_style1"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "<th>現場</th>", html=True)
+        self.assertNotContains(response, 'name="locations"')
+
 
 class ReportSubmitFlowTests(TestCase):
     def setUp(self):
