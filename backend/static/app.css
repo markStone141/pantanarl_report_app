@@ -208,6 +208,16 @@ button {
   border: 1px solid var(--brand);
 }
 
+.target-op-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.target-delete-form {
+  margin-left: auto;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

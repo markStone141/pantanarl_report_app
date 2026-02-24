@@ -118,9 +118,9 @@
           <td>{{ row.name }}</td>
           <td>{{ row.range_label }}</td>
           <td>{{ row.status }}</td>
-          <td>
+          <td class="target-op-cell">
             <a class="btn-inline" href="{% url 'target_period_settings' %}?period={{ row.id }}">表示</a>
-            <form method="post" style="display:inline;" onsubmit="return confirm('この路程を削除します。よろしいですか？');">
+            <form method="post" class="target-delete-form" onsubmit="return confirm('この路程を削除します。よろしいですか？');">
               {% csrf_token %}
               <input type="hidden" name="action" value="delete_period" />
               <input type="hidden" name="delete_period_id" value="{{ row.id }}" />

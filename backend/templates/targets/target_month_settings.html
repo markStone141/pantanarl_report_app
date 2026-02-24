@@ -76,9 +76,9 @@
         <tr>
           <td>{{ row.month_label }}</td>
           <td>{{ row.status }}</td>
-          <td>
+          <td class="target-op-cell">
             <a class="btn-inline" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">表示</a>
-            <form method="post" style="display:inline;" onsubmit="return confirm('この月目標を削除します。よろしいですか？');">
+            <form method="post" class="target-delete-form" onsubmit="return confirm('この月目標を削除します。よろしいですか？');">
               {% csrf_token %}
               <input type="hidden" name="action" value="delete_month_targets" />
               <input type="hidden" name="delete_month" value="{{ row.month_param }}" />
