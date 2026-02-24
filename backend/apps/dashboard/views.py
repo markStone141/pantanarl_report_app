@@ -590,6 +590,10 @@ def member_settings(request: HttpRequest) -> HttpResponse:
             form = _member_form()
 
     members = Member.objects.prefetch_related("department_links")
+    selected_department_ids = {
+        str(dept_id) for dept_id in (form["departments"].value() or [])
+    }
+    department_choices = Department.objects.filter(is_active=True).order_by("code")
     return render(
         request,
         "dashboard/member_settings.html",
@@ -598,5 +602,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
             "members": members,
             "edit_member": edit_member,
             "status_message": status_message,
+            "department_choices": department_choices,
+            "selected_department_ids": selected_department_ids,
         },
     )

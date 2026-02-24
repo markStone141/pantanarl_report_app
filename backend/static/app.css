@@ -132,6 +132,28 @@ label {
   color: #304653;
 }
 
+.checkbox-list {
+  display: grid;
+  gap: 6px;
+}
+
+.checkbox-row {
+  margin: 0;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.checkbox-input {
+  width: auto;
+  margin: 0;
+}
+
 input,
 select,
 textarea,
