@@ -19,6 +19,13 @@
   </header>
 
   <section class="card" style="margin-top: 16px;">
+    <h3>メール本文作成</h3>
+    <label for="mail-comment">コメント</label>
+    <textarea id="mail-comment" placeholder="コメントを入力"></textarea>
+    <button type="button" id="build-mail" style="margin-top: 10px;">テンプレート生成</button>
+  </section>
+
+  <section class="card" style="margin-top: 16px;">
     <div class="row">
       <h3>提出状況一覧</h3>
       <span class="badge">対象日: {{ today_str }}</span>
@@ -111,13 +118,6 @@
   </section>
 
   <section style="margin-top: 16px; display: grid; gap: 16px;">
-    <article class="card">
-      <h3>メール本文作成</h3>
-      <label for="mail-comment">コメント</label>
-      <textarea id="mail-comment" placeholder="コメントを入力"></textarea>
-      <button type="button" id="build-mail" style="margin-top: 10px;">テンプレート生成</button>
-    </article>
-
     <article class="card">
       <h3>目標管理</h3>
       <p class="muted">対象月: {{ target_month_summary }} [{{ target_month_status }}] / 現在路程: {{ target_period_summary }} [{{ target_period_status }}]</p>
