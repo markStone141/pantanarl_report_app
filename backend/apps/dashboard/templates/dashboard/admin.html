@@ -20,6 +20,11 @@
 
   <section class="card" style="margin-top: 16px;">
     <h3>メール本文作成</h3>
+    <div style="display:flex; gap:8px; margin-top: 8px; align-items: center; flex-wrap: wrap;">
+      <button type="button" id="mail-mode-today" class="btn-inline">本日</button>
+      <button type="button" id="mail-mode-prev" class="btn-inline">前日</button>
+      <span class="badge" id="mail-source-date"></span>
+    </div>
     <label for="mail-comment">コメント</label>
     <textarea id="mail-comment" placeholder="コメントを入力"></textarea>
     <button type="button" id="build-mail" style="margin-top: 10px;">テンプレート生成</button>
@@ -190,7 +195,7 @@
   </div>
 </div>
 
-{{ mail_template_payload|json_script:"mail-template-data" }}
+{{ mail_template_payload_map|json_script:"mail-template-data-map" }}
 <script>
   (function () {
     function buildSectionLines(section, periodName, periodRange) {
@@ -244,17 +249,43 @@
       return lines.join("\n");
     }
 
-    const payloadEl = document.getElementById("mail-template-data");
-    const payload = payloadEl ? JSON.parse(payloadEl.textContent) : null;
+    const payloadMapEl = document.getElementById("mail-template-data-map");
+    const payloadMap = payloadMapEl ? JSON.parse(payloadMapEl.textContent) : null;
     const buildBtn = document.getElementById("build-mail");
+    const modeTodayBtn = document.getElementById("mail-mode-today");
+    const modePrevBtn = document.getElementById("mail-mode-prev");
+    const sourceDateEl = document.getElementById("mail-source-date");
     const commentEl = document.getElementById("mail-comment");
     const modalEl = document.getElementById("mail-preview-modal");
     const closeModalBtn = document.getElementById("close-mail-preview");
     const copyPreviewBtn = document.getElementById("copy-mail-preview");
     const previewContent = document.getElementById("mail-preview-content");
-    if (!payload || !buildBtn || !commentEl || !modalEl || !closeModalBtn || !copyPreviewBtn || !previewContent) return;
+    if (
+      !payloadMap ||
+      !buildBtn ||
+      !commentEl ||
+      !modalEl ||
+      !closeModalBtn ||
+      !copyPreviewBtn ||
+      !previewContent ||
+      !modeTodayBtn ||
+      !modePrevBtn ||
+      !sourceDateEl
+    ) return;
 
     let generatedBody = "";
+    let selectedMode = "today";
+
+    function getPayload() {
+      return payloadMap[selectedMode] || payloadMap.today || payloadMap.prev || null;
+    }
+
+    function syncModeUI() {
+      modeTodayBtn.style.opacity = selectedMode === "today" ? "1" : ".65";
+      modePrevBtn.style.opacity = selectedMode === "prev" ? "1" : ".65";
+      const payload = getPayload();
+      sourceDateEl.textContent = payload ? ("参照日: " + payload.report_date) : "";
+    }
 
     function openPreview() {
       if (!generatedBody.trim()) {
@@ -269,7 +300,21 @@
       modalEl.style.display = "none";
     }
 
+    modeTodayBtn.addEventListener("click", function () {
+      selectedMode = "today";
+      syncModeUI();
+    });
+    modePrevBtn.addEventListener("click", function () {
+      selectedMode = "prev";
+      syncModeUI();
+    });
+
     buildBtn.addEventListener("click", function () {
+      const payload = getPayload();
+      if (!payload) {
+        alert("テンプレートデータを読み込めません。");
+        return;
+      }
       generatedBody = buildMailBody(payload, commentEl.value);
       openPreview();
     });
@@ -293,6 +338,8 @@
     modalEl.addEventListener("click", function (e) {
       if (e.target === modalEl) closePreview();
     });
+
+    syncModeUI();
   })();
 
   (function () {

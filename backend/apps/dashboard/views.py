@@ -304,74 +304,208 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         )
 
     label_by_code = {code: label for code, label in target_departments}
-    members_by_code = {code: member_rows_for([code]) for code, _ in target_departments}
 
-    mail_sections = []
-    section_order = [
-        ("UN", "UN①"),
-        ("WV", "UN②"),
-        ("STYLE2", "Styleチーム"),
-        ("STYLE1", "Styleチーム"),
-    ]
-    for code, heading in section_order:
-        if code not in label_by_code:
-            continue
-        daily = daily_totals.get(code, {"count": 0, "amount": 0})
-        member_lines = [
-            {
-                "name": row["member_name"],
-                "count": row["count"],
-                "amount_text": format_yen(row["amount"]),
-            }
-            for row in members_by_code.get(code, [])
-        ]
-        month_metric_lines = [
-            f"{row['label']} {row['actual']}/{row['target']}{row['unit']} 達成率{row['rate']}"
-            for row in metric_detail_by_code.get(code, {}).get("month", [])
-        ]
-        period_metric_lines = [
-            f"{row['label']} {row['actual']}/{row['target']}{row['unit']} 達成率{row['rate']}"
-            for row in metric_detail_by_code.get(code, {}).get("period", [])
-        ]
-        mail_sections.append(
-            {
-                "code": code,
-                "heading": heading,
-                "name": label_by_code[code],
-                "daily_count": daily["count"],
-                "daily_amount_text": format_yen(daily["amount"]),
-                "member_lines": member_lines,
-                "period_lines": period_metric_lines,
-                "month_lines": month_metric_lines,
-            }
+    def build_mail_template_payload(base_date):
+        reports_query = DailyDepartmentReport.objects.filter(
+            report_date=base_date,
+        ).select_related("department")
+        if target_codes:
+            reports_query = reports_query.filter(department__code__in=target_codes)
+        else:
+            reports_query = reports_query.none()
+
+        base_daily_totals = {code: {"count": 0, "amount": 0} for code in target_codes}
+        for report in reports_query:
+            code = report.department.code
+            base_daily_totals[code]["count"] += report.total_count
+            base_daily_totals[code]["amount"] += report.followup_count
+
+        lines_query = DailyDepartmentReportLine.objects.filter(
+            report__report_date=base_date,
+        ).select_related("member", "report__department")
+        if target_codes:
+            lines_query = lines_query.filter(report__department__code__in=target_codes)
+        else:
+            lines_query = lines_query.none()
+        base_member_totals = {code: {} for code in target_codes}
+        for line in lines_query:
+            code = line.report.department.code
+            member_name = line.member.name if line.member else "-"
+            if member_name not in base_member_totals[code]:
+                base_member_totals[code][member_name] = {
+                    "member_name": member_name,
+                    "count": 0,
+                    "amount": 0,
+                    "cs_count": 0,
+                    "refugee_count": 0,
+                }
+            base_member_totals[code][member_name]["count"] += line.count
+            base_member_totals[code][member_name]["amount"] += line.amount
+            base_member_totals[code][member_name]["cs_count"] += line.cs_count
+            base_member_totals[code][member_name]["refugee_count"] += line.refugee_count
+
+        def member_rows_for_mail(code):
+            rows = list(base_member_totals.get(code, {}).values())
+            return sorted(rows, key=lambda x: (-x["amount"], -x["count"], x["member_name"]))
+
+        base_month = base_date.replace(day=1)
+        if not MonthTargetMetricValue.objects.filter(target_month=base_month).exists():
+            latest_month = (
+                MonthTargetMetricValue.objects.order_by("-target_month")
+                .values_list("target_month", flat=True)
+                .first()
+            )
+            if latest_month:
+                base_month = latest_month
+
+        base_month_target_rows = list(
+            MonthTargetMetricValue.objects.filter(
+                target_month=base_month,
+                metric__is_active=True,
+                department__code__in=target_codes,
+            )
+            .order_by("department__code", "metric__display_order", "id")
+            .values("department__code", "metric_id", "value")
+        )
+        base_month_target_values_by_code = {code: {} for code in target_codes}
+        for row in base_month_target_rows:
+            base_month_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
+
+        base_period = (
+            Period.objects.filter(start_date__lte=base_date, end_date__gte=base_date)
+            .order_by("-month", "start_date", "id")
+            .first()
+        )
+        if not base_period:
+            base_period = Period.objects.order_by("-month", "start_date", "id").first()
+
+        if base_period:
+            base_period_rows = list(
+                PeriodTargetMetricValue.objects.filter(
+                    period=base_period,
+                    metric__is_active=True,
+                    department__code__in=target_codes,
+                )
+                .order_by("department__code", "metric__display_order", "id")
+                .values("department__code", "metric_id", "value")
+            )
+            base_period_target_values_by_code = {code: {} for code in target_codes}
+            for row in base_period_rows:
+                base_period_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
+            base_period_start = base_period.start_date
+            base_period_end = base_period.end_date
+            base_period_name = base_period.name
+            base_period_range = (
+                f"{base_period.start_date.month}/{base_period.start_date.day}"
+                f"～{base_period.end_date.month}/{base_period.end_date.day}"
+            )
+        else:
+            base_period_target_values_by_code = {code: {} for code in target_codes}
+            base_period_start = base_date
+            base_period_end = base_date
+            base_period_name = "-"
+            base_period_range = "-"
+
+        if base_month.month == 12:
+            base_month_end = base_month.replace(year=base_month.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            base_month_end = base_month.replace(month=base_month.month + 1, day=1) - timedelta(days=1)
+
+        base_month_actual_totals_by_code = collect_actual_totals(
+            start_date=base_month,
+            end_date=base_month_end,
+            target_codes=target_codes,
+        )
+        base_period_actual_totals_by_code = collect_actual_totals(
+            start_date=base_period_start,
+            end_date=base_period_end,
+            target_codes=target_codes,
         )
 
-    un_wv_codes = [code for code in ["UN", "WV"] if code in label_by_code]
-    un_wv_month_actual = sum(month_actual_totals_by_code.get(code, {"amount": 0})["amount"] for code in un_wv_codes)
-    un_wv_month_target = 0
-    for code in un_wv_codes:
-        for metric in metrics_by_code.get(code, []):
-            if metric.code == "amount":
-                un_wv_month_target += month_target_values_by_code.get(code, {}).get(metric.id, 0)
-    un_wv_month_rate = f"{(un_wv_month_actual / un_wv_month_target) * 100:.1f}%" if un_wv_month_target > 0 else "-"
+        base_metric_detail_by_code = {}
+        for code, _ in target_departments:
+            base_metric_detail_by_code[code] = {
+                "month": metric_detail_rows(
+                    metrics=metrics_by_code.get(code, []),
+                    target_values=base_month_target_values_by_code.get(code, {}),
+                    actual_totals=base_month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+                ),
+                "period": metric_detail_rows(
+                    metrics=metrics_by_code.get(code, []),
+                    target_values=base_period_target_values_by_code.get(code, {}),
+                    actual_totals=base_period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+                ),
+            }
 
-    if current_period:
-        current_period_range = (
-            f"{current_period.start_date.month}/{current_period.start_date.day}"
-            f"～{current_period.end_date.month}/{current_period.end_date.day}"
+        section_order = [
+            ("UN", "UN①"),
+            ("WV", "UN②"),
+            ("STYLE2", "Styleチーム"),
+            ("STYLE1", "Styleチーム"),
+        ]
+        mail_sections = []
+        for code, heading in section_order:
+            if code not in label_by_code:
+                continue
+            member_lines = [
+                {
+                    "name": row["member_name"],
+                    "count": row["count"],
+                    "amount_text": format_yen(row["amount"]),
+                }
+                for row in member_rows_for_mail(code)
+            ]
+            month_metric_lines = [
+                f"{row['label']} {row['actual']}/{row['target']}{row['unit']} 達成率{row['rate']}"
+                for row in base_metric_detail_by_code.get(code, {}).get("month", [])
+            ]
+            period_metric_lines = [
+                f"{row['label']} {row['actual']}/{row['target']}{row['unit']} 達成率{row['rate']}"
+                for row in base_metric_detail_by_code.get(code, {}).get("period", [])
+            ]
+            mail_sections.append(
+                {
+                    "code": code,
+                    "heading": heading,
+                    "name": label_by_code[code],
+                    "daily_count": base_daily_totals.get(code, {}).get("count", 0),
+                    "daily_amount_text": format_yen(base_daily_totals.get(code, {}).get("amount", 0)),
+                    "member_lines": member_lines,
+                    "period_lines": period_metric_lines,
+                    "month_lines": month_metric_lines,
+                }
+            )
+
+        un_wv_codes = [code for code in ["UN", "WV"] if code in label_by_code]
+        un_wv_month_actual = sum(
+            base_month_actual_totals_by_code.get(code, {"amount": 0})["amount"] for code in un_wv_codes
         )
-    else:
-        current_period_range = "-"
-    mail_template_payload = {
-        "today": today.strftime("%Y/%m/%d"),
-        "sections": mail_sections,
-        "period_name": current_period_label,
-        "period_range": current_period_range,
-        "un_wv_summary": {
-            "actual_text": format_yen(un_wv_month_actual),
-            "target_text": format_yen(un_wv_month_target),
-            "rate": un_wv_month_rate,
-        },
+        un_wv_month_target = 0
+        for code in un_wv_codes:
+            for metric in metrics_by_code.get(code, []):
+                if metric.code == "amount":
+                    un_wv_month_target += base_month_target_values_by_code.get(code, {}).get(metric.id, 0)
+        un_wv_month_rate = (
+            f"{(un_wv_month_actual / un_wv_month_target) * 100:.1f}%"
+            if un_wv_month_target > 0
+            else "-"
+        )
+
+        return {
+            "report_date": base_date.strftime("%Y/%m/%d"),
+            "sections": mail_sections,
+            "period_name": base_period_name,
+            "period_range": base_period_range,
+            "un_wv_summary": {
+                "actual_text": format_yen(un_wv_month_actual),
+                "target_text": format_yen(un_wv_month_target),
+                "rate": un_wv_month_rate,
+            },
+        }
+
+    mail_template_payload_map = {
+        "today": build_mail_template_payload(today),
+        "prev": build_mail_template_payload(today - timedelta(days=1)),
     }
 
     context = {
@@ -384,7 +518,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         "target_period_status": period_status,
         "current_period_label": current_period_label,
         "target_progress_rows": target_progress_rows,
-        "mail_template_payload": mail_template_payload,
+        "mail_template_payload_map": mail_template_payload_map,
     }
     return render(request, "dashboard/admin.html", context)
 
