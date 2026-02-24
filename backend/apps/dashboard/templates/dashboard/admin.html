@@ -86,13 +86,13 @@
   <section style="margin-top: 16px; display: grid; gap: 16px;">
     <article class="card">
       <h3>日次まとめメール</h3>
-      <p class="muted">テンプレートを作成して、コメントを加えて利用できます。</p>
+      <p class="muted">集計済みデータで本文テンプレートを作成し、コピーして送信できます。</p>
       <button type="button" id="build-mail">テンプレート作成</button>
       <label for="mail-comment">コメント</label>
-      <input id="mail-comment" placeholder="コメントを入力" />
+      <textarea id="mail-comment" placeholder="コメントを入力（複数行可）"></textarea>
       <label for="mail-body">メール本文（確認用）</label>
       <textarea id="mail-body" placeholder="ここに本文が出力されます"></textarea>
-      <button type="button" id="send-mail" style="margin-top: 8px;">送信（デモ）</button>
+      <button type="button" id="copy-mail" style="margin-top: 8px;">本文をコピー</button>
     </article>
 
     <article class="card">
@@ -151,24 +151,89 @@
   <p class="footer">Admin page on Django template</p>
 </div>
 
+{{ mail_template_payload|json_script:"mail-template-data" }}
 <script>
   (function () {
+    function buildSectionLines(section, periodName, periodRange) {
+      const lines = [];
+      lines.push(section.heading + "（" + section.name + "）");
+      lines.push("全体");
+      lines.push("件数" + section.daily_count + "件、支援額" + section.daily_amount_text);
+      lines.push("");
+      lines.push("（以下個人の実績）");
+      if (section.member_lines.length) {
+        section.member_lines.forEach(function (row) {
+          lines.push(row.name);
+          lines.push("件数" + row.count + "件、支援額" + row.amount_text);
+        });
+      } else {
+        lines.push("実績データなし");
+      }
+      lines.push("");
+      lines.push("（路程の情報）");
+      lines.push(periodName + "（" + periodRange + "）");
+      if (section.period_lines.length) {
+        section.period_lines.forEach(function (line) {
+          lines.push(line);
+        });
+      } else {
+        lines.push("路程目標データなし");
+      }
+      lines.push("月間目標達成率");
+      if (section.month_lines.length) {
+        section.month_lines.forEach(function (line) {
+          lines.push(line);
+        });
+      } else {
+        lines.push("月目標データなし");
+      }
+      return lines;
+    }
+
+    const payloadEl = document.getElementById("mail-template-data");
+    const payload = payloadEl ? JSON.parse(payloadEl.textContent) : null;
+    const buildBtn = document.getElementById("build-mail");
+    const copyBtn = document.getElementById("copy-mail");
+    const commentEl = document.getElementById("mail-comment");
+    const bodyEl = document.getElementById("mail-body");
+    if (!payload || !buildBtn || !copyBtn || !commentEl || !bodyEl) return;
+
     document.getElementById("build-mail").addEventListener("click", function () {
-      const mailCommentEl = document.getElementById("mail-comment");
-      const mailBodyEl = document.getElementById("mail-body");
-      const lines = [
-        "件名: 日次報告",
-        "",
-        "【本日のコメント】",
-        mailCommentEl.value.trim() || "（コメント未入力）",
-        "",
-        "以上、よろしくお願いいたします。",
-      ];
-      mailBodyEl.value = lines.join("\\n");
+      const lines = [];
+      lines.push("件名: 日次報告（" + payload.today + "）");
+      lines.push("");
+      payload.sections.forEach(function (section, idx) {
+        buildSectionLines(section, payload.period_name, payload.period_range).forEach(function (line) {
+          lines.push(line);
+        });
+        if (idx !== payload.sections.length - 1) {
+          lines.push("");
+        }
+      });
+      lines.push("");
+      lines.push("UN全体 " + payload.un_wv_summary.actual_text + "/" + payload.un_wv_summary.target_text + " 達成率" + payload.un_wv_summary.rate);
+      lines.push("");
+      lines.push("【コメント】");
+      lines.push(commentEl.value.trim() || "（コメント未入力）");
+      lines.push("");
+      lines.push("今日も一日お疲れ様でした。");
+      lines.push("引き続き目標達成に向けて取り組んでいきましょう。");
+      bodyEl.value = lines.join("\\n");
     });
 
-    document.getElementById("send-mail").addEventListener("click", function () {
-      alert("送信しました。（デモ）");
+    copyBtn.addEventListener("click", async function () {
+      if (!bodyEl.value.trim()) {
+        alert("先にテンプレートを作成してください。");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(bodyEl.value);
+        alert("本文をコピーしました。");
+      } catch (e) {
+        bodyEl.select();
+        document.execCommand("copy");
+        alert("本文をコピーしました。");
+      }
     });
   })();
 </script>

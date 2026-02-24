@@ -72,6 +72,33 @@ def _format_metric_triples(*, metrics, target_values, actual_totals):
     return " / ".join(target_parts), " / ".join(actual_parts), " / ".join(rate_parts)
 
 
+def _metric_detail_rows(*, metrics, target_values, actual_totals):
+    rows = []
+    for metric in metrics:
+        target = target_values.get(metric.id, 0)
+        actual = _metric_actual_value(
+            metric_code=metric.code,
+            total_count=actual_totals["count"],
+            total_amount=actual_totals["amount"],
+        )
+        rate = f"{(actual / target) * 100:.1f}%" if target > 0 else "-"
+        rows.append(
+            {
+                "code": metric.code,
+                "label": metric.label,
+                "unit": metric.unit or "",
+                "target": target,
+                "actual": actual,
+                "rate": rate,
+            }
+        )
+    return rows
+
+
+def _format_yen(value: int) -> str:
+    return f"{value:,}円"
+
+
 @require_roles(ROLE_ADMIN)
 def dashboard_index(request: HttpRequest) -> HttpResponse:
     today = timezone.localdate()
@@ -262,7 +289,22 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             metrics_by_code[code] = []
 
     target_progress_rows = []
+    metric_detail_by_code = {}
     for code, label in target_departments:
+        month_metric_rows = _metric_detail_rows(
+            metrics=metrics_by_code[code],
+            target_values=month_target_values_by_code.get(code, {}),
+            actual_totals=month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+        )
+        period_metric_rows = _metric_detail_rows(
+            metrics=metrics_by_code[code],
+            target_values=period_target_values_by_code.get(code, {}),
+            actual_totals=period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+        )
+        metric_detail_by_code[code] = {
+            "month": month_metric_rows,
+            "period": period_metric_rows,
+        }
         month_target_text, month_actual_text, month_rate_text = _format_metric_triples(
             metrics=metrics_by_code[code],
             target_values=month_target_values_by_code.get(code, {}),
@@ -296,6 +338,74 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             }
         )
 
+    label_by_code = {code: label for code, label in target_departments}
+    members_by_code = {code: member_rows_for([code]) for code, _ in target_departments}
+
+    mail_sections = []
+    section_order = [
+        ("UN", "UN①"),
+        ("WV", "UN②"),
+        ("STYLE2", "styleチーム"),
+        ("STYLE1", "styleチーム"),
+    ]
+    for code, heading in section_order:
+        if code not in label_by_code:
+            continue
+        daily = daily_totals.get(code, {"count": 0, "amount": 0})
+        member_lines = [
+            {
+                "name": row["member_name"],
+                "count": row["count"],
+                "amount_text": _format_yen(row["amount"]),
+            }
+            for row in members_by_code.get(code, [])
+        ]
+        month_metric_lines = [
+            f"{row['label']}{row['actual']}/{row['target']}{row['unit']}（達成率{row['rate']}）"
+            for row in metric_detail_by_code.get(code, {}).get("month", [])
+        ]
+        period_metric_lines = [
+            f"{row['label']}{row['actual']}/{row['target']}{row['unit']}（達成率{row['rate']}）"
+            for row in metric_detail_by_code.get(code, {}).get("period", [])
+        ]
+        mail_sections.append(
+            {
+                "code": code,
+                "heading": heading,
+                "name": label_by_code[code],
+                "daily_count": daily["count"],
+                "daily_amount_text": _format_yen(daily["amount"]),
+                "member_lines": member_lines,
+                "period_lines": period_metric_lines,
+                "month_lines": month_metric_lines,
+            }
+        )
+
+    un_wv_codes = [code for code in ["UN", "WV"] if code in label_by_code]
+    un_wv_month_actual = sum(month_actual_totals_by_code.get(code, {"amount": 0})["amount"] for code in un_wv_codes)
+    un_wv_month_target = 0
+    for code in un_wv_codes:
+        for metric in metrics_by_code.get(code, []):
+            if metric.code == "amount":
+                un_wv_month_target += month_target_values_by_code.get(code, {}).get(metric.id, 0)
+    un_wv_month_rate = f"{(un_wv_month_actual / un_wv_month_target) * 100:.1f}%" if un_wv_month_target > 0 else "-"
+
+    if current_period:
+        current_period_range = f"{current_period.start_date.month}/{current_period.start_date.day}～{current_period.end_date.month}/{current_period.end_date.day}"
+    else:
+        current_period_range = "-"
+    mail_template_payload = {
+        "today": today.strftime("%Y/%m/%d"),
+        "sections": mail_sections,
+        "period_name": current_period_label,
+        "period_range": current_period_range,
+        "un_wv_summary": {
+            "actual_text": _format_yen(un_wv_month_actual),
+            "target_text": _format_yen(un_wv_month_target),
+            "rate": un_wv_month_rate,
+        },
+    }
+
     context = {
         "today_str": today.strftime("%Y/%m/%d"),
         "submission_rows": submission_rows,
@@ -306,6 +416,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         "target_period_status": period_status,
         "current_period_label": current_period_label,
         "target_progress_rows": target_progress_rows,
+        "mail_template_payload": mail_template_payload,
     }
     return render(request, "dashboard/admin.html", context)
 
