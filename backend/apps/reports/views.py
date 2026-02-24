@@ -1,5 +1,6 @@
-from datetime import timedelta
+﻿from datetime import timedelta
 
+from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -20,6 +21,7 @@ REPORT_ROUTE_BY_DEPARTMENT_CODE = {
     "STYLE1": "report_style1",
     "STYLE2": "report_style2",
 }
+SPLIT_COUNT_CODES = {"WV"}
 
 
 def _period_status(*, today, start_date, end_date) -> str:
@@ -30,9 +32,13 @@ def _period_status(*, today, start_date, end_date) -> str:
     return "finished"
 
 
-def _metric_actual_value(*, metric_code, total_count, total_amount):
-    if metric_code in {"count", "cs_count", "refugee_count"}:
+def _metric_actual_value(*, metric_code, total_count, total_amount, total_cs_count=0, total_refugee_count=0):
+    if metric_code == "count":
         return total_count
+    if metric_code == "cs_count":
+        return total_cs_count
+    if metric_code == "refugee_count":
+        return total_refugee_count
     if metric_code == "amount":
         return total_amount
     return 0
@@ -46,13 +52,18 @@ def _collect_actual_totals(*, start_date, end_date, target_codes):
             report__department__code__in=target_codes,
         )
         .select_related("report__department")
-        .values("report__department__code", "count", "amount")
+        .values("report__department__code", "count", "amount", "cs_count", "refugee_count")
     )
-    totals = {code: {"count": 0, "amount": 0} for code in target_codes}
+    totals = {
+        code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
+        for code in target_codes
+    }
     for line in lines:
         code = line["report__department__code"]
         totals[code]["count"] += line["count"]
         totals[code]["amount"] += line["amount"]
+        totals[code]["cs_count"] += line["cs_count"]
+        totals[code]["refugee_count"] += line["refugee_count"]
     return totals
 
 
@@ -70,6 +81,8 @@ def _format_metric_triples(*, metrics, target_values, actual_totals):
             metric_code=metric.code,
             total_count=actual_totals["count"],
             total_amount=actual_totals["amount"],
+            total_cs_count=actual_totals.get("cs_count", 0),
+            total_refugee_count=actual_totals.get("refugee_count", 0),
         )
         rate = f"{(actual / target) * 100:.1f}%" if target > 0 else "-"
         target_parts.append(f"{label} {target}{unit}")
@@ -110,18 +123,23 @@ def _dashboard_cards_context():
         if latest:
             submission_rows.append(
                 {
+                    "code": code,
                     "label": label,
                     "reporter_name": latest.reporter.name if latest.reporter else "-",
                     "submitted_time": timezone.localtime(latest.created_at).strftime("%H:%M"),
-                    "status": "提出済",
+                    "status": "提出済み",
                     "count": total_count,
                     "amount": total_amount,
                     "report_id": latest.id,
+                    "has_split_counts": code in SPLIT_COUNT_CODES,
+                    "cs_count": 0,
+                    "refugee_count": 0,
                 }
             )
         else:
             submission_rows.append(
                 {
+                    "code": code,
                     "label": label,
                     "reporter_name": "-",
                     "submitted_time": "-",
@@ -129,6 +147,9 @@ def _dashboard_cards_context():
                     "count": "-",
                     "amount": "-",
                     "report_id": None,
+                    "has_split_counts": code in SPLIT_COUNT_CODES,
+                    "cs_count": "-",
+                    "refugee_count": "-",
                 }
             )
 
@@ -138,6 +159,8 @@ def _dashboard_cards_context():
         daily_totals[code] = {
             "count": sum(r.total_count for r in dept_reports),
             "amount": sum(r.followup_count for r in dept_reports),
+            "cs_count": 0,
+            "refugee_count": 0,
         }
 
     lines_query = DailyDepartmentReportLine.objects.filter(
@@ -148,17 +171,36 @@ def _dashboard_cards_context():
     else:
         lines_query = lines_query.none()
     member_totals = {code: {} for code in target_codes}
+    line_totals = {code: {"cs_count": 0, "refugee_count": 0} for code in target_codes}
     for line in lines_query:
         code = line.report.department.code
-        member_name = line.member.name if line.member else "未設定"
+        member_name = line.member.name if line.member else "-"
         if member_name not in member_totals[code]:
-            member_totals[code][member_name] = {"member_name": member_name, "count": 0, "amount": 0}
+            member_totals[code][member_name] = {
+                "member_name": member_name,
+                "count": 0,
+                "amount": 0,
+                "cs_count": 0,
+                "refugee_count": 0,
+            }
         member_totals[code][member_name]["count"] += line.count
         member_totals[code][member_name]["amount"] += line.amount
+        member_totals[code][member_name]["cs_count"] += line.cs_count
+        member_totals[code][member_name]["refugee_count"] += line.refugee_count
+        line_totals[code]["cs_count"] += line.cs_count
+        line_totals[code]["refugee_count"] += line.refugee_count
 
     def member_rows_for(code):
         rows = list(member_totals[code].values())
         return sorted(rows, key=lambda x: (-x["amount"], -x["count"], x["member_name"]))
+
+    for code, _ in target_departments:
+        daily_totals[code]["cs_count"] = line_totals[code]["cs_count"]
+        daily_totals[code]["refugee_count"] = line_totals[code]["refugee_count"]
+    for row in submission_rows:
+        if row["has_split_counts"] and row["count"] != "-":
+            row["cs_count"] = line_totals[row["code"]]["cs_count"]
+            row["refugee_count"] = line_totals[row["code"]]["refugee_count"]
 
     current_month = today.replace(day=1)
     if not MonthTargetMetricValue.objects.filter(target_month=current_month).exists():
@@ -274,9 +316,13 @@ def _dashboard_cards_context():
     for code, label in target_departments:
         kpi_cards.append(
             {
+                "code": code,
                 "title": label,
                 "count": daily_totals[code]["count"],
                 "amount": daily_totals[code]["amount"],
+                "has_split_counts": code in SPLIT_COUNT_CODES,
+                "cs_count": daily_totals[code]["cs_count"],
+                "refugee_count": daily_totals[code]["refugee_count"],
                 "members": member_rows_for(code),
             }
         )
@@ -368,8 +414,10 @@ def _build_row_values(*, request: HttpRequest):
     member_ids = request.POST.getlist("member_ids")
     amounts = request.POST.getlist("amounts")
     counts = request.POST.getlist("counts")
+    cs_counts = request.POST.getlist("cs_counts")
+    refugee_counts = request.POST.getlist("refugee_counts")
     locations = request.POST.getlist("locations")
-    size = max(len(member_ids), len(amounts), len(counts), len(locations), 2)
+    size = max(len(member_ids), len(amounts), len(counts), len(cs_counts), len(refugee_counts), len(locations), 2)
     rows = []
     for i in range(size):
         rows.append(
@@ -377,19 +425,23 @@ def _build_row_values(*, request: HttpRequest):
                 "member_id": member_ids[i] if i < len(member_ids) else "",
                 "amount": amounts[i] if i < len(amounts) else "0",
                 "count": counts[i] if i < len(counts) else "0",
+                "cs_count": cs_counts[i] if i < len(cs_counts) else "0",
+                "refugee_count": refugee_counts[i] if i < len(refugee_counts) else "0",
                 "location": locations[i] if i < len(locations) else "",
             }
         )
     return rows
 
 
-def _parse_rows(*, rows, allowed_member_ids):
+def _parse_rows(*, rows, allowed_member_ids, split_counts=False):
     parsed_rows = []
     row_errors = []
     for idx, row in enumerate(rows, start=1):
         member_id_str = row["member_id"].strip()
         amount_str = row["amount"].strip() or "0"
         count_str = row["count"].strip() or "0"
+        cs_count_str = row["cs_count"].strip() or "0"
+        refugee_count_str = row["refugee_count"].strip() or "0"
         location = row["location"].strip()
         if not member_id_str:
             continue
@@ -400,12 +452,19 @@ def _parse_rows(*, rows, allowed_member_ids):
 
         try:
             amount = int(amount_str)
-            count = int(count_str)
+            if split_counts:
+                cs_count = int(cs_count_str)
+                refugee_count = int(refugee_count_str)
+                count = cs_count + refugee_count
+            else:
+                count = int(count_str)
+                cs_count = 0
+                refugee_count = 0
         except ValueError:
             row_errors.append(f"{idx}行目: 金額と件数は数値で入力してください。")
             continue
 
-        if amount < 0 or count < 0:
+        if amount < 0 or count < 0 or cs_count < 0 or refugee_count < 0:
             row_errors.append(f"{idx}行目: 金額と件数は0以上で入力してください。")
             continue
 
@@ -414,6 +473,8 @@ def _parse_rows(*, rows, allowed_member_ids):
                 "member_id": int(member_id_str),
                 "amount": amount,
                 "count": count,
+                "cs_count": cs_count,
+                "refugee_count": refugee_count,
                 "location": location,
             }
         )
@@ -432,13 +493,15 @@ def _build_initial_rows_from_report(report: DailyDepartmentReport):
                 "member_id": str(line.member_id) if line.member_id else "",
                 "amount": str(line.amount),
                 "count": str(line.count),
+                "cs_count": str(line.cs_count),
+                "refugee_count": str(line.refugee_count),
                 "location": line.location,
             }
         )
     if not rows:
         rows = [
-            {"member_id": "", "amount": "0", "count": "0", "location": ""},
-            {"member_id": "", "amount": "0", "count": "0", "location": ""},
+            {"member_id": "", "amount": "0", "count": "0", "cs_count": "0", "refugee_count": "0", "location": ""},
+            {"member_id": "", "amount": "0", "count": "0", "cs_count": "0", "refugee_count": "0", "location": ""},
         ]
     return rows
 
@@ -450,6 +513,7 @@ def _render_report_form(
     title: str,
     location_label: str,
     show_location: bool = True,
+    split_counts: bool = False,
     editing_report: DailyDepartmentReport | None = None,
     redirect_target: str = "dashboard_index",
 ) -> HttpResponse:
@@ -468,7 +532,11 @@ def _render_report_form(
         if not show_location:
             for row in row_values:
                 row["location"] = ""
-        parsed_rows, row_errors = _parse_rows(rows=row_values, allowed_member_ids=allowed_member_ids)
+        parsed_rows, row_errors = _parse_rows(
+            rows=row_values,
+            allowed_member_ids=allowed_member_ids,
+            split_counts=split_counts,
+        )
 
         if form.is_valid() and not row_errors:
             department = _resolve_department(code=dept_code, label=dept_code)
@@ -514,6 +582,8 @@ def _render_report_form(
                         member=member_map[row["member_id"]],
                         amount=row["amount"],
                         count=row["count"],
+                        cs_count=row["cs_count"],
+                        refugee_count=row["refugee_count"],
                         location=row["location"],
                     )
                     for row in parsed_rows
@@ -543,12 +613,17 @@ def _render_report_form(
                 initial["reporter"] = default_reporter_id
             form = ReportSubmissionForm(initial=initial, members=members)
             row_values = [
-                {"member_id": "", "amount": "0", "count": "0", "location": ""},
-                {"member_id": "", "amount": "0", "count": "0", "location": ""},
+                {"member_id": "", "amount": "0", "count": "0", "cs_count": "0", "refugee_count": "0", "location": ""},
+                {"member_id": "", "amount": "0", "count": "0", "cs_count": "0", "refugee_count": "0", "location": ""},
             ]
 
     recent_reports = (
-        DailyDepartmentReport.objects.filter(department__code=dept_code).select_related("reporter")[:10]
+        DailyDepartmentReport.objects.filter(department__code=dept_code)
+        .select_related("reporter")
+        .annotate(
+            cs_count_total=Sum("lines__cs_count"),
+            refugee_count_total=Sum("lines__refugee_count"),
+        )[:10]
     )
     if form.is_bound:
         selected_reporter_id = str(form.data.get("reporter", "") or "")
@@ -566,6 +641,7 @@ def _render_report_form(
             "title": title,
             "location_label": location_label,
             "show_location": show_location,
+            "split_counts": split_counts,
             "form": form,
             "members": members,
             "row_values": row_values,
@@ -600,6 +676,7 @@ def report_wv(request: HttpRequest) -> HttpResponse:
         dept_code="WV",
         title=f"{department.name if department else 'WV'} 報告フォーム",
         location_label="現場",
+        split_counts=True,
     )
 
 
@@ -625,3 +702,5 @@ def report_style2(request: HttpRequest) -> HttpResponse:
         location_label="現場",
         show_location=False,
     )
+
+

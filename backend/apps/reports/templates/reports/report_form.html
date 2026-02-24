@@ -18,7 +18,7 @@
     {% if show_location %}
     <p class="muted">メンバー・金額・件数・{{ location_label }}を行追加しながら入力できます。</p>
     {% else %}
-    <p class="muted">メンバー・金額・件数を行追加しながら入力できます。{{ location_label }}は固定です。</p>
+    <p class="muted">メンバー・金額・件数を行追加しながら入力できます。{{ location_label }}は不要です。</p>
     {% endif %}
 
     {% if submitted %}
@@ -26,7 +26,7 @@
     {% endif %}
 
     {% if is_edit %}
-    <div class="note" style="margin-top: 10px;">この画面は当日提出分の修正モードです。保存で上書きされます。</div>
+    <div class="note" style="margin-top: 10px;">この画面は当日・過去データの修正モードです。変更後に再保存できます。</div>
     {% endif %}
 
     {% if row_errors %}
@@ -63,7 +63,12 @@
           <tr>
             <th>メンバー</th>
             <th>金額(円)</th>
+            {% if split_counts %}
+            <th>CS件数</th>
+            <th>難民件数</th>
+            {% else %}
             <th>件数</th>
+            {% endif %}
             {% if show_location %}
             <th>{{ location_label }}</th>
             {% endif %}
@@ -81,7 +86,12 @@
               </select>
             </td>
             <td><input type="number" min="0" name="amounts" value="{{ row.amount|default:'0' }}"></td>
+            {% if split_counts %}
+            <td><input type="number" min="0" name="cs_counts" value="{{ row.cs_count|default:'0' }}"></td>
+            <td><input type="number" min="0" name="refugee_counts" value="{{ row.refugee_count|default:'0' }}"></td>
+            {% else %}
             <td><input type="number" min="0" name="counts" value="{{ row.count|default:'0' }}"></td>
+            {% endif %}
             {% if show_location %}
             <td><input name="locations" value="{{ row.location }}"></td>
             {% endif %}
@@ -96,7 +106,7 @@
 
       {% if not members %}
       <div class="note" style="margin-top: 10px;">
-        この部門に所属するメンバーが未設定です。管理者ページのメンバー設定で所属部門を設定してください。
+        この部門に所属するメンバーが未登録です。管理ページのメンバー設定で所属部門を設定してください。
       </div>
       {% endif %}
 
@@ -106,7 +116,7 @@
       </div>
 
       <div style="margin-top: 14px;">
-        <button type="submit">{% if is_edit %}修正を保存{% else %}部署分を一括送信{% endif %}</button>
+        <button type="submit">{% if is_edit %}修正して保存{% else %}部門分を一括送信{% endif %}</button>
       </div>
     </form>
   </section>
@@ -121,7 +131,12 @@
         <tr>
           <th>報告日</th>
           <th>責任者</th>
+          {% if split_counts %}
+          <th>CS件数合計</th>
+          <th>難民件数合計</th>
+          {% else %}
           <th>件数合計</th>
+          {% endif %}
           <th>金額合計(円)</th>
           <th>メモ</th>
         </tr>
@@ -131,13 +146,18 @@
         <tr>
           <td>{{ report.report_date }}</td>
           <td>{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
+          {% if split_counts %}
+          <td>{{ report.cs_count_total|default_if_none:0 }}</td>
+          <td>{{ report.refugee_count_total|default_if_none:0 }}</td>
+          {% else %}
           <td>{{ report.total_count }}</td>
+          {% endif %}
           <td>{{ report.followup_count }}</td>
           <td>{{ report.memo|default:"-" }}</td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="5">まだ送信データがありません。</td>
+          <td colspan="{% if split_counts %}6{% else %}5{% endif %}">まだ送信データがありません。</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -160,7 +180,12 @@
         el.selectedIndex = 0;
       });
       clone.querySelectorAll("input").forEach(function (el) {
-        if (el.name === "amounts" || el.name === "counts") {
+        if (
+          el.name === "amounts" ||
+          el.name === "counts" ||
+          el.name === "cs_counts" ||
+          el.name === "refugee_counts"
+        ) {
           el.value = "0";
         } else {
           el.value = "";

@@ -1,4 +1,4 @@
-from datetime import timedelta
+﻿from datetime import timedelta
 
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,6 +12,8 @@ from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetr
 
 from .forms import DepartmentForm, MemberRegistrationForm, TargetMetricForm
 
+SPLIT_COUNT_CODES = {"WV"}
+
 
 def _period_status(*, today, start_date, end_date) -> str:
     if start_date <= today <= end_date:
@@ -21,9 +23,13 @@ def _period_status(*, today, start_date, end_date) -> str:
     return "finished"
 
 
-def _metric_actual_value(*, metric_code, total_count, total_amount):
-    if metric_code in {"count", "cs_count", "refugee_count"}:
+def _metric_actual_value(*, metric_code, total_count, total_amount, total_cs_count=0, total_refugee_count=0):
+    if metric_code == "count":
         return total_count
+    if metric_code == "cs_count":
+        return total_cs_count
+    if metric_code == "refugee_count":
+        return total_refugee_count
     if metric_code == "amount":
         return total_amount
     return 0
@@ -37,13 +43,18 @@ def _collect_actual_totals(*, start_date, end_date, target_codes):
             report__department__code__in=target_codes,
         )
         .select_related("report__department")
-        .values("report__department__code", "count", "amount")
+        .values("report__department__code", "count", "amount", "cs_count", "refugee_count")
     )
-    totals = {code: {"count": 0, "amount": 0} for code in target_codes}
+    totals = {
+        code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
+        for code in target_codes
+    }
     for line in lines:
         code = line["report__department__code"]
         totals[code]["count"] += line["count"]
         totals[code]["amount"] += line["amount"]
+        totals[code]["cs_count"] += line["cs_count"]
+        totals[code]["refugee_count"] += line["refugee_count"]
     return totals
 
 
@@ -61,6 +72,8 @@ def _format_metric_triples(*, metrics, target_values, actual_totals):
             metric_code=metric.code,
             total_count=actual_totals["count"],
             total_amount=actual_totals["amount"],
+            total_cs_count=actual_totals.get("cs_count", 0),
+            total_refugee_count=actual_totals.get("refugee_count", 0),
         )
         if target > 0:
             rate = f"{(actual / target) * 100:.1f}%"
@@ -80,6 +93,8 @@ def _metric_detail_rows(*, metrics, target_values, actual_totals):
             metric_code=metric.code,
             total_count=actual_totals["count"],
             total_amount=actual_totals["amount"],
+            total_cs_count=actual_totals.get("cs_count", 0),
+            total_refugee_count=actual_totals.get("refugee_count", 0),
         )
         rate = f"{(actual / target) * 100:.1f}%" if target > 0 else "-"
         rows.append(
@@ -134,6 +149,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         if latest:
             submission_rows.append(
                 {
+                    "code": code,
                     "label": label,
                     "reporter_name": latest.reporter.name if latest.reporter else "-",
                     "submitted_time": timezone.localtime(latest.created_at).strftime("%H:%M"),
@@ -141,11 +157,15 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
                     "count": total_count,
                     "amount": total_amount,
                     "report_id": latest.id,
+                    "has_split_counts": code in SPLIT_COUNT_CODES,
+                    "cs_count": 0,
+                    "refugee_count": 0,
                 }
             )
         else:
             submission_rows.append(
                 {
+                    "code": code,
                     "label": label,
                     "reporter_name": "-",
                     "submitted_time": "-",
@@ -153,6 +173,9 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
                     "count": "-",
                     "amount": "-",
                     "report_id": None,
+                    "has_split_counts": code in SPLIT_COUNT_CODES,
+                    "cs_count": "-",
+                    "refugee_count": "-",
                 }
             )
 
@@ -162,6 +185,8 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         daily_totals[code] = {
             "count": sum(r.total_count for r in dept_reports),
             "amount": sum(r.followup_count for r in dept_reports),
+            "cs_count": 0,
+            "refugee_count": 0,
         }
 
     lines_query = DailyDepartmentReportLine.objects.filter(
@@ -173,26 +198,53 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         lines_query = lines_query.none()
     lines = lines_query
     member_totals = {code: {} for code in target_codes}
+    line_totals = {code: {"cs_count": 0, "refugee_count": 0} for code in target_codes}
     for line in lines:
         code = line.report.department.code
-        member_name = line.member.name if line.member else "未設定"
+        member_name = line.member.name if line.member else "-"
         if member_name not in member_totals[code]:
-            member_totals[code][member_name] = {"member_name": member_name, "count": 0, "amount": 0}
+            member_totals[code][member_name] = {
+                "member_name": member_name,
+                "count": 0,
+                "amount": 0,
+                "cs_count": 0,
+                "refugee_count": 0,
+            }
         member_totals[code][member_name]["count"] += line.count
         member_totals[code][member_name]["amount"] += line.amount
+        member_totals[code][member_name]["cs_count"] += line.cs_count
+        member_totals[code][member_name]["refugee_count"] += line.refugee_count
+        line_totals[code]["cs_count"] += line.cs_count
+        line_totals[code]["refugee_count"] += line.refugee_count
 
     def member_rows_for(codes):
         merged = {}
         for code in codes:
             for member_name, totals in member_totals[code].items():
                 if member_name not in merged:
-                    merged[member_name] = {"member_name": member_name, "count": 0, "amount": 0}
+                    merged[member_name] = {
+                        "member_name": member_name,
+                        "count": 0,
+                        "amount": 0,
+                        "cs_count": 0,
+                        "refugee_count": 0,
+                    }
                 merged[member_name]["count"] += totals["count"]
                 merged[member_name]["amount"] += totals["amount"]
+                merged[member_name]["cs_count"] += totals["cs_count"]
+                merged[member_name]["refugee_count"] += totals["refugee_count"]
         return sorted(
             merged.values(),
             key=lambda x: (-x["amount"], -x["count"], x["member_name"]),
         )
+
+    for code, _ in target_departments:
+        daily_totals[code]["cs_count"] = line_totals[code]["cs_count"]
+        daily_totals[code]["refugee_count"] = line_totals[code]["refugee_count"]
+    for row in submission_rows:
+        if row["has_split_counts"] and row["count"] != "-":
+            row["cs_count"] = line_totals[row["code"]]["cs_count"]
+            row["refugee_count"] = line_totals[row["code"]]["refugee_count"]
 
 
     current_month = today.replace(day=1)
@@ -331,9 +383,13 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
     for code, label in target_departments:
         kpi_cards.append(
             {
+                "code": code,
                 "title": label,
                 "count": daily_totals[code]["count"],
                 "amount": daily_totals[code]["amount"],
+                "has_split_counts": code in SPLIT_COUNT_CODES,
+                "cs_count": daily_totals[code]["cs_count"],
+                "refugee_count": daily_totals[code]["refugee_count"],
                 "members": member_rows_for([code]),
             }
         )
@@ -345,8 +401,8 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
     section_order = [
         ("UN", "UN①"),
         ("WV", "UN②"),
-        ("STYLE2", "styleチーム"),
-        ("STYLE1", "styleチーム"),
+        ("STYLE2", "Styleチーム"),
+        ("STYLE1", "Styleチーム"),
     ]
     for code, heading in section_order:
         if code not in label_by_code:
@@ -361,11 +417,11 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             for row in members_by_code.get(code, [])
         ]
         month_metric_lines = [
-            f"{row['label']}{row['actual']}/{row['target']}{row['unit']}（達成率{row['rate']}）"
+            f"{row['label']} {row['actual']}/{row['target']}{row['unit']} 達成率{row['rate']}"
             for row in metric_detail_by_code.get(code, {}).get("month", [])
         ]
         period_metric_lines = [
-            f"{row['label']}{row['actual']}/{row['target']}{row['unit']}（達成率{row['rate']}）"
+            f"{row['label']} {row['actual']}/{row['target']}{row['unit']} 達成率{row['rate']}"
             for row in metric_detail_by_code.get(code, {}).get("period", [])
         ]
         mail_sections.append(
@@ -391,7 +447,10 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
     un_wv_month_rate = f"{(un_wv_month_actual / un_wv_month_target) * 100:.1f}%" if un_wv_month_target > 0 else "-"
 
     if current_period:
-        current_period_range = f"{current_period.start_date.month}/{current_period.start_date.day}～{current_period.end_date.month}/{current_period.end_date.day}"
+        current_period_range = (
+            f"{current_period.start_date.month}/{current_period.start_date.day}"
+            f"～{current_period.end_date.month}/{current_period.end_date.day}"
+        )
     else:
         current_period_range = "-"
     mail_template_payload = {
@@ -512,7 +571,7 @@ def department_settings(request: HttpRequest) -> HttpResponse:
                     duplicate_query = duplicate_query.exclude(id=int(edit_department_id))
 
                 if duplicate_query.exists():
-                    form.add_error("code", "この部署コードは既に使われています。")
+                    form.add_error("code", "この部署コードはすでに使用されています。")
                 else:
                     if edit_department_id and edit_department_id.isdigit():
                         department = get_object_or_404(Department, id=int(edit_department_id))
@@ -520,7 +579,10 @@ def department_settings(request: HttpRequest) -> HttpResponse:
                             member=default_reporter,
                             department=department,
                         ).exists():
-                            form.add_error("default_reporter", "この担当者は選択中の部署に所属していません。")
+                            form.add_error(
+                                "default_reporter",
+                                "責任者は選択中の部署に所属するメンバーを選んでください。",
+                            )
                         else:
                             department.name = form.cleaned_data["name"].strip()
                             department.code = code
@@ -536,7 +598,7 @@ def department_settings(request: HttpRequest) -> HttpResponse:
                             default_reporter=None,
                             is_active=True,
                         )
-                        status_message = f"{department.name}（{department.code}）を登録しました。"
+                        status_message = f"{department.name}（{department.code}）を追加しました。"
                         edit_department = None
                         form = _department_form()
 
@@ -566,7 +628,7 @@ def department_settings(request: HttpRequest) -> HttpResponse:
                     duplicate_query = duplicate_query.exclude(id=edit_metric.id)
 
                 if duplicate_query.exists():
-                    metric_form.add_error("code", "この指標コードは既に使われています。")
+                    metric_form.add_error("code", "この指標コードはすでに使用されています。")
                 else:
                     if edit_metric:
                         edit_metric.department = selected_metric_department
@@ -717,3 +779,5 @@ def member_settings(request: HttpRequest) -> HttpResponse:
             "selected_department_ids": selected_department_ids,
         },
     )
+
+

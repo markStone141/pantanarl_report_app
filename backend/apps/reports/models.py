@@ -46,6 +46,8 @@ class DailyDepartmentReportLine(models.Model):
     )
     amount = models.PositiveIntegerField(default=0)
     count = models.PositiveIntegerField(default=0)
+    cs_count = models.PositiveIntegerField(default=0)
+    refugee_count = models.PositiveIntegerField(default=0)
     location = models.CharField(max_length=128, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
