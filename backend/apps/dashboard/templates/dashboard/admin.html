@@ -98,6 +98,7 @@
     <article class="card">
       <h3>目標管理</h3>
       <p class="muted">対象月: {{ target_month_summary }} [{{ target_month_status }}] / 現在路程: {{ target_period_summary }} [{{ target_period_status }}]</p>
+      <h4 style="margin: 12px 0 8px;">月目標</h4>
       <table>
         <thead>
           <tr>
@@ -105,9 +106,6 @@
             <th>月目標</th>
             <th>月累計実績</th>
             <th>月達成率</th>
-            <th>路程目標</th>
-            <th>路程累計実績</th>
-            <th>路程達成率</th>
           </tr>
         </thead>
         <tbody>
@@ -117,12 +115,33 @@
             <td>{{ row.month_target }}</td>
             <td>{{ row.month_actual }}</td>
             <td>{{ row.month_rate }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4">目標データがありません。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h4 style="margin: 16px 0 8px;">路程目標</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>部署</th>
+            <th>路程目標</th>
+            <th>路程累計実績</th>
+            <th>路程達成率</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in target_progress_rows %}
+          <tr>
+            <td>{{ row.label }}</td>
             <td>{{ row.period_target }}</td>
             <td>{{ row.period_actual }}</td>
             <td>{{ row.period_rate }}</td>
           </tr>
           {% empty %}
-          <tr><td colspan="7">目標データがありません。</td></tr>
+          <tr><td colspan="4">目標データがありません。</td></tr>
           {% endfor %}
         </tbody>
       </table>
