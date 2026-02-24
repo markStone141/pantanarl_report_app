@@ -7,7 +7,6 @@
   <header class="topbar">
     <div>
       <strong>管理者ページ</strong>
-      <div class="muted" style="color: #e1f1f5;">提出状況、部門別実績、目標進捗を確認できます。</div>
     </div>
     <nav>
       <a href="{% url 'dashboard_index' %}">ダッシュボード</a>
@@ -24,7 +23,7 @@
       <h3>提出状況一覧</h3>
       <span class="badge">対象日: {{ today_str }}</span>
     </div>
-    <table>
+    <table class="mobile-card-table">
       <thead>
         <tr>
           <th>部署</th>
@@ -40,14 +39,14 @@
       <tbody>
         {% for row in submission_rows %}
         <tr>
-          <td>{{ row.label }}</td>
-          <td>{{ row.reporter_name }}</td>
-          <td>{{ row.submitted_time }}</td>
-          <td><span class="badge">{{ row.status }}</span></td>
-          <td>{{ row.count }}</td>
-          <td>{% if row.has_split_counts %}CS {{ row.cs_count }} / 難民 {{ row.refugee_count }}{% else %}-{% endif %}</td>
-          <td>{{ row.amount }}</td>
-          <td>
+          <td data-label="部署">{{ row.label }}</td>
+          <td data-label="担当者">{{ row.reporter_name }}</td>
+          <td data-label="提出時刻">{{ row.submitted_time }}</td>
+          <td data-label="ステータス"><span class="badge">{{ row.status }}</span></td>
+          <td data-label="件数">{{ row.count }}</td>
+          <td data-label="件数内訳">{% if row.has_split_counts %}CS {{ row.cs_count }} / 難民 {{ row.refugee_count }}{% else %}-{% endif %}</td>
+          <td data-label="金額">{{ row.amount }}</td>
+          <td data-label="修正">
             {% if row.report_id %}
             <a href="{% url 'report_edit' row.report_id %}"><button type="button" class="btn-inline">修正</button></a>
             {% else %}
@@ -74,36 +73,38 @@
         {% else %}
         <p class="muted">{{ card.count }} 件</p>
         {% endif %}
-        <label style="margin-top: 8px;">個人成績</label>
-        <table>
-          <thead>
-            {% if card.has_split_counts %}
-            <tr><th>メンバー</th><th>CS</th><th>難民</th><th>金額</th></tr>
-            {% else %}
-            <tr><th>メンバー</th><th>件数</th><th>金額</th></tr>
-            {% endif %}
-          </thead>
-          <tbody>
-            {% for row in card.members %}
-            <tr>
-              <td>{{ row.member_name }}</td>
+        <details class="mobile-only-accordion" style="margin-top: 8px;">
+          <summary style="cursor: pointer;">個人成績を表示</summary>
+          <table style="margin-top: 8px;">
+            <thead>
               {% if card.has_split_counts %}
-              <td>{{ row.cs_count }}</td>
-              <td>{{ row.refugee_count }}</td>
+              <tr><th>メンバー</th><th>CS</th><th>難民</th><th>金額</th></tr>
               {% else %}
-              <td>{{ row.count }}</td>
+              <tr><th>メンバー</th><th>件数</th><th>金額</th></tr>
               {% endif %}
-              <td>{{ row.amount }}</td>
-            </tr>
-            {% empty %}
-            {% if card.has_split_counts %}
-            <tr><td>-</td><td>-</td><td>-</td><td>-</td></tr>
-            {% else %}
-            <tr><td>-</td><td>-</td><td>-</td></tr>
-            {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for row in card.members %}
+              <tr>
+                <td>{{ row.member_name }}</td>
+                {% if card.has_split_counts %}
+                <td>{{ row.cs_count }}</td>
+                <td>{{ row.refugee_count }}</td>
+                {% else %}
+                <td>{{ row.count }}</td>
+                {% endif %}
+                <td>{{ row.amount }}</td>
+              </tr>
+              {% empty %}
+              {% if card.has_split_counts %}
+              <tr><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+              {% else %}
+              <tr><td>-</td><td>-</td><td>-</td></tr>
+              {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </details>
       </article>
       {% endfor %}
     </div>
@@ -111,46 +112,41 @@
 
   <section style="margin-top: 16px; display: grid; gap: 16px;">
     <article class="card">
-      <h3>日次まとめメール</h3>
-      <p class="muted">テンプレートを生成してコピーできます。</p>
-      <button type="button" id="build-mail">テンプレート生成</button>
+      <h3>メール本文作成</h3>
       <label for="mail-comment">コメント</label>
       <textarea id="mail-comment" placeholder="コメントを入力"></textarea>
-      <label for="mail-body">メール本文（コピー用）</label>
-      <textarea id="mail-body" placeholder="ここに本文が出力されます"></textarea>
-      <div style="display: flex; gap: 8px; margin-top: 8px;">
-        <button type="button" id="preview-mail">全文プレビュー</button>
-        <button type="button" id="copy-mail">本文をコピー</button>
-      </div>
+      <button type="button" id="build-mail" style="margin-top: 10px;">テンプレート生成</button>
     </article>
 
     <article class="card">
       <h3>目標管理</h3>
       <p class="muted">対象月: {{ target_month_summary }} [{{ target_month_status }}] / 現在路程: {{ target_period_summary }} [{{ target_period_status }}]</p>
 
-      <h4 style="margin: 12px 0 8px;">月目標</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>部署</th>
-            <th>月目標</th>
-            <th>月累計実績</th>
-            <th>達成率</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in target_progress_rows %}
-          <tr>
-            <td>{{ row.label }}</td>
-            <td>{{ row.month_target }}</td>
-            <td>{{ row.month_actual }}</td>
-            <td>{{ row.month_rate }}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="4">目標データがありません。</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <details class="mobile-only-accordion" style="margin-top: 10px;">
+        <summary style="cursor: pointer;">月目標（詳細）</summary>
+        <table style="margin-top: 8px;">
+          <thead>
+            <tr>
+              <th>部署</th>
+              <th>月目標</th>
+              <th>月累計実績</th>
+              <th>達成率</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in target_progress_rows %}
+            <tr>
+              <td>{{ row.label }}</td>
+              <td>{{ row.month_target }}</td>
+              <td>{{ row.month_actual }}</td>
+              <td>{{ row.month_rate }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">目標データがありません。</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
 
       <h4 style="margin: 16px 0 8px;">路程目標</h4>
       <table>
@@ -251,22 +247,21 @@
     const payloadEl = document.getElementById("mail-template-data");
     const payload = payloadEl ? JSON.parse(payloadEl.textContent) : null;
     const buildBtn = document.getElementById("build-mail");
-    const previewBtn = document.getElementById("preview-mail");
-    const copyBtn = document.getElementById("copy-mail");
     const commentEl = document.getElementById("mail-comment");
-    const bodyEl = document.getElementById("mail-body");
     const modalEl = document.getElementById("mail-preview-modal");
     const closeModalBtn = document.getElementById("close-mail-preview");
     const copyPreviewBtn = document.getElementById("copy-mail-preview");
     const previewContent = document.getElementById("mail-preview-content");
-    if (!payload || !buildBtn || !previewBtn || !copyBtn || !commentEl || !bodyEl || !modalEl || !closeModalBtn || !copyPreviewBtn || !previewContent) return;
+    if (!payload || !buildBtn || !commentEl || !modalEl || !closeModalBtn || !copyPreviewBtn || !previewContent) return;
+
+    let generatedBody = "";
 
     function openPreview() {
-      if (!bodyEl.value.trim()) {
+      if (!generatedBody.trim()) {
         alert("先にテンプレートを生成してください。");
         return;
       }
-      previewContent.textContent = bodyEl.value;
+      previewContent.textContent = generatedBody;
       modalEl.style.display = "block";
     }
 
@@ -275,41 +270,66 @@
     }
 
     buildBtn.addEventListener("click", function () {
-      bodyEl.value = buildMailBody(payload, commentEl.value);
+      generatedBody = buildMailBody(payload, commentEl.value);
       openPreview();
     });
 
-    previewBtn.addEventListener("click", openPreview);
     closeModalBtn.addEventListener("click", closePreview);
     copyPreviewBtn.addEventListener("click", async function () {
-      if (!bodyEl.value.trim()) return;
+      if (!generatedBody.trim()) return;
       try {
-        await navigator.clipboard.writeText(bodyEl.value);
+        await navigator.clipboard.writeText(generatedBody);
         alert("本文をコピーしました。");
       } catch (e) {
-        bodyEl.select();
+        const tmp = document.createElement("textarea");
+        tmp.value = generatedBody;
+        document.body.appendChild(tmp);
+        tmp.select();
         document.execCommand("copy");
+        tmp.remove();
         alert("本文をコピーしました。");
       }
     });
     modalEl.addEventListener("click", function (e) {
       if (e.target === modalEl) closePreview();
     });
+  })();
 
-    copyBtn.addEventListener("click", async function () {
-      if (!bodyEl.value.trim()) {
-        alert("先にテンプレートを生成してください。");
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(bodyEl.value);
-        alert("本文をコピーしました。");
-      } catch (e) {
-        bodyEl.select();
-        document.execCommand("copy");
-        alert("本文をコピーしました。");
-      }
+  (function () {
+    const detailsEls = document.querySelectorAll("details.mobile-only-accordion");
+    if (!detailsEls.length) return;
+    const mq = window.matchMedia("(max-width: 768px)");
+
+    function syncAccordionMode() {
+      const mobile = mq.matches;
+      detailsEls.forEach(function (detailsEl) {
+        const summaryEl = detailsEl.querySelector("summary");
+        if (!summaryEl) return;
+        if (mobile) {
+          summaryEl.style.display = "";
+          if (!detailsEl.dataset.userToggled) {
+            detailsEl.open = false;
+          }
+        } else {
+          detailsEl.open = true;
+          summaryEl.style.display = "none";
+        }
+      });
+    }
+
+    detailsEls.forEach(function (detailsEl) {
+      detailsEl.addEventListener("toggle", function () {
+        detailsEl.dataset.userToggled = "1";
+      });
     });
+
+    syncAccordionMode();
+    if (mq.addEventListener) {
+      mq.addEventListener("change", syncAccordionMode);
+    } else if (mq.addListener) {
+      mq.addListener(syncAccordionMode);
+    }
+    window.addEventListener("resize", syncAccordionMode);
   })();
 </script>
 {% endblock %}

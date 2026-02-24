@@ -2,10 +2,13 @@ from django import forms
 
 
 class LoginForm(forms.Form):
-    login_id = forms.CharField(
-        label="ID",
-        max_length=64,
-        widget=forms.TextInput(attrs={"placeholder": "admin または report"}),
+    login_id = forms.ChoiceField(
+        label="ログイン種別",
+        choices=(
+            ("admin", "管理者"),
+            ("report", "報告"),
+        ),
+        widget=forms.Select(),
     )
     password = forms.CharField(
         label="パスワード",

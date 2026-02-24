@@ -236,3 +236,53 @@ class ReportSubmitFlowTests(TestCase):
         self.assertEqual(report.memo, "old-fixed")
         self.assertEqual(report.total_count, 3)
         self.assertEqual(report.followup_count, 4000)
+
+    def test_report_form_recent_history_shows_only_today(self):
+        department = Department.objects.create(name="UN", code="UN")
+        reporter = Member.objects.create(name="Alice", login_id="today_only_alice", password="x")
+        MemberDepartment.objects.create(member=reporter, department=department)
+
+        DailyDepartmentReport.objects.create(
+            department=department,
+            report_date=timezone.localdate() - timedelta(days=1),
+            reporter=reporter,
+            total_count=1,
+            followup_count=1000,
+            memo="yesterday-data",
+        )
+        DailyDepartmentReport.objects.create(
+            department=department,
+            report_date=timezone.localdate(),
+            reporter=reporter,
+            total_count=2,
+            followup_count=2000,
+            memo="today-data",
+        )
+
+        response = self.client.get(reverse("report_un"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "today-data")
+        self.assertNotContains(response, "yesterday-data")
+
+    def test_report_delete_removes_selected_report(self):
+        department = Department.objects.create(name="UN", code="UN")
+        reporter = Member.objects.create(name="Alice", login_id="delete_alice", password="x")
+        MemberDepartment.objects.create(member=reporter, department=department)
+
+        report = DailyDepartmentReport.objects.create(
+            department=department,
+            report_date=timezone.localdate(),
+            reporter=reporter,
+            total_count=1,
+            followup_count=1000,
+            memo="delete-me",
+        )
+
+        response = self.client.post(
+            reverse("report_delete", kwargs={"dept_code": "UN", "report_id": report.id}),
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("report_un"))
+        self.assertFalse(DailyDepartmentReport.objects.filter(id=report.id).exists())

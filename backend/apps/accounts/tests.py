@@ -20,7 +20,7 @@ class LoginFlowTests(TestCase):
             reverse("home"),
             {
                 "login_id": "report",
-                "password": "pn19450823",
+                "password": "0823",
             },
         )
         self.assertEqual(response.status_code, 302)

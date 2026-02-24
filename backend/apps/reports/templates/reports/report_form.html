@@ -16,9 +16,9 @@
     <h3>{% if is_edit %}報告修正{% else %}報告入力{% endif %} ({{ dept_name }})</h3>
 
     {% if show_location %}
-    <p class="muted">メンバー・金額・件数・{{ location_label }}を行追加しながら入力できます。</p>
+    <p class="muted">メンバー・金額・件数・{{ location_label }}を追加しながら入力できます。</p>
     {% else %}
-    <p class="muted">メンバー・金額・件数を行追加しながら入力できます。{{ location_label }}は不要です。</p>
+    <p class="muted">メンバー・金額・件数を追加しながら入力できます。{{ location_label }}は不要です。</p>
     {% endif %}
 
     {% if submitted %}
@@ -26,7 +26,7 @@
     {% endif %}
 
     {% if is_edit %}
-    <div class="note" style="margin-top: 10px;">この画面は当日・過去データの修正モードです。変更後に再保存できます。</div>
+    <div class="note" style="margin-top: 10px;">この画面は過去データの修正モードです。変更後に保存してください。</div>
     {% endif %}
 
     {% if row_errors %}
@@ -106,7 +106,7 @@
 
       {% if not members %}
       <div class="note" style="margin-top: 10px;">
-        この部門に所属するメンバーが未登録です。管理ページのメンバー設定で所属部門を設定してください。
+        この部署に所属するメンバーが未登録です。管理者ページのメンバー設定から所属メンバーを追加してください。
       </div>
       {% endif %}
 
@@ -116,14 +116,14 @@
       </div>
 
       <div style="margin-top: 14px;">
-        <button type="submit">{% if is_edit %}修正して保存{% else %}部門分を一括送信{% endif %}</button>
+        <button type="submit">{% if is_edit %}修正して保存{% else %}部署分を一括送信{% endif %}</button>
       </div>
     </form>
   </section>
 
   <section class="card" style="margin-top: 16px;">
     <div class="row">
-      <h3>直近の送信履歴</h3>
+      <h3>本日の送信履歴</h3>
       <span class="badge">{{ dept_name }}</span>
     </div>
     <table class="stacked-card-table" style="margin-top: 8px;">
@@ -139,6 +139,7 @@
           {% endif %}
           <th>金額合計(円)</th>
           <th>メモ</th>
+          <th>操作</th>
         </tr>
       </thead>
       <tbody>
@@ -154,10 +155,19 @@
           {% endif %}
           <td data-label="金額合計(円)">{{ report.followup_count }}</td>
           <td data-label="メモ">{{ report.memo|default:"-" }}</td>
+          <td data-label="操作">
+            <a href="{% url 'report_edit' report.id %}?next={{ current_view_name }}">
+              <button type="button" class="btn-inline">修正</button>
+            </a>
+            <form method="post" action="{% url 'report_delete' dept_code report.id %}" style="display:inline;" onsubmit="return confirm('この報告を削除します。よろしいですか？');">
+              {% csrf_token %}
+              <button type="submit" class="btn-inline btn-danger">削除</button>
+            </form>
+          </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="{% if split_counts %}6{% else %}5{% endif %}">まだ送信データがありません。</td>
+          <td colspan="{% if split_counts %}7{% else %}6{% endif %}">本日の送信データがありません。</td>
         </tr>
         {% endfor %}
       </tbody>

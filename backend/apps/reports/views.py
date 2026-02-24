@@ -1,7 +1,7 @@
 ﻿from datetime import timedelta
 
 from django.db.models import Sum
-from django.http import HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -22,13 +22,13 @@ from .forms import ReportSubmissionForm
 from .models import DailyDepartmentReport, DailyDepartmentReportLine
 
 
-ALLOWED_EDIT_REDIRECTS = {"dashboard_index", "report_history"}
 REPORT_ROUTE_BY_DEPARTMENT_CODE = {
     "UN": "report_un",
     "WV": "report_wv",
     "STYLE1": "report_style1",
     "STYLE2": "report_style2",
 }
+ALLOWED_EDIT_REDIRECTS = {"dashboard_index", "report_history", *REPORT_ROUTE_BY_DEPARTMENT_CODE.values()}
 
 
 def _dashboard_cards_context():
@@ -314,7 +314,7 @@ def report_history(request: HttpRequest) -> HttpResponse:
     return render(request, "reports/report_history.html", {"reports": reports})
 
 
-@require_roles(ROLE_ADMIN)
+@require_roles(ROLE_REPORT, ROLE_ADMIN)
 def report_edit(request: HttpRequest, report_id: int) -> HttpResponse:
     report = get_object_or_404(
         DailyDepartmentReport.objects.select_related("department", "reporter"),
@@ -333,6 +333,23 @@ def report_edit(request: HttpRequest, report_id: int) -> HttpResponse:
         editing_report=report,
         redirect_target=redirect_target,
     )
+
+
+@require_roles(ROLE_REPORT, ROLE_ADMIN)
+def report_delete(request: HttpRequest, dept_code: str, report_id: int) -> HttpResponse:
+    if request.method != "POST":
+        raise Http404
+
+    normalized_code = dept_code.upper()
+    report = get_object_or_404(
+        DailyDepartmentReport.objects.select_related("department"),
+        id=report_id,
+    )
+    if report.department.code != normalized_code:
+        raise Http404
+
+    report.delete()
+    return redirect(reverse(REPORT_ROUTE_BY_DEPARTMENT_CODE.get(normalized_code, "report_index")))
 
 
 def _members_for_department(department_code: str):
@@ -560,12 +577,16 @@ def _render_report_form(
             ]
 
     recent_reports = (
-        DailyDepartmentReport.objects.filter(department__code=dept_code)
+        DailyDepartmentReport.objects.filter(
+            department__code=dept_code,
+            report_date=timezone.localdate(),
+        )
         .select_related("reporter")
         .annotate(
             cs_count_total=Sum("lines__cs_count"),
             refugee_count_total=Sum("lines__refugee_count"),
-        )[:10]
+        )
+        .order_by("-created_at")[:30]
     )
     if form.is_bound:
         selected_reporter_id = str(form.data.get("reporter", "") or "")
@@ -595,6 +616,7 @@ def _render_report_form(
             "is_edit": is_edit,
             "editing_report": editing_report,
             "redirect_target": redirect_target,
+            "current_view_name": request.resolver_match.view_name if request.resolver_match else "",
         },
     )
 

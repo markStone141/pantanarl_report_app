@@ -4,7 +4,7 @@ from django.shortcuts import redirect, render
 from .auth import ROLE_ADMIN, ROLE_REPORT, SESSION_ROLE_KEY
 from .forms import LoginForm
 
-REPORT_PASSWORD = "pn19450823"
+REPORT_PASSWORD = "0823"
 ADMIN_PASSWORD = "pnadmin"
 
 
@@ -24,7 +24,7 @@ def home(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = LoginForm(request.POST)
         if form.is_valid():
-            login_id = form.cleaned_data["login_id"].strip().lower()
+            login_id = form.cleaned_data["login_id"]
             password = form.cleaned_data["password"]
 
             if login_id == ROLE_ADMIN:
@@ -40,7 +40,7 @@ def home(request: HttpRequest) -> HttpResponse:
                     request.session[SESSION_ROLE_KEY] = ROLE_REPORT
                     return redirect("report_index")
             else:
-                form.add_error("login_id", "IDは admin または report を入力してください。")
+                form.add_error("login_id", "ログイン種別を選択してください。")
     else:
         form = LoginForm()
 

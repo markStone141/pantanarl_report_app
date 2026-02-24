@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    report_delete,
     report_edit,
     report_history,
     report_index,
@@ -14,6 +15,7 @@ urlpatterns = [
     path("", report_index, name="report_index"),
     path("history/", report_history, name="report_history"),
     path("edit/<int:report_id>/", report_edit, name="report_edit"),
+    path("<str:dept_code>/delete/<int:report_id>/", report_delete, name="report_delete"),
     path("un/", report_un, name="report_un"),
     path("wv/", report_wv, name="report_wv"),
     path("style1/", report_style1, name="report_style1"),
