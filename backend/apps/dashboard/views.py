@@ -7,111 +7,20 @@ from django.utils.text import slugify
 
 from apps.accounts.auth import ROLE_ADMIN, require_roles
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.common.report_metrics import (
+    SPLIT_COUNT_CODES,
+    STATUS_NOT_SUBMITTED,
+    STATUS_SUBMITTED,
+    collect_actual_totals,
+    format_metric_triples,
+    format_yen,
+    metric_detail_rows,
+    period_status as calc_period_status,
+)
 from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
 from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 
 from .forms import DepartmentForm, MemberRegistrationForm, TargetMetricForm
-
-SPLIT_COUNT_CODES = {"WV"}
-
-
-def _period_status(*, today, start_date, end_date) -> str:
-    if start_date <= today <= end_date:
-        return "active"
-    if today < start_date:
-        return "planned"
-    return "finished"
-
-
-def _metric_actual_value(*, metric_code, total_count, total_amount, total_cs_count=0, total_refugee_count=0):
-    if metric_code == "count":
-        return total_count
-    if metric_code == "cs_count":
-        return total_cs_count
-    if metric_code == "refugee_count":
-        return total_refugee_count
-    if metric_code == "amount":
-        return total_amount
-    return 0
-
-
-def _collect_actual_totals(*, start_date, end_date, target_codes):
-    lines = (
-        DailyDepartmentReportLine.objects.filter(
-            report__report_date__gte=start_date,
-            report__report_date__lte=end_date,
-            report__department__code__in=target_codes,
-        )
-        .select_related("report__department")
-        .values("report__department__code", "count", "amount", "cs_count", "refugee_count")
-    )
-    totals = {
-        code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
-        for code in target_codes
-    }
-    for line in lines:
-        code = line["report__department__code"]
-        totals[code]["count"] += line["count"]
-        totals[code]["amount"] += line["amount"]
-        totals[code]["cs_count"] += line["cs_count"]
-        totals[code]["refugee_count"] += line["refugee_count"]
-    return totals
-
-
-def _format_metric_triples(*, metrics, target_values, actual_totals):
-    if not metrics:
-        return "-", "-", "-"
-    target_parts = []
-    actual_parts = []
-    rate_parts = []
-    for metric in metrics:
-        label = metric.label
-        unit = metric.unit or ""
-        target = target_values.get(metric.id, 0)
-        actual = _metric_actual_value(
-            metric_code=metric.code,
-            total_count=actual_totals["count"],
-            total_amount=actual_totals["amount"],
-            total_cs_count=actual_totals.get("cs_count", 0),
-            total_refugee_count=actual_totals.get("refugee_count", 0),
-        )
-        if target > 0:
-            rate = f"{(actual / target) * 100:.1f}%"
-        else:
-            rate = "-"
-        target_parts.append(f"{label} {target}{unit}")
-        actual_parts.append(f"{label} {actual}{unit}")
-        rate_parts.append(f"{label} {rate}")
-    return " / ".join(target_parts), " / ".join(actual_parts), " / ".join(rate_parts)
-
-
-def _metric_detail_rows(*, metrics, target_values, actual_totals):
-    rows = []
-    for metric in metrics:
-        target = target_values.get(metric.id, 0)
-        actual = _metric_actual_value(
-            metric_code=metric.code,
-            total_count=actual_totals["count"],
-            total_amount=actual_totals["amount"],
-            total_cs_count=actual_totals.get("cs_count", 0),
-            total_refugee_count=actual_totals.get("refugee_count", 0),
-        )
-        rate = f"{(actual / target) * 100:.1f}%" if target > 0 else "-"
-        rows.append(
-            {
-                "code": metric.code,
-                "label": metric.label,
-                "unit": metric.unit or "",
-                "target": target,
-                "actual": actual,
-                "rate": rate,
-            }
-        )
-    return rows
-
-
-def _format_yen(value: int) -> str:
-    return f"{value:,}円"
 
 
 @require_roles(ROLE_ADMIN)
@@ -153,7 +62,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
                     "label": label,
                     "reporter_name": latest.reporter.name if latest.reporter else "-",
                     "submitted_time": timezone.localtime(latest.created_at).strftime("%H:%M"),
-                    "status": "提出済み",
+                    "status": STATUS_SUBMITTED,
                     "count": total_count,
                     "amount": total_amount,
                     "report_id": latest.id,
@@ -169,7 +78,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
                     "label": label,
                     "reporter_name": "-",
                     "submitted_time": "-",
-                    "status": "未提出",
+                    "status": STATUS_NOT_SUBMITTED,
                     "count": "-",
                     "amount": "-",
                     "report_id": None,
@@ -299,7 +208,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         for row in period_rows:
             period_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
         current_period_label = current_period.name
-        period_status = _period_status(
+        period_status = calc_period_status(
             today=today,
             start_date=current_period.start_date,
             end_date=current_period.end_date,
@@ -319,12 +228,12 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
     else:
         month_end = current_month.replace(month=current_month.month + 1, day=1) - timedelta(days=1)
 
-    month_actual_totals_by_code = _collect_actual_totals(
+    month_actual_totals_by_code = collect_actual_totals(
         start_date=month_start,
         end_date=month_end,
         target_codes=target_codes,
     )
-    period_actual_totals_by_code = _collect_actual_totals(
+    period_actual_totals_by_code = collect_actual_totals(
         start_date=period_start,
         end_date=period_end,
         target_codes=target_codes,
@@ -343,12 +252,12 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
     target_progress_rows = []
     metric_detail_by_code = {}
     for code, label in target_departments:
-        month_metric_rows = _metric_detail_rows(
+        month_metric_rows = metric_detail_rows(
             metrics=metrics_by_code[code],
             target_values=month_target_values_by_code.get(code, {}),
             actual_totals=month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
         )
-        period_metric_rows = _metric_detail_rows(
+        period_metric_rows = metric_detail_rows(
             metrics=metrics_by_code[code],
             target_values=period_target_values_by_code.get(code, {}),
             actual_totals=period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
@@ -357,12 +266,12 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             "month": month_metric_rows,
             "period": period_metric_rows,
         }
-        month_target_text, month_actual_text, month_rate_text = _format_metric_triples(
+        month_target_text, month_actual_text, month_rate_text = format_metric_triples(
             metrics=metrics_by_code[code],
             target_values=month_target_values_by_code.get(code, {}),
             actual_totals=month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
         )
-        period_target_text, period_actual_text, period_rate_text = _format_metric_triples(
+        period_target_text, period_actual_text, period_rate_text = format_metric_triples(
             metrics=metrics_by_code[code],
             target_values=period_target_values_by_code.get(code, {}),
             actual_totals=period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
@@ -412,7 +321,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             {
                 "name": row["member_name"],
                 "count": row["count"],
-                "amount_text": _format_yen(row["amount"]),
+                "amount_text": format_yen(row["amount"]),
             }
             for row in members_by_code.get(code, [])
         ]
@@ -430,7 +339,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
                 "heading": heading,
                 "name": label_by_code[code],
                 "daily_count": daily["count"],
-                "daily_amount_text": _format_yen(daily["amount"]),
+                "daily_amount_text": format_yen(daily["amount"]),
                 "member_lines": member_lines,
                 "period_lines": period_metric_lines,
                 "month_lines": month_metric_lines,
@@ -459,8 +368,8 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         "period_name": current_period_label,
         "period_range": current_period_range,
         "un_wv_summary": {
-            "actual_text": _format_yen(un_wv_month_actual),
-            "target_text": _format_yen(un_wv_month_target),
+            "actual_text": format_yen(un_wv_month_actual),
+            "target_text": format_yen(un_wv_month_target),
             "rate": un_wv_month_rate,
         },
     }
