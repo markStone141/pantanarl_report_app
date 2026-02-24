@@ -9,6 +9,11 @@ from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
 
 
 class ReportMemberFilteringTests(TestCase):
+    def setUp(self):
+        session = self.client.session
+        session["role"] = "admin"
+        session.save()
+
     def test_report_un_shows_only_un_members(self):
         un = Department.objects.create(name="UN", code="UN")
         wv = Department.objects.create(name="WV", code="WV")
@@ -41,6 +46,11 @@ class ReportMemberFilteringTests(TestCase):
 
 
 class ReportSubmitFlowTests(TestCase):
+    def setUp(self):
+        session = self.client.session
+        session["role"] = "admin"
+        session.save()
+
     def test_report_submit_saves_aggregates_and_lines(self):
         today_str = timezone.localdate().isoformat()
         department = Department.objects.create(name="UN", code="UN")

@@ -5,6 +5,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
+from apps.accounts.auth import ROLE_ADMIN, require_roles
 from apps.accounts.models import Department
 
 from .models import (
@@ -246,6 +247,7 @@ def _current_period() -> Period | None:
     return Period.objects.order_by("-month", "start_date", "id").first()
 
 
+@require_roles(ROLE_ADMIN)
 def target_index(request: HttpRequest) -> HttpResponse:
     configs = _department_configs()
     current_month = _current_month()
@@ -268,6 +270,7 @@ def target_index(request: HttpRequest) -> HttpResponse:
     )
 
 
+@require_roles(ROLE_ADMIN)
 def target_month_settings(request: HttpRequest) -> HttpResponse:
     configs = _department_configs()
     selected_month = _month_start(request.GET.get("month"))
@@ -311,6 +314,7 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
     )
 
 
+@require_roles(ROLE_ADMIN)
 def target_period_settings(request: HttpRequest) -> HttpResponse:
     configs = _department_configs()
     selected_period = None

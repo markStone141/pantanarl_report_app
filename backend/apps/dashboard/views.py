@@ -3,7 +3,9 @@ from datetime import timedelta
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.text import slugify
 
+from apps.accounts.auth import ROLE_ADMIN, require_roles
 from apps.accounts.models import Department, Member, MemberDepartment
 from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
 from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
@@ -70,15 +72,14 @@ def _format_metric_triples(*, metrics, target_values, actual_totals):
     return " / ".join(target_parts), " / ".join(actual_parts), " / ".join(rate_parts)
 
 
+@require_roles(ROLE_ADMIN)
 def dashboard_index(request: HttpRequest) -> HttpResponse:
     today = timezone.localdate()
-    target_departments = [
-        ("UN", "UN"),
-        ("WV", "WV"),
-        ("STYLE1", "Style1"),
-        ("STYLE2", "Style2"),
-    ]
-    target_codes = [code for code, _ in target_departments]
+    target_codes = ["UN", "WV", "STYLE1", "STYLE2"]
+    department_name_map = {
+        dept.code: dept.name for dept in Department.objects.filter(code__in=target_codes)
+    }
+    target_departments = [(code, department_name_map.get(code, code)) for code in target_codes]
 
     today_reports = (
         DailyDepartmentReport.objects.filter(
@@ -162,8 +163,6 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             key=lambda x: (-x["amount"], -x["count"], x["member_name"]),
         )
 
-    style_count = daily_totals["STYLE1"]["count"] + daily_totals["STYLE2"]["count"]
-    style_amount = daily_totals["STYLE1"]["amount"] + daily_totals["STYLE2"]["amount"]
 
     current_month = today.replace(day=1)
     if not MonthTargetMetricValue.objects.filter(target_month=current_month).exists():
@@ -282,29 +281,21 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             }
         )
 
+    kpi_cards = []
+    for code, label in target_departments:
+        kpi_cards.append(
+            {
+                "title": label,
+                "count": daily_totals[code]["count"],
+                "amount": daily_totals[code]["amount"],
+                "members": member_rows_for([code]),
+            }
+        )
+
     context = {
         "today_str": today.strftime("%Y/%m/%d"),
         "submission_rows": submission_rows,
-        "kpi_cards": [
-            {
-                "title": "UN",
-                "count": daily_totals["UN"]["count"],
-                "amount": daily_totals["UN"]["amount"],
-                "members": member_rows_for(["UN"]),
-            },
-            {
-                "title": "WV",
-                "count": daily_totals["WV"]["count"],
-                "amount": daily_totals["WV"]["amount"],
-                "members": member_rows_for(["WV"]),
-            },
-            {
-                "title": "Style",
-                "count": style_count,
-                "amount": style_amount,
-                "members": member_rows_for(["STYLE1", "STYLE2"]),
-            },
-        ],
+        "kpi_cards": kpi_cards,
         "target_month_summary": f"{current_month.year}/{current_month.month}",
         "target_month_status": month_status,
         "target_period_summary": current_period_label,
@@ -335,6 +326,7 @@ def _target_metric_form(*, data=None, initial=None) -> TargetMetricForm:
     return TargetMetricForm(data=data, initial=initial)
 
 
+@require_roles(ROLE_ADMIN)
 def member_settings(request: HttpRequest) -> HttpResponse:
     status_message = None
     edit_member = None
@@ -423,6 +415,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
     )
 
 
+@require_roles(ROLE_ADMIN)
 def member_delete(request: HttpRequest, member_id: int) -> HttpResponse:
     if request.method != "POST":
         return redirect("member_settings")
@@ -432,6 +425,7 @@ def member_delete(request: HttpRequest, member_id: int) -> HttpResponse:
     return redirect("member_settings")
 
 
+@require_roles(ROLE_ADMIN)
 def department_settings(request: HttpRequest) -> HttpResponse:
     status_message = None
     edit_department = None
@@ -610,6 +604,7 @@ def department_settings(request: HttpRequest) -> HttpResponse:
     )
 
 
+@require_roles(ROLE_ADMIN)
 def department_delete(request: HttpRequest, department_id: int) -> HttpResponse:
     if request.method != "POST":
         return redirect("department_settings")
@@ -617,3 +612,76 @@ def department_delete(request: HttpRequest, department_id: int) -> HttpResponse:
     department = get_object_or_404(Department, id=department_id)
     department.delete()
     return redirect("department_settings")
+
+
+def _build_internal_member_login_id(name: str) -> str:
+    base = slugify(name) or "member"
+    candidate = base
+    suffix = 2
+    while Member.objects.filter(login_id=candidate).exists():
+        candidate = f"{base}{suffix}"
+        suffix += 1
+    return candidate
+
+
+@require_roles(ROLE_ADMIN)
+def member_settings(request: HttpRequest) -> HttpResponse:
+    status_message = None
+    edit_member = None
+
+    edit_id = request.GET.get("edit")
+    if edit_id and edit_id.isdigit():
+        edit_member = Member.objects.filter(id=int(edit_id)).first()
+
+    if request.method == "POST":
+        edit_member_id = request.POST.get("edit_member_id")
+        form = _member_form(data=request.POST)
+        if form.is_valid():
+            departments = form.cleaned_data["departments"]
+            member_name = form.cleaned_data["name"].strip()
+
+            if edit_member_id and edit_member_id.isdigit():
+                member = get_object_or_404(Member, id=int(edit_member_id))
+                member.name = member_name
+                member.save(update_fields=["name"])
+                status_message = f"{member.name} を更新しました。"
+            else:
+                member = Member.objects.create(
+                    name=member_name,
+                    login_id=_build_internal_member_login_id(member_name),
+                    password="",
+                )
+                status_message = f"{member.name} を登録しました。"
+
+            MemberDepartment.objects.filter(member=member).exclude(department__in=departments).delete()
+            existing_departments = set(
+                MemberDepartment.objects.filter(member=member).values_list("department_id", flat=True)
+            )
+            for dept in departments:
+                if dept.id not in existing_departments:
+                    MemberDepartment.objects.create(member=member, department=dept)
+
+            form = _member_form()
+            edit_member = None
+    else:
+        if edit_member:
+            form = _member_form(
+                initial={
+                    "name": edit_member.name,
+                    "departments": list(edit_member.department_links.values_list("department_id", flat=True)),
+                }
+            )
+        else:
+            form = _member_form()
+
+    members = Member.objects.prefetch_related("department_links")
+    return render(
+        request,
+        "dashboard/member_settings.html",
+        {
+            "form": form,
+            "members": members,
+            "edit_member": edit_member,
+            "status_message": status_message,
+        },
+    )

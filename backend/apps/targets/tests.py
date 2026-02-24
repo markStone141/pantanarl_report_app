@@ -11,6 +11,9 @@ from .models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, Tar
 
 class TargetsFlowTests(TestCase):
     def setUp(self):
+        session = self.client.session
+        session["role"] = "admin"
+        session.save()
         Department.objects.create(name="UN", code="UN")
         Department.objects.create(name="WV", code="WV")
         Department.objects.create(name="Style1", code="STYLE1")

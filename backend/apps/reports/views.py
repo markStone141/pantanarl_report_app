@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, require_roles
 from apps.accounts.models import Department, Member
 
 from .forms import ReportSubmissionForm
@@ -12,10 +13,12 @@ from .models import DailyDepartmentReport, DailyDepartmentReportLine
 ALLOWED_EDIT_REDIRECTS = {"dashboard_index", "report_history"}
 
 
+@require_roles(ROLE_REPORT, ROLE_ADMIN)
 def report_index(request: HttpRequest) -> HttpResponse:
     return render(request, "reports/report_index.html")
 
 
+@require_roles(ROLE_ADMIN)
 def report_history(request: HttpRequest) -> HttpResponse:
     reports = (
         DailyDepartmentReport.objects.select_related("department", "reporter")
@@ -25,6 +28,7 @@ def report_history(request: HttpRequest) -> HttpResponse:
     return render(request, "reports/report_history.html", {"reports": reports})
 
 
+@require_roles(ROLE_ADMIN)
 def report_edit(request: HttpRequest, report_id: int) -> HttpResponse:
     report = get_object_or_404(
         DailyDepartmentReport.objects.select_related("department", "reporter"),
@@ -274,6 +278,7 @@ def _render_report_form(
     )
 
 
+@require_roles(ROLE_REPORT, ROLE_ADMIN)
 def report_un(request: HttpRequest) -> HttpResponse:
     return _render_report_form(
         request,
@@ -283,6 +288,7 @@ def report_un(request: HttpRequest) -> HttpResponse:
     )
 
 
+@require_roles(ROLE_REPORT, ROLE_ADMIN)
 def report_wv(request: HttpRequest) -> HttpResponse:
     return _render_report_form(
         request,
@@ -292,6 +298,7 @@ def report_wv(request: HttpRequest) -> HttpResponse:
     )
 
 
+@require_roles(ROLE_REPORT, ROLE_ADMIN)
 def report_style1(request: HttpRequest) -> HttpResponse:
     return _render_report_form(
         request,
@@ -302,6 +309,7 @@ def report_style1(request: HttpRequest) -> HttpResponse:
     )
 
 
+@require_roles(ROLE_REPORT, ROLE_ADMIN)
 def report_style2(request: HttpRequest) -> HttpResponse:
     return _render_report_form(
         request,

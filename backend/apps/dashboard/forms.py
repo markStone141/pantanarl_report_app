@@ -9,17 +9,6 @@ class MemberRegistrationForm(forms.Form):
         max_length=64,
         widget=forms.TextInput(attrs={"placeholder": "メンバー名"}),
     )
-    login_id = forms.CharField(
-        label="ログインID",
-        max_length=64,
-        widget=forms.TextInput(attrs={"placeholder": "例: un_ishii"}),
-    )
-    password = forms.CharField(
-        label="パスワード",
-        max_length=128,
-        required=False,
-        widget=forms.PasswordInput(attrs={"placeholder": "パスワード"}),
-    )
     departments = forms.ModelMultipleChoiceField(
         label="所属部署",
         required=False,
@@ -49,12 +38,12 @@ class DepartmentForm(forms.Form):
 
 class TargetMetricForm(forms.Form):
     label = forms.CharField(
-        label="指標名",
+        label="項目名",
         max_length=64,
         widget=forms.TextInput(attrs={"placeholder": "例: 件数"}),
     )
     code = forms.CharField(
-        label="指標コード",
+        label="項目コード",
         max_length=32,
         widget=forms.TextInput(attrs={"placeholder": "例: count"}),
     )
