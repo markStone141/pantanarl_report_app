@@ -88,15 +88,15 @@ def _ensure_default_metrics() -> None:
 def _department_configs():
     _ensure_default_metrics()
     configs = []
-    for code, label in TARGET_DEPARTMENTS:
-        department = _department_by_code(code=code, label=label)
+    for code, fallback_label in TARGET_DEPARTMENTS:
+        department = _department_by_code(code=code, label=fallback_label)
         metrics = list(
             TargetMetric.objects.filter(department=department, is_active=True).order_by("display_order", "id")
         )
         configs.append(
             {
                 "code": code,
-                "label": label,
+                "label": department.name,
                 "department": department,
                 "metrics": metrics,
             }
@@ -363,30 +363,43 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
                         status = _period_status(start_date, end_date)
                         if edit_id and edit_id.isdigit():
                             selected_period = get_object_or_404(Period, id=int(edit_id))
-                            duplicate_period = (
-                                Period.objects.filter(month=period_month, name=name).exclude(id=selected_period.id).first()
-                            )
-                            if duplicate_period:
-                                selected_period = duplicate_period
-                            selected_period.month = period_month
-                            selected_period.name = name
-                            selected_period.status = status
-                            selected_period.start_date = start_date
-                            selected_period.end_date = end_date
-                            selected_period.save(
-                                update_fields=["month", "name", "status", "start_date", "end_date", "updated_at"]
-                            )
                         else:
-                            selected_period, _ = Period.objects.update_or_create(
-                                month=period_month,
-                                name=name,
-                                defaults={
-                                    "status": status,
-                                    "start_date": start_date,
-                                    "end_date": end_date,
-                                },
+                            selected_period = Period.objects.filter(month=period_month, name=name).first()
+
+                        duplicate_name_query = Period.objects.filter(month=period_month, name=name)
+                        if selected_period:
+                            duplicate_name_query = duplicate_name_query.exclude(id=selected_period.id)
+                        if duplicate_name_query.exists():
+                            form_error = "同じ対象月・路程番号の路程が既にあります。"
+                        else:
+                            overlap_query = Period.objects.filter(
+                                start_date__lte=end_date,
+                                end_date__gte=start_date,
                             )
-                        period_saved = True
+                            if selected_period:
+                                overlap_query = overlap_query.exclude(id=selected_period.id)
+
+                            if overlap_query.exists():
+                                form_error = "期間が既存の路程と重複しています。"
+                            else:
+                                if selected_period:
+                                    selected_period.month = period_month
+                                    selected_period.name = name
+                                    selected_period.status = status
+                                    selected_period.start_date = start_date
+                                    selected_period.end_date = end_date
+                                    selected_period.save(
+                                        update_fields=["month", "name", "status", "start_date", "end_date", "updated_at"]
+                                    )
+                                else:
+                                    selected_period = Period.objects.create(
+                                        month=period_month,
+                                        name=name,
+                                        status=status,
+                                        start_date=start_date,
+                                        end_date=end_date,
+                                    )
+                                period_saved = True
 
         elif action == "save_period_targets":
             selected_id = request.POST.get("selected_period_id")

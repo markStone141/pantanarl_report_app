@@ -141,3 +141,35 @@ class TargetsFlowTests(TestCase):
         self.assertEqual(Period.objects.filter(month=current_month, name=name).count(), 1)
         period = Period.objects.get(month=current_month, name=name)
         self.assertEqual(period.status, "finished")
+
+    def test_period_save_rejects_overlapping_range(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+
+        self.client.get(reverse("target_period_settings"))
+        first = self.client.post(
+            reverse("target_period_settings"),
+            {
+                "action": "save_period",
+                "period_month": current_month.strftime("%Y-%m"),
+                "period_sequence": "1",
+                "start_date": (today + timedelta(days=1)).isoformat(),
+                "end_date": (today + timedelta(days=3)).isoformat(),
+            },
+        )
+        self.assertEqual(first.status_code, 200)
+        before_count = Period.objects.count()
+
+        second = self.client.post(
+            reverse("target_period_settings"),
+            {
+                "action": "save_period",
+                "period_month": current_month.strftime("%Y-%m"),
+                "period_sequence": "2",
+                "start_date": (today + timedelta(days=2)).isoformat(),
+                "end_date": (today + timedelta(days=4)).isoformat(),
+            },
+        )
+        self.assertEqual(second.status_code, 200)
+        self.assertContains(second, "期間が既存の路程と重複しています。")
+        self.assertEqual(Period.objects.count(), before_count)
