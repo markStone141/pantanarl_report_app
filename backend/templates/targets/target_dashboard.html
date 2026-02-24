@@ -77,13 +77,13 @@
     {% if period_history_rows %}
     <table>
       <thead>
-        <tr><th>対象月</th><th>路程名</th><th>状態</th></tr>
+        <tr><th>路程名</th><th>期間</th><th>状態</th></tr>
       </thead>
       <tbody>
         {% for row in period_history_rows %}
         <tr>
-          <td>{{ row.month_label }}</td>
           <td>{{ row.name }}</td>
+          <td>{{ row.range_label }}</td>
           <td>{{ row.status }}</td>
         </tr>
         {% endfor %}

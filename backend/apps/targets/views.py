@@ -274,22 +274,30 @@ def target_index(request: HttpRequest) -> HttpResponse:
 def target_month_settings(request: HttpRequest) -> HttpResponse:
     configs = _department_configs()
     selected_month = _month_start(request.GET.get("month"))
+    month_deleted = False
 
-    if request.method == "POST" and request.POST.get("action") == "save_month_targets":
-        selected_month = _month_start(request.POST.get("month"))
-        status = _month_status(selected_month)
-        for config in configs:
-            for metric in config["metrics"]:
-                MonthTargetMetricValue.objects.update_or_create(
-                    department=config["department"],
-                    target_month=selected_month,
-                    metric=metric,
-                    defaults={
-                        "value": _to_int(request.POST.get(f"metric_{metric.id}")),
-                        "status": status,
-                    },
-                )
-        return redirect(f"{request.path}?month={_month_value_from_date(selected_month)}&saved=1")
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "save_month_targets":
+            selected_month = _month_start(request.POST.get("month"))
+            status = _month_status(selected_month)
+            for config in configs:
+                for metric in config["metrics"]:
+                    MonthTargetMetricValue.objects.update_or_create(
+                        department=config["department"],
+                        target_month=selected_month,
+                        metric=metric,
+                        defaults={
+                            "value": _to_int(request.POST.get(f"metric_{metric.id}")),
+                            "status": status,
+                        },
+                    )
+            return redirect(f"{request.path}?month={_month_value_from_date(selected_month)}&saved=1")
+        if action == "delete_month_targets":
+            target_month = _month_start(request.POST.get("delete_month"))
+            MonthTargetMetricValue.objects.filter(target_month=target_month).delete()
+            selected_month = _current_month()
+            month_deleted = True
 
     history_rows = _month_history_rows()
     month_switch_options = [{"value": row["month_param"], "label": row["month_label"]} for row in history_rows]
@@ -310,6 +318,7 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
             "history_rows": _month_history_rows(selected_month),
             "month_switch_options": month_switch_options,
             "saved": request.GET.get("saved") == "1",
+            "month_deleted": month_deleted,
         },
     )
 
@@ -323,6 +332,7 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
         selected_period = Period.objects.filter(id=int(period_id)).first()
 
     period_saved = False
+    period_deleted = False
     target_saved = False
     form_error = None
 
@@ -393,6 +403,15 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
                 target_saved = True
             else:
                 form_error = "対象の路程を選択してください。"
+        elif action == "delete_period":
+            delete_period_id = request.POST.get("delete_period_id")
+            if delete_period_id and delete_period_id.isdigit():
+                deleting_period = Period.objects.filter(id=int(delete_period_id)).first()
+                if deleting_period:
+                    deleting_period.delete()
+                    period_deleted = True
+                    if selected_period and str(selected_period.id) == delete_period_id:
+                        selected_period = None
 
     if not selected_period:
         selected_period = _current_period()
@@ -441,6 +460,7 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
             "form_end_date": selected_end,
             "form_edit_period_id": selected_id,
             "period_saved": period_saved or request.GET.get("period_saved") == "1",
+            "period_deleted": period_deleted,
             "target_saved": target_saved or request.GET.get("target_saved") == "1",
             "form_error": form_error,
             "history_rows": _period_history_rows(),

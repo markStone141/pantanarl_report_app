@@ -63,6 +63,9 @@
 
   <section class="card" style="margin-top: 16px;">
     <h3>作成済み月目標一覧</h3>
+    {% if month_deleted %}
+    <div class="note" style="margin: 10px 0;">月目標を削除しました。</div>
+    {% endif %}
     <table>
       <thead>
         <tr><th>対象月</th><th>状態</th><th>操作</th></tr>
@@ -73,7 +76,15 @@
         <tr>
           <td>{{ row.month_label }}</td>
           <td>{{ row.status }}</td>
-          <td><a class="btn-inline" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">表示</a></td>
+          <td>
+            <a class="btn-inline" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">表示</a>
+            <form method="post" style="display:inline;" onsubmit="return confirm('この月目標を削除します。よろしいですか？');">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete_month_targets" />
+              <input type="hidden" name="delete_month" value="{{ row.month_param }}" />
+              <button type="submit" class="btn-inline btn-danger">削除</button>
+            </form>
+          </td>
         </tr>
         {% endfor %}
         {% else %}
