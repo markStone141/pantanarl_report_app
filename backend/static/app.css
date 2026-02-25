@@ -238,6 +238,12 @@ button {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
+}
+
+.report-date-wrap {
+  min-width: 0;
+  overflow: hidden;
 }
 
 textarea {

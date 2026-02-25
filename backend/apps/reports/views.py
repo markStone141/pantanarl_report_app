@@ -497,9 +497,15 @@ def _render_report_form(
     if form.is_bound:
         selected_reporter_id = str(form.data.get("reporter", "") or "")
         memo_value = form.data.get("memo", "") or ""
+        report_date_value = str(form.data.get("report_date", "") or "")
     else:
         selected_reporter_id = str(form.initial.get("reporter", "") or "")
         memo_value = form.initial.get("memo", "") or ""
+        initial_report_date = form.initial.get("report_date") or selected_date
+        if hasattr(initial_report_date, "strftime"):
+            report_date_value = initial_report_date.strftime("%Y-%m-%d")
+        else:
+            report_date_value = str(initial_report_date or "")
 
     return render(
         request,
@@ -518,6 +524,7 @@ def _render_report_form(
             "recent_reports": recent_reports,
             "selected_reporter_id": selected_reporter_id,
             "memo_value": memo_value,
+            "report_date_value": report_date_value,
             "submitted": request.GET.get("submitted") == "1",
             "is_edit": is_edit,
             "editing_report": editing_report,
@@ -525,6 +532,7 @@ def _render_report_form(
             "current_view_name": request.resolver_match.view_name if request.resolver_match else "",
             "selected_mode": selected_mode,
             "recent_reports_date": selected_date.strftime("%Y/%m/%d"),
+            "today_iso": timezone.localdate().isoformat(),
         },
     )
 

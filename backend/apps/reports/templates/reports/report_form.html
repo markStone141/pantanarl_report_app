@@ -43,14 +43,14 @@
       {% endif %}
 
       <div class="grid grid-2">
-        <div>
+        <div class="report-date-wrap">
           <label for="{{ form.report_date.id_for_label }}">{{ form.report_date.label }}</label>
           <input
             type="date"
             name="report_date"
             id="id_report_date"
             class="report-date-input"
-            value="{{ report_date_value }}"
+            value="{{ report_date_value|default:today_iso }}"
             required
           >
         </div>
@@ -185,6 +185,11 @@
 
 <script>
   (function () {
+    const reportDateInput = document.getElementById("id_report_date");
+    if (reportDateInput && !reportDateInput.value) {
+      reportDateInput.value = "{{ today_iso }}";
+    }
+
     const rows = document.getElementById("member-rows");
     const addButton = document.getElementById("add-row");
 
