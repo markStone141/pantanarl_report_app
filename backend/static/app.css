@@ -437,6 +437,10 @@ th {
 }
 
 @media (max-width: 768px) {
+  .grid > * {
+    min-width: 0;
+  }
+
   .container {
     width: min(1100px, 96vw);
     margin: 14px auto 20px;
@@ -505,6 +509,7 @@ th {
   input[type="date"],
   input[type="month"],
   input[type="week"] {
+    display: block;
     min-width: 0;
     width: 100%;
     max-width: 100%;
