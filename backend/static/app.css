@@ -474,6 +474,23 @@ th {
     min-width: 0;
   }
 
+  .report-date-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .report-date-input {
+    display: block;
+    box-sizing: border-box;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+  }
+
   .container {
     width: min(1100px, 96vw);
     margin: 14px auto 20px;
