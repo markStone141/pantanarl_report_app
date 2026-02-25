@@ -502,6 +502,14 @@ th {
     min-height: 44px;
   }
 
+  input[type="date"],
+  input[type="month"],
+  input[type="week"] {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
   .btn-inline {
     min-height: 38px;
   }
