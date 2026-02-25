@@ -233,6 +233,16 @@ button {
   font-family: inherit;
 }
 
+.report-date-input {
+  display: block;
+  width: 100% !important;
+  max-width: 100%;
+  min-width: 0;
+  inline-size: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 textarea {
   min-height: 92px;
   resize: vertical;
