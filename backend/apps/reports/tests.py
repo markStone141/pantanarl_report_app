@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
 from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
+from apps.targets.models import MonthTargetMetricValue, TargetMetric
 
 
 class ReportMemberFilteringTests(TestCase):
@@ -413,3 +414,38 @@ class ReportSubmitFlowTests(TestCase):
         )
         self.assertEqual(delete_response.status_code, 302)
         self.assertFalse(DailyDepartmentReport.objects.filter(id=report.id).exists())
+
+
+class ReportTargetMonthSelectionTests(TestCase):
+    def setUp(self):
+        session = self.client.session
+        session["role"] = "admin"
+        session.save()
+
+    def test_report_index_month_target_uses_current_month_without_fallback(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        old_month = (current_month - timedelta(days=1)).replace(day=1)
+        un = Department.objects.create(name="UN", code="UN")
+        metric = TargetMetric.objects.create(
+            department=un,
+            code="amount_report_old_only",
+            label="Amount",
+            unit="yen",
+            display_order=1,
+            is_active=True,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=un,
+            target_month=old_month,
+            metric=metric,
+            status="finished",
+            value=7777,
+        )
+
+        response = self.client.get(reverse("report_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["target_month_summary"],
+            f"{current_month.year}/{current_month.month}",
+        )

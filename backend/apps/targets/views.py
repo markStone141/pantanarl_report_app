@@ -220,13 +220,7 @@ def _period_history_rows():
 
 
 def _current_month() -> date:
-    today_month = timezone.localdate().replace(day=1)
-    if MonthTargetMetricValue.objects.filter(target_month=today_month).exists():
-        return today_month
-    latest = MonthTargetMetricValue.objects.order_by("-target_month").values_list("target_month", flat=True).first()
-    if latest:
-        return latest
-    return today_month
+    return timezone.localdate().replace(day=1)
 
 
 def _current_period() -> Period | None:

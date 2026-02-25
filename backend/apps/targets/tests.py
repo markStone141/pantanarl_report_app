@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.test import TestCase
 from django.urls import reverse
@@ -6,6 +7,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Department
 
+from . import views as target_views
 from .models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 
 
@@ -226,3 +228,148 @@ class TargetsFlowTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Period.objects.filter(id=period.id).exists())
+
+
+class TargetStatusBoundaryTests(TestCase):
+    def setUp(self):
+        session = self.client.session
+        session["role"] = "admin"
+        session.save()
+        self.un = Department.objects.create(name="UN", code="UN")
+
+    def _make_un_amount_metric(self):
+        return TargetMetric.objects.create(
+            department=self.un,
+            code=f"amount_{TargetMetric.objects.count()}",
+            label="Amount",
+            unit="yen",
+            display_order=1,
+            is_active=True,
+        )
+
+    def test_month_status_switches_active_planned_finished(self):
+        base_today = timezone.datetime(2026, 3, 15).date()
+        self.assertEqual(
+            target_views._month_status(timezone.datetime(2026, 3, 1).date(), today=base_today),
+            "active",
+        )
+        self.assertEqual(
+            target_views._month_status(timezone.datetime(2026, 2, 1).date(), today=base_today),
+            "finished",
+        )
+        self.assertEqual(
+            target_views._month_status(timezone.datetime(2026, 4, 1).date(), today=base_today),
+            "planned",
+        )
+
+    def test_period_status_switches_active_planned_finished(self):
+        base_today = timezone.datetime(2026, 3, 15).date()
+        self.assertEqual(
+            target_views._period_status(
+                timezone.datetime(2026, 3, 10).date(),
+                timezone.datetime(2026, 3, 20).date(),
+                today=base_today,
+            ),
+            "active",
+        )
+        self.assertEqual(
+            target_views._period_status(
+                timezone.datetime(2026, 3, 16).date(),
+                timezone.datetime(2026, 3, 20).date(),
+                today=base_today,
+            ),
+            "planned",
+        )
+        self.assertEqual(
+            target_views._period_status(
+                timezone.datetime(2026, 3, 1).date(),
+                timezone.datetime(2026, 3, 14).date(),
+                today=base_today,
+            ),
+            "finished",
+        )
+
+    def test_current_month_prefers_today_month_when_exists(self):
+        metric = self._make_un_amount_metric()
+        current_month = timezone.datetime(2026, 3, 1).date()
+        old_month = timezone.datetime(2026, 2, 1).date()
+        MonthTargetMetricValue.objects.create(
+            department=self.un,
+            target_month=old_month,
+            metric=metric,
+            status="finished",
+            value=1000,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.un,
+            target_month=current_month,
+            metric=metric,
+            status="active",
+            value=2000,
+        )
+
+        with patch("apps.targets.views.timezone.localdate", return_value=timezone.datetime(2026, 3, 15).date()):
+            selected = target_views._current_month()
+        self.assertEqual(selected, current_month)
+
+    def test_current_month_does_not_fall_back_to_latest_saved_month(self):
+        metric = self._make_un_amount_metric()
+        MonthTargetMetricValue.objects.create(
+            department=self.un,
+            target_month=timezone.datetime(2026, 1, 1).date(),
+            metric=metric,
+            status="finished",
+            value=1000,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.un,
+            target_month=timezone.datetime(2026, 2, 1).date(),
+            metric=metric,
+            status="finished",
+            value=2000,
+        )
+
+        with patch("apps.targets.views.timezone.localdate", return_value=timezone.datetime(2026, 3, 15).date()):
+            selected = target_views._current_month()
+        self.assertEqual(selected, timezone.datetime(2026, 3, 1).date())
+
+    def test_current_period_prefers_active_period(self):
+        Period.objects.create(
+            month=timezone.datetime(2026, 2, 1).date(),
+            name="2026年度2月 第1次路程",
+            status="finished",
+            start_date=timezone.datetime(2026, 2, 1).date(),
+            end_date=timezone.datetime(2026, 2, 10).date(),
+        )
+        active = Period.objects.create(
+            month=timezone.datetime(2026, 3, 1).date(),
+            name="2026年度3月 第1次路程",
+            status="active",
+            start_date=timezone.datetime(2026, 3, 10).date(),
+            end_date=timezone.datetime(2026, 3, 20).date(),
+        )
+
+        with patch("apps.targets.views.timezone.localdate", return_value=timezone.datetime(2026, 3, 15).date()):
+            selected = target_views._current_period()
+        self.assertEqual(selected.id, active.id)
+
+    def test_current_period_falls_back_to_latest_period(self):
+        old = Period.objects.create(
+            month=timezone.datetime(2026, 1, 1).date(),
+            name="2026年度1月 第1次路程",
+            status="finished",
+            start_date=timezone.datetime(2026, 1, 1).date(),
+            end_date=timezone.datetime(2026, 1, 5).date(),
+        )
+        latest = Period.objects.create(
+            month=timezone.datetime(2026, 2, 1).date(),
+            name="2026年度2月 第1次路程",
+            status="finished",
+            start_date=timezone.datetime(2026, 2, 1).date(),
+            end_date=timezone.datetime(2026, 2, 5).date(),
+        )
+
+        with patch("apps.targets.views.timezone.localdate", return_value=timezone.datetime(2026, 3, 15).date()):
+            selected = target_views._current_period()
+        self.assertEqual(selected.id, latest.id)
+        self.assertNotEqual(selected.id, old.id)

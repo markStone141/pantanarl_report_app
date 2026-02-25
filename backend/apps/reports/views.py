@@ -47,14 +47,6 @@ def _dashboard_cards_context():
     member_totals = snapshot["member_totals"]
 
     current_month = today.replace(day=1)
-    if not MonthTargetMetricValue.objects.filter(target_month=current_month).exists():
-        latest_month = (
-            MonthTargetMetricValue.objects.order_by("-target_month")
-            .values_list("target_month", flat=True)
-            .first()
-        )
-        if latest_month:
-            current_month = latest_month
 
     month_target_rows = list(
         MonthTargetMetricValue.objects.filter(

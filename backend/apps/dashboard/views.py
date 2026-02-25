@@ -42,14 +42,6 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
 
 
     current_month = today.replace(day=1)
-    if not MonthTargetMetricValue.objects.filter(target_month=current_month).exists():
-        latest_month = (
-            MonthTargetMetricValue.objects.order_by("-target_month")
-            .values_list("target_month", flat=True)
-            .first()
-        )
-        if latest_month:
-            current_month = latest_month
 
     month_target_rows = list(
         MonthTargetMetricValue.objects.filter(
@@ -199,14 +191,6 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         base_member_totals = base_snapshot["member_totals"]
 
         base_month = base_date.replace(day=1)
-        if not MonthTargetMetricValue.objects.filter(target_month=base_month).exists():
-            latest_month = (
-                MonthTargetMetricValue.objects.order_by("-target_month")
-                .values_list("target_month", flat=True)
-                .first()
-            )
-            if latest_month:
-                base_month = latest_month
 
         base_month_target_rows = list(
             MonthTargetMetricValue.objects.filter(

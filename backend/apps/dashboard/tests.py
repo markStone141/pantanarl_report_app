@@ -453,3 +453,87 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         style_progress = next(row for row in response.context["target_progress_rows"] if row["label"] == "Style1")
         self.assertIn("10000", style_progress["month_target"])
         self.assertIn("8000", style_progress["month_actual"])
+
+    def test_dashboard_month_target_uses_current_month_without_fallback(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        old_month = (current_month - timedelta(days=1)).replace(day=1)
+
+        metric = TargetMetric.objects.create(
+            department=self.depts["UN"],
+            code="amount_old_only",
+            label="Amount",
+            unit="yen",
+            display_order=1,
+            is_active=True,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.depts["UN"],
+            target_month=old_month,
+            metric=metric,
+            status="finished",
+            value=9999,
+        )
+
+        response = self.client.get(reverse("dashboard_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["target_month_summary"],
+            f"{current_month.year}/{current_month.month}",
+        )
+        row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
+        self.assertNotIn("9999", row["month_target"])
+
+    def test_dashboard_reflects_existing_actuals_when_target_created_later(self):
+        today = timezone.localdate()
+        month = today.replace(day=1)
+        period = Period.objects.create(
+            month=month,
+            name=f"{today.year}年度{today.month}月 第3次路程",
+            status="active",
+            start_date=today - timedelta(days=2),
+            end_date=today + timedelta(days=2),
+        )
+        report = DailyDepartmentReport.objects.create(
+            department=self.depts["UN"],
+            report_date=today,
+            reporter=self.reporter,
+            total_count=2,
+            followup_count=3000,
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=self.reporter,
+            amount=3000,
+            count=2,
+        )
+
+        metric = TargetMetric.objects.create(
+            department=self.depts["UN"],
+            code="amount",
+            label="Amount",
+            unit="yen",
+            display_order=1,
+            is_active=True,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.depts["UN"],
+            target_month=month,
+            metric=metric,
+            status="active",
+            value=6000,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=period,
+            department=self.depts["UN"],
+            metric=metric,
+            value=6000,
+        )
+
+        response = self.client.get(reverse("dashboard_index"))
+        self.assertEqual(response.status_code, 200)
+        row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
+        self.assertIn("3000", row["month_actual"])
+        self.assertIn("50.0%", row["month_rate"])
+        self.assertIn("3000", row["period_actual"])
+        self.assertIn("50.0%", row["period_rate"])
