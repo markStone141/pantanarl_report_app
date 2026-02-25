@@ -34,6 +34,7 @@
           <div class="badge" style="margin-top: 8px; display: inline-block;">{{ selected_status }}</div>
         </div>
       </div>
+      {% if month_switch_options %}
       <div style="margin-top: 8px;">
         <label for="month-switch">作成済み月に切替</label>
         <select id="month-switch" onchange="if(this.value){location.href='{% url 'target_month_settings' %}?month='+this.value;}">
@@ -42,6 +43,7 @@
           {% endfor %}
         </select>
       </div>
+      {% endif %}
 
       {% for row in rows %}
       <div style="margin-top: 12px; padding: 10px; border: 1px solid #d4e2ea; border-radius: 8px;">

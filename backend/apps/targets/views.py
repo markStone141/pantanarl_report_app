@@ -1,4 +1,4 @@
-import re
+﻿import re
 from datetime import date
 
 from django.http import HttpRequest, HttpResponse
@@ -300,13 +300,7 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
             month_deleted = True
 
     history_rows = _month_history_rows()
-    switch_rows = _month_history_rows(selected_month, include_selected=True)
-    month_switch_options = [{"value": row["month_param"], "label": row["month_label"]} for row in switch_rows]
-    if not month_switch_options:
-        month_switch_options = [
-            {"value": _month_value_from_date(selected_month), "label": f"{selected_month.year}年{selected_month.month}月"}
-        ]
-
+    month_switch_options = [{"value": row["month_param"], "label": row["month_label"]} for row in history_rows]
     return render(
         request,
         "targets/target_month_settings.html",
@@ -480,3 +474,4 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
             "history_rows": _period_history_rows(),
         },
     )
+
