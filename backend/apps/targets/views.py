@@ -300,7 +300,6 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
             month_deleted = True
 
     history_rows = _month_history_rows()
-    month_switch_options = [{"value": row["month_param"], "label": row["month_label"]} for row in history_rows]
     return render(
         request,
         "targets/target_month_settings.html",
@@ -311,7 +310,6 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
             "status_options": STATUS_OPTIONS,
             "rows": _build_month_rows(target_month=selected_month, configs=configs),
             "history_rows": history_rows,
-            "month_switch_options": month_switch_options,
             "saved": request.GET.get("saved") == "1",
             "month_deleted": month_deleted,
         },
