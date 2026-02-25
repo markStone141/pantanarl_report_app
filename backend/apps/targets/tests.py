@@ -1,6 +1,7 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -373,3 +374,25 @@ class TargetStatusBoundaryTests(TestCase):
             selected = target_views._current_period()
         self.assertEqual(selected.id, latest.id)
         self.assertNotEqual(selected.id, old.id)
+
+
+class TargetSeedCommandTests(TestCase):
+    def test_seed_command_creates_defaults_only_when_empty(self):
+        self.assertEqual(Department.objects.count(), 0)
+        self.assertEqual(TargetMetric.objects.count(), 0)
+
+        call_command("seed_default_departments_and_metrics_if_empty")
+
+        self.assertEqual(
+            set(Department.objects.values_list("code", flat=True)),
+            {"UN", "WV", "STYLE1", "STYLE2"},
+        )
+        self.assertEqual(TargetMetric.objects.count(), 6)
+
+    def test_seed_command_skips_when_existing_data_present(self):
+        Department.objects.create(name="Custom", code="CUSTOM")
+
+        call_command("seed_default_departments_and_metrics_if_empty")
+
+        self.assertEqual(Department.objects.count(), 1)
+        self.assertEqual(TargetMetric.objects.count(), 0)
