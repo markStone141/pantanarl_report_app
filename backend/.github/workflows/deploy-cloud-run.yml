@@ -1,0 +1,47 @@
+﻿name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-cloud-run.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: reportapp-488507
+  REGION: asia-northeast1
+  SERVICE: report-app
+  REPOSITORY: report-app
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${{ env.REGION }}-docker.pkg.dev" --quiet
+
+      - name: Submit Cloud Build
+        working-directory: backend
+        run: |
+          gcloud builds submit \
+            --project="${PROJECT_ID}" \
+            --config=cloudbuild.yaml \
+            --substitutions="_SERVICE=${SERVICE},_REGION=${REGION},_REPOSITORY=${REPOSITORY}"
