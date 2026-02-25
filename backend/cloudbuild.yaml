@@ -1,0 +1,38 @@
+substitutions:
+  _SERVICE: report-app
+  _REGION: asia-northeast1
+  _REPOSITORY: report-app
+  _RUN_MIGRATIONS_ON_STARTUP: "0"
+  _RUN_SEED_ON_STARTUP: "0"
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$SHORT_SHA
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$SHORT_SHA
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$SHORT_SHA
+      - --region
+      - ${_REGION}
+      - --platform
+      - managed
+      - --allow-unauthenticated
+      - --set-env-vars
+      - DJANGO_SETTINGS_MODULE=config.settings.prod,RUN_MIGRATIONS_ON_STARTUP=${_RUN_MIGRATIONS_ON_STARTUP},RUN_SEED_ON_STARTUP=${_RUN_SEED_ON_STARTUP}
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$SHORT_SHA
