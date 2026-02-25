@@ -235,15 +235,21 @@ button {
 
 .report-date-input {
   display: block;
-  width: 100%;
+  flex: 1 1 auto;
+  width: 1px;
   max-width: 100%;
-  min-width: 0;
+  min-width: 0 !important;
   box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .report-date-wrap {
+  display: flex;
+  width: 100%;
   min-width: 0;
-  overflow: hidden;
+  max-width: 100%;
+  overflow: clip;
 }
 
 textarea {
