@@ -33,7 +33,6 @@
       <button type="button" id="mail-mode-prev" class="btn-inline">前日</button>
       <span class="badge" id="mail-source-date"></span>
     </div>
-    <label for="mail-comment">コメント</label>
     <textarea id="mail-comment" placeholder="コメントを入力"></textarea>
     <button type="button" id="build-mail" style="margin-top: 10px;">テンプレート生成</button>
   </section>
@@ -260,6 +259,77 @@
       return lines.join("\n");
     }
 
+    function buildSectionLinesV2(section, periodName, periodRange) {
+      const lines = [];
+      const amountLabel = section.code && section.code.indexOf("STYLE") === 0 ? "金額" : "支援額";
+      lines.push(section.heading + "（" + section.name + "）");
+
+      if (section.has_report) {
+        lines.push("全体");
+        lines.push("件数" + section.daily_count + "件、" + amountLabel + section.daily_amount_text);
+        lines.push("");
+        if (section.member_lines.length) {
+          section.member_lines.forEach(function (row) {
+            lines.push(row.name);
+            lines.push("件数" + row.count + "件、" + amountLabel + row.amount_text);
+          });
+        } else {
+          lines.push("個人実績データなし");
+        }
+        lines.push("");
+      } else {
+        lines.push("稼働無し");
+        lines.push("");
+      }
+
+      lines.push("【" + periodName + "（" + periodRange + "）】");
+      if (section.period_lines.length) {
+        section.period_lines.forEach(function (line) {
+          lines.push(line);
+        });
+      } else {
+        lines.push("路程目標データなし");
+      }
+      lines.push("【月間目標達成率】");
+      if (section.month_lines.length) {
+        section.month_lines.forEach(function (line) {
+          lines.push(line);
+        });
+      } else {
+        lines.push("月目標データなし");
+      }
+      return lines;
+    }
+
+    function buildMailBodyV2(payload, commentValue) {
+      const lines = [];
+      let insertedUnSummary = false;
+
+      payload.sections.forEach(function (section, idx) {
+        buildSectionLinesV2(section, payload.period_name, payload.period_range).forEach(function (line) {
+          lines.push(line);
+        });
+
+        if (section.code === "WV") {
+          lines.push("");
+          lines.push("UN全体 " + payload.un_wv_summary.actual_text + "/" + payload.un_wv_summary.target_text + " 達成率" + payload.un_wv_summary.rate);
+          lines.push("");
+          insertedUnSummary = true;
+        } else if (idx !== payload.sections.length - 1) {
+          lines.push("");
+        }
+      });
+
+      if (!insertedUnSummary) {
+        lines.push("");
+        lines.push("UN全体 " + payload.un_wv_summary.actual_text + "/" + payload.un_wv_summary.target_text + " 達成率" + payload.un_wv_summary.rate);
+      }
+
+      lines.push("");
+      lines.push((commentValue || "").trim() || "（コメント未入力）");
+      return lines.join("\n");
+    }
+
     const payloadMapEl = document.getElementById("mail-template-data-map");
     const payloadMap = payloadMapEl ? JSON.parse(payloadMapEl.textContent) : null;
     const buildBtn = document.getElementById("build-mail");
@@ -326,7 +396,7 @@
         alert("テンプレートデータを読み込めません。");
         return;
       }
-      generatedBody = buildMailBody(payload, commentEl.value);
+      generatedBody = buildMailBodyV2(payload, commentEl.value);
       openPreview();
     });
 

@@ -189,6 +189,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         )
         base_daily_totals = base_snapshot["daily_totals"]
         base_member_totals = base_snapshot["member_totals"]
+        base_has_report_by_code = base_snapshot["has_report_by_code"]
 
         base_month = base_date.replace(day=1)
 
@@ -302,6 +303,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
                     "code": code,
                     "heading": heading,
                     "name": label_by_code[code],
+                    "has_report": base_has_report_by_code.get(code, False),
                     "daily_count": base_daily_totals.get(code, {}).get("count", 0),
                     "daily_amount_text": format_yen(base_daily_totals.get(code, {}).get("amount", 0)),
                     "member_lines": member_lines,

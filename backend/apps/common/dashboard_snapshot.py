@@ -35,10 +35,12 @@ def build_submission_snapshot(*, report_date, target_departments):
 
     submission_rows = []
     daily_totals = {}
+    has_report_by_code = {code: False for code in target_codes}
     for code, label in target_departments:
         latest = latest_by_code.get(code)
         totals = report_totals.get(code, {"count": 0, "amount": 0})
         if latest:
+            has_report_by_code[code] = True
             submission_rows.append(
                 {
                     "code": code,
@@ -121,6 +123,7 @@ def build_submission_snapshot(*, report_date, target_departments):
         "submission_rows": submission_rows,
         "daily_totals": daily_totals,
         "member_totals": member_totals,
+        "has_report_by_code": has_report_by_code,
     }
 
 
