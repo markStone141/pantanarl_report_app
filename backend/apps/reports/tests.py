@@ -51,10 +51,8 @@ class ReportMemberFilteringTests(TestCase):
         response = self.client.get(reverse("report_index"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "ユニセフ 本日分")
-        self.assertContains(response, "ユニセフ 前日分")
-        self.assertContains(response, "ワールドビジョン 本日分")
-        self.assertContains(response, "ワールドビジョン 前日分")
+        self.assertContains(response, "ユニセフ 報告へ")
+        self.assertContains(response, "ワールドビジョン 報告へ")
 
     def test_report_form_title_uses_department_display_name(self):
         department = Department.objects.create(name="ユニセフ渋谷", code="UN")

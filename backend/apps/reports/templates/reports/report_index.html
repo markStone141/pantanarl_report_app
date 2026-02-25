@@ -18,10 +18,7 @@
       <h3>部門別報告フォーム</h3>
       <div style="display: grid; gap: 12px; margin-top: 10px;">
         {% for button in department_buttons %}
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <a href="{{ button.today_url }}" class="department-button">{{ button.name }} 本日分</a>
-          <a href="{{ button.prev_url }}" class="department-button" style="background:#ffffff; color: var(--brand); border:1px solid var(--brand);">{{ button.name }} 前日分</a>
-        </div>
+        <a href="{% url button.url_name %}" class="department-button">{{ button.name }} 報告へ</a>
         {% empty %}
         <p class="muted">表示できる報告部署がありません。</p>
         {% endfor %}

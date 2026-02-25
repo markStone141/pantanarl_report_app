@@ -295,8 +295,7 @@ def report_index(request: HttpRequest) -> HttpResponse:
     department_buttons = [
         {
             "name": department_map.get(code, code),
-            "today_url": reverse(url_name),
-            "prev_url": f"{reverse(url_name)}?mode=prev",
+            "url_name": url_name,
         }
         for code, url_name in REPORT_ROUTE_BY_DEPARTMENT_CODE.items()
     ]
