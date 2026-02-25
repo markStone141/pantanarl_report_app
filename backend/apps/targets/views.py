@@ -192,7 +192,7 @@ def _sequence_from_period_name(name: str) -> int:
     return int(match.group(1))
 
 
-def _month_history_rows(selected_month: date | None = None):
+def _month_history_rows(selected_month: date | None = None, include_selected: bool = False):
     months = (
         MonthTargetMetricValue.objects.order_by("-target_month")
         .values_list("target_month", flat=True)
@@ -200,7 +200,7 @@ def _month_history_rows(selected_month: date | None = None):
     )
     rows = []
     month_set = set(months)
-    if selected_month:
+    if selected_month and include_selected:
         month_set.add(selected_month)
     for month in sorted(month_set, reverse=True):
         rows.append(
@@ -300,7 +300,8 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
             month_deleted = True
 
     history_rows = _month_history_rows()
-    month_switch_options = [{"value": row["month_param"], "label": row["month_label"]} for row in history_rows]
+    switch_rows = _month_history_rows(selected_month, include_selected=True)
+    month_switch_options = [{"value": row["month_param"], "label": row["month_label"]} for row in switch_rows]
     if not month_switch_options:
         month_switch_options = [
             {"value": _month_value_from_date(selected_month), "label": f"{selected_month.year}年{selected_month.month}月"}
@@ -315,7 +316,7 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
             "selected_status": _month_status(selected_month),
             "status_options": STATUS_OPTIONS,
             "rows": _build_month_rows(target_month=selected_month, configs=configs),
-            "history_rows": _month_history_rows(selected_month),
+            "history_rows": history_rows,
             "month_switch_options": month_switch_options,
             "saved": request.GET.get("saved") == "1",
             "month_deleted": month_deleted,

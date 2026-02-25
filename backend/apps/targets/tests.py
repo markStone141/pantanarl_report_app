@@ -49,6 +49,42 @@ class TargetsFlowTests(TestCase):
         dashboard_response = self.client.get(reverse("target_index"))
         self.assertContains(dashboard_response, "active")
 
+    def test_month_targets_can_be_deleted(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+
+        self.client.get(reverse("target_month_settings"))
+        un_amount_metric = TargetMetric.objects.get(department__code="UN", code="amount")
+        MonthTargetMetricValue.objects.create(
+            department=Department.objects.get(code="UN"),
+            target_month=current_month,
+            metric=un_amount_metric,
+            value=12345,
+            status="active",
+        )
+        self.assertTrue(MonthTargetMetricValue.objects.filter(target_month=current_month).exists())
+
+        response = self.client.post(
+            reverse("target_month_settings"),
+            {
+                "action": "delete_month_targets",
+                "delete_month": current_month.strftime("%Y-%m"),
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(MonthTargetMetricValue.objects.filter(target_month=current_month).exists())
+
+    def test_unsaved_selected_month_is_not_shown_in_saved_month_history(self):
+        today = timezone.localdate()
+        target_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
+
+        response = self.client.get(
+            reverse("target_month_settings") + f"?month={target_month.strftime('%Y-%m')}"
+        )
+        self.assertEqual(response.status_code, 200)
+        history_months = [row["month"] for row in response.context["history_rows"]]
+        self.assertNotIn(target_month, history_months)
+
     def test_period_save_with_prefixed_name_and_auto_status(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)
