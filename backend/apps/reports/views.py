@@ -8,10 +8,9 @@ from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, require_roles
 from apps.accounts.models import Department, Member
+from apps.common.dashboard_snapshot import build_member_rows, build_submission_snapshot
 from apps.common.report_metrics import (
     SPLIT_COUNT_CODES,
-    STATUS_NOT_SUBMITTED,
-    STATUS_SUBMITTED,
     collect_actual_totals,
     format_metric_triples,
     period_status as calc_period_status,
@@ -38,109 +37,14 @@ def _dashboard_cards_context():
         .order_by("code")
         .values_list("code", "name")
     )
-    target_codes = [code for code, _ in target_departments]
-
-    today_reports_query = DailyDepartmentReport.objects.filter(
+    snapshot = build_submission_snapshot(
         report_date=today,
-    ).select_related("department", "reporter")
-    if target_codes:
-        today_reports_query = today_reports_query.filter(department__code__in=target_codes)
-    else:
-        today_reports_query = today_reports_query.none()
-    today_reports = today_reports_query.order_by("department__code", "-created_at")
-
-    latest_by_code = {}
-    for report in today_reports:
-        if report.department.code not in latest_by_code:
-            latest_by_code[report.department.code] = report
-
-    submission_rows = []
-    for code, label in target_departments:
-        dept_reports = [r for r in today_reports if r.department.code == code]
-        total_count = sum(r.total_count for r in dept_reports)
-        total_amount = sum(r.followup_count for r in dept_reports)
-        latest = latest_by_code.get(code)
-        if latest:
-            submission_rows.append(
-                {
-                    "code": code,
-                    "label": label,
-                    "reporter_name": latest.reporter.name if latest.reporter else "-",
-                    "submitted_time": timezone.localtime(latest.created_at).strftime("%H:%M"),
-                    "status": STATUS_SUBMITTED,
-                    "count": total_count,
-                    "amount": total_amount,
-                    "report_id": latest.id,
-                    "has_split_counts": code in SPLIT_COUNT_CODES,
-                    "cs_count": 0,
-                    "refugee_count": 0,
-                }
-            )
-        else:
-            submission_rows.append(
-                {
-                    "code": code,
-                    "label": label,
-                    "reporter_name": "-",
-                    "submitted_time": "-",
-                    "status": STATUS_NOT_SUBMITTED,
-                    "count": "-",
-                    "amount": "-",
-                    "report_id": None,
-                    "has_split_counts": code in SPLIT_COUNT_CODES,
-                    "cs_count": "-",
-                    "refugee_count": "-",
-                }
-            )
-
-    daily_totals = {}
-    for code, _ in target_departments:
-        dept_reports = today_reports.filter(department__code=code)
-        daily_totals[code] = {
-            "count": sum(r.total_count for r in dept_reports),
-            "amount": sum(r.followup_count for r in dept_reports),
-            "cs_count": 0,
-            "refugee_count": 0,
-        }
-
-    lines_query = DailyDepartmentReportLine.objects.filter(
-        report__report_date=today,
-    ).select_related("member", "report__department")
-    if target_codes:
-        lines_query = lines_query.filter(report__department__code__in=target_codes)
-    else:
-        lines_query = lines_query.none()
-    member_totals = {code: {} for code in target_codes}
-    line_totals = {code: {"cs_count": 0, "refugee_count": 0} for code in target_codes}
-    for line in lines_query:
-        code = line.report.department.code
-        member_name = line.member.name if line.member else "-"
-        if member_name not in member_totals[code]:
-            member_totals[code][member_name] = {
-                "member_name": member_name,
-                "count": 0,
-                "amount": 0,
-                "cs_count": 0,
-                "refugee_count": 0,
-            }
-        member_totals[code][member_name]["count"] += line.count
-        member_totals[code][member_name]["amount"] += line.amount
-        member_totals[code][member_name]["cs_count"] += line.cs_count
-        member_totals[code][member_name]["refugee_count"] += line.refugee_count
-        line_totals[code]["cs_count"] += line.cs_count
-        line_totals[code]["refugee_count"] += line.refugee_count
-
-    def member_rows_for(code):
-        rows = list(member_totals[code].values())
-        return sorted(rows, key=lambda x: (-x["amount"], -x["count"], x["member_name"]))
-
-    for code, _ in target_departments:
-        daily_totals[code]["cs_count"] = line_totals[code]["cs_count"]
-        daily_totals[code]["refugee_count"] = line_totals[code]["refugee_count"]
-    for row in submission_rows:
-        if row["has_split_counts"] and row["count"] != "-":
-            row["cs_count"] = line_totals[row["code"]]["cs_count"]
-            row["refugee_count"] = line_totals[row["code"]]["refugee_count"]
+        target_departments=target_departments,
+    )
+    target_codes = snapshot["target_codes"]
+    submission_rows = snapshot["submission_rows"]
+    daily_totals = snapshot["daily_totals"]
+    member_totals = snapshot["member_totals"]
 
     current_month = today.replace(day=1)
     if not MonthTargetMetricValue.objects.filter(target_month=current_month).exists():
@@ -267,7 +171,7 @@ def _dashboard_cards_context():
                 "has_split_counts": code in SPLIT_COUNT_CODES,
                 "cs_count": daily_totals[code]["cs_count"],
                 "refugee_count": daily_totals[code]["refugee_count"],
-                "members": member_rows_for(code),
+                "members": build_member_rows(member_totals=member_totals, codes=[code]),
             }
         )
 
