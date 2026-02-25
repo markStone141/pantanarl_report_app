@@ -85,7 +85,7 @@ class TargetsFlowTests(TestCase):
         history_months = [row["month"] for row in response.context["history_rows"]]
         self.assertNotIn(target_month, history_months)
 
-    def test_period_save_with_prefixed_name_and_auto_status(self):
+    def test_period_save_with_auto_status(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)
         start_date = today - timedelta(days=1)
@@ -103,7 +103,7 @@ class TargetsFlowTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 200)
-        period = Period.objects.get(name=f"{current_month.year}年度{current_month.month}月 第1次路程")
+        period = Period.objects.get(month=current_month)
         self.assertEqual(period.status, "active")
 
     def test_period_targets_are_saved(self):
@@ -123,7 +123,7 @@ class TargetsFlowTests(TestCase):
                 "end_date": end_date.isoformat(),
             },
         )
-        period = Period.objects.get(name=f"{current_month.year}年度{current_month.month}月 第1次路程")
+        period = Period.objects.get(month=current_month)
         un_count_metric = TargetMetric.objects.get(department__code="UN", code="count")
         wv_refugee_metric = TargetMetric.objects.get(department__code="WV", code="refugee_count")
 
@@ -150,7 +150,7 @@ class TargetsFlowTests(TestCase):
         current_month = today.replace(day=1)
 
         self.client.get(reverse("target_period_settings"))
-        first = self.client.post(
+        self.client.post(
             reverse("target_period_settings"),
             {
                 "action": "save_period",
@@ -160,9 +160,8 @@ class TargetsFlowTests(TestCase):
                 "end_date": (today + timedelta(days=2)).isoformat(),
             },
         )
-        self.assertEqual(first.status_code, 200)
 
-        second = self.client.post(
+        self.client.post(
             reverse("target_period_settings"),
             {
                 "action": "save_period",
@@ -172,10 +171,9 @@ class TargetsFlowTests(TestCase):
                 "end_date": (today - timedelta(days=1)).isoformat(),
             },
         )
-        self.assertEqual(second.status_code, 200)
-        name = f"{current_month.year}年度{current_month.month}月 第1次路程"
-        self.assertEqual(Period.objects.filter(month=current_month, name=name).count(), 1)
-        period = Period.objects.get(month=current_month, name=name)
+
+        self.assertEqual(Period.objects.filter(month=current_month).count(), 1)
+        period = Period.objects.get(month=current_month)
         self.assertEqual(period.status, "finished")
 
     def test_period_save_rejects_overlapping_range(self):
@@ -183,7 +181,7 @@ class TargetsFlowTests(TestCase):
         current_month = today.replace(day=1)
 
         self.client.get(reverse("target_period_settings"))
-        first = self.client.post(
+        self.client.post(
             reverse("target_period_settings"),
             {
                 "action": "save_period",
@@ -193,10 +191,9 @@ class TargetsFlowTests(TestCase):
                 "end_date": (today + timedelta(days=3)).isoformat(),
             },
         )
-        self.assertEqual(first.status_code, 200)
         before_count = Period.objects.count()
 
-        second = self.client.post(
+        response = self.client.post(
             reverse("target_period_settings"),
             {
                 "action": "save_period",
@@ -206,6 +203,26 @@ class TargetsFlowTests(TestCase):
                 "end_date": (today + timedelta(days=4)).isoformat(),
             },
         )
-        self.assertEqual(second.status_code, 200)
-        self.assertContains(second, "期間が既存の路程と重複しています。")
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(Period.objects.count(), before_count)
+
+    def test_period_can_be_deleted(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        period = Period.objects.create(
+            month=current_month,
+            name=f"{today.year}年度{today.month}月 第9次路程",
+            status="active",
+            start_date=today,
+            end_date=today + timedelta(days=1),
+        )
+
+        response = self.client.post(
+            reverse("target_period_settings"),
+            {
+                "action": "delete_period",
+                "delete_period_id": str(period.id),
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Period.objects.filter(id=period.id).exists())

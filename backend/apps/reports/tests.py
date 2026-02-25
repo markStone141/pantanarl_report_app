@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.db.models import Sum
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -307,3 +308,108 @@ class ReportSubmitFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "previous-day-hit")
         self.assertNotContains(response, "today-hit")
+
+    def test_wv_report_submit_edit_delete_with_split_counts(self):
+        today_str = timezone.localdate().isoformat()
+        department = Department.objects.create(name="WV", code="WV")
+        reporter = Member.objects.create(name="WV Lead", login_id="wv_lead", password="x")
+        member_2 = Member.objects.create(name="WV Bob", login_id="wv_bob", password="x")
+        MemberDepartment.objects.create(member=reporter, department=department)
+        MemberDepartment.objects.create(member=member_2, department=department)
+
+        create_response = self.client.post(
+            reverse("report_wv"),
+            data={
+                "report_date": today_str,
+                "reporter": reporter.id,
+                "memo": "wv create",
+                "member_ids": [str(reporter.id), str(member_2.id)],
+                "amounts": ["1000", "2000"],
+                "counts": ["0", "0"],
+                "cs_counts": ["1", "2"],
+                "refugee_counts": ["2", "1"],
+                "locations": ["A", "B"],
+            },
+        )
+        self.assertEqual(create_response.status_code, 302)
+        report = DailyDepartmentReport.objects.get(department=department)
+        self.assertEqual(report.total_count, 6)
+        self.assertEqual(report.followup_count, 3000)
+        self.assertEqual(report.lines.aggregate(cs=Sum("cs_count"))["cs"], 3)
+        self.assertEqual(report.lines.aggregate(ref=Sum("refugee_count"))["ref"], 3)
+
+        edit_response = self.client.post(
+            reverse("report_edit", kwargs={"report_id": report.id}),
+            data={
+                "report_date": today_str,
+                "reporter": reporter.id,
+                "memo": "wv edit",
+                "member_ids": [str(reporter.id)],
+                "amounts": ["5000"],
+                "counts": ["0"],
+                "cs_counts": ["4"],
+                "refugee_counts": ["1"],
+                "locations": ["C"],
+            },
+        )
+        self.assertEqual(edit_response.status_code, 302)
+        report.refresh_from_db()
+        self.assertEqual(report.memo, "wv edit")
+        self.assertEqual(report.total_count, 5)
+        self.assertEqual(report.followup_count, 5000)
+        self.assertEqual(report.lines.count(), 1)
+
+        delete_response = self.client.post(
+            reverse("report_delete", kwargs={"dept_code": "WV", "report_id": report.id}),
+        )
+        self.assertEqual(delete_response.status_code, 302)
+        self.assertFalse(DailyDepartmentReport.objects.filter(id=report.id).exists())
+
+    def test_style_report_submit_edit_delete_without_location(self):
+        today_str = timezone.localdate().isoformat()
+        department = Department.objects.create(name="Style North", code="STYLE1")
+        reporter = Member.objects.create(name="Style Lead", login_id="style_lead", password="x")
+        MemberDepartment.objects.create(member=reporter, department=department)
+
+        create_response = self.client.post(
+            reverse("report_style1"),
+            data={
+                "report_date": today_str,
+                "reporter": reporter.id,
+                "memo": "style create",
+                "member_ids": [str(reporter.id)],
+                "amounts": ["7000"],
+                "counts": ["3"],
+                "locations": ["IGNORED"],
+            },
+        )
+        self.assertEqual(create_response.status_code, 302)
+        report = DailyDepartmentReport.objects.get(department=department)
+        self.assertEqual(report.total_count, 3)
+        self.assertEqual(report.followup_count, 7000)
+        self.assertEqual(report.location, "")
+        self.assertEqual(report.lines.first().location, "")
+
+        edit_response = self.client.post(
+            reverse("report_edit", kwargs={"report_id": report.id}),
+            data={
+                "report_date": today_str,
+                "reporter": reporter.id,
+                "memo": "style edit",
+                "member_ids": [str(reporter.id)],
+                "amounts": ["8000"],
+                "counts": ["4"],
+                "locations": ["IGNORED2"],
+            },
+        )
+        self.assertEqual(edit_response.status_code, 302)
+        report.refresh_from_db()
+        self.assertEqual(report.memo, "style edit")
+        self.assertEqual(report.followup_count, 8000)
+        self.assertEqual(report.location, "")
+
+        delete_response = self.client.post(
+            reverse("report_delete", kwargs={"dept_code": "STYLE1", "report_id": report.id}),
+        )
+        self.assertEqual(delete_response.status_code, 302)
+        self.assertFalse(DailyDepartmentReport.objects.filter(id=report.id).exists())
