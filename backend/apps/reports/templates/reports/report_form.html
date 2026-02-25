@@ -50,7 +50,7 @@
             name="report_date"
             id="id_report_date"
             class="report-date-input"
-            value="{{ form.report_date.value|default_if_none:'' }}"
+            value="{{ report_date_value }}"
             required
           >
         </div>
@@ -185,14 +185,6 @@
 
 <script>
   (function () {
-    const reportDateInput = document.getElementById("id_report_date");
-    if (reportDateInput) {
-      reportDateInput.classList.add("report-date-input");
-      reportDateInput.style.width = "100%";
-      reportDateInput.style.maxWidth = "100%";
-      reportDateInput.style.minWidth = "0";
-    }
-
     const rows = document.getElementById("member-rows");
     const addButton = document.getElementById("add-row");
 

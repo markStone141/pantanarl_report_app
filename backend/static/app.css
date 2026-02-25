@@ -235,12 +235,9 @@ button {
 
 .report-date-input {
   display: block;
-  width: 100% !important;
+  width: 100%;
   max-width: 100%;
   min-width: 0;
-  inline-size: 100%;
-  -webkit-appearance: none;
-  appearance: none;
 }
 
 textarea {
@@ -539,15 +536,6 @@ th {
   button {
     font-size: 16px;
     min-height: 44px;
-  }
-
-  input[type="date"],
-  input[type="month"],
-  input[type="week"] {
-    display: block;
-    min-width: 0;
-    width: 100% !important;
-    max-width: 100%;
   }
 
   .btn-inline {
