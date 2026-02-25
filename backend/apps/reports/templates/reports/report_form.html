@@ -6,6 +6,7 @@
 <div class="container">
   <header class="topbar">
     <strong>{{ title }}</strong>
+    <a href="{% url 'logout' %}" class="topbar-mobile-logout">ログアウト</a>
     <nav>
       <a href="{% url 'report_index' %}">報告一覧</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
