@@ -45,14 +45,16 @@
       <div class="grid grid-2">
         <div class="report-date-wrap">
           <label for="{{ form.report_date.id_for_label }}">{{ form.report_date.label }}</label>
-          <input
-            type="date"
-            name="report_date"
-            id="id_report_date"
-            class="report-date-input"
-            value="{{ report_date_value|default:today_iso }}"
-            required
-          >
+          <div class="report-date-field">
+            <input
+              type="date"
+              name="report_date"
+              id="id_report_date"
+              class="report-date-input"
+              value="{{ report_date_value|default:today_iso }}"
+              required
+            >
+          </div>
         </div>
         <div>
           <label for="{{ form.reporter.id_for_label }}">{{ form.reporter.label }}</label>

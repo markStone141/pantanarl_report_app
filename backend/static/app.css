@@ -249,6 +249,13 @@ button {
   overflow: hidden;
 }
 
+.report-date-field {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
 textarea {
   min-height: 92px;
   resize: vertical;
@@ -483,12 +490,15 @@ th {
 
   .report-date-input {
     display: block;
+    flex: 1 1 auto;
     box-sizing: border-box;
     inline-size: 100% !important;
-    width: 100% !important;
+    width: 1px !important;
     max-inline-size: 100%;
-    min-inline-size: 0;
-    min-width: 0;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   .container {
