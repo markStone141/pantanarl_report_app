@@ -123,14 +123,7 @@ def _period_status(start_date: date, end_date: date, today: date | None = None) 
     return TARGET_STATUS_FINISHED
 
 
-def _build_month_rows(*, target_month: date, configs):
-    values = {
-        value.metric_id: value.value
-        for value in MonthTargetMetricValue.objects.filter(
-            target_month=target_month,
-            metric__is_active=True,
-        ).select_related("metric")
-    }
+def _build_target_rows(*, configs, values):
     rows = []
     for config in configs:
         metric_rows = []
@@ -146,6 +139,17 @@ def _build_month_rows(*, target_month: date, configs):
             )
         rows.append({"label": config["label"], "metrics": metric_rows})
     return rows
+
+
+def _build_month_rows(*, target_month: date, configs):
+    values = {
+        value.metric_id: value.value
+        for value in MonthTargetMetricValue.objects.filter(
+            target_month=target_month,
+            metric__is_active=True,
+        ).select_related("metric")
+    }
+    return _build_target_rows(configs=configs, values=values)
 
 
 def _build_period_rows(*, period: Period | None, configs):
@@ -158,21 +162,7 @@ def _build_period_rows(*, period: Period | None, configs):
                 metric__is_active=True,
             ).select_related("metric")
         }
-    rows = []
-    for config in configs:
-        metric_rows = []
-        for metric in config["metrics"]:
-            metric_rows.append(
-                {
-                    "id": metric.id,
-                    "label": metric.label,
-                    "unit": metric.unit,
-                    "value": values.get(metric.id, 0),
-                    "input_name": f"metric_{metric.id}",
-                }
-            )
-        rows.append({"label": config["label"], "metrics": metric_rows})
-    return rows
+    return _build_target_rows(configs=configs, values=values)
 
 
 def _period_name(*, month: date, sequence: int) -> str:
@@ -247,6 +237,152 @@ def _current_period() -> Period | None:
     return Period.objects.order_by("-month", "start_date", "id").first()
 
 
+def _save_month_targets(*, selected_month: date, configs, post_data) -> None:
+    status = _month_status(selected_month)
+    for config in configs:
+        for metric in config["metrics"]:
+            MonthTargetMetricValue.objects.update_or_create(
+                department=config["department"],
+                target_month=selected_month,
+                metric=metric,
+                defaults={
+                    "value": _to_int(post_data.get(f"metric_{metric.id}")),
+                    "status": status,
+                },
+            )
+
+
+def _parse_period_form(post_data):
+    period_month = _month_start(post_data.get("period_month"))
+    sequence_str = (post_data.get("period_sequence") or "").strip()
+    start_date_str = post_data.get("start_date")
+    end_date_str = post_data.get("end_date")
+    try:
+        start_date = date.fromisoformat(start_date_str or "")
+        end_date = date.fromisoformat(end_date_str or "")
+    except ValueError:
+        return None, "開始日と終了日の形式が不正です。"
+
+    if not sequence_str.isdigit():
+        return None, "路程番号を選択してください。"
+
+    sequence = int(sequence_str)
+    if sequence not in PERIOD_SEQUENCE_OPTIONS:
+        return None, "路程番号が不正です。"
+    if start_date > end_date:
+        return None, "開始日は終了日以前を指定してください。"
+
+    return {
+        "period_month": period_month,
+        "sequence": sequence,
+        "start_date": start_date,
+        "end_date": end_date,
+    }, None
+
+
+def _save_period_definition(*, post_data):
+    edit_id = post_data.get("edit_period_id")
+    parsed, error = _parse_period_form(post_data)
+    if error:
+        return None, False, error
+
+    period_month = parsed["period_month"]
+    sequence = parsed["sequence"]
+    start_date = parsed["start_date"]
+    end_date = parsed["end_date"]
+    name = _period_name(month=period_month, sequence=sequence)
+    status = _period_status(start_date, end_date)
+
+    if edit_id and edit_id.isdigit():
+        selected_period = get_object_or_404(Period, id=int(edit_id))
+    else:
+        selected_period = Period.objects.filter(month=period_month, name=name).first()
+
+    duplicate_name_query = Period.objects.filter(month=period_month, name=name)
+    if selected_period:
+        duplicate_name_query = duplicate_name_query.exclude(id=selected_period.id)
+    if duplicate_name_query.exists():
+        return selected_period, False, "同じ対象月・路程番号の路程が既にあります。"
+
+    overlap_query = Period.objects.filter(
+        start_date__lte=end_date,
+        end_date__gte=start_date,
+    )
+    if selected_period:
+        overlap_query = overlap_query.exclude(id=selected_period.id)
+    if overlap_query.exists():
+        return selected_period, False, "期間が既存の路程と重複しています。"
+
+    if selected_period:
+        selected_period.month = period_month
+        selected_period.name = name
+        selected_period.status = status
+        selected_period.start_date = start_date
+        selected_period.end_date = end_date
+        selected_period.save(
+            update_fields=["month", "name", "status", "start_date", "end_date", "updated_at"]
+        )
+    else:
+        selected_period = Period.objects.create(
+            month=period_month,
+            name=name,
+            status=status,
+            start_date=start_date,
+            end_date=end_date,
+        )
+    return selected_period, True, None
+
+
+def _save_period_targets(*, selected_period: Period, configs, post_data) -> None:
+    for config in configs:
+        for metric in config["metrics"]:
+            PeriodTargetMetricValue.objects.update_or_create(
+                period=selected_period,
+                department=config["department"],
+                metric=metric,
+                defaults={"value": _to_int(post_data.get(f"metric_{metric.id}"))},
+            )
+
+
+def _period_form_values(selected_period: Period | None):
+    selected_month = timezone.localdate().replace(day=1)
+    selected_sequence = 1
+    selected_status = TARGET_STATUS_PLANNED
+    selected_start = ""
+    selected_end = ""
+    selected_id = ""
+    if selected_period:
+        selected_month = selected_period.month
+        selected_sequence = _sequence_from_period_name(selected_period.name)
+        selected_status = _period_status(selected_period.start_date, selected_period.end_date)
+        selected_start = selected_period.start_date.isoformat()
+        selected_end = selected_period.end_date.isoformat()
+        selected_id = str(selected_period.id)
+    return {
+        "form_month": _month_value_from_date(selected_month),
+        "form_sequence": selected_sequence,
+        "form_status": selected_status,
+        "form_start_date": selected_start,
+        "form_end_date": selected_end,
+        "form_edit_period_id": selected_id,
+    }
+
+
+def _period_options():
+    periods = Period.objects.order_by("-month", "start_date", "id")
+    return [
+        {
+            "id": period.id,
+            "label": (
+                f"{period.name} "
+                f"[{_period_status(period.start_date, period.end_date)}] "
+                f"({period.start_date:%Y/%m/%d} - {period.end_date:%Y/%m/%d})"
+            ),
+        }
+        for period in periods
+    ]
+
+
 @require_roles(ROLE_ADMIN)
 def target_index(request: HttpRequest) -> HttpResponse:
     configs = _department_configs()
@@ -280,18 +416,7 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
         action = request.POST.get("action")
         if action == "save_month_targets":
             selected_month = _month_start(request.POST.get("month"))
-            status = _month_status(selected_month)
-            for config in configs:
-                for metric in config["metrics"]:
-                    MonthTargetMetricValue.objects.update_or_create(
-                        department=config["department"],
-                        target_month=selected_month,
-                        metric=metric,
-                        defaults={
-                            "value": _to_int(request.POST.get(f"metric_{metric.id}")),
-                            "status": status,
-                        },
-                    )
+            _save_month_targets(selected_month=selected_month, configs=configs, post_data=request.POST)
             return redirect(f"{request.path}?month={_month_value_from_date(selected_month)}&saved=1")
         if action == "delete_month_targets":
             target_month = _month_start(request.POST.get("delete_month"))
@@ -332,80 +457,15 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "save_period":
-            edit_id = request.POST.get("edit_period_id")
-            period_month = _month_start(request.POST.get("period_month"))
-            sequence_str = (request.POST.get("period_sequence") or "").strip()
-            start_date_str = request.POST.get("start_date")
-            end_date_str = request.POST.get("end_date")
-            try:
-                start_date = date.fromisoformat(start_date_str or "")
-                end_date = date.fromisoformat(end_date_str or "")
-            except ValueError:
-                form_error = "開始日と終了日の形式が不正です。"
-            else:
-                if not sequence_str.isdigit():
-                    form_error = "路程番号を選択してください。"
-                else:
-                    sequence = int(sequence_str)
-                    if sequence not in PERIOD_SEQUENCE_OPTIONS:
-                        form_error = "路程番号が不正です。"
-                    elif start_date > end_date:
-                        form_error = "開始日は終了日以前を指定してください。"
-                    else:
-                        name = _period_name(month=period_month, sequence=sequence)
-                        status = _period_status(start_date, end_date)
-                        if edit_id and edit_id.isdigit():
-                            selected_period = get_object_or_404(Period, id=int(edit_id))
-                        else:
-                            selected_period = Period.objects.filter(month=period_month, name=name).first()
-
-                        duplicate_name_query = Period.objects.filter(month=period_month, name=name)
-                        if selected_period:
-                            duplicate_name_query = duplicate_name_query.exclude(id=selected_period.id)
-                        if duplicate_name_query.exists():
-                            form_error = "同じ対象月・路程番号の路程が既にあります。"
-                        else:
-                            overlap_query = Period.objects.filter(
-                                start_date__lte=end_date,
-                                end_date__gte=start_date,
-                            )
-                            if selected_period:
-                                overlap_query = overlap_query.exclude(id=selected_period.id)
-
-                            if overlap_query.exists():
-                                form_error = "期間が既存の路程と重複しています。"
-                            else:
-                                if selected_period:
-                                    selected_period.month = period_month
-                                    selected_period.name = name
-                                    selected_period.status = status
-                                    selected_period.start_date = start_date
-                                    selected_period.end_date = end_date
-                                    selected_period.save(
-                                        update_fields=["month", "name", "status", "start_date", "end_date", "updated_at"]
-                                    )
-                                else:
-                                    selected_period = Period.objects.create(
-                                        month=period_month,
-                                        name=name,
-                                        status=status,
-                                        start_date=start_date,
-                                        end_date=end_date,
-                                    )
-                                period_saved = True
+            saved_period, period_saved, form_error = _save_period_definition(post_data=request.POST)
+            if saved_period is not None:
+                selected_period = saved_period
 
         elif action == "save_period_targets":
             selected_id = request.POST.get("selected_period_id")
             if selected_id and selected_id.isdigit():
                 selected_period = get_object_or_404(Period, id=int(selected_id))
-                for config in configs:
-                    for metric in config["metrics"]:
-                        PeriodTargetMetricValue.objects.update_or_create(
-                            period=selected_period,
-                            department=config["department"],
-                            metric=metric,
-                            defaults={"value": _to_int(request.POST.get(f"metric_{metric.id}"))},
-                        )
+                _save_period_targets(selected_period=selected_period, configs=configs, post_data=request.POST)
                 target_saved = True
             else:
                 form_error = "対象の路程を選択してください。"
@@ -422,32 +482,7 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
     if not selected_period:
         selected_period = _current_period()
 
-    selected_month = timezone.localdate().replace(day=1)
-    selected_sequence = 1
-    selected_status = TARGET_STATUS_PLANNED
-    selected_start = ""
-    selected_end = ""
-    selected_id = ""
-    if selected_period:
-        selected_month = selected_period.month
-        selected_sequence = _sequence_from_period_name(selected_period.name)
-        selected_status = _period_status(selected_period.start_date, selected_period.end_date)
-        selected_start = selected_period.start_date.isoformat()
-        selected_end = selected_period.end_date.isoformat()
-        selected_id = str(selected_period.id)
-
-    periods = Period.objects.order_by("-month", "start_date", "id")
-    period_options = [
-        {
-            "id": period.id,
-            "label": (
-                f"{period.name} "
-                f"[{_period_status(period.start_date, period.end_date)}] "
-                f"({period.start_date:%Y/%m/%d} - {period.end_date:%Y/%m/%d})"
-            ),
-        }
-        for period in periods
-    ]
+    form_values = _period_form_values(selected_period)
 
     return render(
         request,
@@ -456,15 +491,10 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
             "selected_period": selected_period,
             "selected_period_label": _period_label(selected_period),
             "rows": _build_period_rows(period=selected_period, configs=configs),
-            "period_options": period_options,
+            "period_options": _period_options(),
             "period_sequence_options": PERIOD_SEQUENCE_OPTIONS,
             "status_options": STATUS_OPTIONS,
-            "form_month": _month_value_from_date(selected_month),
-            "form_sequence": selected_sequence,
-            "form_status": selected_status,
-            "form_start_date": selected_start,
-            "form_end_date": selected_end,
-            "form_edit_period_id": selected_id,
+            **form_values,
             "period_saved": period_saved or request.GET.get("period_saved") == "1",
             "period_deleted": period_deleted,
             "target_saved": target_saved or request.GET.get("target_saved") == "1",
