@@ -446,15 +446,38 @@ def _render_report_form(
                 )
                 report.lines.all().delete()
             else:
-                report = DailyDepartmentReport.objects.create(
+                existing_reports = DailyDepartmentReport.objects.filter(
                     department=department,
                     report_date=form.cleaned_data["report_date"],
-                    reporter=form.cleaned_data["reporter"],
-                    total_count=total_count,
-                    followup_count=total_amount,
-                    location=fallback_location,
-                    memo=form.cleaned_data["memo"].strip(),
-                )
+                ).order_by("-created_at", "-id")
+                report = existing_reports.first()
+                if report:
+                    report.reporter = form.cleaned_data["reporter"]
+                    report.total_count = total_count
+                    report.followup_count = total_amount
+                    report.location = fallback_location
+                    report.memo = form.cleaned_data["memo"].strip()
+                    report.save(
+                        update_fields=[
+                            "reporter",
+                            "total_count",
+                            "followup_count",
+                            "location",
+                            "memo",
+                        ]
+                    )
+                    report.lines.all().delete()
+                    existing_reports.exclude(id=report.id).delete()
+                else:
+                    report = DailyDepartmentReport.objects.create(
+                        department=department,
+                        report_date=form.cleaned_data["report_date"],
+                        reporter=form.cleaned_data["reporter"],
+                        total_count=total_count,
+                        followup_count=total_amount,
+                        location=fallback_location,
+                        memo=form.cleaned_data["memo"].strip(),
+                    )
 
             member_map = {member.id: member for member in members}
             DailyDepartmentReportLine.objects.bulk_create(

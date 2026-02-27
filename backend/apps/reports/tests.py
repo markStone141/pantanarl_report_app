@@ -142,6 +142,75 @@ class ReportSubmitFlowTests(TestCase):
         self.assertContains(response, "Alice")
         self.assertContains(response, "Bob")
 
+    def test_report_submit_overwrites_existing_same_day_same_department(self):
+        today_str = timezone.localdate().isoformat()
+        department = Department.objects.create(name="UN", code="UN")
+        reporter_1 = Member.objects.create(name="Alice", login_id="overwrite_alice", password="x")
+        reporter_2 = Member.objects.create(name="Bob", login_id="overwrite_bob", password="x")
+        member_1 = Member.objects.create(name="Carol", login_id="overwrite_carol", password="x")
+        member_2 = Member.objects.create(name="Dave", login_id="overwrite_dave", password="x")
+        for member in (reporter_1, reporter_2, member_1, member_2):
+            MemberDepartment.objects.create(member=member, department=department)
+
+        first = DailyDepartmentReport.objects.create(
+            department=department,
+            report_date=timezone.localdate(),
+            reporter=reporter_1,
+            total_count=1,
+            followup_count=1000,
+            memo="old",
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=first,
+            member=member_1,
+            amount=1000,
+            count=1,
+            location="A",
+        )
+
+        second = DailyDepartmentReport.objects.create(
+            department=department,
+            report_date=timezone.localdate(),
+            reporter=reporter_2,
+            total_count=2,
+            followup_count=2000,
+            memo="old-2",
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=second,
+            member=member_2,
+            amount=2000,
+            count=2,
+            location="B",
+        )
+
+        submit_response = self.client.post(
+            reverse("report_un"),
+            data={
+                "report_date": today_str,
+                "reporter": reporter_1.id,
+                "memo": "latest",
+                "member_ids": [str(member_1.id)],
+                "amounts": ["5000"],
+                "counts": ["5"],
+                "locations": ["Tokyo"],
+            },
+        )
+
+        self.assertEqual(submit_response.status_code, 302)
+        self.assertEqual(DailyDepartmentReport.objects.filter(department=department, report_date=timezone.localdate()).count(), 1)
+        report = DailyDepartmentReport.objects.get(department=department, report_date=timezone.localdate())
+        self.assertEqual(report.id, second.id)
+        self.assertEqual(report.reporter_id, reporter_1.id)
+        self.assertEqual(report.total_count, 5)
+        self.assertEqual(report.followup_count, 5000)
+        self.assertEqual(report.memo, "latest")
+        self.assertEqual(report.lines.count(), 1)
+        line = report.lines.first()
+        self.assertEqual(line.member_id, member_1.id)
+        self.assertEqual(line.amount, 5000)
+        self.assertEqual(line.count, 5)
+
     def test_report_edit_updates_existing_report_and_lines(self):
         today_str = timezone.localdate().isoformat()
         department = Department.objects.create(name="UN", code="UN")
