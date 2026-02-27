@@ -1,4 +1,5 @@
-﻿from datetime import timedelta
+import re
+from datetime import timedelta
 
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -25,6 +26,11 @@ def _format_amount_text(value):
     if isinstance(value, int):
         return f"{value:,}"
     return value
+
+
+def _mail_period_heading(period_name: str) -> str:
+    match = re.search(r"第\d+次路程", period_name or "")
+    return match.group(0) if match else (period_name or "-")
 
 
 @require_roles(ROLE_ADMIN)
@@ -241,7 +247,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
                 base_period_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
             base_period_start = base_period.start_date
             base_period_end = base_period.end_date
-            base_period_name = base_period.name
+            base_period_name = _mail_period_heading(base_period.name)
             base_period_range = (
                 f"{base_period.start_date.month}/{base_period.start_date.day}"
                 f"～{base_period.end_date.month}/{base_period.end_date.day}"
