@@ -89,7 +89,7 @@
                 {% endfor %}
               </select>
             </td>
-            <td data-label="金額(円)"><input type="number" min="0" name="amounts" value="{{ row.amount|default:'0' }}"></td>
+            <td data-label="金額(円)"><input type="text" inputmode="numeric" name="amounts" value="{{ row.amount|default:'0' }}"></td>
             {% if split_counts %}
             <td data-label="CS件数"><input type="number" min="0" name="cs_counts" value="{{ row.cs_count|default:'0' }}"></td>
             <td data-label="難民件数"><input type="number" min="0" name="refugee_counts" value="{{ row.refugee_count|default:'0' }}"></td>
@@ -183,8 +183,41 @@
 
     const rows = document.getElementById("member-rows");
     const addButton = document.getElementById("add-row");
+    const form = document.querySelector("form[method='post']");
 
     if (!rows || !addButton) return;
+
+    function formatAmountValue(value) {
+      const digits = String(value || "").replace(/[^\d]/g, "");
+      if (!digits) return "";
+      return Number(digits).toLocaleString("en-US");
+    }
+
+    function bindAmountInput(input) {
+      if (!input || input.dataset.commaBound === "1") return;
+      input.dataset.commaBound = "1";
+      input.addEventListener("input", function () {
+        input.value = formatAmountValue(input.value);
+      });
+      input.addEventListener("blur", function () {
+        input.value = formatAmountValue(input.value || "0");
+      });
+      input.value = formatAmountValue(input.value || "0");
+    }
+
+    function bindAllAmountInputs(scope) {
+      (scope || document).querySelectorAll("input[name='amounts']").forEach(bindAmountInput);
+    }
+
+    bindAllAmountInputs(document);
+
+    if (form) {
+      form.addEventListener("submit", function () {
+        form.querySelectorAll("input[name='amounts']").forEach(function (input) {
+          input.value = String(input.value || "").replace(/,/g, "");
+        });
+      });
+    }
 
     addButton.addEventListener("click", function () {
       const firstRow = rows.querySelector("tr");
@@ -206,6 +239,7 @@
         }
       });
       rows.appendChild(clone);
+      bindAllAmountInputs(clone);
     });
   })();
 </script>
