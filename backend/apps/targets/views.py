@@ -1,4 +1,4 @@
-﻿import re
+import re
 from datetime import date
 
 from django.http import HttpRequest, HttpResponse
@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, require_roles
 from apps.accounts.models import Department
+from apps.common.report_metrics import format_metric_value
 
 from .models import (
     MonthTargetMetricValue,
@@ -134,6 +135,7 @@ def _build_target_rows(*, configs, values):
                     "label": metric.label,
                     "unit": metric.unit,
                     "value": values.get(metric.id, 0),
+                    "value_text": format_metric_value(metric_code=metric.code, value=values.get(metric.id, 0)),
                     "input_name": f"metric_{metric.id}",
                 }
             )
@@ -496,4 +498,3 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
             "history_rows": _period_history_rows(),
         },
     )
-

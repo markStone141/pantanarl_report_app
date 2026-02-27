@@ -27,7 +27,7 @@
       <strong>{{ row.label }}</strong>
       <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
         {% for metric in row.metrics %}
-        <span class="badge">{{ metric.label }}: {{ metric.value }}{{ metric.unit }}</span>
+        <span class="badge">{{ metric.label }}: {{ metric.value_text }}{{ metric.unit }}</span>
         {% endfor %}
       </div>
     </div>
@@ -65,7 +65,7 @@
       <strong>{{ row.label }}</strong>
       <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
         {% for metric in row.metrics %}
-        <span class="badge">{{ metric.label }}: {{ metric.value }}{{ metric.unit }}</span>
+        <span class="badge">{{ metric.label }}: {{ metric.value_text }}{{ metric.unit }}</span>
         {% endfor %}
       </div>
     </div>
@@ -95,3 +95,4 @@
   </section>
 </div>
 {% endblock %}
+
