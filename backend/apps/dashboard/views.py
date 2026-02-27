@@ -21,6 +21,12 @@ from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetr
 from .forms import DepartmentForm, MemberRegistrationForm, TargetMetricForm
 
 
+def _format_amount_text(value):
+    if isinstance(value, int):
+        return f"{value:,}"
+    return value
+
+
 @require_roles(ROLE_ADMIN)
 def dashboard_index(request: HttpRequest) -> HttpResponse:
     real_today = timezone.localdate()
@@ -39,6 +45,8 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
     submission_rows = snapshot["submission_rows"]
     daily_totals = snapshot["daily_totals"]
     member_totals = snapshot["member_totals"]
+    for row in submission_rows:
+        row["amount_text"] = _format_amount_text(row.get("amount"))
 
 
     current_month = today.replace(day=1)
@@ -167,16 +175,20 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
 
     kpi_cards = []
     for code, label in target_departments:
+        member_rows = build_member_rows(member_totals=member_totals, codes=[code])
+        for member_row in member_rows:
+            member_row["amount_text"] = _format_amount_text(member_row.get("amount", 0))
         kpi_cards.append(
             {
                 "code": code,
                 "title": label,
                 "count": daily_totals[code]["count"],
                 "amount": daily_totals[code]["amount"],
+                "amount_text": _format_amount_text(daily_totals[code]["amount"]),
                 "has_split_counts": code in SPLIT_COUNT_CODES,
                 "cs_count": daily_totals[code]["cs_count"],
                 "refugee_count": daily_totals[code]["refugee_count"],
-                "members": build_member_rows(member_totals=member_totals, codes=[code]),
+                "members": member_rows,
             }
         )
 
@@ -291,11 +303,11 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
                 for row in build_member_rows(member_totals=base_member_totals, codes=[code])
             ]
             month_metric_lines = [
-                f"{row['label']} {row['actual']}/{row['target']}{row['unit']} 達成率{row['rate']}"
+                f"{row['label']} {row['actual_text']}/{row['target_text']}{row['unit']} 達成率{row['rate']}"
                 for row in base_metric_detail_by_code.get(code, {}).get("month", [])
             ]
             period_metric_lines = [
-                f"{row['label']} {row['actual']}/{row['target']}{row['unit']} 達成率{row['rate']}"
+                f"{row['label']} {row['actual_text']}/{row['target_text']}{row['unit']} 達成率{row['rate']}"
                 for row in base_metric_detail_by_code.get(code, {}).get("period", [])
             ]
             mail_sections.append(

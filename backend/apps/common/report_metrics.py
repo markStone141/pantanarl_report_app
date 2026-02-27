@@ -25,6 +25,12 @@ def metric_actual_value(*, metric_code, total_count, total_amount, total_cs_coun
     return 0
 
 
+def format_metric_value(*, metric_code, value: int) -> str:
+    if metric_code == "amount":
+        return f"{value:,}"
+    return str(value)
+
+
 def collect_actual_totals(*, start_date, end_date, target_codes):
     lines = (
         DailyDepartmentReportLine.objects.filter(
@@ -66,8 +72,8 @@ def format_metric_triples(*, metrics, target_values, actual_totals):
             total_refugee_count=actual_totals.get("refugee_count", 0),
         )
         rate = f"{(actual / target) * 100:.1f}%" if target > 0 else "-"
-        target_parts.append(f"{label} {target}{unit}")
-        actual_parts.append(f"{label} {actual}{unit}")
+        target_parts.append(f"{label} {format_metric_value(metric_code=metric.code, value=target)}{unit}")
+        actual_parts.append(f"{label} {format_metric_value(metric_code=metric.code, value=actual)}{unit}")
         rate_parts.append(f"{label} {rate}")
     return " / ".join(target_parts), " / ".join(actual_parts), " / ".join(rate_parts)
 
@@ -91,6 +97,8 @@ def metric_detail_rows(*, metrics, target_values, actual_totals):
                 "unit": metric.unit or "",
                 "target": target,
                 "actual": actual,
+                "target_text": format_metric_value(metric_code=metric.code, value=target),
+                "actual_text": format_metric_value(metric_code=metric.code, value=actual),
                 "rate": rate,
             }
         )

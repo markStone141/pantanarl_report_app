@@ -21,6 +21,12 @@ from .forms import ReportSubmissionForm
 from .models import DailyDepartmentReport, DailyDepartmentReportLine
 
 
+def _format_amount_text(value):
+    if isinstance(value, int):
+        return f"{value:,}"
+    return value
+
+
 REPORT_ROUTE_BY_DEPARTMENT_CODE = {
     "UN": "report_un",
     "WV": "report_wv",
@@ -45,6 +51,8 @@ def _dashboard_cards_context():
     submission_rows = snapshot["submission_rows"]
     daily_totals = snapshot["daily_totals"]
     member_totals = snapshot["member_totals"]
+    for row in submission_rows:
+        row["amount_text"] = _format_amount_text(row.get("amount"))
 
     current_month = today.replace(day=1)
 
@@ -154,16 +162,20 @@ def _dashboard_cards_context():
 
     kpi_cards = []
     for code, label in target_departments:
+        member_rows = build_member_rows(member_totals=member_totals, codes=[code])
+        for member_row in member_rows:
+            member_row["amount_text"] = _format_amount_text(member_row.get("amount", 0))
         kpi_cards.append(
             {
                 "code": code,
                 "title": label,
                 "count": daily_totals[code]["count"],
                 "amount": daily_totals[code]["amount"],
+                "amount_text": _format_amount_text(daily_totals[code]["amount"]),
                 "has_split_counts": code in SPLIT_COUNT_CODES,
                 "cs_count": daily_totals[code]["cs_count"],
                 "refugee_count": daily_totals[code]["refugee_count"],
-                "members": build_member_rows(member_totals=member_totals, codes=[code]),
+                "members": member_rows,
             }
         )
 
@@ -202,11 +214,15 @@ def report_index(request: HttpRequest) -> HttpResponse:
 
 @require_roles(ROLE_ADMIN)
 def report_history(request: HttpRequest) -> HttpResponse:
-    reports = (
+    reports = list(
         DailyDepartmentReport.objects.select_related("department", "reporter")
         .prefetch_related("lines__member")
         .order_by("-report_date", "-created_at")[:100]
     )
+    for report in reports:
+        report.followup_count_text = _format_amount_text(report.followup_count)
+        for line in report.lines.all():
+            line.amount_text = _format_amount_text(line.amount)
     return render(request, "reports/report_history.html", {"reports": reports})
 
 
@@ -482,7 +498,7 @@ def _render_report_form(
                 {"member_id": "", "amount": "0", "count": "0", "cs_count": "0", "refugee_count": "0", "location": ""},
             ]
 
-    recent_reports = (
+    recent_reports = list(
         DailyDepartmentReport.objects.filter(
             department__code=dept_code,
             report_date=selected_date,
@@ -494,6 +510,8 @@ def _render_report_form(
         )
         .order_by("-created_at")[:30]
     )
+    for report in recent_reports:
+        report.followup_count_text = _format_amount_text(report.followup_count)
     if form.is_bound:
         selected_reporter_id = str(form.data.get("reporter", "") or "")
         memo_value = form.data.get("memo", "") or ""

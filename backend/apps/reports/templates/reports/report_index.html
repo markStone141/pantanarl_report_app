@@ -33,7 +33,7 @@
       {% for card in kpi_cards %}
       <article class="card">
         <h3>{{ card.title }}</h3>
-        <div class="kpi">¥ {{ card.amount }}</div>
+        <div class="kpi">¥ {{ card.amount_text }}</div>
         {% if card.has_split_counts %}
         <p class="muted">件数: CS {{ card.cs_count }} / 難民 {{ card.refugee_count }}</p>
         {% else %}
@@ -60,7 +60,7 @@
                 {% else %}
                 <td>{{ member.count }}</td>
                 {% endif %}
-                <td>{{ member.amount }}</td>
+                <td>{{ member.amount_text }}</td>
               </tr>
               {% empty %}
               {% if card.has_split_counts %}

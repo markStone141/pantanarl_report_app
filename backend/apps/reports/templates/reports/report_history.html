@@ -36,7 +36,7 @@
           <td>{{ report.department.name }}</td>
           <td>{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
           <td>{{ report.total_count }}</td>
-          <td>{{ report.followup_count }}</td>
+          <td>{{ report.followup_count_text }}</td>
           <td>{{ report.location|default:"-" }}</td>
           <td>{{ report.memo|default:"-" }}</td>
           <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
@@ -52,7 +52,7 @@
             {% for line in report.lines.all %}
               {% if not forloop.first %} / {% endif %}
               {% if line.member %}{{ line.member.name }}{% else %}未設定{% endif %}
-              (金額 {{ line.amount }}円, 件数 {{ line.count }}, 現場 {{ line.location|default:"-" }})
+              (金額 {{ line.amount_text }}円, 件数 {{ line.count }}, 現場 {{ line.location|default:"-" }})
             {% empty %}
               明細なし
             {% endfor %}

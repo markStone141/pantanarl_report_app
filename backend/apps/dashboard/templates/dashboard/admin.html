@@ -65,7 +65,7 @@
           <td data-label="ステータス"><span class="badge">{{ row.status }}</span></td>
           <td data-label="件数">{{ row.count }}</td>
           <td data-label="件数内訳">{% if row.has_split_counts %}CS {{ row.cs_count }} / 難民 {{ row.refugee_count }}{% else %}-{% endif %}</td>
-          <td data-label="金額">{{ row.amount }}</td>
+          <td data-label="金額">{{ row.amount_text }}</td>
           <td data-label="修正">
             {% if row.report_id %}
             <a href="{% url 'report_edit' row.report_id %}"><button type="button" class="btn-inline">修正</button></a>
@@ -87,7 +87,7 @@
       {% for card in kpi_cards %}
       <article class="card">
         <h3>{{ card.title }}</h3>
-        <div class="kpi">¥ {{ card.amount }}</div>
+        <div class="kpi">¥ {{ card.amount_text }}</div>
         {% if card.has_split_counts %}
         <p class="muted">CS {{ card.cs_count }} / 難民 {{ card.refugee_count }}</p>
         {% else %}
@@ -113,7 +113,7 @@
                 {% else %}
                 <td>{{ row.count }}</td>
                 {% endif %}
-                <td>{{ row.amount }}</td>
+                <td>{{ row.amount_text }}</td>
               </tr>
               {% empty %}
               {% if card.has_split_counts %}

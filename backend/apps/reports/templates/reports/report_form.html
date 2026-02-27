@@ -152,7 +152,7 @@
           {% else %}
           <td data-label="件数合計">{{ report.total_count }}</td>
           {% endif %}
-          <td data-label="金額合計(円)">{{ report.followup_count }}</td>
+          <td data-label="金額合計(円)">{{ report.followup_count_text }}</td>
           <td data-label="メモ">{{ report.memo|default:"-" }}</td>
           <td data-label="操作">
             <a href="{% url 'report_edit' report.id %}?next={{ current_view_name }}">
