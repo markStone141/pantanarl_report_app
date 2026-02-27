@@ -215,6 +215,9 @@ def _period_history_rows():
                 "name": period.name,
                 "status": _period_status(period.start_date, period.end_date),
                 "month_label": f"{period.month.year}年{period.month.month}月",
+                "month_param": _month_value_from_date(period.month),
+                "start_date": period.start_date.isoformat(),
+                "end_date": period.end_date.isoformat(),
                 "range_label": f"{period.start_date:%Y/%m/%d} - {period.end_date:%Y/%m/%d}",
             }
         )
@@ -278,6 +281,8 @@ def _parse_period_form(post_data):
 
 def _save_period_definition(*, post_data):
     edit_id = post_data.get("edit_period_id")
+    force_overwrite = post_data.get("force_overwrite") == "1"
+    overwrite_period_id = post_data.get("overwrite_period_id")
     parsed, error = _parse_period_form(post_data)
     if error:
         return None, False, error
@@ -293,6 +298,16 @@ def _save_period_definition(*, post_data):
         selected_period = get_object_or_404(Period, id=int(edit_id))
     else:
         selected_period = Period.objects.filter(month=period_month, name=name).first()
+        if selected_period and not force_overwrite:
+            return selected_period, False, "同じ名前の路程が既にあります。上書きする場合は確認してください。"
+
+    if (
+        not selected_period
+        and force_overwrite
+        and overwrite_period_id
+        and overwrite_period_id.isdigit()
+    ):
+        selected_period = Period.objects.filter(id=int(overwrite_period_id)).first()
 
     duplicate_name_query = Period.objects.filter(month=period_month, name=name)
     if selected_period:
@@ -307,7 +322,7 @@ def _save_period_definition(*, post_data):
     if selected_period:
         overlap_query = overlap_query.exclude(id=selected_period.id)
     if overlap_query.exists():
-        return selected_period, False, "期間が既存の路程と重複しています。"
+        return selected_period, False, "指定の期間と重複する路程が既に存在します。上書きする場合は確認してください。"
 
     if selected_period:
         selected_period.month = period_month
@@ -340,7 +355,7 @@ def _save_period_targets(*, selected_period: Period, configs, post_data) -> None
             )
 
 
-def _period_form_values(selected_period: Period | None):
+def _period_form_values(selected_period: Period | None, *, include_edit_id: bool = False):
     selected_month = timezone.localdate().replace(day=1)
     selected_sequence = 1
     selected_status = TARGET_STATUS_PLANNED
@@ -353,7 +368,8 @@ def _period_form_values(selected_period: Period | None):
         selected_status = _period_status(selected_period.start_date, selected_period.end_date)
         selected_start = selected_period.start_date.isoformat()
         selected_end = selected_period.end_date.isoformat()
-        selected_id = str(selected_period.id)
+        if include_edit_id:
+            selected_id = str(selected_period.id)
     return {
         "form_month": _month_value_from_date(selected_month),
         "form_sequence": selected_sequence,
@@ -441,9 +457,11 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
 def target_period_settings(request: HttpRequest) -> HttpResponse:
     configs = _department_configs()
     selected_period = None
+    is_edit_mode = False
     period_id = request.GET.get("period")
     if period_id and period_id.isdigit():
         selected_period = Period.objects.filter(id=int(period_id)).first()
+        is_edit_mode = selected_period is not None
 
     period_saved = False
     period_deleted = False
@@ -456,6 +474,8 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
             saved_period, period_saved, form_error = _save_period_definition(post_data=request.POST)
             if saved_period is not None:
                 selected_period = saved_period
+            posted_edit_id = request.POST.get("edit_period_id")
+            is_edit_mode = bool(posted_edit_id and posted_edit_id.isdigit())
 
         elif action == "save_period_targets":
             selected_id = request.POST.get("selected_period_id")
@@ -478,7 +498,7 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
     if not selected_period:
         selected_period = _current_period()
 
-    form_values = _period_form_values(selected_period)
+    form_values = _period_form_values(selected_period, include_edit_id=is_edit_mode)
 
     return render(
         request,

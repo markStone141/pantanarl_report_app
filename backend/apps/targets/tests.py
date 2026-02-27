@@ -148,12 +148,46 @@ class TargetsFlowTests(TestCase):
         )
         self.assertEqual(un_value.value, 45)
 
-    def test_period_duplicate_save_updates_existing_instead_of_error(self):
+    def test_period_form_defaults_to_create_mode_without_edit_id(self):
+        response = self.client.get(reverse("target_period_settings"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["form_edit_period_id"], "")
+
+    def test_period_save_creates_multiple_periods_when_sequence_differs(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+
+        self.client.post(
+            reverse("target_period_settings"),
+            {
+                "action": "save_period",
+                "period_month": current_month.strftime("%Y-%m"),
+                "period_sequence": "1",
+                "start_date": (today + timedelta(days=1)).isoformat(),
+                "end_date": (today + timedelta(days=2)).isoformat(),
+                "edit_period_id": "",
+            },
+        )
+        self.client.post(
+            reverse("target_period_settings"),
+            {
+                "action": "save_period",
+                "period_month": current_month.strftime("%Y-%m"),
+                "period_sequence": "2",
+                "start_date": (today + timedelta(days=3)).isoformat(),
+                "end_date": (today + timedelta(days=4)).isoformat(),
+                "edit_period_id": "",
+            },
+        )
+
+        self.assertEqual(Period.objects.filter(month=current_month).count(), 2)
+
+    def test_period_duplicate_save_requires_force_overwrite(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)
 
         self.client.get(reverse("target_period_settings"))
-        self.client.post(
+        first_response = self.client.post(
             reverse("target_period_settings"),
             {
                 "action": "save_period",
@@ -163,8 +197,10 @@ class TargetsFlowTests(TestCase):
                 "end_date": (today + timedelta(days=2)).isoformat(),
             },
         )
+        self.assertEqual(first_response.status_code, 200)
+        period = Period.objects.get(month=current_month)
 
-        self.client.post(
+        blocked_response = self.client.post(
             reverse("target_period_settings"),
             {
                 "action": "save_period",
@@ -174,9 +210,27 @@ class TargetsFlowTests(TestCase):
                 "end_date": (today - timedelta(days=1)).isoformat(),
             },
         )
-
+        self.assertEqual(blocked_response.status_code, 200)
         self.assertEqual(Period.objects.filter(month=current_month).count(), 1)
-        period = Period.objects.get(month=current_month)
+        period.refresh_from_db()
+        self.assertEqual(period.start_date, today + timedelta(days=1))
+        self.assertEqual(period.end_date, today + timedelta(days=2))
+
+        overwrite_response = self.client.post(
+            reverse("target_period_settings"),
+            {
+                "action": "save_period",
+                "period_month": current_month.strftime("%Y-%m"),
+                "period_sequence": "1",
+                "start_date": (today - timedelta(days=2)).isoformat(),
+                "end_date": (today - timedelta(days=1)).isoformat(),
+                "force_overwrite": "1",
+                "overwrite_period_id": str(period.id),
+            },
+        )
+        self.assertEqual(overwrite_response.status_code, 200)
+
+        period.refresh_from_db()
         self.assertEqual(period.status, "finished")
 
     def test_period_save_rejects_overlapping_range(self):
@@ -208,6 +262,36 @@ class TargetsFlowTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Period.objects.count(), before_count)
+
+    def test_period_overlap_can_overwrite_when_forced(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        first = Period.objects.create(
+            month=current_month,
+            name=f"{today.year}年度{today.month}月 第1次路程",
+            status="planned",
+            start_date=today + timedelta(days=1),
+            end_date=today + timedelta(days=3),
+        )
+
+        response = self.client.post(
+            reverse("target_period_settings"),
+            {
+                "action": "save_period",
+                "period_month": current_month.strftime("%Y-%m"),
+                "period_sequence": "2",
+                "start_date": (today + timedelta(days=2)).isoformat(),
+                "end_date": (today + timedelta(days=4)).isoformat(),
+                "force_overwrite": "1",
+                "overwrite_period_id": str(first.id),
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Period.objects.count(), 1)
+        first.refresh_from_db()
+        self.assertIn("第2次路程", first.name)
+        self.assertEqual(first.start_date, today + timedelta(days=2))
+        self.assertEqual(first.end_date, today + timedelta(days=4))
 
     def test_period_can_be_deleted(self):
         today = timezone.localdate()

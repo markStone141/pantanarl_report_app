@@ -28,6 +28,8 @@
       {% csrf_token %}
       <input type="hidden" name="action" value="save_period" />
       <input type="hidden" name="edit_period_id" value="{{ form_edit_period_id }}" />
+      <input type="hidden" name="force_overwrite" value="0" />
+      <input type="hidden" name="overwrite_period_id" value="" />
       <div class="grid grid-2">
         <div>
           <label>対象年月</label>
@@ -138,6 +140,7 @@
     {% endif %}
   </section>
 </div>
+{{ history_rows|json_script:"period-history-data" }}
 <script>
   (function () {
     function formatAmountValue(value) {
@@ -170,6 +173,73 @@
     document.querySelectorAll("form").forEach(function (form) {
       if (form.querySelector("input[name='action'][value='save_period_targets']")) {
         bindForm(form);
+      }
+    });
+
+    const savePeriodForm = document.querySelector("form input[name='action'][value='save_period']")?.form;
+    const historyEl = document.getElementById("period-history-data");
+    if (!savePeriodForm || !historyEl) return;
+
+    let periodHistory = [];
+    try {
+      periodHistory = JSON.parse(historyEl.textContent || "[]");
+    } catch (e) {
+      periodHistory = [];
+    }
+
+    function overlaps(startA, endA, startB, endB) {
+      return startA <= endB && endA >= startB;
+    }
+
+    savePeriodForm.addEventListener("submit", function (event) {
+      const editId = (savePeriodForm.querySelector("input[name='edit_period_id']")?.value || "").trim();
+      const month = (savePeriodForm.querySelector("input[name='period_month']")?.value || "").trim();
+      const sequence = (savePeriodForm.querySelector("select[name='period_sequence']")?.value || "").trim();
+      const startDate = (savePeriodForm.querySelector("input[name='start_date']")?.value || "").trim();
+      const endDate = (savePeriodForm.querySelector("input[name='end_date']")?.value || "").trim();
+      const forceInput = savePeriodForm.querySelector("input[name='force_overwrite']");
+      const overwriteInput = savePeriodForm.querySelector("input[name='overwrite_period_id']");
+
+      if (!month || !sequence || !startDate || !endDate || !forceInput || !overwriteInput) return;
+
+      forceInput.value = "0";
+      overwriteInput.value = "";
+
+      const year = Number(month.slice(0, 4));
+      const monthNumber = Number(month.slice(5, 7));
+      const generatedName = year + "年度" + monthNumber + "月 第" + sequence + "次路程";
+      const monthParam = month;
+      const currentId = editId ? Number(editId) : null;
+
+      const duplicate = periodHistory.find(function (row) {
+        if (currentId && Number(row.id) === currentId) return false;
+        return row.month_param === monthParam && row.name === generatedName;
+      });
+
+      if (duplicate) {
+        const ok = window.confirm("すでに同じ名前の路程が存在します。上書きしますか？");
+        if (!ok) {
+          event.preventDefault();
+          return;
+        }
+        forceInput.value = "1";
+        overwriteInput.value = String(duplicate.id);
+        return;
+      }
+
+      const overlapped = periodHistory.find(function (row) {
+        if (currentId && Number(row.id) === currentId) return false;
+        return overlaps(startDate, endDate, row.start_date, row.end_date);
+      });
+
+      if (overlapped) {
+        const ok = window.confirm("指定の期間と重複する期間の路程が既に存在します。上書きしますか？");
+        if (!ok) {
+          event.preventDefault();
+          return;
+        }
+        forceInput.value = "1";
+        overwriteInput.value = String(overlapped.id);
       }
     });
   })();
