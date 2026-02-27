@@ -1,28 +1,28 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
-{% block title %}霍ｯ遞玖ｨｭ螳・| 邂｡逅・・・繝ｼ繧ｸ{% endblock %}
+{% block title %}路程設定 | 管理者ページ{% endblock %}
 
 {% block content %}
 <div class="container">
   <header class="topbar">
     <div>
-      <strong>霍ｯ遞玖ｨｭ螳・/strong>
-      <div class="muted" style="color: #e1f1f5;">霍ｯ遞狗岼讓吶・蜈･蜉帙→迥ｶ諷狗ｮ｡逅・ｒ陦後＞縺ｾ縺吶・/div>
+      <strong>路程設定</strong>
+      <div class="muted" style="color: #e1f1f5;">路程目標の入力と状態管理を行います。</div>
     </div>
     <nav>
-      <a href="{% url 'target_index' %}">逶ｮ讓吶ム繝・す繝･繝懊・繝・/a>
-      <a href="{% url 'target_month_settings' %}">譛育岼讓呵ｨｭ螳・/a>
-      <a href="{% url 'logout' %}" class="logout-link">繝ｭ繧ｰ繧｢繧ｦ繝・/a>
+      <a href="{% url 'target_index' %}">目標ダッシュボード</a>
+      <a href="{% url 'target_month_settings' %}">月目標設定</a>
+      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
 
   <section class="card" style="margin-top: 16px;">
-    <h3>霍ｯ遞狗匳骭ｲ繝ｻ譖ｴ譁ｰ</h3>
+    <h3>路程期間・状態</h3>
     {% if form_error %}
     <div class="error-text" style="margin: 10px 0;">{{ form_error }}</div>
     {% endif %}
     {% if period_saved %}
-    <div class="notice" style="margin: 10px 0;">霍ｯ遞九ｒ菫晏ｭ倥＠縺ｾ縺励◆縲・/div>
+    <div class="notice" style="margin: 10px 0;">路程を保存しました。</div>
     {% endif %}
     <form method="post">
       {% csrf_token %}
@@ -55,23 +55,24 @@
           <label>終了日</label>
           <input type="date" name="end_date" value="{{ form_end_date }}" required />
         </div>
-      </div>`r`n      <div style="margin-top: 10px;"><button type="submit">霍ｯ遞九ｒ菫晏ｭ・/button></div>
+      </div>
+      <div style="margin-top: 10px;"><button type="submit">路程を保存</button></div>
     </form>
   </section>
 
   <section class="card" style="margin-top: 16px;">
-    <h3>霍ｯ遞狗岼讓吝・蜉・/h3>
+    <h3>路程目標入力</h3>
     {% if target_saved %}
-    <div class="notice" style="margin: 10px 0;">霍ｯ遞狗岼讓吶ｒ菫晏ｭ倥＠縺ｾ縺励◆縲・/div>
+    <div class="notice" style="margin: 10px 0;">路程目標を保存しました。</div>
     {% endif %}
     <form method="post">
       {% csrf_token %}
       <input type="hidden" name="action" value="save_period_targets" />
       <div class="grid grid-2">
         <div>
-          <label>蟇ｾ雎｡霍ｯ遞・/label>
+          <label>対象路程</label>
           <select name="selected_period_id" required>
-            <option value="">驕ｸ謚槭＠縺ｦ縺上□縺輔＞</option>
+            <option value="">選択してください</option>
             {% for option in period_options %}
             <option value="{{ option.id }}" {% if selected_period and selected_period.id == option.id %}selected{% endif %}>
               {{ option.label }}
@@ -99,19 +100,19 @@
       </div>
       {% endfor %}
 
-      <div style="margin-top: 12px;"><button type="submit">霍ｯ遞狗岼讓吶ｒ菫晏ｭ・/button></div>
+      <div style="margin-top: 12px;"><button type="submit">路程目標を保存</button></div>
     </form>
   </section>
 
   <section class="card" style="margin-top: 16px;">
-    <h3>菴懈・貂医∩霍ｯ遞狗岼讓吩ｸ隕ｧ</h3>
+    <h3>作成済み路程目標一覧</h3>
     {% if period_deleted %}
-    <div class="note" style="margin: 10px 0;">霍ｯ遞九ｒ蜑企勁縺励∪縺励◆縲・/div>
+    <div class="note" style="margin: 10px 0;">路程を削除しました。</div>
     {% endif %}
     {% if history_rows %}
     <table>
       <thead>
-        <tr><th>霍ｯ遞句錐</th><th>譛滄俣</th><th>迥ｶ諷・/th><th>謫堺ｽ・/th></tr>
+        <tr><th>路程名</th><th>期間</th><th>状態</th><th>操作</th></tr>
       </thead>
       <tbody>
         {% for row in history_rows %}
@@ -120,12 +121,12 @@
           <td>{{ row.range_label }}</td>
           <td>{{ row.status }}</td>
           <td class="target-op-cell">
-            <a class="btn-inline" href="{% url 'target_period_settings' %}?period={{ row.id }}">陦ｨ遉ｺ</a>
-            <form method="post" class="target-delete-form" onsubmit="return confirm('縺薙・霍ｯ遞九ｒ蜑企勁縺励∪縺吶ゅｈ繧阪＠縺・〒縺吶°・・);">
+            <a class="btn-inline" href="{% url 'target_period_settings' %}?period={{ row.id }}">表示</a>
+            <form method="post" class="target-delete-form" onsubmit="return confirm('この路程を削除します。よろしいですか？');">
               {% csrf_token %}
               <input type="hidden" name="action" value="delete_period" />
               <input type="hidden" name="delete_period_id" value="{{ row.id }}" />
-              <button type="submit" class="btn-inline btn-danger">蜑企勁</button>
+              <button type="submit" class="btn-inline btn-danger">削除</button>
             </form>
           </td>
         </tr>
@@ -133,7 +134,7 @@
       </tbody>
     </table>
     {% else %}
-    <p class="muted">菴懈・貂医∩縺ｮ霍ｯ遞狗岼讓吶・縺ゅｊ縺ｾ縺帙ｓ縲・/p>
+    <p class="muted">作成済みの路程目標はありません。</p>
     {% endif %}
   </section>
 </div>
@@ -174,5 +175,3 @@
   })();
 </script>
 {% endblock %}
-
-
