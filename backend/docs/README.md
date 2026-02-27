@@ -12,3 +12,18 @@
 2. 報告者: `REPORT_GUIDE.md`
 3. 目標設定担当: `TARGET_GUIDE.md`
 
+## 開発ルール（文字化け防止）
+
+1. 依存をインストール
+   - `pip install pre-commit`
+2. フックを有効化
+   - `pre-commit install`
+3. 事前チェックを実行
+   - `pre-commit run --all-files`
+
+上記で以下を自動チェックします。
+- 改行コードの統一（LF）
+- ファイル末尾改行
+- Python構文エラー
+- Django `manage.py check`
+- UTF-8 BOM 混入

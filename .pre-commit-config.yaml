@@ -1,0 +1,25 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: check-ast
+
+  - repo: local
+    hooks:
+      - id: django-check
+        name: django-check
+        entry: python backend/manage.py check
+        language: system
+        pass_filenames: false
+      - id: check-no-bom
+        name: check-no-bom
+        entry: python backend/scripts/check_no_bom.py
+        language: system
+        pass_filenames: false
+
