@@ -545,6 +545,7 @@ def report_un(request: HttpRequest) -> HttpResponse:
         dept_code="UN",
         title=f"{department.name if department else 'UN'} 報告フォーム",
         location_label="現場",
+        show_location=False,
     )
 
 
@@ -556,6 +557,7 @@ def report_wv(request: HttpRequest) -> HttpResponse:
         dept_code="WV",
         title=f"{department.name if department else 'WV'} 報告フォーム",
         location_label="現場",
+        show_location=False,
         split_counts=True,
     )
 

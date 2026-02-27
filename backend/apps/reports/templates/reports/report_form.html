@@ -16,12 +16,6 @@
   <section class="card" style="margin-top: 16px;">
     <h3>{% if is_edit %}報告修正{% else %}報告入力{% endif %} ({{ dept_name }})</h3>
 
-    {% if show_location %}
-    <p class="muted">メンバー・金額・件数・{{ location_label }}を追加しながら入力できます。</p>
-    {% else %}
-    <p class="muted">メンバー・金額・件数を追加しながら入力できます。{{ location_label }}は不要です。</p>
-    {% endif %}
-
     {% if submitted %}
     <div class="note" style="margin-top: 10px;">報告を送信しました。</div>
     {% endif %}
