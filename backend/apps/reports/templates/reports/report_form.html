@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}{{ title }} | Report App{% endblock %}
 
@@ -6,22 +6,22 @@
 <div class="container">
   <header class="topbar">
     <strong>{{ title }}</strong>
-    <a href="{% url 'logout' %}" class="topbar-mobile-logout">ログアウト</a>
+    <a href="{% url 'logout' %}" class="topbar-mobile-logout">繝ｭ繧ｰ繧｢繧ｦ繝・/a>
     <nav>
-      <a href="{% url 'report_index' %}">報告一覧</a>
-      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
+      <a href="{% url 'report_index' %}">蝣ｱ蜻贋ｸ隕ｧ</a>
+      <a href="{% url 'logout' %}" class="logout-link">繝ｭ繧ｰ繧｢繧ｦ繝・/a>
     </nav>
   </header>
 
   <section class="card" style="margin-top: 16px;">
-    <h3>{% if is_edit %}報告修正{% else %}報告入力{% endif %} ({{ dept_name }})</h3>
+    <h3>{% if is_edit %}蝣ｱ蜻贋ｿｮ豁｣{% else %}蝣ｱ蜻雁・蜉學% endif %} ({{ dept_name }})</h3>
 
     {% if submitted %}
-    <div class="note" style="margin-top: 10px;">報告を送信しました。</div>
+    <div class="note" style="margin-top: 10px;">蝣ｱ蜻翫ｒ騾∽ｿ｡縺励∪縺励◆縲・/div>
     {% endif %}
 
     {% if is_edit %}
-    <div class="note" style="margin-top: 10px;">この画面は過去データの修正モードです。変更後に保存してください。</div>
+    <div class="note" style="margin-top: 10px;">縺薙・逕ｻ髱｢縺ｯ驕主悉繝・・繧ｿ縺ｮ菫ｮ豁｣繝｢繝ｼ繝峨〒縺吶ょ､画峩蠕後↓菫晏ｭ倥＠縺ｦ縺上□縺輔＞縲・/div>
     {% endif %}
 
     {% if row_errors %}
@@ -53,7 +53,7 @@
         <div>
           <label for="{{ form.reporter.id_for_label }}">{{ form.reporter.label }}</label>
           <select name="reporter" id="id_reporter">
-            <option value="">選択してください</option>
+            <option value="">驕ｸ謚槭＠縺ｦ縺上□縺輔＞</option>
             {% for member in members %}
             <option value="{{ member.id }}" {% if selected_reporter_id == member.id|stringformat:'s' %}selected{% endif %}>{{ member.name }}</option>
             {% endfor %}
@@ -61,17 +61,17 @@
         </div>
       </div>
 
-      <label style="margin-top: 12px;">メンバー別入力</label>
+      <label style="margin-top: 12px;">繝｡繝ｳ繝舌・蛻･蜈･蜉・/label>
       <table class="stacked-card-table">
         <thead>
           <tr>
-            <th>メンバー</th>
-            <th>金額(円)</th>
+            <th>繝｡繝ｳ繝舌・</th>
+            <th>驥鷹｡・蜀・</th>
             {% if split_counts %}
-            <th>CS件数</th>
-            <th>難民件数</th>
+            <th>CS莉ｶ謨ｰ</th>
+            <th>髮｣豌台ｻｶ謨ｰ</th>
             {% else %}
-            <th>件数</th>
+            <th>莉ｶ謨ｰ</th>
             {% endif %}
             {% if show_location %}
             <th>{{ location_label }}</th>
@@ -81,20 +81,20 @@
         <tbody id="member-rows">
           {% for row in row_values %}
           <tr>
-            <td data-label="メンバー">
+            <td data-label="繝｡繝ｳ繝舌・">
               <select name="member_ids">
-                <option value="">選択してください</option>
+                <option value="">驕ｸ謚槭＠縺ｦ縺上□縺輔＞</option>
                 {% for member in members %}
                 <option value="{{ member.id }}" {% if row.member_id == member.id|stringformat:"s" %}selected{% endif %}>{{ member.name }}</option>
                 {% endfor %}
               </select>
             </td>
-            <td data-label="金額(円)"><input type="number" min="0" name="amounts" value="{{ row.amount|default:'0' }}"></td>
+            <td data-label="驥鷹｡・蜀・"><input type="number" min="0" name="amounts" value="{{ row.amount|default:'0' }}"></td>
             {% if split_counts %}
-            <td data-label="CS件数"><input type="number" min="0" name="cs_counts" value="{{ row.cs_count|default:'0' }}"></td>
-            <td data-label="難民件数"><input type="number" min="0" name="refugee_counts" value="{{ row.refugee_count|default:'0' }}"></td>
+            <td data-label="CS莉ｶ謨ｰ"><input type="number" min="0" name="cs_counts" value="{{ row.cs_count|default:'0' }}"></td>
+            <td data-label="髮｣豌台ｻｶ謨ｰ"><input type="number" min="0" name="refugee_counts" value="{{ row.refugee_count|default:'0' }}"></td>
             {% else %}
-            <td data-label="件数"><input type="number" min="0" name="counts" value="{{ row.count|default:'0' }}"></td>
+            <td data-label="莉ｶ謨ｰ"><input type="number" min="0" name="counts" value="{{ row.count|default:'0' }}"></td>
             {% endif %}
             {% if show_location %}
             <td data-label="{{ location_label }}"><input name="locations" value="{{ row.location }}"></td>
@@ -105,73 +105,67 @@
       </table>
 
       <div style="margin-top: 10px;">
-        <button type="button" id="add-row" class="btn-inline">メンバーを追加</button>
+        <button type="button" id="add-row" class="btn-inline">繝｡繝ｳ繝舌・繧定ｿｽ蜉</button>
       </div>
 
       {% if not members %}
       <div class="note" style="margin-top: 10px;">
-        この部署に所属するメンバーが未登録です。管理者ページのメンバー設定から所属メンバーを追加してください。
-      </div>
+        縺薙・驛ｨ鄂ｲ縺ｫ謇螻槭☆繧九Γ繝ｳ繝舌・縺梧悴逋ｻ骭ｲ縺ｧ縺吶らｮ｡逅・・・繝ｼ繧ｸ縺ｮ繝｡繝ｳ繝舌・險ｭ螳壹°繧画園螻槭Γ繝ｳ繝舌・繧定ｿｽ蜉縺励※縺上□縺輔＞縲・      </div>
       {% endif %}
 
-      <div style="margin-top: 10px;">
-        <label for="{{ form.memo.id_for_label }}">{{ form.memo.label }}</label>
-        <textarea name="memo" rows="3" id="id_memo">{{ memo_value }}</textarea>
-      </div>
-
       <div style="margin-top: 14px;">
-        <button type="submit">{% if is_edit %}修正して保存{% else %}部署分を一括送信{% endif %}</button>
+        <button type="submit">{% if is_edit %}菫ｮ豁｣縺励※菫晏ｭ・% else %}驛ｨ鄂ｲ蛻・ｒ荳諡ｬ騾∽ｿ｡{% endif %}</button>
       </div>
     </form>
   </section>
 
   <section class="card" style="margin-top: 16px;">
     <div class="row">
-      <h3>送信履歴（{{ recent_reports_date }}）</h3>
-      <span class="badge">{{ dept_name }} / {% if selected_mode == "prev" %}前日分{% else %}本日分{% endif %}</span>
+      <h3>騾∽ｿ｡螻･豁ｴ・・{ recent_reports_date }}・・/h3>
+      <span class="badge">{{ dept_name }} / {% if selected_mode == "prev" %}蜑肴律蛻・% else %}譛ｬ譌･蛻・% endif %}</span>
     </div>
     <table class="stacked-card-table" style="margin-top: 8px;">
       <thead>
         <tr>
-          <th>報告日</th>
-          <th>責任者</th>
+          <th>蝣ｱ蜻頑律</th>
+          <th>雋ｬ莉ｻ閠・/th>
           {% if split_counts %}
-          <th>CS件数合計</th>
-          <th>難民件数合計</th>
+          <th>CS莉ｶ謨ｰ蜷郁ｨ・/th>
+          <th>髮｣豌台ｻｶ謨ｰ蜷郁ｨ・/th>
           {% else %}
-          <th>件数合計</th>
+          <th>莉ｶ謨ｰ蜷郁ｨ・/th>
           {% endif %}
-          <th>金額合計(円)</th>
-          <th>メモ</th>
-          <th>操作</th>
+          <th>驥鷹｡榊粋險・蜀・</th>
+          <th>繝｡繝｢</th>
+          <th>謫堺ｽ・/th>
         </tr>
       </thead>
       <tbody>
         {% for report in recent_reports %}
         <tr>
-          <td data-label="報告日">{{ report.report_date }}</td>
-          <td data-label="責任者">{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
+          <td data-label="蝣ｱ蜻頑律">{{ report.report_date }}</td>
+          <td data-label="雋ｬ莉ｻ閠・>{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
           {% if split_counts %}
-          <td data-label="CS件数合計">{{ report.cs_count_total|default_if_none:0 }}</td>
-          <td data-label="難民件数合計">{{ report.refugee_count_total|default_if_none:0 }}</td>
+          <td data-label="CS莉ｶ謨ｰ蜷郁ｨ・>{{ report.cs_count_total|default_if_none:0 }}</td>
+          <td data-label="髮｣豌台ｻｶ謨ｰ蜷郁ｨ・>{{ report.refugee_count_total|default_if_none:0 }}</td>
           {% else %}
-          <td data-label="件数合計">{{ report.total_count }}</td>
+          <td data-label="莉ｶ謨ｰ蜷郁ｨ・>{{ report.total_count }}</td>
           {% endif %}
-          <td data-label="金額合計(円)">{{ report.followup_count }}</td>
-          <td data-label="メモ">{{ report.memo|default:"-" }}</td>
-          <td data-label="操作">
+          <td data-label="驥鷹｡榊粋險・蜀・">{{ report.followup_count }}</td>
+          <td data-label="繝｡繝｢">{{ report.memo|default:"-" }}</td>
+          <td data-label="謫堺ｽ・>
             <a href="{% url 'report_edit' report.id %}?next={{ current_view_name }}">
-              <button type="button" class="btn-inline">修正</button>
+              <button type="button" class="btn-inline">菫ｮ豁｣</button>
             </a>
-            <form method="post" action="{% url 'report_delete' dept_code report.id %}" style="display:inline;" onsubmit="return confirm('この報告を削除します。よろしいですか？');">
+            <form method="post" action="{% url 'report_delete' dept_code report.id %}" style="display:inline;" onsubmit="return confirm('縺薙・蝣ｱ蜻翫ｒ蜑企勁縺励∪縺吶ゅｈ繧阪＠縺・〒縺吶°・・);">
               {% csrf_token %}
-              <button type="submit" class="btn-inline btn-danger">削除</button>
+              <button type="submit" class="btn-inline btn-danger">蜑企勁</button>
             </form>
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="{% if split_counts %}7{% else %}6{% endif %}">本日の送信データがありません。</td>
+          <td colspan="{% if split_counts %}7{% else %}6{% endif %}">譛ｬ譌･縺ｮ騾∽ｿ｡繝・・繧ｿ縺後≠繧翫∪縺帙ｓ縲・/td>
         </tr>
         {% endfor %}
       </tbody>
@@ -215,3 +209,4 @@
   })();
 </script>
 {% endblock %}
+
