@@ -41,7 +41,7 @@
           {% for metric in row.metrics %}
           <div>
             <label>{{ metric.label }}</label>
-            <input type="number" min="0" name="{{ metric.input_name }}" value="{{ metric.value }}" />
+            <input type="text" inputmode="numeric" name="{{ metric.input_name }}" value="{{ metric.value }}" />
             <div class="muted">{{ metric.unit }}</div>
           </div>
           {% endfor %}
@@ -87,4 +87,40 @@
     </table>
   </section>
 </div>
+<script>
+  (function () {
+    function formatAmountValue(value) {
+      const digits = String(value || "").replace(/[^\d]/g, "");
+      if (!digits) return "";
+      return Number(digits).toLocaleString("en-US");
+    }
+
+    function bindAmountInput(input) {
+      if (!input || input.dataset.commaBound === "1") return;
+      input.dataset.commaBound = "1";
+      input.addEventListener("input", function () {
+        input.value = formatAmountValue(input.value);
+      });
+      input.addEventListener("blur", function () {
+        input.value = formatAmountValue(input.value || "0");
+      });
+      input.value = formatAmountValue(input.value || "0");
+    }
+
+    function bindForm(form) {
+      form.querySelectorAll("input[name^='metric_']").forEach(bindAmountInput);
+      form.addEventListener("submit", function () {
+        form.querySelectorAll("input[name^='metric_']").forEach(function (input) {
+          input.value = String(input.value || "").replace(/,/g, "");
+        });
+      });
+    }
+
+    document.querySelectorAll("form").forEach(function (form) {
+      if (form.querySelector("input[name='action'][value='save_month_targets']")) {
+        bindForm(form);
+      }
+    });
+  })();
+</script>
 {% endblock %}
