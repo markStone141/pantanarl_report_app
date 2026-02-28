@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User認証 + Member連携 UIモック</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <div>
+        <strong>User認証 + Member連携（UIモック）</strong>
+        <div class="muted" style="color:#e1f1f5;">計画段階の画面イメージです（静的HTML）</div>
+      </div>
+      <nav>
+        <a href="index.html">戻る</a>
+      </nav>
+    </header>
+
+    <section class="card" style="margin-top:16px;">
+      <h3>1. ログイン画面（User）</h3>
+      <p class="muted">認証はUser、業務データはMemberに紐づける想定。</p>
+      <div class="grid grid-2">
+        <div>
+          <label>ログインID（username）</label>
+          <input type="text" placeholder="例: un_ishii" />
+        </div>
+        <div>
+          <label>パスワード</label>
+          <input type="password" placeholder="••••••••" />
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <button type="button">ログイン</button>
+      </div>
+      <div class="note" style="margin-top:12px;">
+        成功時はロールに応じて `管理画面` または `報告一覧` へ遷移。
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:16px;">
+      <h3>2. ユーザー作成（管理者）</h3>
+      <div class="grid grid-3">
+        <div>
+          <label>username</label>
+          <input type="text" placeholder="例: wv_sato" />
+        </div>
+        <div>
+          <label>表示名（first_name）</label>
+          <input type="text" placeholder="例: 佐藤" />
+        </div>
+        <div>
+          <label>初期パスワード</label>
+          <input type="password" placeholder="初期パスワード" />
+        </div>
+      </div>
+      <div class="grid grid-3">
+        <div>
+          <label>有効化</label>
+          <select>
+            <option>有効</option>
+            <option>無効</option>
+          </select>
+        </div>
+        <div>
+          <label>管理者権限（is_staff）</label>
+          <select>
+            <option>なし</option>
+            <option>あり</option>
+          </select>
+        </div>
+        <div>
+          <label>ロール</label>
+          <select>
+            <option>report</option>
+            <option>admin</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <button type="button">ユーザーを作成</button>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:16px;">
+      <h3>3. Member連携（OneToOne）</h3>
+      <p class="muted">UserとMemberを1対1で紐づけ、報告対象部署も同時に管理するイメージ。</p>
+      <div class="grid grid-2">
+        <div>
+          <label>対象User</label>
+          <select>
+            <option>un_ishii（石井）</option>
+            <option>wv_sato（佐藤）</option>
+            <option>style1_tanaka（田中）</option>
+          </select>
+        </div>
+        <div>
+          <label>紐づけるMember</label>
+          <select>
+            <option>石井（UN）</option>
+            <option>佐藤（WV）</option>
+            <option>田中（Style港北）</option>
+          </select>
+        </div>
+      </div>
+      <label>所属部署（複数可）</label>
+      <div class="grid grid-3">
+        <label><input type="checkbox" style="width:auto;" checked /> UN</label>
+        <label><input type="checkbox" style="width:auto;" /> WV</label>
+        <label><input type="checkbox" style="width:auto;" /> STYLE1</label>
+      </div>
+      <div style="margin-top:12px;">
+        <button type="button">連携を保存</button>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:16px;">
+      <h3>4. 一覧イメージ</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>表示名</th>
+            <th>Member</th>
+            <th>ロール</th>
+            <th>状態</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>un_ishii</td>
+            <td>石井</td>
+            <td>石井（UN）</td>
+            <td><span class="badge">report</span></td>
+            <td><span class="ok">有効</span></td>
+            <td>
+              <button class="btn-inline" type="button">編集</button>
+              <button class="btn-inline btn-danger" type="button">無効化</button>
+            </td>
+          </tr>
+          <tr>
+            <td>admin</td>
+            <td>管理者</td>
+            <td>-</td>
+            <td><span class="badge">admin</span></td>
+            <td><span class="ok">有効</span></td>
+            <td>
+              <button class="btn-inline" type="button">編集</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <p class="footer">このページは実装前のUI確認用モックです。</p>
+  </div>
+</body>
+</html>
+

@@ -1,0 +1,440 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ナレッジ共有 スレッド詳細モック</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body {
+      padding-bottom: 88px;
+    }
+    .tag-list {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .tag-chip {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      background: #edf5f7;
+      color: #1f4f5e;
+    }
+    .meta {
+      font-size: 0.85rem;
+      color: #607582;
+      margin-top: 4px;
+    }
+    .timeline {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .outcome-strip {
+      display: flex;
+      gap: 6px;
+      flex-wrap: nowrap;
+      margin-top: 8px;
+      font-size: 0.82rem;
+      color: #6f838f;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 2px;
+    }
+    .outcome-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #f8fbfc;
+      border: 1px solid #e0e9ed;
+      border-radius: 999px;
+      padding: 3px 7px;
+      font-size: 0.76rem;
+      line-height: 1;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+    .outcome-filter-btn {
+      cursor: pointer;
+      width: auto;
+      min-height: 0;
+      background: #f8fbfc;
+      color: inherit;
+      border: 1px solid #e0e9ed;
+      font-weight: 600;
+    }
+    .outcome-filter-btn.active {
+      background: #126e82;
+      color: #ffffff;
+      border-color: #126e82;
+    }
+    .outcome-filter-btn.active svg {
+      color: currentColor;
+    }
+    .outcome-item svg {
+      width: 12px;
+      height: 12px;
+    }
+    .outcome-good svg { color: #1e7c4d; }
+    .outcome-keep svg { color: #355767; }
+    .outcome-retry svg { color: #9b3838; }
+    .outcome-question svg { color: #7454a6; }
+    .followup {
+      border: 1px solid #d7e0e6;
+      border-left: 3px solid #b8d7e2;
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px 10px 10px 12px;
+    }
+    .result-badge {
+      display: inline-block;
+      padding: 3px 7px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .result-success { background: #e5f5ec; color: #1e7c4d; }
+    .result-neutral { background: #eef3f7; color: #355767; }
+    .result-fail { background: #faecec; color: #9b3838; }
+    .result-question { background: #f3eefb; color: #6f44ad; }
+    .result-icon {
+      width: 13px;
+      height: 13px;
+      flex: 0 0 auto;
+    }
+    .comment-list {
+      margin-top: 8px;
+      display: grid;
+      gap: 6px;
+    }
+    .comment-list[hidden] {
+      display: none !important;
+    }
+    .comment-item {
+      background: #f8fbfc;
+      border: 1px solid #e0e9ed;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 0.9rem;
+    }
+    .comment-reply {
+      margin-top: 8px;
+      margin-left: 10px;
+      padding: 7px 8px;
+      border-left: 2px solid #c7d9e1;
+      background: #ffffff;
+      border-radius: 6px;
+      font-size: 0.86rem;
+    }
+    .followup-actions {
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .followup-action-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .comment-reply-btn {
+      width: auto;
+      min-height: 0;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      background: #eaf3f6;
+      color: #1f4f5e;
+      border: 1px solid #cfe0e7;
+      font-weight: 700;
+    }
+    .comment-replies-toggle-btn {
+      width: auto;
+      min-height: 0;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      background: #ffffff;
+      color: #355767;
+      border: 1px solid #cfdbe1;
+      font-weight: 700;
+    }
+    .comment-meta {
+      color: #6d808b;
+      font-size: 0.78rem;
+      margin-bottom: 4px;
+    }
+    .empty-note {
+      margin-top: 8px;
+      padding: 10px;
+      border: 1px dashed #c8d7de;
+      border-radius: 10px;
+      color: #5b6f7b;
+      background: #f8fbfc;
+      display: none;
+    }
+    .comment-controls {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .comment-load-more-btn {
+      width: auto;
+      min-height: 0;
+      justify-self: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+    }
+    .fab {
+      position: fixed;
+      right: 16px;
+      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      width: 58px;
+      height: 58px;
+      border-radius: 999px;
+      border: 0;
+      background: linear-gradient(135deg, #126e82, #1e97b1);
+      color: #fff;
+      font-size: 1.8rem;
+      font-weight: 700;
+      line-height: 1;
+      box-shadow: 0 8px 20px rgba(8, 70, 85, 0.28);
+      z-index: 60;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .fab.hidden {
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+    }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(19, 34, 40, 0.45);
+      z-index: 70;
+      display: none;
+      align-items: flex-end;
+    }
+    .overlay.open { display: flex; }
+    .sheet {
+      width: 100%;
+      max-height: 86vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 16px 16px 0 0;
+      padding: 14px;
+      box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
+    }
+    .sheet-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      min-height: 38px;
+      border-radius: 999px;
+      border: 1px solid #cdd9df;
+      background: #fff;
+      color: #1a4e5e;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      cursor: pointer;
+    }
+    .quick-actions {
+      margin-top: 10px;
+      display: block;
+    }
+    .reply-context {
+      display: none;
+      margin-bottom: 8px;
+      padding: 8px 10px;
+      border: 1px solid #d3e2e8;
+      border-radius: 8px;
+      background: #f4fafc;
+      color: #385664;
+      font-size: 0.84rem;
+    }
+    .icon-label {
+      font-size: 1rem;
+      line-height: 1;
+      margin-top: 2px;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <div>
+        <strong>スレッド詳細</strong>
+        <div class="muted" style="color:#e1f1f5;">全文 + コメント一覧</div>
+      </div>
+      <nav>
+        <a href="knowledge-thread-ui-preview.html">一覧へ</a>
+      </nav>
+    </header>
+
+    <section class="card" style="margin-top:16px;">
+      <strong>初回声かけで足を止めてもらう導入例</strong>
+      <div class="meta">投稿者: 石井 / 2026-02-28 18:30</div>
+      <div class="tag-list">
+        <span class="tag-chip">#初回接触</span>
+        <span class="tag-chip">#UN</span>
+        <span class="tag-chip">#成功事例</span>
+      </div>
+      <div class="card" style="margin-top:12px;">
+        <p>最初の3秒で「何の話か」を明確にし、選択肢を狭めない質問で会話を開始する。</p>
+        <p>例: 「少しだけお時間いいですか？」ではなく「本日、子ども支援の現場報告をお渡ししています。」</p>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:12px;">
+      <h3>コメント一覧（2）</h3>
+      <div class="outcome-strip">
+        <button type="button" class="outcome-item outcome-filter-btn outcome-good" data-comment-filter="good" aria-label="Goodコメントで絞り込み">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 10v10M11 10h7.5a2 2 0 0 1 1.9 2.6l-1.4 4.8A2 2 0 0 1 17.1 19H11V10zM7 10 9.6 4.8A1.8 1.8 0 0 1 11.2 4c.9.1 1.5.9 1.4 1.8L12 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          4
+        </button>
+        <button type="button" class="outcome-item outcome-filter-btn outcome-keep" data-comment-filter="keep" aria-label="Keepコメントで絞り込み">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          2
+        </button>
+        <button type="button" class="outcome-item outcome-filter-btn outcome-retry" data-comment-filter="retry" aria-label="Retryコメントで絞り込み">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 11a8 8 0 1 0 2.3 5.6M20 4v7h-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          1
+        </button>
+        <button type="button" class="outcome-item outcome-filter-btn outcome-question" data-comment-filter="question" aria-label="質問コメントで絞り込み">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9.5 9a2.5 2.5 0 1 1 4.3 1.7c-.8.8-1.8 1.3-1.8 2.5M12 17h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          3
+        </button>
+      </div>
+      <div class="timeline">
+        <article class="followup" data-comment-type="good">
+          <div class="meta row">
+            <span>佐藤 / 2026-03-01 14:20</span>
+            <span class="result-badge result-success">
+              <svg class="result-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M5 12l5 5L19 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </span>
+          </div>
+          <p class="muted">断り後に再接続できた</p>
+          <p class="muted">導入直後に「30秒だけ」で許可を取り、最後まで会話を継続できた。</p>
+          <div class="followup-actions">
+            <div class="followup-action-left">
+              <button type="button" class="comment-replies-toggle-btn" data-target-replies="replies-1" data-reply-count="2" aria-expanded="false" onclick="toggleReplies(this)">返信を表示（2）</button>
+            </div>
+            <button type="button" class="comment-reply-btn">このコメントに返信</button>
+          </div>
+          <div id="replies-1" class="comment-list" hidden>
+            <div class="comment-item">
+              <div class="comment-meta">田中 / 15:10</div>
+              自分も同じ言い回しを使ってみます。
+              <div class="comment-reply">
+                <div class="comment-meta">佐藤 / 15:24</div>
+                ありがとう。次はクロージング文言を試してみます。
+              </div>
+            </div>
+            <div class="comment-item">
+              <div class="comment-meta">石井 / 16:05</div>
+              「30秒だけ」は効果高いのでテンプレに追加しましょう。
+            </div>
+          </div>
+        </article>
+
+        <article class="followup" data-comment-type="keep">
+          <div class="meta row">
+            <span>皆川 / 2026-03-01 16:42</span>
+            <span class="result-badge result-neutral">
+              <svg class="result-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 12h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path>
+              </svg>
+            </span>
+          </div>
+          <p class="muted">会話継続はしたが承諾なし</p>
+          <p class="muted">導入は通るが、クロージングで失速。次は質問順を変えて試す。</p>
+          <div class="followup-actions">
+            <div class="followup-action-left">
+              <button type="button" class="comment-replies-toggle-btn" data-target-replies="replies-2" data-reply-count="1" aria-expanded="false" onclick="toggleReplies(this)">返信を表示（1）</button>
+            </div>
+            <button type="button" class="comment-reply-btn">このコメントに返信</button>
+          </div>
+          <div id="replies-2" class="comment-list" hidden>
+            <div class="comment-item">
+              <div class="comment-meta">早坂 / 17:04</div>
+              クロージング前に確認質問を1つ入れると改善するかも。
+            </div>
+          </div>
+        </article>
+        <article class="followup" data-comment-type="question">
+          <div class="meta row">
+            <span>角田 / 2026-03-01 18:15</span>
+            <span class="result-badge result-question">
+              <svg class="result-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9.5 9a2.5 2.5 0 1 1 4.3 1.7c-.8.8-1.8 1.3-1.8 2.5M12 17h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </span>
+          </div>
+          <p class="muted">次の一言の質問</p>
+          <p class="muted">会話が続いた後に、どの質問で支援意思を確認していますか？</p>
+          <div class="followup-actions">
+            <button type="button" class="comment-reply-btn">このコメントに返信</button>
+          </div>
+        </article>
+      </div>
+      <div id="comment-empty" class="empty-note">この種別のコメントはまだありません。</div>
+      <div class="comment-controls">
+        <div id="comment-page-count" class="list-note">表示: 0 / 0</div>
+        <button id="comment-load-more-btn" class="comment-load-more-btn" type="button">もっと表示</button>
+      </div>
+    </section>
+  </div>
+
+  <button id="fab-followup" class="fab" type="button" aria-label="コメントを追加">+</button>
+
+  <div id="followup-overlay" class="overlay" role="dialog" aria-modal="true" aria-label="コメント追加">
+    <section class="sheet">
+      <div class="sheet-head">
+        <strong>コメントを追加</strong>
+        <button class="icon-btn" type="button" data-close-overlay aria-label="閉じる">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
+          </svg>
+        </button>
+      </div>
+      <div id="reply-context" class="reply-context"></div>
+      <div id="rating-group">
+        <label for="comment-reaction" class="icon-label">アイコン</label>
+        <select id="comment-reaction">
+          <option>👍</option>
+          <option>➖</option>
+          <option>🌀</option>
+          <option>❓</option>
+        </select>
+      </div>
+      <label>コメント詳細（任意）</label>
+      <textarea placeholder="質問や補足コメントを記入"></textarea>
+      <div class="quick-actions">
+        <button type="button">投稿</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="scripts/knowledge-thread-detail-preview.js"></script>
+</body>
+</html>
+
+

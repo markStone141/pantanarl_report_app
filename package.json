@@ -1,0 +1,11 @@
+{
+  "name": "report-app-docs-lint",
+  "private": true,
+  "scripts": {
+    "lint": "eslint \"docs/scripts/**/*.js\"",
+    "lint:fix": "eslint \"docs/scripts/**/*.js\" --fix"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1"
+  }
+}

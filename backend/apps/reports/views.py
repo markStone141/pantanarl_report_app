@@ -625,5 +625,3 @@ def report_style2(request: HttpRequest) -> HttpResponse:
         location_label="現場",
         show_location=False,
     )
-
-

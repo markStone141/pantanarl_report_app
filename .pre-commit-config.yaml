@@ -22,4 +22,3 @@ repos:
         entry: python backend/scripts/check_no_bom.py
         language: system
         pass_filenames: false
-

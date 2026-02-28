@@ -677,5 +677,3 @@ def member_settings(request: HttpRequest) -> HttpResponse:
             "selected_department_ids": selected_department_ids,
         },
     )
-
-
