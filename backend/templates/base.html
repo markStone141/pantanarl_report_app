@@ -12,8 +12,10 @@
   <script>
     (function () {
       const topbars = document.querySelectorAll(".topbar");
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
       topbars.forEach(function (topbar, idx) {
         if (topbar.classList.contains("topbar-nav-always")) return;
+        if (topbar.classList.contains("topbar-desktop-expanded") && !isMobile) return;
         const nav = topbar.querySelector("nav");
         if (!nav || nav.classList.contains("menu-collapsible")) return;
 

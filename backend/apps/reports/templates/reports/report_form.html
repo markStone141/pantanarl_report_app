@@ -142,7 +142,7 @@
           {% endif %}
           <th>金額合計(円)</th>
           <th>メモ</th>
-          <th>操作</th>
+          <th>メンバー別実績</th>
         </tr>
       </thead>
       <tbody>
@@ -158,21 +158,18 @@
           {% endif %}
           <td data-label="金額合計(円)">{{ report.followup_count_text }}</td>
           <td data-label="メモ">{{ report.memo|default:"-" }}</td>
-          <td data-label="操作">
-            <details style="margin-bottom: 8px;">
-              <summary style="cursor: pointer;">詳細</summary>
-              <div style="margin-top: 8px; display: grid; gap: 4px;">
-                {% for line in report.lines.all %}
-                  {% if split_counts %}
-                  <div>{{ line.member.name }} CS{{ line.cs_count }}件 難民{{ line.refugee_count }}件 {{ line.amount_text }}円</div>
-                  {% else %}
-                  <div>{{ line.member.name }} {{ line.count }}件 {{ line.amount_text }}円</div>
-                  {% endif %}
-                {% empty %}
-                <div>詳細データなし</div>
-                {% endfor %}
-              </div>
-            </details>
+          <td data-label="メンバー別実績">
+            <div style="margin-bottom: 8px; display: grid; gap: 4px;">
+              {% for line in report.lines.all %}
+                {% if split_counts %}
+                <div>{{ line.member.name }} CS{{ line.cs_count }}件 難民{{ line.refugee_count }}件 {{ line.amount_text }}円</div>
+                {% else %}
+                <div>{{ line.member.name }} {{ line.count }}件 {{ line.amount_text }}円</div>
+                {% endif %}
+              {% empty %}
+              <div>詳細データなし</div>
+              {% endfor %}
+            </div>
             <a href="{% url 'report_edit' report.id %}?next={{ current_view_name }}">
               <button type="button" class="btn-inline">修正</button>
             </a>

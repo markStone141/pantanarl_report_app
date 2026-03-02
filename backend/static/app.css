@@ -556,6 +556,10 @@ th {
     display: none;
   }
 
+  .topbar.topbar-desktop-expanded .topbar-menu-toggle {
+    display: inline-flex;
+  }
+
   .card {
     padding: 14px 12px;
     border-radius: 12px;
