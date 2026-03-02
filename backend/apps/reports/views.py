@@ -16,7 +16,6 @@ from apps.common.report_metrics import (
     period_status as calc_period_status,
 )
 from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
-from apps.targets.models import TARGET_STATUS_ACTIVE
 
 from .forms import ReportSubmissionForm
 from .models import DailyDepartmentReport, DailyDepartmentReportLine
@@ -60,7 +59,6 @@ def _dashboard_cards_context():
     month_target_rows = list(
         MonthTargetMetricValue.objects.filter(
             target_month=current_month,
-            status=TARGET_STATUS_ACTIVE,
             metric__is_active=True,
             department__code__in=target_codes,
         )
@@ -71,20 +69,20 @@ def _dashboard_cards_context():
     for row in month_target_rows:
         month_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
 
-    if month_target_rows:
+    if current_month == today.replace(day=1):
         month_status = "active"
+    elif current_month > today.replace(day=1):
+        month_status = "planned"
     else:
-        month_status = "-"
+        month_status = "finished"
 
     current_period = (
-        Period.objects.filter(
-            status=TARGET_STATUS_ACTIVE,
-            start_date__lte=today,
-            end_date__gte=today,
-        )
+        Period.objects.filter(start_date__lte=today, end_date__gte=today)
         .order_by("-month", "start_date", "id")
         .first()
     )
+    if not current_period:
+        current_period = Period.objects.order_by("-month", "start_date", "id").first()
 
     if current_period:
         period_rows = list(
@@ -110,8 +108,8 @@ def _dashboard_cards_context():
     else:
         period_target_values_by_code = {code: {} for code in target_codes}
         period_status = "-"
-        period_start = None
-        period_end = None
+        period_start = today
+        period_end = today
         current_period_label = "-"
 
     month_start = current_month
@@ -125,17 +123,11 @@ def _dashboard_cards_context():
         end_date=month_end,
         target_codes=target_codes,
     )
-    if period_start and period_end:
-        period_actual_totals_by_code = collect_actual_totals(
-            start_date=period_start,
-            end_date=period_end,
-            target_codes=target_codes,
-        )
-    else:
-        period_actual_totals_by_code = {
-            code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
-            for code in target_codes
-        }
+    period_actual_totals_by_code = collect_actual_totals(
+        start_date=period_start,
+        end_date=period_end,
+        target_codes=target_codes,
+    )
 
     metrics_by_code = {}
     for code, _ in target_departments:
