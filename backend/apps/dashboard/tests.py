@@ -572,6 +572,31 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertNotIn("8,888", row["period_target"])
         self.assertIn("0", row["period_target"])
 
+    def test_mail_payload_ignores_non_active_target_values(self):
+        today = timezone.localdate()
+        month = today.replace(day=1)
+        metric = TargetMetric.objects.create(
+            department=self.depts["UN"],
+            code="amount",
+            label="Amount",
+            unit="yen",
+            display_order=1,
+            is_active=True,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.depts["UN"],
+            target_month=month,
+            metric=metric,
+            status=TARGET_STATUS_PLANNED,
+            value=12345,
+        )
+
+        response = self.client.get(reverse("dashboard_index"))
+        self.assertEqual(response.status_code, 200)
+        payload = response.context["mail_template_payload_map"]["today"]
+        un_section = next(section for section in payload["sections"] if section["code"] == "UN")
+        self.assertEqual(un_section["month_lines"], [])
+
     def test_dashboard_reflects_existing_actuals_when_target_created_later(self):
         today = timezone.localdate()
         month = today.replace(day=1)

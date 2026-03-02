@@ -305,17 +305,27 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
 
         base_metric_detail_by_code = {}
         for code, _ in target_departments:
+            month_target_values = base_month_target_values_by_code.get(code, {})
+            period_target_values = base_period_target_values_by_code.get(code, {})
             base_metric_detail_by_code[code] = {
-                "month": metric_detail_rows(
-                    metrics=metrics_by_code.get(code, []),
-                    target_values=base_month_target_values_by_code.get(code, {}),
-                    actual_totals=base_month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
-                ),
-                "period": metric_detail_rows(
-                    metrics=metrics_by_code.get(code, []),
-                    target_values=base_period_target_values_by_code.get(code, {}),
-                    actual_totals=base_period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
-                ),
+                "month": [
+                    row
+                    for row in metric_detail_rows(
+                        metrics=metrics_by_code.get(code, []),
+                        target_values=month_target_values,
+                        actual_totals=base_month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+                    )
+                    if row["target"] > 0
+                ],
+                "period": [
+                    row
+                    for row in metric_detail_rows(
+                        metrics=metrics_by_code.get(code, []),
+                        target_values=period_target_values,
+                        actual_totals=base_period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+                    )
+                    if row["target"] > 0
+                ],
             }
 
         section_order = [
