@@ -81,8 +81,6 @@ def _dashboard_cards_context():
         .order_by("-month", "start_date", "id")
         .first()
     )
-    if not current_period:
-        current_period = Period.objects.order_by("-month", "start_date", "id").first()
 
     if current_period:
         period_rows = list(
@@ -108,8 +106,8 @@ def _dashboard_cards_context():
     else:
         period_target_values_by_code = {code: {} for code in target_codes}
         period_status = "-"
-        period_start = today
-        period_end = today
+        period_start = None
+        period_end = None
         current_period_label = "-"
 
     month_start = current_month
@@ -123,11 +121,17 @@ def _dashboard_cards_context():
         end_date=month_end,
         target_codes=target_codes,
     )
-    period_actual_totals_by_code = collect_actual_totals(
-        start_date=period_start,
-        end_date=period_end,
-        target_codes=target_codes,
-    )
+    if period_start and period_end:
+        period_actual_totals_by_code = collect_actual_totals(
+            start_date=period_start,
+            end_date=period_end,
+            target_codes=target_codes,
+        )
+    else:
+        period_actual_totals_by_code = {
+            code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
+            for code in target_codes
+        }
 
     metrics_by_code = {}
     for code, _ in target_departments:

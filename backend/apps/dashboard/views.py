@@ -82,8 +82,6 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         .order_by("-month", "start_date", "id")
         .first()
     )
-    if not current_period:
-        current_period = Period.objects.order_by("-month", "start_date", "id").first()
 
     if current_period:
         period_rows = list(
@@ -110,8 +108,8 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         current_period_label = "-"
         period_status = "-"
         period_target_values_by_code = {code: {} for code in target_codes}
-        period_start = today
-        period_end = today
+        period_start = None
+        period_end = None
 
     month_start = current_month
     if current_month.month == 12:
@@ -124,11 +122,17 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         end_date=month_end,
         target_codes=target_codes,
     )
-    period_actual_totals_by_code = collect_actual_totals(
-        start_date=period_start,
-        end_date=period_end,
-        target_codes=target_codes,
-    )
+    if period_start and period_end:
+        period_actual_totals_by_code = collect_actual_totals(
+            start_date=period_start,
+            end_date=period_end,
+            target_codes=target_codes,
+        )
+    else:
+        period_actual_totals_by_code = {
+            code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
+            for code in target_codes
+        }
 
     metrics_by_code = {}
     for code, label in target_departments:
