@@ -267,7 +267,9 @@ def report_delete(request: HttpRequest, dept_code: str, report_id: int) -> HttpR
 
 def _members_for_department(department_code: str):
     return (
-        Member.objects.filter(department_links__department__code=department_code)
+        Member.objects.active().filter(
+            department_links__department__code=department_code,
+        )
         .distinct()
         .order_by("name")
     )

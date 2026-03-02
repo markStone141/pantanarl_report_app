@@ -1,4 +1,10 @@
 from django.db import models
+from django.conf import settings
+
+
+class MemberQuerySet(models.QuerySet):
+    def active(self):
+        return self.filter(is_active=True)
 
 
 class Department(models.Model):
@@ -25,7 +31,16 @@ class Member(models.Model):
     name = models.CharField(max_length=64)
     login_id = models.CharField(max_length=64, unique=True)
     password = models.CharField(max_length=128)
+    is_active = models.BooleanField(default=True)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="member_profile",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+    objects = MemberQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_at"]

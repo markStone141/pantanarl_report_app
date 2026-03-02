@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -20,6 +21,8 @@ from apps.common.report_metrics import (
 from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 
 from .forms import DepartmentForm, MemberRegistrationForm, TargetMetricForm
+
+User = get_user_model()
 
 
 def _format_amount_text(value):
@@ -387,8 +390,12 @@ def _member_form(*, data=None, initial=None) -> MemberRegistrationForm:
 def _department_form(*, data=None, initial=None, edit_department=None) -> DepartmentForm:
     form = DepartmentForm(data=data, initial=initial)
     if edit_department:
-        reporter_ids = Member.objects.filter(department_links__department=edit_department).values_list("id", flat=True)
-        form.fields["default_reporter"].queryset = Member.objects.filter(id__in=reporter_ids).order_by("name")
+        reporter_ids = Member.objects.active().filter(
+            department_links__department=edit_department,
+        ).values_list("id", flat=True)
+        form.fields["default_reporter"].queryset = Member.objects.active().filter(
+            id__in=reporter_ids,
+        ).order_by("name")
     else:
         form.fields["default_reporter"].queryset = Member.objects.none()
     return form
@@ -404,7 +411,28 @@ def member_delete(request: HttpRequest, member_id: int) -> HttpResponse:
         return redirect("member_settings")
 
     member = get_object_or_404(Member, id=member_id)
+    linked_user = member.user
+    member.is_active = not member.is_active
+    member.save(update_fields=["is_active"])
+    if linked_user and not linked_user.is_superuser:
+        linked_user.is_active = member.is_active
+        linked_user.save(update_fields=["is_active"])
+    return redirect("member_settings")
+
+
+@require_roles(ROLE_ADMIN)
+def member_purge(request: HttpRequest, member_id: int) -> HttpResponse:
+    if request.method != "POST":
+        return redirect("member_settings")
+
+    member = get_object_or_404(Member, id=member_id)
+    if member.is_active:
+        return redirect("member_settings")
+
+    linked_user = member.user
     member.delete()
+    if linked_user and not linked_user.is_superuser:
+        linked_user.delete()
     return redirect("member_settings")
 
 
@@ -604,7 +632,7 @@ def _build_internal_member_login_id(name: str) -> str:
     base = slugify(name) or "member"
     candidate = base
     suffix = 2
-    while Member.objects.filter(login_id=candidate).exists():
+    while Member.objects.active().filter(login_id=candidate).exists():
         candidate = f"{base}{suffix}"
         suffix += 1
     return candidate
@@ -625,42 +653,104 @@ def member_settings(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             departments = form.cleaned_data["departments"]
             member_name = form.cleaned_data["name"].strip()
+            auth_login_id = (form.cleaned_data.get("auth_login_id") or "").strip()
+            auth_password = (form.cleaned_data.get("auth_password") or "").strip()
+            linked_user = None
 
             if edit_member_id and edit_member_id.isdigit():
                 member = get_object_or_404(Member, id=int(edit_member_id))
                 member.name = member_name
-                member.save(update_fields=["name"])
-                status_message = f"{member.name} を更新しました。"
+                linked_user = member.user
+                if auth_password and not auth_login_id and not linked_user:
+                    form.add_error("auth_login_id", "パスワードを設定する場合はログインIDを入力してください。")
+                if auth_login_id:
+                    duplicate_user = User.objects.filter(username=auth_login_id)
+                    if linked_user:
+                        duplicate_user = duplicate_user.exclude(id=linked_user.id)
+                    if duplicate_user.exists():
+                        form.add_error("auth_login_id", "このログインIDはすでに使用されています。")
+                    else:
+                        if not linked_user:
+                            if not auth_password:
+                                form.add_error("auth_password", "新規連携時はパスワードを入力してください。")
+                                linked_user = None
+                            else:
+                                linked_user = User.objects.create_user(
+                                    username=auth_login_id,
+                                    password=auth_password,
+                                )
+                        else:
+                            linked_user.username = auth_login_id
+                            linked_user.save(update_fields=["username"])
+                if not form.errors:
+                    if linked_user and auth_password:
+                        linked_user.set_password(auth_password)
+                        linked_user.save(update_fields=["password"])
+                    member.user = linked_user
+                    if auth_login_id:
+                        member.login_id = auth_login_id
+                        if auth_password:
+                            member.password = auth_password
+                        member.save(update_fields=["name", "user", "login_id", "password"])
+                    else:
+                        member.save(update_fields=["name", "user"])
+                    status_message = f"{member.name} を更新しました。"
             else:
-                member = Member.objects.create(
-                    name=member_name,
-                    login_id=_build_internal_member_login_id(member_name),
-                    password="",
+                if auth_login_id and not auth_password:
+                    form.add_error("auth_password", "新規作成時、ログインIDを設定する場合はパスワードが必要です。")
+                elif auth_password and not auth_login_id:
+                    form.add_error("auth_login_id", "パスワードを設定する場合はログインIDを入力してください。")
+                else:
+                    if auth_login_id:
+                        if User.objects.filter(username=auth_login_id).exists():
+                            form.add_error("auth_login_id", "このログインIDはすでに使用されています。")
+                    if not form.errors:
+                        if auth_login_id:
+                            linked_user = User.objects.create_user(
+                                username=auth_login_id,
+                                password=auth_password,
+                            )
+                            login_id = auth_login_id
+                            raw_password = auth_password
+                        else:
+                            login_id = _build_internal_member_login_id(member_name)
+                            raw_password = ""
+                        member = Member.objects.create(
+                            name=member_name,
+                            login_id=login_id,
+                            password=raw_password,
+                            user=linked_user,
+                        )
+                        status_message = f"{member.name} を登録しました。"
+
+            if not form.errors:
+                MemberDepartment.objects.filter(member=member).exclude(department__in=departments).delete()
+                existing_departments = set(
+                    MemberDepartment.objects.filter(member=member).values_list("department_id", flat=True)
                 )
-                status_message = f"{member.name} を登録しました。"
+                for dept in departments:
+                    if dept.id not in existing_departments:
+                        MemberDepartment.objects.create(member=member, department=dept)
 
-            MemberDepartment.objects.filter(member=member).exclude(department__in=departments).delete()
-            existing_departments = set(
-                MemberDepartment.objects.filter(member=member).values_list("department_id", flat=True)
-            )
-            for dept in departments:
-                if dept.id not in existing_departments:
-                    MemberDepartment.objects.create(member=member, department=dept)
-
-            form = _member_form()
-            edit_member = None
+                form = _member_form()
+                edit_member = None
     else:
         if edit_member:
             form = _member_form(
                 initial={
                     "name": edit_member.name,
                     "departments": list(edit_member.department_links.values_list("department_id", flat=True)),
+                    "auth_login_id": edit_member.user.username if edit_member.user else "",
                 }
             )
         else:
             form = _member_form()
 
-    members = Member.objects.prefetch_related("department_links")
+    members = (
+        Member.objects.prefetch_related("department_links")
+        .select_related("user")
+        .order_by("-is_active", "name")
+    )
     selected_department_ids = {
         str(dept_id) for dept_id in (form["departments"].value() or [])
     }

@@ -39,3 +39,16 @@
 ## メモ
 - 管理者モデレーション対象: 記事、コメント（全投稿種別）
 - 権限表示ルール: UIのボタン表示とAPI/サーバー側権限制御の両方で担保する
+
+## 開発運用ルール
+- [ ] `main` は常にデプロイ可能状態を維持する（直接pushしない）
+- [ ] 機能ごとにブランチを切る（`feature/*`, `fix/*`, `chore/*`）
+- [ ] 1PR=1目的で小さく分ける
+- [ ] マージ前に `lint` とテストを実行する
+- [ ] 問題発生時はCloud Runの前リビジョンへロールバックする
+
+## ブランチ命名例
+- `feature/knowledge-read-state`
+- `feature/knowledge-comment-thread`
+- `fix/comment-toggle-bug`
+- `chore/eslint-docs`

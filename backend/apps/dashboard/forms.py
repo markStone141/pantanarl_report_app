@@ -15,6 +15,21 @@ class MemberRegistrationForm(forms.Form):
         queryset=Department.objects.none(),
         widget=forms.CheckboxSelectMultiple,
     )
+    auth_login_id = forms.CharField(
+        label="ログインID",
+        required=False,
+        max_length=150,
+        widget=forms.TextInput(attrs={"placeholder": "ナレッジ共有アプリ用ID"}),
+    )
+    auth_password = forms.CharField(
+        label="ログインパスワード",
+        required=False,
+        max_length=128,
+        widget=forms.PasswordInput(
+            attrs={"placeholder": "新規設定時は必須（編集時は変更時のみ入力）"},
+            render_value=False,
+        ),
+    )
 
 
 class DepartmentForm(forms.Form):

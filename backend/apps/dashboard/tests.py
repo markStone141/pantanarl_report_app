@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -7,6 +8,8 @@ from django.utils import timezone
 from apps.accounts.models import Department, Member, MemberDepartment
 from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
 from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
+
+User = get_user_model()
 
 
 def seed_departments():
@@ -54,6 +57,13 @@ class MemberSettingsViewTests(TestCase):
         member = Member.objects.create(name="Delete User", login_id="del_id", password="")
         response = self.client.post(reverse("member_delete", args=[member.id]))
         self.assertEqual(response.status_code, 302)
+        member.refresh_from_db()
+        self.assertFalse(member.is_active)
+
+    def test_purge_inactive_member_removes_record(self):
+        member = Member.objects.create(name="Inactive User", login_id="inactive_id", password="", is_active=False)
+        response = self.client.post(reverse("member_purge", args=[member.id]))
+        self.assertEqual(response.status_code, 302)
         self.assertFalse(Member.objects.filter(id=member.id).exists())
 
     def test_register_member_with_departments_creates_links(self):
@@ -95,6 +105,37 @@ class MemberSettingsViewTests(TestCase):
         response = self.client.get(reverse("member_settings"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "UN")
+
+    def test_register_member_with_auth_credentials_links_user(self):
+        response = self.client.post(
+            reverse("member_settings"),
+            {
+                "name": "Auth Member",
+                "auth_login_id": "auth_member_1",
+                "auth_password": "AuthPass123",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        member = Member.objects.get(name="Auth Member")
+        self.assertIsNotNone(member.user)
+        self.assertEqual(member.user.username, "auth_member_1")
+        self.assertTrue(member.user.check_password("AuthPass123"))
+
+    def test_edit_member_can_update_auth_password(self):
+        user = User.objects.create_user(username="edit_user_1", password="OldPass123")
+        member = Member.objects.create(name="Edit User", login_id="edit_user_1", password="", user=user)
+        response = self.client.post(
+            reverse("member_settings"),
+            {
+                "edit_member_id": str(member.id),
+                "name": "Edit User",
+                "auth_login_id": "edit_user_1",
+                "auth_password": "NewPass123",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        member.refresh_from_db()
+        self.assertTrue(member.user.check_password("NewPass123"))
 
 
 class DepartmentSettingsViewTests(TestCase):
