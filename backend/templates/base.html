@@ -13,6 +13,7 @@
     (function () {
       const topbars = document.querySelectorAll(".topbar");
       topbars.forEach(function (topbar, idx) {
+        if (topbar.classList.contains("topbar-nav-always")) return;
         const nav = topbar.querySelector("nav");
         if (!nav || nav.classList.contains("menu-collapsible")) return;
 
