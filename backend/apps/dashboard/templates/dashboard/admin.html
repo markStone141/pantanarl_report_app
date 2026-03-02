@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}管理者ページ | Report App{% endblock %}
 
@@ -212,6 +212,7 @@
     function buildSectionLines(section, periodName, periodRange) {
       const lines = [];
       const amountLabel = section.code && section.code.indexOf("STYLE") === 0 ? "金額" : "支援額";
+      const hasPeriod = periodName && periodName !== "-" && periodRange && periodRange !== "-";
       lines.push(section.heading + "（" + section.name + "）");
       lines.push("全体");
       lines.push("件数" + section.daily_count + "件、" + amountLabel + section.daily_amount_text);
@@ -263,6 +264,7 @@
     function buildSectionLinesV2(section, periodName, periodRange) {
       const lines = [];
       const amountLabel = section.code && section.code.indexOf("STYLE") === 0 ? "金額" : "支援額";
+      const hasPeriod = periodName && periodName !== "-" && periodRange && periodRange !== "-";
       lines.push(section.heading + "（" + section.name + "）");
 
       if (section.has_report) {
@@ -283,13 +285,15 @@
         lines.push("");
       }
 
-      lines.push("【" + periodName + "（" + periodRange + "）】");
-      if (section.period_lines.length) {
-        section.period_lines.forEach(function (line) {
-          lines.push(line);
-        });
-      } else {
-        lines.push("路程目標データなし");
+      if (hasPeriod) {
+        lines.push("【" + periodName + "（" + periodRange + "）】");
+        if (section.period_lines.length) {
+          section.period_lines.forEach(function (line) {
+            lines.push(line);
+          });
+        } else {
+          lines.push("路程目標データなし");
+        }
       }
       lines.push("【月間目標達成率】");
       if (section.month_lines.length) {

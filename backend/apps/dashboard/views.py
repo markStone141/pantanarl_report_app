@@ -233,8 +233,6 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             .order_by("-month", "start_date", "id")
             .first()
         )
-        if not base_period:
-            base_period = Period.objects.order_by("-month", "start_date", "id").first()
 
         if base_period:
             base_period_rows = list(
@@ -258,8 +256,8 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             )
         else:
             base_period_target_values_by_code = {code: {} for code in target_codes}
-            base_period_start = base_date
-            base_period_end = base_date
+            base_period_start = None
+            base_period_end = None
             base_period_name = "-"
             base_period_range = "-"
 
@@ -273,11 +271,17 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             end_date=base_month_end,
             target_codes=target_codes,
         )
-        base_period_actual_totals_by_code = collect_actual_totals(
-            start_date=base_period_start,
-            end_date=base_period_end,
-            target_codes=target_codes,
-        )
+        if base_period_start and base_period_end:
+            base_period_actual_totals_by_code = collect_actual_totals(
+                start_date=base_period_start,
+                end_date=base_period_end,
+                target_codes=target_codes,
+            )
+        else:
+            base_period_actual_totals_by_code = {
+                code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
+                for code in target_codes
+            }
 
         base_metric_detail_by_code = {}
         for code, _ in target_departments:
