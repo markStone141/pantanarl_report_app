@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
 from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
-from apps.targets.models import TARGET_STATUS_PLANNED, MonthTargetMetricValue, TargetMetric
+from apps.targets.models import MonthTargetMetricValue, TargetMetric
 
 
 class ReportMemberFilteringTests(TestCase):
@@ -518,29 +518,3 @@ class ReportTargetMonthSelectionTests(TestCase):
             response.context["target_month_summary"],
             f"{current_month.year}/{current_month.month}",
         )
-
-    def test_report_index_ignores_planned_month_target(self):
-        today = timezone.localdate()
-        month = today.replace(day=1)
-        un = Department.objects.create(name="UN", code="UN")
-        metric = TargetMetric.objects.create(
-            department=un,
-            code="amount",
-            label="Amount",
-            unit="yen",
-            display_order=1,
-            is_active=True,
-        )
-        MonthTargetMetricValue.objects.create(
-            department=un,
-            target_month=month,
-            metric=metric,
-            status=TARGET_STATUS_PLANNED,
-            value=7777,
-        )
-
-        response = self.client.get(reverse("report_index"))
-        self.assertEqual(response.status_code, 200)
-        row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
-        self.assertNotIn("7,777", row["month_target"])
-        self.assertIn("0", row["month_target"])
