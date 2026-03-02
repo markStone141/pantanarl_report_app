@@ -316,6 +316,8 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                 {
                     "name": row["member_name"],
                     "count": row["count"],
+                    "cs_count": row.get("cs_count", 0),
+                    "refugee_count": row.get("refugee_count", 0),
                     "amount_text": format_yen(row["amount"]),
                 }
                 for row in build_member_rows(member_totals=base_member_totals, codes=[code])
@@ -335,6 +337,8 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                     "name": label_by_code[code],
                     "has_report": base_has_report_by_code.get(code, False),
                     "daily_count": base_daily_totals.get(code, {}).get("count", 0),
+                    "daily_cs_count": base_daily_totals.get(code, {}).get("cs_count", 0),
+                    "daily_refugee_count": base_daily_totals.get(code, {}).get("refugee_count", 0),
                     "daily_amount_text": format_yen(base_daily_totals.get(code, {}).get("amount", 0)),
                     "member_lines": member_lines,
                     "period_lines": period_metric_lines,

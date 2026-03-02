@@ -269,12 +269,20 @@
 
       if (section.has_report) {
         lines.push("全体");
-        lines.push("件数" + section.daily_count + "件、" + amountLabel + section.daily_amount_text);
+        if (section.code === "WV") {
+          lines.push("CS" + section.daily_cs_count + "件 難民" + section.daily_refugee_count + "件 " + amountLabel + section.daily_amount_text);
+        } else {
+          lines.push("件数" + section.daily_count + "件、" + amountLabel + section.daily_amount_text);
+        }
         lines.push("");
         if (section.member_lines.length) {
           section.member_lines.forEach(function (row) {
             lines.push(row.name);
-            lines.push("件数" + row.count + "件、" + amountLabel + row.amount_text);
+            if (section.code === "WV") {
+              lines.push("CS" + row.cs_count + "件 難民" + row.refugee_count + "件 " + amountLabel + row.amount_text);
+            } else {
+              lines.push("件数" + row.count + "件、" + amountLabel + row.amount_text);
+            }
           });
         } else {
           lines.push("個人実績データなし");
