@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import timedelta
 
@@ -29,12 +30,27 @@ from apps.targets.models import (
 from .forms import DepartmentForm, MemberRegistrationForm, TargetMetricForm
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 def _empty_totals_by_code(target_codes):
     return {
         code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
         for code in target_codes
+    }
+
+
+def _empty_mail_payload(base_date):
+    return {
+        "report_date": base_date.strftime("%Y/%m/%d"),
+        "sections": [],
+        "period_name": "-",
+        "period_range": "-",
+        "un_wv_summary": {
+            "actual_text": format_yen(0),
+            "target_text": format_yen(0),
+            "rate": "-",
+        },
     }
 
 
@@ -395,9 +411,16 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             },
         }
 
+    def safe_build_mail_template_payload(base_date):
+        try:
+            return build_mail_template_payload(base_date)
+        except Exception:
+            logger.exception("Failed to build mail template payload for %s", base_date.isoformat())
+            return _empty_mail_payload(base_date)
+
     mail_template_payload_map = {
-        "today": build_mail_template_payload(real_today),
-        "prev": build_mail_template_payload(real_today - timedelta(days=1)),
+        "today": safe_build_mail_template_payload(real_today),
+        "prev": safe_build_mail_template_payload(real_today - timedelta(days=1)),
     }
 
     context = {
