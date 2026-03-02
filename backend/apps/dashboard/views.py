@@ -1,4 +1,3 @@
-import logging
 import re
 from datetime import timedelta
 
@@ -24,7 +23,6 @@ from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetr
 from .forms import DepartmentForm, MemberRegistrationForm, TargetMetricForm
 
 User = get_user_model()
-logger = logging.getLogger(__name__)
 
 
 def _format_amount_text(value):
@@ -362,16 +360,9 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             },
         }
 
-    def safe_build_mail_template_payload(base_date):
-        try:
-            return build_mail_template_payload(base_date)
-        except Exception:
-            logger.exception("Failed to build mail template payload for %s", base_date.isoformat())
-            return _empty_mail_payload(base_date)
-
     mail_template_payload_map = {
-        "today": safe_build_mail_template_payload(real_today),
-        "prev": safe_build_mail_template_payload(real_today - timedelta(days=1)),
+        "today": build_mail_template_payload(real_today),
+        "prev": build_mail_template_payload(real_today - timedelta(days=1)),
     }
 
     context = {
