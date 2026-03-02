@@ -1,4 +1,4 @@
-﻿window.toggleReplies = function (btn) {
+window.toggleReplies = function (btn) {
       if (!btn) return;
       var targetId = btn.getAttribute("data-target-replies");
       var target = targetId ? document.getElementById(targetId) : null;

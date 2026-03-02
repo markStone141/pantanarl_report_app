@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
       const filterButtons = document.querySelectorAll("[data-filter-tag]");
       const tagSearchInput = document.getElementById("tag-search");
       const summaryEl = document.getElementById("filter-summary");
