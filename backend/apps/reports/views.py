@@ -533,6 +533,7 @@ def _render_report_form(
             report_date=selected_date,
         )
         .select_related("reporter")
+        .prefetch_related("lines__member")
         .annotate(
             cs_count_total=Sum("lines__cs_count"),
             refugee_count_total=Sum("lines__refugee_count"),
@@ -541,6 +542,8 @@ def _render_report_form(
     )
     for report in recent_reports:
         report.followup_count_text = _format_amount_text(report.followup_count)
+        for line in report.lines.all():
+            line.amount_text = _format_amount_text(line.amount)
     if form.is_bound:
         selected_reporter_id = str(form.data.get("reporter", "") or "")
         memo_value = form.data.get("memo", "") or ""
