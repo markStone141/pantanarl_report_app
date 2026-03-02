@@ -5,9 +5,10 @@ class LoginForm(forms.Form):
     login_id = forms.ChoiceField(
         label="ログイン種別",
         choices=(
-            ("admin", "管理者"),
             ("report", "報告"),
+            ("admin", "管理者"),
         ),
+        initial="report",
         widget=forms.Select(),
     )
     password = forms.CharField(
