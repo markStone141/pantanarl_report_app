@@ -7,7 +7,13 @@ from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
 from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
-from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
+from apps.targets.models import (
+    TARGET_STATUS_PLANNED,
+    MonthTargetMetricValue,
+    Period,
+    PeriodTargetMetricValue,
+    TargetMetric,
+)
 
 User = get_user_model()
 
@@ -524,6 +530,47 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         )
         row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
         self.assertNotIn("9999", row["month_target"])
+
+    def test_dashboard_uses_only_active_targets(self):
+        today = timezone.localdate()
+        month = today.replace(day=1)
+        metric = TargetMetric.objects.create(
+            department=self.depts["UN"],
+            code="amount",
+            label="Amount",
+            unit="yen",
+            display_order=1,
+            is_active=True,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.depts["UN"],
+            target_month=month,
+            metric=metric,
+            status=TARGET_STATUS_PLANNED,
+            value=9999,
+        )
+        planned_period = Period.objects.create(
+            month=month,
+            name=f"{today.year}/{today.month} planned period",
+            status=TARGET_STATUS_PLANNED,
+            start_date=today - timedelta(days=1),
+            end_date=today + timedelta(days=1),
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=planned_period,
+            department=self.depts["UN"],
+            metric=metric,
+            value=8888,
+        )
+
+        response = self.client.get(reverse("dashboard_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["target_period_summary"], "-")
+        row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
+        self.assertNotIn("9,999", row["month_target"])
+        self.assertIn("0", row["month_target"])
+        self.assertNotIn("8,888", row["period_target"])
+        self.assertIn("0", row["period_target"])
 
     def test_dashboard_reflects_existing_actuals_when_target_created_later(self):
         today = timezone.localdate()

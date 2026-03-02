@@ -18,11 +18,24 @@ from apps.common.report_metrics import (
     metric_detail_rows,
     period_status as calc_period_status,
 )
-from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
+from apps.targets.models import (
+    TARGET_STATUS_ACTIVE,
+    MonthTargetMetricValue,
+    Period,
+    PeriodTargetMetricValue,
+    TargetMetric,
+)
 
 from .forms import DepartmentForm, MemberRegistrationForm, TargetMetricForm
 
 User = get_user_model()
+
+
+def _empty_totals_by_code(target_codes):
+    return {
+        code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
+        for code in target_codes
+    }
 
 
 def _format_amount_text(value):
@@ -63,6 +76,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
     month_target_rows = list(
         MonthTargetMetricValue.objects.filter(
             target_month=current_month,
+            status=TARGET_STATUS_ACTIVE,
             metric__is_active=True,
             department__code__in=target_codes,
         )
@@ -81,12 +95,14 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         month_status = "finished"
 
     current_period = (
-        Period.objects.filter(start_date__lte=today, end_date__gte=today)
+        Period.objects.filter(
+            status=TARGET_STATUS_ACTIVE,
+            start_date__lte=today,
+            end_date__gte=today,
+        )
         .order_by("-month", "start_date", "id")
         .first()
     )
-    if not current_period:
-        current_period = Period.objects.order_by("-month", "start_date", "id").first()
 
     if current_period:
         period_rows = list(
@@ -111,10 +127,10 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         period_end = current_period.end_date
     else:
         current_period_label = "-"
-        period_status = "-"
+        period_status = "finished"
         period_target_values_by_code = {code: {} for code in target_codes}
-        period_start = today
-        period_end = today
+        period_start = None
+        period_end = None
 
     month_start = current_month
     if current_month.month == 12:
@@ -127,11 +143,14 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         end_date=month_end,
         target_codes=target_codes,
     )
-    period_actual_totals_by_code = collect_actual_totals(
-        start_date=period_start,
-        end_date=period_end,
-        target_codes=target_codes,
-    )
+    if period_start and period_end:
+        period_actual_totals_by_code = collect_actual_totals(
+            start_date=period_start,
+            end_date=period_end,
+            target_codes=target_codes,
+        )
+    else:
+        period_actual_totals_by_code = _empty_totals_by_code(target_codes)
 
     metrics_by_code = {}
     for code, label in target_departments:
@@ -217,6 +236,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         base_month_target_rows = list(
             MonthTargetMetricValue.objects.filter(
                 target_month=base_month,
+                status=TARGET_STATUS_ACTIVE,
                 metric__is_active=True,
                 department__code__in=target_codes,
             )
@@ -228,12 +248,14 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             base_month_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
 
         base_period = (
-            Period.objects.filter(start_date__lte=base_date, end_date__gte=base_date)
+            Period.objects.filter(
+                status=TARGET_STATUS_ACTIVE,
+                start_date__lte=base_date,
+                end_date__gte=base_date,
+            )
             .order_by("-month", "start_date", "id")
             .first()
         )
-        if not base_period:
-            base_period = Period.objects.order_by("-month", "start_date", "id").first()
 
         if base_period:
             base_period_rows = list(
@@ -257,8 +279,8 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             )
         else:
             base_period_target_values_by_code = {code: {} for code in target_codes}
-            base_period_start = base_date
-            base_period_end = base_date
+            base_period_start = None
+            base_period_end = None
             base_period_name = "-"
             base_period_range = "-"
 
@@ -272,11 +294,14 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
             end_date=base_month_end,
             target_codes=target_codes,
         )
-        base_period_actual_totals_by_code = collect_actual_totals(
-            start_date=base_period_start,
-            end_date=base_period_end,
-            target_codes=target_codes,
-        )
+        if base_period_start and base_period_end:
+            base_period_actual_totals_by_code = collect_actual_totals(
+                start_date=base_period_start,
+                end_date=base_period_end,
+                target_codes=target_codes,
+            )
+        else:
+            base_period_actual_totals_by_code = _empty_totals_by_code(target_codes)
 
         base_metric_detail_by_code = {}
         for code, _ in target_departments:
