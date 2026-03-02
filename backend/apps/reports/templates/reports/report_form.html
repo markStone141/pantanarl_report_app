@@ -161,38 +161,17 @@
           <td data-label="操作">
             <details style="margin-bottom: 8px;">
               <summary style="cursor: pointer;">詳細</summary>
-              <table style="margin-top: 8px;">
-                <thead>
-                  <tr>
-                    <th>メンバー</th>
-                    {% if split_counts %}
-                    <th>CS</th>
-                    <th>難民</th>
-                    {% else %}
-                    <th>件数</th>
-                    {% endif %}
-                    <th>金額(円)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for line in report.lines.all %}
-                  <tr>
-                    <td>{{ line.member.name }}</td>
-                    {% if split_counts %}
-                    <td>{{ line.cs_count }}</td>
-                    <td>{{ line.refugee_count }}</td>
-                    {% else %}
-                    <td>{{ line.count }}</td>
-                    {% endif %}
-                    <td>{{ line.amount_text }}</td>
-                  </tr>
-                  {% empty %}
-                  <tr>
-                    <td colspan="{% if split_counts %}4{% else %}3{% endif %}">詳細データなし</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+              <div style="margin-top: 8px; display: grid; gap: 4px;">
+                {% for line in report.lines.all %}
+                  {% if split_counts %}
+                  <div>{{ line.member.name }} CS{{ line.cs_count }}件 難民{{ line.refugee_count }}件 {{ line.amount_text }}円</div>
+                  {% else %}
+                  <div>{{ line.member.name }} {{ line.count }}件 {{ line.amount_text }}円</div>
+                  {% endif %}
+                {% empty %}
+                <div>詳細データなし</div>
+                {% endfor %}
+              </div>
             </details>
             <a href="{% url 'report_edit' report.id %}?next={{ current_view_name }}">
               <button type="button" class="btn-inline">修正</button>
