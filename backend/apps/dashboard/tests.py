@@ -327,10 +327,10 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         response = self.client.get(reverse("dashboard_index"))
         self.assertEqual(response.status_code, 200)
         row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
-        self.assertIn("2000", row["month_target"])
-        self.assertIn("1000", row["month_actual"])
+        self.assertIn("2,000", row["month_target"])
+        self.assertIn("1,000", row["month_actual"])
         self.assertIn("50.0%", row["month_rate"])
-        self.assertIn("4000", row["period_target"])
+        self.assertIn("4,000", row["period_target"])
         self.assertIn("25.0%", row["period_rate"])
 
     def test_dashboard_mail_payload_switches_today_and_previous_day(self):
@@ -492,8 +492,8 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertIn("2", wv_progress["month_actual"])
 
         style_progress = next(row for row in response.context["target_progress_rows"] if row["label"] == "Style1")
-        self.assertIn("10000", style_progress["month_target"])
-        self.assertIn("8000", style_progress["month_actual"])
+        self.assertIn("10,000", style_progress["month_target"])
+        self.assertIn("8,000", style_progress["month_actual"])
 
     def test_dashboard_month_target_uses_current_month_without_fallback(self):
         today = timezone.localdate()
@@ -574,7 +574,40 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         response = self.client.get(reverse("dashboard_index"))
         self.assertEqual(response.status_code, 200)
         row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
-        self.assertIn("3000", row["month_actual"])
+        self.assertIn("3,000", row["month_actual"])
         self.assertIn("50.0%", row["month_rate"])
-        self.assertIn("3000", row["period_actual"])
+        self.assertIn("3,000", row["period_actual"])
         self.assertIn("50.0%", row["period_rate"])
+
+    def test_dashboard_does_not_apply_planned_targets_when_active_missing(self):
+        today = timezone.localdate()
+        month = today.replace(day=1)
+        metric = TargetMetric.objects.create(
+            department=self.depts["UN"],
+            code="amount",
+            label="Amount",
+            unit="yen",
+            display_order=1,
+            is_active=True,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.depts["UN"],
+            target_month=month,
+            metric=metric,
+            status="planned",
+            value=9999,
+        )
+        Period.objects.create(
+            month=month,
+            name=f"{today.year}年度{today.month}月 第9次路程",
+            status="planned",
+            start_date=today - timedelta(days=1),
+            end_date=today + timedelta(days=1),
+        )
+
+        response = self.client.get(reverse("dashboard_index"))
+        self.assertEqual(response.status_code, 200)
+        row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
+        self.assertNotIn("9,999", row["month_target"])
+        self.assertIn("0", row["month_target"])
+        self.assertEqual(response.context["target_period_summary"], "-")
