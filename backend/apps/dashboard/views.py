@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import timedelta
 
@@ -23,6 +24,7 @@ from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetr
 from .forms import DepartmentForm, MemberRegistrationForm, TargetMetricForm
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 def _format_amount_text(value):
@@ -36,8 +38,7 @@ def _mail_period_heading(period_name: str) -> str:
     return match.group(0) if match else (period_name or "-")
 
 
-@require_roles(ROLE_ADMIN)
-def dashboard_index(request: HttpRequest) -> HttpResponse:
+def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
     real_today = timezone.localdate()
     selected_mode = "prev" if request.GET.get("mode") == "prev" else "today"
     today = real_today - timedelta(days=1) if selected_mode == "prev" else real_today
@@ -379,6 +380,47 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
         "selected_mode": selected_mode,
     }
     return render(request, "dashboard/admin.html", context)
+
+
+@require_roles(ROLE_ADMIN)
+def dashboard_index(request: HttpRequest) -> HttpResponse:
+    try:
+        return _dashboard_index_impl(request)
+    except Exception:
+        logger.exception("dashboard_index failed")
+        today = timezone.localdate()
+        return render(
+            request,
+            "dashboard/admin.html",
+            {
+                "today_str": today.strftime("%Y/%m/%d"),
+                "submission_rows": [],
+                "kpi_cards": [],
+                "target_month_summary": f"{today.year}/{today.month}",
+                "target_month_status": "-",
+                "target_period_summary": "-",
+                "target_period_status": "-",
+                "current_period_label": "-",
+                "target_progress_rows": [],
+                "mail_template_payload_map": {
+                    "today": {
+                        "report_date": today.strftime("%Y/%m/%d"),
+                        "sections": [],
+                        "period_name": "-",
+                        "period_range": "-",
+                        "un_wv_summary": {"actual_text": "0円", "target_text": "0円", "rate": "-"},
+                    },
+                    "prev": {
+                        "report_date": (today - timedelta(days=1)).strftime("%Y/%m/%d"),
+                        "sections": [],
+                        "period_name": "-",
+                        "period_range": "-",
+                        "un_wv_summary": {"actual_text": "0円", "target_text": "0円", "rate": "-"},
+                    },
+                },
+                "selected_mode": "today",
+            },
+        )
 
 
 def _member_form(*, data=None, initial=None) -> MemberRegistrationForm:
