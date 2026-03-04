@@ -210,7 +210,19 @@ def _get_talks_member(request: HttpRequest) -> Member | None:
 
 def _is_talks_admin(request: HttpRequest) -> bool:
     role = request.session.get(SESSION_ROLE_KEY)
-    return role == ROLE_ADMIN or bool(request.session.get(TALKS_SESSION_IS_ADMIN_KEY))
+    talks_admin_flag = bool(request.session.get(TALKS_SESSION_IS_ADMIN_KEY))
+
+    # Keep admin sessions interoperable between ReportApp and Talks.
+    if role == ROLE_ADMIN and not talks_admin_flag:
+        request.session[TALKS_SESSION_IS_ADMIN_KEY] = True
+        if not request.session.get(TALKS_SESSION_MEMBER_NAME_KEY):
+            request.session[TALKS_SESSION_MEMBER_NAME_KEY] = "管理者"
+        talks_admin_flag = True
+    elif talks_admin_flag and role != ROLE_ADMIN:
+        request.session[SESSION_ROLE_KEY] = ROLE_ADMIN
+        role = ROLE_ADMIN
+
+    return role == ROLE_ADMIN or talks_admin_flag
 
 
 def _get_talks_display_name(request: HttpRequest, member: Member | None) -> str:

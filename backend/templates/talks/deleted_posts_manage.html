@@ -13,6 +13,7 @@
     </div>
     <nav class="talks-topbar-nav" style="display:flex; align-items:center; gap:10px;">
       <span class="talks-welcome-text" style="color:#fff; font-size:0.78rem;">おかえりなさい！{{ talks_member_name }}さん</span>
+      <a href="{% url 'dashboard_index' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">管理者ダッシュボード</a>
       <a href="{% url 'talks_index' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">一覧へ</a>
       <a href="{% url 'talks_tag_manage' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">タグ管理</a>
       <a href="{% url 'talks_logout' %}" class="logout-link">ログアウト</a>
