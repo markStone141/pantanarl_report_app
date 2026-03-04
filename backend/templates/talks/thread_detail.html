@@ -108,6 +108,127 @@
     .knowledge-comment-item[hidden] {
       display: none !important;
     }
+    .knowledge-followup-actions {
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .knowledge-comment-reply-btn {
+      width: auto;
+      min-height: 0;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      background: #eaf3f6;
+      color: #1f4f5e;
+      border: 1px solid #cfe0e7;
+      font-weight: 700;
+    }
+    .knowledge-fab {
+      position: fixed;
+      right: 16px;
+      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      width: 58px;
+      height: 58px;
+      border-radius: 999px;
+      border: 0;
+      background: linear-gradient(135deg, #126e82, #1e97b1);
+      color: #fff;
+      font-size: 1.8rem;
+      font-weight: 700;
+      line-height: 1;
+      box-shadow: 0 8px 20px rgba(8, 70, 85, 0.28);
+      z-index: 60;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .knowledge-form-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(19, 34, 40, 0.45);
+      z-index: 70;
+      display: none;
+      align-items: flex-end;
+    }
+    .knowledge-form-overlay.open {
+      display: flex;
+    }
+    .knowledge-form-sheet {
+      width: 100%;
+      max-height: 86vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 16px 16px 0 0;
+      padding: 14px;
+      box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
+    }
+    .knowledge-form-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .knowledge-form-close {
+      width: 38px;
+      height: 38px;
+      min-height: 38px;
+      border-radius: 999px;
+      border: 1px solid #cdd9df;
+      background: #fff;
+      color: #1a4e5e;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      cursor: pointer;
+    }
+    .knowledge-reply-context {
+      display: none;
+      margin-bottom: 8px;
+      padding: 8px 10px;
+      border: 1px solid #d3e2e8;
+      border-radius: 8px;
+      background: #f4fafc;
+      color: #385664;
+      font-size: 0.84rem;
+    }
+    .knowledge-reply-context.is-open {
+      display: block;
+    }
+    .knowledge-comment-textarea {
+      min-height: 140px;
+    }
+    .knowledge-reaction-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .knowledge-reaction-option {
+      width: auto;
+      min-height: 0;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid #d9e5ea;
+      background: #f8fbfc;
+      color: #4f6673;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.86rem;
+      cursor: pointer;
+    }
+    .knowledge-reaction-option.is-selected {
+      border-color: #126e82;
+      background: #126e82;
+      color: #fff;
+    }
+    .knowledge-reaction-option.is-selected i {
+      color: #fff !important;
+    }
     .knowledge-tag-chip {
       background: #eaf3f7;
       color: #0f4d5d;
@@ -206,6 +327,14 @@
                 {% endif %}
               </div>
               <p class="knowledge-followup-body">{{ comment.body }}</p>
+              <div class="knowledge-followup-actions">
+                <button
+                  type="button"
+                  class="knowledge-comment-reply-btn"
+                  data-reply-target="{{ comment.id }}"
+                  data-reply-author="{{ comment.author }}"
+                >このコメントに返信</button>
+              </div>
 
               {% if comment.replies %}
                 <div class="knowledge-reply-block">
@@ -226,12 +355,48 @@
     {% endif %}
   </section>
 </div>
+<button id="knowledge-open-comment" class="knowledge-fab" type="button" aria-label="コメントを追加">+</button>
+
+<div id="knowledge-comment-overlay" class="knowledge-form-overlay" aria-hidden="true">
+  <section class="knowledge-form-sheet">
+    <div class="knowledge-form-head">
+      <strong>コメントを追加</strong>
+      <button id="knowledge-close-comment" class="knowledge-form-close" type="button" aria-label="閉じる">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" id="knowledge-parent-id" name="parent_id" value="">
+      <input type="hidden" id="knowledge-reaction-code" name="reaction_code" value="{% if reaction_types %}{{ reaction_types.0.code }}{% endif %}">
+      <div id="knowledge-reply-context" class="knowledge-reply-context"></div>
+      <div id="knowledge-reaction-block">
+        <label>アイコン</label>
+        <div class="knowledge-reaction-picker">
+          {% for reaction in reaction_types %}
+            <button
+              type="button"
+              class="knowledge-reaction-option {% if forloop.first %}is-selected{% endif %}"
+              data-reaction-code="{{ reaction.code }}"
+            >
+              <i class="{{ reaction.icon_class }}" style="color:{{ reaction.color }};"></i>{{ reaction.label }}
+            </button>
+          {% endfor %}
+        </div>
+      </div>
+      <label for="knowledge-comment-body">コメント</label>
+      <textarea id="knowledge-comment-body" name="body" class="knowledge-comment-textarea"></textarea>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button type="submit" class="btn-inline" style="width:auto;">投稿</button>
+        <button id="knowledge-cancel-comment" type="button" class="btn-inline" style="width:auto; background:#5b7280;">キャンセル</button>
+      </div>
+    </form>
+  </section>
+</div>
 <script>
   (function () {
     const buttons = document.querySelectorAll("[data-filter-kind]");
     const items = document.querySelectorAll(".knowledge-comment-item");
-    if (!buttons.length || !items.length) return;
-
     let activeKind = "";
 
     function render() {
@@ -245,11 +410,77 @@
       });
     }
 
-    buttons.forEach(function (btn) {
+    if (buttons.length && items.length) {
+      buttons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          const kind = btn.getAttribute("data-filter-kind") || "";
+          activeKind = activeKind === kind ? "" : kind;
+          render();
+        });
+      });
+    }
+
+    const openComment = document.getElementById("knowledge-open-comment");
+    const closeComment = document.getElementById("knowledge-close-comment");
+    const cancelComment = document.getElementById("knowledge-cancel-comment");
+    const commentOverlay = document.getElementById("knowledge-comment-overlay");
+    const parentId = document.getElementById("knowledge-parent-id");
+    const replyContext = document.getElementById("knowledge-reply-context");
+    const commentBody = document.getElementById("knowledge-comment-body");
+    const replyButtons = document.querySelectorAll("[data-reply-target]");
+    const reactionBlock = document.getElementById("knowledge-reaction-block");
+    const reactionCode = document.getElementById("knowledge-reaction-code");
+    const reactionButtons = document.querySelectorAll("[data-reaction-code]");
+
+    function openCommentSheet() {
+      if (!commentOverlay) return;
+      commentOverlay.classList.add("open");
+      commentOverlay.setAttribute("aria-hidden", "false");
+      if (commentBody) commentBody.focus();
+    }
+
+    function closeCommentSheet() {
+      if (!commentOverlay) return;
+      commentOverlay.classList.remove("open");
+      commentOverlay.setAttribute("aria-hidden", "true");
+      if (parentId) parentId.value = "";
+      if (replyContext) {
+        replyContext.classList.remove("is-open");
+        replyContext.textContent = "";
+      }
+      if (reactionBlock) reactionBlock.style.display = "";
+    }
+
+    if (openComment) openComment.addEventListener("click", openCommentSheet);
+    if (closeComment) closeComment.addEventListener("click", closeCommentSheet);
+    if (cancelComment) cancelComment.addEventListener("click", closeCommentSheet);
+    if (commentOverlay) {
+      commentOverlay.addEventListener("click", function (event) {
+        if (event.target === commentOverlay) closeCommentSheet();
+      });
+    }
+
+    replyButtons.forEach(function (btn) {
       btn.addEventListener("click", function () {
-        const kind = btn.getAttribute("data-filter-kind") || "";
-        activeKind = activeKind === kind ? "" : kind;
-        render();
+        if (parentId) parentId.value = btn.getAttribute("data-reply-target") || "";
+        if (replyContext) {
+          const author = btn.getAttribute("data-reply-author") || "";
+          replyContext.textContent = "返信先: " + author;
+          replyContext.classList.add("is-open");
+        }
+        if (reactionBlock) reactionBlock.style.display = "none";
+        openCommentSheet();
+      });
+    });
+
+    reactionButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const code = btn.getAttribute("data-reaction-code") || "";
+        if (!code) return;
+        if (reactionCode) reactionCode.value = code;
+        reactionButtons.forEach(function (other) {
+          other.classList.toggle("is-selected", other === btn);
+        });
       });
     });
   })();

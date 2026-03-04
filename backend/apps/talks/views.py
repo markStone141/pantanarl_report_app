@@ -3,10 +3,12 @@ from __future__ import annotations
 from collections import Counter
 
 from django.http import Http404, HttpRequest, HttpResponse
+from django.shortcuts import redirect
 from django.shortcuts import render
 from django.utils import timezone
 
 from .models import KnowledgeComment, KnowledgePost, KnowledgeTag
+from .models import KnowledgeReactionType
 
 
 REACTION_CODES = ("good", "keep", "retry", "question")
@@ -55,6 +57,66 @@ def _serialize_comment(comment: KnowledgeComment) -> dict:
         "body": comment.body,
         "kind": comment.reaction_type.code,
     }
+
+
+def _resolve_author_from_request(request: HttpRequest) -> tuple[object | None, str]:
+    user = getattr(request, "user", None)
+    if user and getattr(user, "is_authenticated", False):
+        member = getattr(user, "member_profile", None)
+        if member:
+            return member, member.name
+        return None, user.get_username() or "匿名"
+    return None, "匿名"
+
+
+def _create_comment_from_post(request: HttpRequest, post: KnowledgePost) -> None:
+    body = (request.POST.get("body") or "").strip()
+    if not body:
+        return
+
+    reaction = None
+
+    parent = None
+    parent_id = (request.POST.get("parent_id") or "").strip()
+    if parent_id.isdigit():
+        parent = (
+            KnowledgeComment.objects.filter(
+                id=int(parent_id),
+                post=post,
+                parent__isnull=True,
+                is_deleted=False,
+            )
+            .select_related("reaction_type", "author_member")
+            .first()
+        )
+    if parent:
+        reaction = parent.reaction_type
+    else:
+        reaction_code = (request.POST.get("reaction_code") or "").strip()
+        reaction = (
+            KnowledgeReactionType.objects.filter(code=reaction_code, is_active=True)
+            .order_by("sort_order", "id")
+            .first()
+        )
+        if not reaction:
+            reaction = (
+                KnowledgeReactionType.objects.filter(is_active=True)
+                .order_by("sort_order", "id")
+                .first()
+            )
+    if not reaction:
+        return
+
+    author_member, author_snapshot = _resolve_author_from_request(request)
+    KnowledgeComment.objects.create(
+        post=post,
+        parent=parent,
+        author_member=author_member,
+        author_name_snapshot=author_snapshot,
+        body=body,
+        reaction_type=reaction,
+        is_deleted=False,
+    )
 
 
 def talks_index(request: HttpRequest) -> HttpResponse:
@@ -116,6 +178,10 @@ def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
     if not post:
         raise Http404("Thread not found")
 
+    if request.method == "POST":
+        _create_comment_from_post(request, post)
+        return redirect("talks_detail", thread_id=thread_id)
+
     top_level_comments = [c for c in post.comments.all() if c.parent_id is None and not c.is_deleted]
     top_level_comments.sort(key=lambda c: c.created_at)
 
@@ -153,5 +219,6 @@ def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
             "keep_count": reaction_counts["keep"],
             "retry_count": reaction_counts["retry"],
             "question_count": reaction_counts["question"],
+            "reaction_types": KnowledgeReactionType.objects.filter(is_active=True).order_by("sort_order", "id"),
         },
     )
