@@ -32,9 +32,23 @@
     }
     .knowledge-thread-link {
       padding: 10px 12px !important;
+      text-align: left !important;
     }
     .knowledge-thread-title {
       font-size: 1.03rem;
+      font-weight: 500;
+      line-height: 1.55;
+      letter-spacing: 0.01em;
+      color: #1b2a34;
+      text-align: left !important;
+      margin: 0;
+      display: block;
+      width: 100%;
+    }
+    .knowledge-thread-head {
+      justify-content: flex-start !important;
+      align-items: center;
+      gap: 8px;
     }
     .knowledge-list-heading {
       margin: 0;
@@ -308,13 +322,22 @@
   <header class="topbar topbar-desktop-expanded" style="margin-bottom:16px;">
     <div>
       <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" style="display:inline-flex; align-items:center;">
-        <img src="{% static 'img/talks_logo.png' %}?v=3" alt="Talks" style="height:44px; width:auto; display:block;">
+        <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" style="height:44px; width:auto; display:block;">
       </a>
     </div>
     <nav>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
+  {% if messages %}
+    <section class="card" style="margin-bottom:12px; padding:10px 12px;">
+      {% for message in messages %}
+        <div style="margin:4px 0; font-size:0.9rem; color:{% if message.tags == 'error' %}#a43737{% else %}#1f6f4a{% endif %};">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </section>
+  {% endif %}
 
   <section class="card knowledge-filter-card" id="knowledge-filter-card">
     <form method="get" class="grid" style="gap:10px;">
@@ -410,7 +433,7 @@
       <div class="grid" style="gap:12px;">
         {% for thread in threads %}
           <a href="{% url 'talks_detail' thread.id %}" class="card knowledge-thread-link" style="display:block; color:inherit;">
-            <div class="row" style="align-items:center;">
+            <div class="row knowledge-thread-head" style="align-items:center; justify-content:flex-start;">
               <strong class="knowledge-thread-title">{{ thread.title }}</strong>
               {% if thread.is_unread %}
                 <span class="knowledge-unread-badge">新着</span>
@@ -543,10 +566,12 @@
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <form class="grid" style="gap:10px;">
+      <form id="knowledge-create-form" method="post" action="{% url 'talks_index' %}" class="grid" style="gap:10px;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_post">
         <div>
           <label for="knowledge-create-title">タイトル</label>
-          <input id="knowledge-create-title" class="knowledge-compact-input" type="text">
+          <input id="knowledge-create-title" name="title" class="knowledge-compact-input" type="text">
         </div>
         <div>
           <label for="knowledge-create-tag-search">タグ</label>
@@ -565,7 +590,7 @@
         </div>
         <div>
           <label for="knowledge-create-body">本文</label>
-          <textarea id="knowledge-create-body" class="knowledge-create-textarea"></textarea>
+          <textarea id="knowledge-create-body" name="body" class="knowledge-create-textarea"></textarea>
         </div>
         <div class="knowledge-filter-actions">
           <button id="knowledge-create-submit" type="button" class="btn-inline" style="width:auto;">投稿する</button>
@@ -586,6 +611,9 @@
     const closeCreate = document.getElementById("knowledge-close-create");
     const cancelCreate = document.getElementById("knowledge-create-cancel");
     const submitCreate = document.getElementById("knowledge-create-submit");
+    const createForm = document.getElementById("knowledge-create-form");
+    const createTitle = document.getElementById("knowledge-create-title");
+    const createBody = document.getElementById("knowledge-create-body");
     const createTagSearch = document.getElementById("knowledge-create-tag-search");
     const createTagOptions = Array.prototype.slice.call(document.querySelectorAll("[data-create-tag-option]"));
     const createSelectedTags = document.getElementById("knowledge-create-selected-tags");
@@ -636,7 +664,22 @@
     }
     if (submitCreate) {
       submitCreate.addEventListener("click", function () {
-        window.alert("新規投稿の保存処理は次段階でDB連携します。");
+        if (!createTitle || !createBody || !createForm) return;
+        if ((createTitle.value || "").trim() === "") {
+          window.alert("タイトルを入力してください。");
+          createTitle.focus();
+          return;
+        }
+        if ((createBody.value || "").trim() === "") {
+          window.alert("本文を入力してください。");
+          createBody.focus();
+          return;
+        }
+        if (!selectedCreateTags.length) {
+          window.alert("タグを1つ以上選択してください。");
+          return;
+        }
+        createForm.submit();
       });
     }
 

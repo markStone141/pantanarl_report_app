@@ -4,13 +4,14 @@ from collections import Counter
 from datetime import datetime
 
 from django.core.paginator import Paginator
+from django.contrib import messages
 from django.http import Http404, HttpRequest, HttpResponse
 from django.db.models import Count, F, Q
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.utils import timezone
 
-from .models import KnowledgeComment, KnowledgePost, KnowledgeTag
+from .models import KnowledgeComment, KnowledgePost, KnowledgePostTag, KnowledgeTag
 from .models import KnowledgePostRead
 from .models import KnowledgeReactionType
 
@@ -137,7 +138,55 @@ def _create_comment_from_post(request: HttpRequest, post: KnowledgePost) -> None
     )
 
 
+def _create_post_from_request(request: HttpRequest) -> tuple[KnowledgePost | None, str | None]:
+    title = (request.POST.get("title") or "").strip()
+    body = (request.POST.get("body") or "").strip()
+    selected_tag_names = []
+    for raw in request.POST.getlist("tags"):
+        name = (raw or "").strip()
+        if name and name not in selected_tag_names:
+            selected_tag_names.append(name)
+
+    if not title:
+        return None, "タイトルを入力してください。"
+    if not body:
+        return None, "本文を入力してください。"
+    if not selected_tag_names:
+        return None, "タグを1つ以上選択してください。"
+
+    tags_by_name = {
+        tag.name: tag
+        for tag in KnowledgeTag.objects.filter(is_active=True, name__in=selected_tag_names)
+    }
+    ordered_tags = [tags_by_name[name] for name in selected_tag_names if name in tags_by_name]
+    if not ordered_tags:
+        return None, "有効なタグが選択されていません。"
+
+    author_member, author_snapshot = _resolve_author_from_request(request)
+    post = KnowledgePost.objects.create(
+        title=title,
+        body=body,
+        author_member=author_member,
+        author_name_snapshot=author_snapshot,
+        status=KnowledgePost.Status.PUBLISHED,
+        is_deleted=False,
+        published_at=timezone.now(),
+    )
+    for tag in ordered_tags:
+        KnowledgePostTag.objects.create(post=post, tag=tag)
+    return post, None
+
+
 def talks_index(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST" and request.POST.get("action") == "create_post":
+        post, error = _create_post_from_request(request)
+        if post:
+            messages.success(request, "新規投稿を作成しました。")
+            return redirect("talks_detail", thread_id=post.id)
+        if error:
+            messages.error(request, error)
+        return redirect("talks_index")
+
     selected_tags = [tag for tag in request.GET.getlist("tag") if tag]
     selected_author = (request.GET.get("author") or "").strip()
     selected_sort = (request.GET.get("sort") or SORT_NEWEST).strip()

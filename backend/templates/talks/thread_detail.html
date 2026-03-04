@@ -13,6 +13,14 @@
       margin-bottom: 16px;
       padding: 20px !important;
     }
+    .knowledge-thread-body {
+      margin-top: 12px;
+      font-size: 1.08rem;
+      line-height: 1.78;
+      letter-spacing: 0.01em;
+      font-weight: 500;
+      color: #1b2a34;
+    }
     .knowledge-title-divider {
       border: 0;
       border-top: 1px solid #e3ebef;
@@ -265,7 +273,7 @@
   <header class="topbar topbar-desktop-expanded" style="margin-bottom:16px;">
     <div>
       <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" style="display:inline-flex; align-items:center;">
-        <img src="{% static 'img/talks_logo.png' %}?v=3" alt="Talks" style="height:44px; width:auto; display:block;">
+        <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" style="height:44px; width:auto; display:block;">
       </a>
     </div>
     <nav>
@@ -277,7 +285,7 @@
   <article class="card knowledge-thread-card">
     <h1 class="knowledge-thread-title" style="margin:0; font-size:11px !important; line-height:1.35; font-weight:600; color:#4f6673;">{{ thread.title }}</h1>
     <hr class="knowledge-title-divider">
-    <p style="margin-top:12px; font-size:1.175rem; line-height:1.86; color:#1b2a34;">{{ thread.body }}</p>
+    <p class="knowledge-thread-body">{{ thread.body }}</p>
     <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
       {% for tag in thread.tags.all %}<span class="badge knowledge-tag-chip">#{{ tag.name }}</span>{% endfor %}
     </div>
