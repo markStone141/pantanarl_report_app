@@ -3,18 +3,25 @@ from __future__ import annotations
 from collections import Counter
 from datetime import datetime
 
-from django.core.paginator import Paginator
 from django.contrib import messages
-from django.http import Http404, HttpRequest, HttpResponse
+from django.contrib.auth import get_user_model, login as auth_login, logout as auth_logout
+from django.core.paginator import Paginator
 from django.db.models import Count, F, Q
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.utils import timezone
 
+from apps.accounts.models import Member
+
+from .forms import TalksLoginForm
 from .models import KnowledgeComment, KnowledgePost, KnowledgePostTag, KnowledgeTag
 from .models import KnowledgePostRead
 from .models import KnowledgeReactionType
 
+
+TALKS_SESSION_MEMBER_ID_KEY = "talks_member_id"
+TALKS_SESSION_MEMBER_NAME_KEY = "talks_member_name"
 
 REACTION_CODES = ("good", "keep", "retry", "question")
 SORT_NEWEST = "newest"
@@ -79,6 +86,10 @@ def _serialize_comment(comment: KnowledgeComment) -> dict:
 
 
 def _resolve_author_from_request(request: HttpRequest) -> tuple[object | None, str]:
+    talks_member = _get_talks_member(request)
+    if talks_member:
+        return talks_member, talks_member.name
+
     user = getattr(request, "user", None)
     if user and getattr(user, "is_authenticated", False):
         member = getattr(user, "member_profile", None)
@@ -177,7 +188,70 @@ def _create_post_from_request(request: HttpRequest) -> tuple[KnowledgePost | Non
     return post, None
 
 
+def _get_talks_member(request: HttpRequest) -> Member | None:
+    member_id = request.session.get(TALKS_SESSION_MEMBER_ID_KEY)
+    if not member_id:
+        return None
+
+    member = Member.objects.active().filter(id=member_id).first()
+    if not member:
+        request.session.pop(TALKS_SESSION_MEMBER_ID_KEY, None)
+        request.session.pop(TALKS_SESSION_MEMBER_NAME_KEY, None)
+        return None
+    return member
+
+
+def _ensure_member_user(member: Member):
+    if member.user:
+        return member.user
+
+    User = get_user_model()
+    base_username = member.login_id
+    username = base_username
+    suffix = 1
+    while User.objects.filter(username=username).exists():
+        username = f"{base_username}_{suffix}"
+        suffix += 1
+
+    user = User.objects.create(username=username)
+    user.set_unusable_password()
+    user.save(update_fields=["password"])
+    member.user = user
+    member.save(update_fields=["user"])
+    return user
+
+
+def talks_login(request: HttpRequest) -> HttpResponse:
+    member = _get_talks_member(request)
+    if member:
+        return redirect("talks_index")
+
+    if request.method == "POST":
+        form = TalksLoginForm(request.POST)
+        if form.is_valid() and form.member:
+            user = _ensure_member_user(form.member)
+            auth_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+            request.session[TALKS_SESSION_MEMBER_ID_KEY] = form.member.id
+            request.session[TALKS_SESSION_MEMBER_NAME_KEY] = form.member.name
+            return redirect("talks_index")
+    else:
+        form = TalksLoginForm()
+
+    return render(request, "talks/login.html", {"form": form})
+
+
+def talks_logout(request: HttpRequest) -> HttpResponse:
+    auth_logout(request)
+    request.session.pop(TALKS_SESSION_MEMBER_ID_KEY, None)
+    request.session.pop(TALKS_SESSION_MEMBER_NAME_KEY, None)
+    return redirect("talks_login")
+
+
 def talks_index(request: HttpRequest) -> HttpResponse:
+    talks_member = _get_talks_member(request)
+    if not talks_member:
+        return redirect("talks_login")
+
     if request.method == "POST" and request.POST.get("action") == "create_post":
         post, error = _create_post_from_request(request)
         if post:
@@ -284,11 +358,16 @@ def talks_index(request: HttpRequest) -> HttpResponse:
             "date_from": date_from_raw,
             "available_tags": available_tags,
             "available_authors": available_authors,
+            "talks_member_name": talks_member.name,
         },
     )
 
 
 def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
+    talks_member = _get_talks_member(request)
+    if not talks_member:
+        return redirect("talks_login")
+
     post = (
         KnowledgePost.objects.filter(
             id=thread_id,
@@ -358,5 +437,6 @@ def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
             "retry_count": reaction_counts["retry"],
             "question_count": reaction_counts["question"],
             "reaction_types": KnowledgeReactionType.objects.filter(is_active=True).order_by("sort_order", "id"),
+            "talks_member_name": talks_member.name,
         },
     )

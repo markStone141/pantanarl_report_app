@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Talks ログイン | Report App{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+  <section class="card login-card">
+    <div style="margin-bottom:14px; padding:20px 12px; min-height:120px; border-radius:12px; background:#126e82; display:flex; align-items:center; justify-content:center;">
+      <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" style="height:56px; width:auto; max-width:100%;">
+    </div>
+    <form method="post" class="grid" style="gap:10px;">
+      {% csrf_token %}
+      <div>
+        <label for="{{ form.login_id.id_for_label }}">ID</label>
+        {{ form.login_id }}
+      </div>
+      <div>
+        <label for="{{ form.password.id_for_label }}">パスワード</label>
+        {{ form.password }}
+      </div>
+      {% if form.non_field_errors %}
+        <div class="error-text">{{ form.non_field_errors|join:", " }}</div>
+      {% endif %}
+      <button type="submit">ログイン</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

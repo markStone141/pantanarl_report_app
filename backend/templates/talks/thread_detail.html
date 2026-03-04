@@ -13,6 +13,25 @@
       margin-bottom: 16px;
       padding: 20px !important;
     }
+    .talks-topbar-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .talks-welcome-text {
+      display: inline-flex;
+      align-items: center;
+      color: #fff;
+      font-size: 0.78rem;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .talks-logout-link {
+      margin-left: auto;
+    }
+    .talks-back-link {
+      display: inline-flex;
+    }
     .knowledge-thread-body {
       margin-top: 12px;
       font-size: 1.08rem;
@@ -244,6 +263,9 @@
       border: 1px solid #c6d8df;
     }
     @media (max-width: 768px) {
+      .talks-back-link {
+        display: none !important;
+      }
       .knowledge-thread-title {
         font-size: 1.14rem !important;
         line-height: 1.45;
@@ -276,9 +298,10 @@
         <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" style="height:44px; width:auto; display:block;">
       </a>
     </div>
-    <nav>
-      <a href="{% url 'talks_index' %}">一覧へ戻る</a>
-      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
+    <nav class="talks-topbar-nav">
+      <span class="talks-welcome-text">おかえりなさい！{{ talks_member_name }}さん</span>
+      <a href="{% url 'talks_index' %}" class="talks-back-link">一覧へ戻る</a>
+      <a href="{% url 'talks_logout' %}" class="logout-link talks-logout-link">ログアウト</a>
     </nav>
   </header>
 
