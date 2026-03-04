@@ -322,8 +322,13 @@ def talks_index(request: HttpRequest) -> HttpResponse:
             messages.error(request, error)
         return redirect("talks_index")
 
-    selected_tags = [tag for tag in request.GET.getlist("tag") if tag]
+    selected_tags = []
+    for tag in request.GET.getlist("tag"):
+        clean_tag = (tag or "").strip()
+        if clean_tag and clean_tag not in selected_tags:
+            selected_tags.append(clean_tag)
     selected_author = (request.GET.get("author") or "").strip()
+    selected_unread_only = (request.GET.get("unread") or "").strip() == "1"
     selected_sort = (request.GET.get("sort") or SORT_NEWEST).strip()
     if selected_sort not in {key for key, _ in SORT_OPTIONS}:
         selected_sort = SORT_NEWEST
@@ -355,7 +360,9 @@ def talks_index(request: HttpRequest) -> HttpResponse:
         .prefetch_related("tags", "comments__reaction_type", "reads")
     )
     if selected_tags:
-        posts = posts.filter(tags__name__in=selected_tags).distinct()
+        for tag_name in selected_tags:
+            posts = posts.filter(tags__name=tag_name)
+        posts = posts.distinct()
     if date_from_dt:
         posts = posts.filter(created_at__gte=date_from_dt)
 
@@ -378,6 +385,21 @@ def talks_index(request: HttpRequest) -> HttpResponse:
     if selected_author:
         thread_items = [item for item in thread_items if item["author"] == selected_author]
 
+    if request.user.is_authenticated and thread_items:
+        read_map = {
+            read.post_id: read.read_at
+            for read in KnowledgePostRead.objects.filter(
+                user=request.user,
+                post_id__in=[item["id"] for item in thread_items],
+            ).only("post_id", "read_at")
+        }
+        for item in thread_items:
+            read_at = read_map.get(item["id"])
+            item["is_unread"] = read_at is None or read_at < item["updated_at"]
+
+    if selected_unread_only:
+        thread_items = [item for item in thread_items if item["is_unread"]]
+
     paginator = Paginator(thread_items, 20)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -387,21 +409,16 @@ def talks_index(request: HttpRequest) -> HttpResponse:
             talks_member is not None and item.get("author_member_id") == talks_member.id
         )
 
-    if request.user.is_authenticated and page_threads:
-        read_map = {
-            read.post_id: read.read_at
-            for read in KnowledgePostRead.objects.filter(
-                user=request.user,
-                post_id__in=[item["id"] for item in page_threads],
-            ).only("post_id", "read_at")
-        }
-        for item in page_threads:
-            read_at = read_map.get(item["id"])
-            item["is_unread"] = read_at is None or read_at < item["updated_at"]
-
     query_params = request.GET.copy()
     query_params.pop("page", None)
     pagination_query = query_params.urlencode()
+    unread_toggle_params = request.GET.copy()
+    unread_toggle_params.pop("page", None)
+    if selected_unread_only:
+        unread_toggle_params.pop("unread", None)
+    else:
+        unread_toggle_params["unread"] = "1"
+    unread_toggle_query = unread_toggle_params.urlencode()
 
     available_tags = list(
         KnowledgeTag.objects.filter(is_active=True).order_by("sort_order", "name").values_list("name", flat=True)
@@ -418,6 +435,7 @@ def talks_index(request: HttpRequest) -> HttpResponse:
             "pagination_query": pagination_query,
             "selected_tags": selected_tags,
             "selected_author": selected_author,
+            "selected_unread_only": selected_unread_only,
             "selected_sort": selected_sort,
             "sort_options": SORT_OPTIONS,
             "date_from": date_from_raw,
@@ -425,6 +443,7 @@ def talks_index(request: HttpRequest) -> HttpResponse:
             "available_authors": available_authors,
             "talks_member_name": _get_talks_display_name(request, talks_member),
             "talks_is_admin": talks_is_admin,
+            "unread_toggle_query": unread_toggle_query,
         },
     )
 
