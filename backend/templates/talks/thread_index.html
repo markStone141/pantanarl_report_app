@@ -214,6 +214,20 @@
       color: #0f4d5d;
       border: 1px solid #c6d8df;
     }
+    .knowledge-create-show-all-wrap {
+      margin-top: 8px;
+    }
+    .knowledge-create-show-all-btn {
+      width: auto;
+      min-height: 0;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: #fff;
+      color: #1b5b6d;
+      border: 1px solid #c6d8df;
+      cursor: pointer;
+    }
     .knowledge-create-selected-tags {
       margin-top: 8px;
       display: flex;
@@ -663,6 +677,9 @@
               >{{ tag }}</button>
             {% endfor %}
           </div>
+          <div class="knowledge-create-show-all-wrap">
+            <button id="knowledge-create-show-all-tags" type="button" class="knowledge-create-show-all-btn">すべてのタグを見る</button>
+          </div>
           <div id="knowledge-create-selected-tags" class="knowledge-create-selected-tags"></div>
           <div id="knowledge-create-selected-hidden"></div>
         </div>
@@ -693,10 +710,12 @@
     const createTitle = document.getElementById("knowledge-create-title");
     const createBody = document.getElementById("knowledge-create-body");
     const createTagSearch = document.getElementById("knowledge-create-tag-search");
+    const createShowAllTagsButton = document.getElementById("knowledge-create-show-all-tags");
     const createTagOptions = Array.prototype.slice.call(document.querySelectorAll("[data-create-tag-option]"));
     const createSelectedTags = document.getElementById("knowledge-create-selected-tags");
     const createSelectedHidden = document.getElementById("knowledge-create-selected-hidden");
     const selectedCreateTags = [];
+    let createTagAllVisible = false;
     if (!openFilter || !closeFilter || !filterOverlay) return;
 
     function openSheet() {
@@ -798,17 +817,30 @@
       });
     });
 
+    if (createShowAllTagsButton) {
+      createShowAllTagsButton.addEventListener("click", function () {
+        createTagAllVisible = true;
+        createTagOptions.forEach(function (button) {
+          button.style.display = "";
+        });
+        createShowAllTagsButton.style.display = "none";
+      });
+    }
+
     if (createTagSearch) {
       createTagSearch.addEventListener("input", function () {
         const q = (createTagSearch.value || "").trim().toLowerCase();
         createTagOptions.forEach(function (button) {
           const text = (button.getAttribute("data-create-tag-option") || "").toLowerCase();
           if (q === "") {
-            button.style.display = button.classList.contains("is-hidden-default") ? "none" : "";
+            button.style.display = !createTagAllVisible && button.classList.contains("is-hidden-default") ? "none" : "";
             return;
           }
           button.style.display = text.indexOf(q) >= 0 ? "" : "none";
         });
+        if (createShowAllTagsButton) {
+          createShowAllTagsButton.style.display = q === "" && !createTagAllVisible ? "" : "none";
+        }
       });
     }
 
