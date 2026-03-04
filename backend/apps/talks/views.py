@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import datetime
+import os
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login as auth_login, logout as auth_logout
@@ -14,7 +15,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Member
 
-from .forms import TalksLoginForm
+from .forms import CommentEditForm, PostEditForm, TagManageForm, TalksLoginForm
 from .models import KnowledgeComment, KnowledgePost, KnowledgePostTag, KnowledgeTag
 from .models import KnowledgePostRead
 from .models import KnowledgeReactionType
@@ -22,6 +23,9 @@ from .models import KnowledgeReactionType
 
 TALKS_SESSION_MEMBER_ID_KEY = "talks_member_id"
 TALKS_SESSION_MEMBER_NAME_KEY = "talks_member_name"
+TALKS_SESSION_IS_ADMIN_KEY = "talks_is_admin"
+TALKS_ADMIN_LOGIN_ID = os.getenv("TALKS_ADMIN_LOGIN_ID", "admin")
+TALKS_ADMIN_PASSWORD = os.getenv("TALKS_ADMIN_PASSWORD", "pnadmin")
 
 REACTION_CODES = ("good", "keep", "retry", "question")
 SORT_NEWEST = "newest"
@@ -72,6 +76,7 @@ def _post_to_list_item(post: KnowledgePost) -> dict:
         "created_display": _format_created_display(post.created_at),
         "view_count": post.view_count,
         "updated_at": post.updated_at,
+        "author_member_id": post.author_member_id,
     }
 
 
@@ -79,6 +84,7 @@ def _serialize_comment(comment: KnowledgeComment) -> dict:
     return {
         "id": comment.id,
         "author": _author_name(comment.author_member, comment.author_name_snapshot),
+        "author_member_id": comment.author_member_id,
         "created_at": timezone.localtime(comment.created_at).strftime("%Y-%m-%d %H:%M"),
         "body": comment.body,
         "kind": comment.reaction_type.code,
@@ -201,6 +207,37 @@ def _get_talks_member(request: HttpRequest) -> Member | None:
     return member
 
 
+def _is_talks_admin(request: HttpRequest) -> bool:
+    return bool(request.session.get(TALKS_SESSION_IS_ADMIN_KEY))
+
+
+def _get_talks_display_name(request: HttpRequest, member: Member | None) -> str:
+    if _is_talks_admin(request):
+        return request.session.get(TALKS_SESSION_MEMBER_NAME_KEY, "管理者")
+    if member:
+        return member.name
+    return ""
+
+
+def _ensure_admin_user():
+    User = get_user_model()
+    user = User.objects.filter(username="talks_admin").first()
+    if user:
+        return user
+    user = User.objects.create(username="talks_admin", is_staff=True)
+    user.set_unusable_password()
+    user.save(update_fields=["password"])
+    return user
+
+
+def _can_manage_post(member: Member | None, is_admin: bool, post: KnowledgePost) -> bool:
+    return is_admin or (member is not None and post.author_member_id == member.id)
+
+
+def _can_manage_comment(member: Member | None, is_admin: bool, comment: KnowledgeComment) -> bool:
+    return is_admin or (member is not None and comment.author_member_id == member.id)
+
+
 def _ensure_member_user(member: Member):
     if member.user:
         return member.user
@@ -221,16 +258,38 @@ def _ensure_member_user(member: Member):
     return user
 
 
+def _replace_post_tags(post: KnowledgePost, selected_tag_names: list[str]) -> None:
+    tags_by_name = {
+        tag.name: tag for tag in KnowledgeTag.objects.filter(is_active=True, name__in=selected_tag_names)
+    }
+    ordered_tags = [tags_by_name[name] for name in selected_tag_names if name in tags_by_name]
+    KnowledgePostTag.objects.filter(post=post).delete()
+    for tag in ordered_tags:
+        KnowledgePostTag.objects.create(post=post, tag=tag)
+
+
 def talks_login(request: HttpRequest) -> HttpResponse:
     member = _get_talks_member(request)
-    if member:
+    if member or _is_talks_admin(request):
         return redirect("talks_index")
 
     if request.method == "POST":
+        login_id = (request.POST.get("login_id") or "").strip()
+        password = request.POST.get("password") or ""
+
+        if login_id == TALKS_ADMIN_LOGIN_ID and password == TALKS_ADMIN_PASSWORD:
+            admin_user = _ensure_admin_user()
+            auth_login(request, admin_user, backend="django.contrib.auth.backends.ModelBackend")
+            request.session[TALKS_SESSION_IS_ADMIN_KEY] = True
+            request.session[TALKS_SESSION_MEMBER_ID_KEY] = None
+            request.session[TALKS_SESSION_MEMBER_NAME_KEY] = "管理者"
+            return redirect("talks_index")
+
         form = TalksLoginForm(request.POST)
         if form.is_valid() and form.member:
             user = _ensure_member_user(form.member)
             auth_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+            request.session[TALKS_SESSION_IS_ADMIN_KEY] = False
             request.session[TALKS_SESSION_MEMBER_ID_KEY] = form.member.id
             request.session[TALKS_SESSION_MEMBER_NAME_KEY] = form.member.name
             return redirect("talks_index")
@@ -242,6 +301,7 @@ def talks_login(request: HttpRequest) -> HttpResponse:
 
 def talks_logout(request: HttpRequest) -> HttpResponse:
     auth_logout(request)
+    request.session.pop(TALKS_SESSION_IS_ADMIN_KEY, None)
     request.session.pop(TALKS_SESSION_MEMBER_ID_KEY, None)
     request.session.pop(TALKS_SESSION_MEMBER_NAME_KEY, None)
     return redirect("talks_login")
@@ -249,7 +309,8 @@ def talks_logout(request: HttpRequest) -> HttpResponse:
 
 def talks_index(request: HttpRequest) -> HttpResponse:
     talks_member = _get_talks_member(request)
-    if not talks_member:
+    talks_is_admin = _is_talks_admin(request)
+    if not talks_member and not talks_is_admin:
         return redirect("talks_login")
 
     if request.method == "POST" and request.POST.get("action") == "create_post":
@@ -321,6 +382,10 @@ def talks_index(request: HttpRequest) -> HttpResponse:
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
     page_threads = list(page_obj.object_list)
+    for item in page_threads:
+        item["can_manage"] = talks_is_admin or (
+            talks_member is not None and item.get("author_member_id") == talks_member.id
+        )
 
     if request.user.is_authenticated and page_threads:
         read_map = {
@@ -358,14 +423,16 @@ def talks_index(request: HttpRequest) -> HttpResponse:
             "date_from": date_from_raw,
             "available_tags": available_tags,
             "available_authors": available_authors,
-            "talks_member_name": talks_member.name,
+            "talks_member_name": _get_talks_display_name(request, talks_member),
+            "talks_is_admin": talks_is_admin,
         },
     )
 
 
 def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
     talks_member = _get_talks_member(request)
-    if not talks_member:
+    talks_is_admin = _is_talks_admin(request)
+    if not talks_member and not talks_is_admin:
         return redirect("talks_login")
 
     post = (
@@ -411,7 +478,9 @@ def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
 
         replies = [
             {
+                "id": reply.id,
                 "author": _author_name(reply.author_member, reply.author_name_snapshot),
+                "author_member_id": reply.author_member_id,
                 "created_at": timezone.localtime(reply.created_at).strftime("%Y-%m-%d %H:%M"),
                 "body": reply.body,
             }
@@ -421,6 +490,11 @@ def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
             )
         ]
         serialized = _serialize_comment(comment)
+        serialized["can_manage"] = _can_manage_comment(member=talks_member, is_admin=talks_is_admin, comment=comment)
+        for reply_item in replies:
+            reply_item["can_manage"] = talks_is_admin or (
+                talks_member is not None and reply_item.get("author_member_id") == talks_member.id
+            )
         serialized["replies"] = replies
         comments.append(serialized)
 
@@ -429,6 +503,7 @@ def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
         "talks/thread_detail.html",
         {
             "thread": post,
+            "can_manage_thread": _can_manage_post(member=talks_member, is_admin=talks_is_admin, post=post),
             "thread_author": _author_name(post.author_member, post.author_name_snapshot),
             "thread_created_at": timezone.localtime(post.created_at).strftime("%Y-%m-%d %H:%M"),
             "comments": comments,
@@ -437,6 +512,225 @@ def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
             "retry_count": reaction_counts["retry"],
             "question_count": reaction_counts["question"],
             "reaction_types": KnowledgeReactionType.objects.filter(is_active=True).order_by("sort_order", "id"),
-            "talks_member_name": talks_member.name,
+            "talks_member_name": _get_talks_display_name(request, talks_member),
+            "talks_is_admin": talks_is_admin,
         },
     )
+
+
+def talks_tag_manage(request: HttpRequest) -> HttpResponse:
+    talks_member = _get_talks_member(request)
+    talks_is_admin = _is_talks_admin(request)
+    if not talks_is_admin:
+        messages.error(request, "タグ管理は管理者のみ実行できます。")
+        return redirect("talks_index")
+
+    edit_id_raw = (request.GET.get("edit") or "").strip()
+    editing_tag = None
+
+    if request.method == "POST":
+        action = (request.POST.get("action") or "save").strip()
+
+        if action == "toggle":
+            tag_id_raw = (request.POST.get("tag_id") or "").strip()
+            if tag_id_raw.isdigit():
+                tag = KnowledgeTag.objects.filter(id=int(tag_id_raw)).first()
+                if tag:
+                    tag.is_active = not tag.is_active
+                    tag.save(update_fields=["is_active", "updated_at"])
+            return redirect("talks_tag_manage")
+
+        form = TagManageForm(request.POST)
+        if form.is_valid():
+            tag_id = form.cleaned_data.get("tag_id")
+            name = form.cleaned_data["name"]
+            sort_order = form.cleaned_data["sort_order"]
+            is_active = form.cleaned_data["is_active"]
+
+            if tag_id:
+                tag = KnowledgeTag.objects.filter(id=tag_id).first()
+                if not tag:
+                    messages.error(request, "編集対象のタグが見つかりません。")
+                    return redirect("talks_tag_manage")
+
+                duplicated = KnowledgeTag.objects.filter(name=name).exclude(id=tag.id).exists()
+                if duplicated:
+                    messages.error(request, "同じタグ名が既に存在します。")
+                else:
+                    tag.name = name
+                    tag.sort_order = sort_order
+                    tag.is_active = is_active
+                    tag.save(update_fields=["name", "sort_order", "is_active", "updated_at"])
+                    messages.success(request, "タグを更新しました。")
+                    return redirect("talks_tag_manage")
+            else:
+                if KnowledgeTag.objects.filter(name=name).exists():
+                    messages.error(request, "同じタグ名が既に存在します。")
+                else:
+                    KnowledgeTag.objects.create(
+                        name=name,
+                        sort_order=sort_order,
+                        is_active=is_active,
+                    )
+                    messages.success(request, "タグを追加しました。")
+                    return redirect("talks_tag_manage")
+    else:
+        if edit_id_raw.isdigit():
+            editing_tag = KnowledgeTag.objects.filter(id=int(edit_id_raw)).first()
+        if editing_tag:
+            form = TagManageForm(
+                initial={
+                    "tag_id": editing_tag.id,
+                    "name": editing_tag.name,
+                    "sort_order": editing_tag.sort_order,
+                    "is_active": editing_tag.is_active,
+                }
+            )
+        else:
+            form = TagManageForm(initial={"sort_order": 0, "is_active": True})
+
+    tags = (
+        KnowledgeTag.objects.annotate(
+            post_count=Count("posts", filter=Q(posts__is_deleted=False)),
+        )
+        .order_by("sort_order", "name")
+    )
+
+    return render(
+        request,
+        "talks/tag_manage.html",
+        {
+            "form": form,
+            "tags": tags,
+            "editing_tag": editing_tag,
+            "talks_member_name": _get_talks_display_name(request, talks_member),
+            "talks_is_admin": talks_is_admin,
+        },
+    )
+
+
+def talks_post_edit(request: HttpRequest, post_id: int) -> HttpResponse:
+    talks_member = _get_talks_member(request)
+    talks_is_admin = _is_talks_admin(request)
+    if not talks_member and not talks_is_admin:
+        return redirect("talks_login")
+
+    post = KnowledgePost.objects.filter(id=post_id, is_deleted=False).prefetch_related("tags").first()
+    if not post:
+        raise Http404("Post not found")
+    if not _can_manage_post(member=talks_member, is_admin=talks_is_admin, post=post):
+        raise Http404("Post not found")
+
+    if request.method == "POST":
+        form = PostEditForm(request.POST)
+        if form.is_valid():
+            post.title = form.cleaned_data["title"]
+            post.body = form.cleaned_data["body"]
+            post.save()
+            _replace_post_tags(post, form.cleaned_data["tags"])
+            messages.success(request, "投稿を更新しました。")
+            return redirect("talks_detail", thread_id=post.id)
+        selected_tag_names = [str(name) for name in request.POST.getlist("tags") if str(name).strip()]
+    else:
+        form = PostEditForm(
+            initial={
+                "title": post.title,
+                "body": post.body,
+                "tags": [tag.name for tag in post.tags.all()],
+            }
+        )
+        selected_tag_names = [tag.name for tag in post.tags.all()]
+
+    available_tag_names = [name for name, _ in form.fields["tags"].choices]
+
+    return render(
+        request,
+        "talks/post_edit.html",
+        {
+            "form": form,
+            "post": post,
+            "talks_member_name": _get_talks_display_name(request, talks_member),
+            "talks_is_admin": talks_is_admin,
+            "available_tag_names": available_tag_names,
+            "selected_tag_names": selected_tag_names,
+        },
+    )
+
+
+def talks_post_delete(request: HttpRequest, post_id: int) -> HttpResponse:
+    talks_member = _get_talks_member(request)
+    talks_is_admin = _is_talks_admin(request)
+    if not talks_member and not talks_is_admin:
+        return redirect("talks_login")
+    if request.method != "POST":
+        return redirect("talks_index")
+
+    post = KnowledgePost.objects.filter(id=post_id, is_deleted=False).first()
+    if post and _can_manage_post(member=talks_member, is_admin=talks_is_admin, post=post):
+        post.is_deleted = True
+        post.save(update_fields=["is_deleted", "updated_at"])
+        messages.success(request, "投稿を削除しました。")
+    return redirect("talks_index")
+
+
+def talks_comment_edit(request: HttpRequest, comment_id: int) -> HttpResponse:
+    talks_member = _get_talks_member(request)
+    talks_is_admin = _is_talks_admin(request)
+    if not talks_member and not talks_is_admin:
+        return redirect("talks_login")
+
+    comment = (
+        KnowledgeComment.objects.select_related("post")
+        .filter(id=comment_id, is_deleted=False)
+        .first()
+    )
+    if not comment:
+        raise Http404("Comment not found")
+    if not _can_manage_comment(member=talks_member, is_admin=talks_is_admin, comment=comment):
+        raise Http404("Comment not found")
+
+    if request.method == "POST":
+        form = CommentEditForm(request.POST)
+        if form.is_valid():
+            comment.body = form.cleaned_data["body"]
+            comment.save()
+            messages.success(request, "コメントを更新しました。")
+            return redirect("talks_detail", thread_id=comment.post_id)
+    else:
+        form = CommentEditForm(initial={"body": comment.body})
+
+    return render(
+        request,
+        "talks/comment_edit.html",
+        {
+            "form": form,
+            "comment": comment,
+            "talks_member_name": _get_talks_display_name(request, talks_member),
+            "talks_is_admin": talks_is_admin,
+        },
+    )
+
+
+def talks_comment_delete(request: HttpRequest, comment_id: int) -> HttpResponse:
+    talks_member = _get_talks_member(request)
+    talks_is_admin = _is_talks_admin(request)
+    if not talks_member and not talks_is_admin:
+        return redirect("talks_login")
+    if request.method != "POST":
+        return redirect("talks_index")
+
+    comment = (
+        KnowledgeComment.objects.select_related("post")
+        .filter(id=comment_id, is_deleted=False)
+        .first()
+    )
+    if not comment:
+        return redirect("talks_index")
+    if not _can_manage_comment(member=talks_member, is_admin=talks_is_admin, comment=comment):
+        return redirect("talks_detail", thread_id=comment.post_id)
+
+    thread_id = comment.post_id
+    comment.is_deleted = True
+    comment.save(update_fields=["is_deleted", "updated_at"])
+    messages.success(request, "コメントを削除しました。")
+    return redirect("talks_detail", thread_id=thread_id)

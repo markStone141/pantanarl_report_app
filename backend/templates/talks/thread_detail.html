@@ -13,6 +13,12 @@
       margin-bottom: 16px;
       padding: 20px !important;
     }
+    .knowledge-thread-title {
+      display: block;
+      width: 100%;
+      margin: 0;
+      text-align: left !important;
+    }
     .talks-topbar-nav {
       display: flex;
       align-items: center;
@@ -39,6 +45,37 @@
       letter-spacing: 0.01em;
       font-weight: 500;
       color: #1b2a34;
+    }
+    .knowledge-item-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .knowledge-card-actions {
+      margin-top: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .knowledge-icon-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid #c8d8df;
+      background: #fff;
+      color: #1f4f5e;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      padding: 0;
+      min-height: 0;
+      cursor: pointer;
+    }
+    .knowledge-icon-btn.danger {
+      color: #a43e3e;
+      border-color: #e7c4c4;
+      background: #fff7f7;
     }
     .knowledge-title-divider {
       border: 0;
@@ -140,6 +177,13 @@
       margin-top: 8px;
       display: flex;
       justify-content: flex-end;
+    }
+    .knowledge-followup-footer {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
     }
     .knowledge-comment-reply-btn {
       width: auto;
@@ -300,19 +344,37 @@
     </div>
     <nav class="talks-topbar-nav">
       <span class="talks-welcome-text">おかえりなさい！{{ talks_member_name }}さん</span>
+      {% if talks_is_admin %}
+        <a href="{% url 'talks_tag_manage' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">タグ管理</a>
+      {% endif %}
       <a href="{% url 'talks_index' %}" class="talks-back-link">一覧へ戻る</a>
       <a href="{% url 'talks_logout' %}" class="logout-link talks-logout-link">ログアウト</a>
     </nav>
   </header>
 
   <article class="card knowledge-thread-card">
-    <h1 class="knowledge-thread-title" style="margin:0; font-size:11px !important; line-height:1.35; font-weight:600; color:#4f6673;">{{ thread.title }}</h1>
+    <div class="row" style="align-items:center; justify-content:flex-start; gap:8px;">
+      <h1 class="knowledge-thread-title" style="margin:0; font-size:11px !important; line-height:1.35; font-weight:600; color:#4f6673;">{{ thread.title }}</h1>
+    </div>
     <hr class="knowledge-title-divider">
     <p class="knowledge-thread-body">{{ thread.body }}</p>
     <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
       {% for tag in thread.tags.all %}<span class="badge knowledge-tag-chip">#{{ tag.name }}</span>{% endfor %}
     </div>
-    <div class="muted" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:12px; justify-content:flex-end; text-align:right;">
+    <div class="muted" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:flex-start; text-align:left;">
+      {% if can_manage_thread %}
+        <span class="knowledge-item-actions">
+          <a class="knowledge-icon-btn" href="{% url 'talks_post_edit' thread.id %}" title="投稿を編集" aria-label="投稿を編集">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </a>
+          <form method="post" action="{% url 'talks_post_delete' thread.id %}" style="margin:0;" onsubmit="return confirm('この投稿を削除しますか？');">
+            {% csrf_token %}
+            <button type="submit" class="knowledge-icon-btn danger" title="投稿を削除" aria-label="投稿を削除">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </form>
+        </span>
+      {% endif %}
       <span style="display:inline-flex; align-items:center; gap:6px;">
         <i class="fa-solid fa-user" aria-hidden="true"></i>{{ thread_author }}
       </span>
@@ -351,32 +413,62 @@
             <article class="knowledge-followup">
               <div class="knowledge-followup-meta">
                 <span class="muted" style="font-size:.84rem;">{{ comment.author }} / {{ comment.created_at }}</span>
-                {% if comment.kind == "good" %}
-                  <span class="knowledge-result-badge knowledge-result-good" title="Good"><i class="fa-solid fa-thumbs-up"></i></span>
-                {% elif comment.kind == "keep" %}
-                  <span class="knowledge-result-badge knowledge-result-keep" title="Keep"><i class="fa-solid fa-hand"></i></span>
-                {% elif comment.kind == "retry" %}
-                  <span class="knowledge-result-badge knowledge-result-retry" title="Retry"><i class="fa-solid fa-rotate-right"></i></span>
-                {% else %}
-                  <span class="knowledge-result-badge knowledge-result-question" title="質問"><i class="fa-solid fa-circle-question"></i></span>
-                {% endif %}
+                <div style="display:inline-flex; align-items:center; gap:6px;">
+                  {% if comment.kind == "good" %}
+                    <span class="knowledge-result-badge knowledge-result-good" title="Good"><i class="fa-solid fa-thumbs-up"></i></span>
+                  {% elif comment.kind == "keep" %}
+                    <span class="knowledge-result-badge knowledge-result-keep" title="Keep"><i class="fa-solid fa-hand"></i></span>
+                  {% elif comment.kind == "retry" %}
+                    <span class="knowledge-result-badge knowledge-result-retry" title="Retry"><i class="fa-solid fa-rotate-right"></i></span>
+                  {% else %}
+                    <span class="knowledge-result-badge knowledge-result-question" title="質問"><i class="fa-solid fa-circle-question"></i></span>
+                  {% endif %}
+                </div>
               </div>
               <p class="knowledge-followup-body">{{ comment.body }}</p>
-              <div class="knowledge-followup-actions">
-                <button
-                  type="button"
-                  class="knowledge-comment-reply-btn"
-                  data-reply-target="{{ comment.id }}"
-                  data-reply-author="{{ comment.author }}"
-                >このコメントに返信</button>
+              <div class="knowledge-followup-footer">
+                <div class="knowledge-item-actions">
+                  {% if comment.can_manage %}
+                    <a class="knowledge-icon-btn" href="{% url 'talks_comment_edit' comment.id %}" title="コメントを編集" aria-label="コメントを編集">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </a>
+                    <form method="post" action="{% url 'talks_comment_delete' comment.id %}" style="margin:0;" onsubmit="return confirm('このコメントを削除しますか？');">
+                      {% csrf_token %}
+                      <button type="submit" class="knowledge-icon-btn danger" title="コメントを削除" aria-label="コメントを削除">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
+                <div class="knowledge-followup-actions" style="margin-top:0;">
+                  <button
+                    type="button"
+                    class="knowledge-comment-reply-btn"
+                    data-reply-target="{{ comment.id }}"
+                    data-reply-author="{{ comment.author }}"
+                  >このコメントに返信</button>
+                </div>
               </div>
 
               {% if comment.replies %}
                 <div class="knowledge-reply-block">
                   {% for reply in comment.replies %}
                     <div class="knowledge-reply-item">
-                      <div class="knowledge-reply-meta">{{ reply.author }} / {{ reply.created_at }}</div>
+                      <div class="knowledge-reply-meta" style="display:flex; align-items:center; gap:6px;"><span>{{ reply.author }} / {{ reply.created_at }}</span></div>
                       <div>{{ reply.body }}</div>
+                      {% if reply.can_manage %}
+                        <div class="knowledge-item-actions">
+                          <a class="knowledge-icon-btn" href="{% url 'talks_comment_edit' reply.id %}" title="返信を編集" aria-label="返信を編集">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                          </a>
+                          <form method="post" action="{% url 'talks_comment_delete' reply.id %}" style="margin:0;" onsubmit="return confirm('この返信を削除しますか？');">
+                            {% csrf_token %}
+                            <button type="submit" class="knowledge-icon-btn danger" title="返信を削除" aria-label="返信を削除">
+                              <i class="fa-solid fa-trash"></i>
+                            </button>
+                          </form>
+                        </div>
+                      {% endif %}
                     </div>
                   {% endfor %}
                 </div>

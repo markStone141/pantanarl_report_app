@@ -46,9 +46,52 @@
       width: 100%;
     }
     .knowledge-thread-head {
-      justify-content: flex-start !important;
+      display: block !important;
+      width: 100%;
+      text-align: left !important;
+    }
+    .knowledge-title-link {
+      color: inherit;
+      text-decoration: none;
+      display: block !important;
+      width: 100%;
+      text-align: left !important;
+    }
+    .knowledge-item-actions {
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      flex: 0 0 auto;
+      margin-top: 0;
+    }
+    .knowledge-icon-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid #c8d8df;
+      background: #fff;
+      color: #1f4f5e;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      padding: 0;
+      min-height: 0;
+      cursor: pointer;
+    }
+    .knowledge-icon-btn.danger {
+      color: #a43e3e;
+      border-color: #e7c4c4;
+      background: #fff7f7;
+    }
+    .knowledge-meta-row {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: flex-start;
+      text-align: left;
     }
     .knowledge-list-heading {
       margin: 0;
@@ -343,6 +386,9 @@
     </div>
     <nav class="talks-topbar-nav">
       <span class="talks-welcome-text">おかえりなさい！{{ talks_member_name }}さん</span>
+      {% if talks_is_admin %}
+        <a href="{% url 'talks_tag_manage' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">タグ管理</a>
+      {% endif %}
       <a href="{% url 'talks_logout' %}" class="logout-link talks-logout-link">ログアウト</a>
     </nav>
   </header>
@@ -449,9 +495,11 @@
     {% if threads %}
       <div class="grid" style="gap:12px;">
         {% for thread in threads %}
-          <a href="{% url 'talks_detail' thread.id %}" class="card knowledge-thread-link" style="display:block; color:inherit;">
-            <div class="row knowledge-thread-head" style="align-items:center; justify-content:flex-start;">
-              <strong class="knowledge-thread-title">{{ thread.title }}</strong>
+          <article class="card knowledge-thread-link js-thread-card" data-href="{% url 'talks_detail' thread.id %}" style="display:block; color:inherit; cursor:pointer;">
+            <div class="knowledge-thread-head">
+              <a href="{% url 'talks_detail' thread.id %}" class="knowledge-title-link">
+                <strong class="knowledge-thread-title">{{ thread.title }}</strong>
+              </a>
               {% if thread.is_unread %}
                 <span class="knowledge-unread-badge">新着</span>
               {% endif %}
@@ -459,7 +507,20 @@
             <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
               {% for tag in thread.tags %}<span class="badge knowledge-tag-chip">#{{ tag }}</span>{% endfor %}
             </div>
-            <div class="muted" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:12px; justify-content:flex-end; text-align:right;">
+            <div class="muted knowledge-meta-row">
+              {% if thread.can_manage %}
+                <span class="knowledge-item-actions">
+                  <a class="knowledge-icon-btn" href="{% url 'talks_post_edit' thread.id %}" title="投稿を編集" aria-label="投稿を編集">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </a>
+                  <form method="post" action="{% url 'talks_post_delete' thread.id %}" style="margin:0;" onsubmit="return confirm('この投稿を削除しますか？');">
+                    {% csrf_token %}
+                    <button type="submit" class="knowledge-icon-btn danger" title="投稿を削除" aria-label="投稿を削除">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                </span>
+              {% endif %}
               <span style="display:inline-flex; align-items:center; gap:6px;">
                 <i class="fa-solid fa-user" aria-hidden="true"></i>{{ thread.author }}
               </span>
@@ -473,7 +534,7 @@
                 <i class="fa-solid fa-eye" style="color:#607582;"></i>{{ thread.view_count }}
               </span>
             </div>
-          </a>
+          </article>
         {% endfor %}
       </div>
       <div class="knowledge-pagination" style="margin-top:14px; margin-bottom:4px;">
@@ -771,6 +832,16 @@
 
     bindTagSearch("knowledge-tag-search", "desktop");
     bindTagSearch("knowledge-tag-search-mobile", "mobile");
+
+    const threadCards = document.querySelectorAll(".js-thread-card");
+    threadCards.forEach(function (card) {
+      card.addEventListener("click", function (event) {
+        const interactive = event.target.closest("a, button, form, input, textarea, select, label");
+        if (interactive && card.contains(interactive)) return;
+        const href = card.getAttribute("data-href");
+        if (href) window.location.href = href;
+      });
+    });
   })();
 </script>
 {% endblock %}

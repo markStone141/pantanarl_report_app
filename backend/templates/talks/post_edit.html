@@ -1,0 +1,205 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}投稿編集 | Talks{% endblock %}
+
+{% block content %}
+<div class="container">
+  <style>
+    .post-edit-tag-search {
+      margin-bottom: 8px;
+    }
+    .post-edit-tag-options {
+      margin-top: 6px;
+      max-height: 180px;
+      overflow: auto;
+      border: 1px solid #d7e0e6;
+      border-radius: 10px;
+      padding: 8px;
+      background: #fbfdfe;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .post-edit-tag-btn {
+      width: auto;
+      min-height: 0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      background: #eef6f8;
+      color: #0f4d5d;
+      border: 1px solid #c6d8df;
+      cursor: pointer;
+    }
+    .post-edit-tag-btn.is-selected {
+      background: #126e82;
+      color: #fff;
+      border-color: #126e82;
+    }
+    .post-edit-selected-tags {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .post-edit-selected-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: #126e82;
+      color: #fff;
+    }
+    .post-edit-selected-remove {
+      width: auto;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .post-edit-cancel-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 16px;
+      border-radius: 10px;
+      background: #5b7280;
+      color: #fff !important;
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-decoration: none;
+      line-height: 1;
+    }
+  </style>
+  <header class="topbar topbar-desktop-expanded" style="margin-bottom:16px;">
+    <div>
+      <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" style="display:inline-flex; align-items:center;">
+        <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" style="height:44px; width:auto; display:block;">
+      </a>
+    </div>
+    <nav>
+      <span style="color:#fff; font-size:0.78rem; white-space:nowrap;">おかえりなさい！{{ talks_member_name }}さん</span>
+      <a href="{% url 'talks_logout' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+
+  <section class="card">
+    <h2 style="margin-bottom:10px;">投稿を編集</h2>
+    <form method="post" class="grid" style="gap:10px;">
+      {% csrf_token %}
+      <div>
+        <label for="{{ form.title.id_for_label }}">タイトル</label>
+        {{ form.title }}
+      </div>
+      <div>
+        <label for="{{ form.body.id_for_label }}">本文</label>
+        {{ form.body }}
+      </div>
+      <div>
+        <label>タグ</label>
+        <div class="post-edit-tag-search">
+          <input id="post-edit-tag-search" type="text" placeholder="タグ名で検索">
+        </div>
+        <div id="post-edit-tag-options" class="post-edit-tag-options">
+          {% for tag_name in available_tag_names %}
+            <button
+              type="button"
+              class="post-edit-tag-btn"
+              data-tag="{{ tag_name }}"
+            >{{ tag_name }}</button>
+          {% endfor %}
+        </div>
+        <div id="post-edit-selected-tags" class="post-edit-selected-tags"></div>
+        <div id="post-edit-selected-hidden"></div>
+      </div>
+      {% if form.non_field_errors %}
+        <div class="error-text">{{ form.non_field_errors|join:", " }}</div>
+      {% endif %}
+      <div class="row" style="justify-content:flex-end; margin-top: 8px;">
+        <a href="{% url 'talks_detail' post.id %}" class="post-edit-cancel-link">キャンセル</a>
+        <button type="submit" class="btn-inline">保存する</button>
+      </div>
+    </form>
+  </section>
+</div>
+{{ selected_tag_names|json_script:"post-edit-selected-tags-data" }}
+<script>
+  (function () {
+    const selectedDataEl = document.getElementById("post-edit-selected-tags-data");
+    const selectedTags = selectedDataEl ? JSON.parse(selectedDataEl.textContent || "[]") : [];
+    const selected = Array.isArray(selectedTags) ? selectedTags.slice() : [];
+    const searchInput = document.getElementById("post-edit-tag-search");
+    const optionButtons = Array.prototype.slice.call(document.querySelectorAll(".post-edit-tag-btn"));
+    const selectedWrap = document.getElementById("post-edit-selected-tags");
+    const hiddenWrap = document.getElementById("post-edit-selected-hidden");
+
+    function render() {
+      if (!selectedWrap || !hiddenWrap) return;
+      selectedWrap.innerHTML = "";
+      hiddenWrap.innerHTML = "";
+      optionButtons.forEach(function (btn) {
+        const tag = btn.getAttribute("data-tag") || "";
+        if (selected.indexOf(tag) >= 0) {
+          btn.classList.add("is-selected");
+        } else {
+          btn.classList.remove("is-selected");
+        }
+      });
+      selected.forEach(function (tag) {
+        const chip = document.createElement("span");
+        chip.className = "post-edit-selected-tag";
+        chip.textContent = tag;
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "post-edit-selected-remove";
+        remove.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        remove.addEventListener("click", function () {
+          const idx = selected.indexOf(tag);
+          if (idx >= 0) selected.splice(idx, 1);
+          render();
+        });
+        chip.appendChild(remove);
+        selectedWrap.appendChild(chip);
+
+        const hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = "tags";
+        hidden.value = tag;
+        hiddenWrap.appendChild(hidden);
+      });
+    }
+
+    optionButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const tag = btn.getAttribute("data-tag") || "";
+        const idx = selected.indexOf(tag);
+        if (idx >= 0) {
+          selected.splice(idx, 1);
+        } else {
+          selected.push(tag);
+        }
+        render();
+      });
+    });
+
+    if (searchInput) {
+      searchInput.addEventListener("input", function () {
+        const q = (searchInput.value || "").trim().toLowerCase();
+        optionButtons.forEach(function (btn) {
+          const text = (btn.getAttribute("data-tag") || "").toLowerCase();
+          btn.style.display = q === "" || text.indexOf(q) >= 0 ? "" : "none";
+        });
+      });
+    }
+
+    render();
+  })();
+</script>
+{% endblock %}

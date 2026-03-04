@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}タグ管理 | Report App{% endblock %}
+
+{% block content %}
+<div class="container">
+  <style>
+    .tag-form-grid {
+      display: grid;
+      gap: 10px;
+    }
+    .tag-active-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 2px;
+    }
+    .tag-active-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      min-height: 18px;
+      margin: 0;
+    }
+    .tag-active-label {
+      margin: 0;
+      font-weight: 700;
+      color: #1f3240;
+    }
+    .tag-active-help {
+      color: #5f7480;
+      font-size: 0.84rem;
+    }
+  </style>
+  <header class="topbar topbar-desktop-expanded" style="margin-bottom:16px;">
+    <div>
+      <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" style="display:inline-flex; align-items:center;">
+        <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" style="height:44px; width:auto; display:block;">
+      </a>
+    </div>
+    <nav class="talks-topbar-nav" style="display:flex; align-items:center; gap:10px;">
+      <span class="talks-welcome-text" style="color:#fff; font-size:0.78rem;">おかえりなさい！{{ talks_member_name }}さん</span>
+      <a href="{% url 'talks_index' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">一覧へ</a>
+      <a href="{% url 'talks_logout' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+
+  {% if messages %}
+    <section class="card" style="margin-bottom:12px; padding:10px 12px;">
+      {% for message in messages %}
+        <div style="margin:4px 0; font-size:0.9rem; color:{% if message.tags == 'error' %}#a43737{% else %}#1f6f4a{% endif %};">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  <section class="card" style="margin-bottom:14px;">
+    <h2 style="margin:0 0 10px;">タグ管理</h2>
+    <form method="post" class="tag-form-grid">
+      {% csrf_token %}
+      {{ form.tag_id }}
+      <div class="grid grid-2" style="gap:10px;">
+        <div>
+          <label for="{{ form.name.id_for_label }}">タグ名</label>
+          {{ form.name }}
+        </div>
+        <div>
+          <label for="{{ form.sort_order.id_for_label }}">並び順</label>
+          {{ form.sort_order }}
+        </div>
+      </div>
+      <div class="tag-active-row">
+        {{ form.is_active }}
+        <label for="{{ form.is_active.id_for_label }}" class="tag-active-label">有効タグとして使用する</label>
+      </div>
+      <div class="tag-active-help">チェックあり: 一覧/投稿で選択可能、チェックなし: 非表示（既存投稿には残ります）</div>
+      <div style="display:flex; gap:8px;">
+        <button type="submit" class="btn-inline" style="width:auto;">{% if editing_tag %}更新{% else %}追加{% endif %}</button>
+        {% if editing_tag %}
+          <a href="{% url 'talks_tag_manage' %}" class="btn-inline" style="width:auto; background:#5b7280;">キャンセル</a>
+        {% endif %}
+      </div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2 style="margin:0 0 10px;">登録済みタグ</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>タグ名</th>
+            <th>並び順</th>
+            <th>状態</th>
+            <th>利用投稿数</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tag in tags %}
+            <tr>
+              <td>{{ tag.name }}</td>
+              <td>{{ tag.sort_order }}</td>
+              <td>{% if tag.is_active %}有効{% else %}無効{% endif %}</td>
+              <td>{{ tag.post_count }}</td>
+              <td>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <a href="{% url 'talks_tag_manage' %}?edit={{ tag.id }}" class="btn-inline" style="width:auto; min-height:0; padding:5px 9px;">編集</a>
+                  <form method="post" action="{% url 'talks_tag_manage' %}" style="margin:0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="toggle">
+                    <input type="hidden" name="tag_id" value="{{ tag.id }}">
+                    <button type="submit" class="btn-inline" style="width:auto; min-height:0; padding:5px 9px; background:{% if tag.is_active %}#8f4d4d{% else %}#3f6f54{% endif %};">
+                      {% if tag.is_active %}無効化{% else %}有効化{% endif %}
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">タグはまだありません。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}
