@@ -1,4 +1,5 @@
-﻿from django import forms
+from django import forms
+from django.db.models import Count
 
 from apps.accounts.models import Member
 from apps.talks.models import KnowledgeTag
@@ -38,7 +39,7 @@ class PostEditForm(forms.Form):
         super().__init__(*args, **kwargs)
         tag_names = list(
             KnowledgeTag.objects.filter(is_active=True)
-            .order_by("sort_order", "name")
+            .annotate(post_count=Count("posts")).order_by("-post_count", "name")
             .values_list("name", flat=True)
         )
         self.fields["tags"].choices = [(name, name) for name in tag_names]
@@ -51,7 +52,6 @@ class CommentEditForm(forms.Form):
 class TagManageForm(forms.Form):
     tag_id = forms.IntegerField(required=False, widget=forms.HiddenInput)
     name = forms.CharField(label="タグ名", max_length=64)
-    sort_order = forms.IntegerField(label="並び順", min_value=0, initial=0)
     is_active = forms.BooleanField(label="有効", required=False, initial=True)
 
     def clean_name(self):

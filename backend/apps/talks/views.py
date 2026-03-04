@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from collections import Counter
 from datetime import datetime
@@ -438,7 +438,7 @@ def talks_index(request: HttpRequest) -> HttpResponse:
     unread_toggle_query = unread_toggle_params.urlencode()
 
     available_tags = list(
-        KnowledgeTag.objects.filter(is_active=True).order_by("sort_order", "name").values_list("name", flat=True)
+        KnowledgeTag.objects.filter(is_active=True).annotate(post_count=Count("posts", filter=Q(posts__is_deleted=False))).order_by("-post_count", "name").values_list("name", flat=True)
     )
     available_authors = author_pool
 
@@ -580,7 +580,6 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             tag_id = form.cleaned_data.get("tag_id")
             name = form.cleaned_data["name"]
-            sort_order = form.cleaned_data["sort_order"]
             is_active = form.cleaned_data["is_active"]
 
             if tag_id:
@@ -594,9 +593,8 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
                     messages.error(request, "同じタグ名が既に存在します。")
                 else:
                     tag.name = name
-                    tag.sort_order = sort_order
                     tag.is_active = is_active
-                    tag.save(update_fields=["name", "sort_order", "is_active", "updated_at"])
+                    tag.save(update_fields=["name", "is_active", "updated_at"])
                     messages.success(request, "タグを更新しました。")
                     return redirect("talks_tag_manage")
             else:
@@ -605,7 +603,6 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
                 else:
                     KnowledgeTag.objects.create(
                         name=name,
-                        sort_order=sort_order,
                         is_active=is_active,
                     )
                     messages.success(request, "タグを追加しました。")
@@ -618,18 +615,17 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
                 initial={
                     "tag_id": editing_tag.id,
                     "name": editing_tag.name,
-                    "sort_order": editing_tag.sort_order,
                     "is_active": editing_tag.is_active,
                 }
             )
         else:
-            form = TagManageForm(initial={"sort_order": 0, "is_active": True})
+            form = TagManageForm(initial={"is_active": True})
 
     tags = (
         KnowledgeTag.objects.annotate(
             post_count=Count("posts", filter=Q(posts__is_deleted=False)),
         )
-        .order_by("sort_order", "name")
+        .order_by("-post_count", "name")
     )
 
     return render(

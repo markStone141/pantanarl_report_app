@@ -67,10 +67,7 @@
           <label for="{{ form.name.id_for_label }}">タグ名</label>
           {{ form.name }}
         </div>
-        <div>
-          <label for="{{ form.sort_order.id_for_label }}">並び順</label>
-          {{ form.sort_order }}
-        </div>
+        
       </div>
       <div class="tag-active-row">
         {{ form.is_active }}
@@ -93,7 +90,6 @@
         <thead>
           <tr>
             <th>タグ名</th>
-            <th>並び順</th>
             <th>状態</th>
             <th>利用投稿数</th>
             <th>操作</th>
@@ -103,7 +99,6 @@
           {% for tag in tags %}
             <tr>
               <td>{{ tag.name }}</td>
-              <td>{{ tag.sort_order }}</td>
               <td>{% if tag.is_active %}有効{% else %}無効{% endif %}</td>
               <td>{{ tag.post_count }}</td>
               <td>
@@ -121,7 +116,7 @@
               </td>
             </tr>
           {% empty %}
-            <tr><td colspan="5">タグはまだありません。</td></tr>
+            <tr><td colspan="4">タグはまだありません。</td></tr>
           {% endfor %}
         </tbody>
       </table>

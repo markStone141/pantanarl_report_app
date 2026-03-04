@@ -275,7 +275,7 @@ class TalksAdminPermissionTests(TalksBaseTestCase):
         self._set_role_admin_session()
         create = self.client.post(
             reverse("talks_tag_manage"),
-            {"name": "新タグ", "sort_order": 9, "is_active": "on"},
+            {"name": "新タグ", "is_active": "on"},
         )
         self.assertRedirects(create, reverse("talks_tag_manage"))
         tag = KnowledgeTag.objects.get(name="新タグ")
