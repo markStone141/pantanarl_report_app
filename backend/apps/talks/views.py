@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import datetime
-import os
 
 from django.contrib import messages
-from django.contrib.auth import get_user_model, login as auth_login, logout as auth_logout
+from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
 from django.db.models import Count, F, Q
 from django.http import Http404, HttpRequest, HttpResponse
@@ -20,13 +19,20 @@ from .forms import CommentEditForm, PostEditForm, TagManageForm, TalksLoginForm
 from .models import KnowledgeComment, KnowledgePost, KnowledgePostTag, KnowledgeTag
 from .models import KnowledgePostRead
 from .models import KnowledgeReactionType
+from .services.session import (
+    TALKS_ADMIN_LOGIN_ID,
+    TALKS_ADMIN_PASSWORD,
+    TALKS_SESSION_IS_ADMIN_KEY,
+    TALKS_SESSION_MEMBER_ID_KEY,
+    TALKS_SESSION_MEMBER_NAME_KEY,
+    clear_talks_session,
+    ensure_admin_user,
+    ensure_member_user,
+    get_talks_display_name,
+    get_talks_member,
+    is_talks_admin,
+)
 
-
-TALKS_SESSION_MEMBER_ID_KEY = "talks_member_id"
-TALKS_SESSION_MEMBER_NAME_KEY = "talks_member_name"
-TALKS_SESSION_IS_ADMIN_KEY = "talks_is_admin"
-TALKS_ADMIN_LOGIN_ID = os.getenv("TALKS_ADMIN_LOGIN_ID", "admin")
-TALKS_ADMIN_PASSWORD = os.getenv("TALKS_ADMIN_PASSWORD", "pnadmin")
 
 REACTION_CODES = ("good", "keep", "retry", "question")
 SORT_NEWEST = "newest"
@@ -93,7 +99,7 @@ def _serialize_comment(comment: KnowledgeComment) -> dict:
 
 
 def _resolve_author_from_request(request: HttpRequest) -> tuple[object | None, str]:
-    talks_member = _get_talks_member(request)
+    talks_member = get_talks_member(request)
     if talks_member:
         return talks_member, talks_member.name
 
@@ -195,81 +201,12 @@ def _create_post_from_request(request: HttpRequest) -> tuple[KnowledgePost | Non
     return post, None
 
 
-def _get_talks_member(request: HttpRequest) -> Member | None:
-    member_id = request.session.get(TALKS_SESSION_MEMBER_ID_KEY)
-    if not member_id:
-        return None
-
-    member = Member.objects.active().filter(id=member_id).first()
-    if not member:
-        request.session.pop(TALKS_SESSION_MEMBER_ID_KEY, None)
-        request.session.pop(TALKS_SESSION_MEMBER_NAME_KEY, None)
-        return None
-    return member
-
-
-def _is_talks_admin(request: HttpRequest) -> bool:
-    role = request.session.get(SESSION_ROLE_KEY)
-    talks_admin_flag = bool(request.session.get(TALKS_SESSION_IS_ADMIN_KEY))
-
-    # Keep admin sessions interoperable between ReportApp and Talks.
-    if role == ROLE_ADMIN and not talks_admin_flag:
-        request.session[TALKS_SESSION_IS_ADMIN_KEY] = True
-        if not request.session.get(TALKS_SESSION_MEMBER_NAME_KEY):
-            request.session[TALKS_SESSION_MEMBER_NAME_KEY] = "管理者"
-        talks_admin_flag = True
-    elif talks_admin_flag and role != ROLE_ADMIN:
-        request.session[SESSION_ROLE_KEY] = ROLE_ADMIN
-        role = ROLE_ADMIN
-
-    return role == ROLE_ADMIN or talks_admin_flag
-
-
-def _get_talks_display_name(request: HttpRequest, member: Member | None) -> str:
-    if _is_talks_admin(request):
-        return request.session.get(TALKS_SESSION_MEMBER_NAME_KEY, "管理者")
-    if member:
-        return member.name
-    return ""
-
-
-def _ensure_admin_user():
-    User = get_user_model()
-    user = User.objects.filter(username="talks_admin").first()
-    if user:
-        return user
-    user = User.objects.create(username="talks_admin", is_staff=True)
-    user.set_unusable_password()
-    user.save(update_fields=["password"])
-    return user
-
-
 def _can_manage_post(member: Member | None, is_admin: bool, post: KnowledgePost) -> bool:
     return is_admin or (member is not None and post.author_member_id == member.id)
 
 
 def _can_manage_comment(member: Member | None, is_admin: bool, comment: KnowledgeComment) -> bool:
     return is_admin or (member is not None and comment.author_member_id == member.id)
-
-
-def _ensure_member_user(member: Member):
-    if member.user:
-        return member.user
-
-    User = get_user_model()
-    base_username = member.login_id
-    username = base_username
-    suffix = 1
-    while User.objects.filter(username=username).exists():
-        username = f"{base_username}_{suffix}"
-        suffix += 1
-
-    user = User.objects.create(username=username)
-    user.set_unusable_password()
-    user.save(update_fields=["password"])
-    member.user = user
-    member.save(update_fields=["user"])
-    return user
 
 
 def _replace_post_tags(post: KnowledgePost, selected_tag_names: list[str]) -> None:
@@ -283,8 +220,8 @@ def _replace_post_tags(post: KnowledgePost, selected_tag_names: list[str]) -> No
 
 
 def talks_login(request: HttpRequest) -> HttpResponse:
-    member = _get_talks_member(request)
-    if member or _is_talks_admin(request):
+    member = get_talks_member(request)
+    if member or is_talks_admin(request):
         return redirect("talks_index")
 
     if request.method == "POST":
@@ -292,7 +229,7 @@ def talks_login(request: HttpRequest) -> HttpResponse:
         password = request.POST.get("password") or ""
 
         if login_id == TALKS_ADMIN_LOGIN_ID and password == TALKS_ADMIN_PASSWORD:
-            admin_user = _ensure_admin_user()
+            admin_user = ensure_admin_user()
             auth_login(request, admin_user, backend="django.contrib.auth.backends.ModelBackend")
             request.session[SESSION_ROLE_KEY] = ROLE_ADMIN
             request.session[TALKS_SESSION_IS_ADMIN_KEY] = True
@@ -302,7 +239,7 @@ def talks_login(request: HttpRequest) -> HttpResponse:
 
         form = TalksLoginForm(request.POST)
         if form.is_valid() and form.member:
-            user = _ensure_member_user(form.member)
+            user = ensure_member_user(form.member)
             auth_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
             request.session[SESSION_ROLE_KEY] = ROLE_REPORT
             request.session[TALKS_SESSION_IS_ADMIN_KEY] = False
@@ -317,16 +254,13 @@ def talks_login(request: HttpRequest) -> HttpResponse:
 
 def talks_logout(request: HttpRequest) -> HttpResponse:
     auth_logout(request)
-    request.session.pop(SESSION_ROLE_KEY, None)
-    request.session.pop(TALKS_SESSION_IS_ADMIN_KEY, None)
-    request.session.pop(TALKS_SESSION_MEMBER_ID_KEY, None)
-    request.session.pop(TALKS_SESSION_MEMBER_NAME_KEY, None)
+    clear_talks_session(request)
     return redirect("talks_login")
 
 
 def talks_index(request: HttpRequest) -> HttpResponse:
-    talks_member = _get_talks_member(request)
-    talks_is_admin = _is_talks_admin(request)
+    talks_member = get_talks_member(request)
+    talks_is_admin = is_talks_admin(request)
     if not talks_member and not talks_is_admin:
         return redirect("talks_login")
 
@@ -458,7 +392,7 @@ def talks_index(request: HttpRequest) -> HttpResponse:
             "date_from": date_from_raw,
             "available_tags": available_tags,
             "available_authors": available_authors,
-            "talks_member_name": _get_talks_display_name(request, talks_member),
+            "talks_member_name": get_talks_display_name(request, talks_member),
             "talks_is_admin": talks_is_admin,
             "unread_toggle_query": unread_toggle_query,
         },
@@ -466,8 +400,8 @@ def talks_index(request: HttpRequest) -> HttpResponse:
 
 
 def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
-    talks_member = _get_talks_member(request)
-    talks_is_admin = _is_talks_admin(request)
+    talks_member = get_talks_member(request)
+    talks_is_admin = is_talks_admin(request)
     if not talks_member and not talks_is_admin:
         return redirect("talks_login")
 
@@ -548,15 +482,15 @@ def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
             "retry_count": reaction_counts["retry"],
             "question_count": reaction_counts["question"],
             "reaction_types": KnowledgeReactionType.objects.filter(is_active=True).order_by("sort_order", "id"),
-            "talks_member_name": _get_talks_display_name(request, talks_member),
+            "talks_member_name": get_talks_display_name(request, talks_member),
             "talks_is_admin": talks_is_admin,
         },
     )
 
 
 def talks_tag_manage(request: HttpRequest) -> HttpResponse:
-    talks_member = _get_talks_member(request)
-    talks_is_admin = _is_talks_admin(request)
+    talks_member = get_talks_member(request)
+    talks_is_admin = is_talks_admin(request)
     if not talks_is_admin:
         messages.error(request, "タグ管理は管理者のみ実行できます。")
         return redirect("talks_index")
@@ -635,15 +569,15 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
             "form": form,
             "tags": tags,
             "editing_tag": editing_tag,
-            "talks_member_name": _get_talks_display_name(request, talks_member),
+            "talks_member_name": get_talks_display_name(request, talks_member),
             "talks_is_admin": talks_is_admin,
         },
     )
 
 
 def talks_deleted_posts_manage(request: HttpRequest) -> HttpResponse:
-    talks_member = _get_talks_member(request)
-    talks_is_admin = _is_talks_admin(request)
+    talks_member = get_talks_member(request)
+    talks_is_admin = is_talks_admin(request)
     if not talks_is_admin:
         messages.error(request, "削除済みトークの管理は管理者のみ実行できます。")
         return redirect("talks_index")
@@ -677,15 +611,15 @@ def talks_deleted_posts_manage(request: HttpRequest) -> HttpResponse:
         "talks/deleted_posts_manage.html",
         {
             "deleted_posts": deleted_posts,
-            "talks_member_name": _get_talks_display_name(request, talks_member),
+            "talks_member_name": get_talks_display_name(request, talks_member),
             "talks_is_admin": talks_is_admin,
         },
     )
 
 
 def talks_post_edit(request: HttpRequest, post_id: int) -> HttpResponse:
-    talks_member = _get_talks_member(request)
-    talks_is_admin = _is_talks_admin(request)
+    talks_member = get_talks_member(request)
+    talks_is_admin = is_talks_admin(request)
     if not talks_member and not talks_is_admin:
         return redirect("talks_login")
 
@@ -723,7 +657,7 @@ def talks_post_edit(request: HttpRequest, post_id: int) -> HttpResponse:
         {
             "form": form,
             "post": post,
-            "talks_member_name": _get_talks_display_name(request, talks_member),
+            "talks_member_name": get_talks_display_name(request, talks_member),
             "talks_is_admin": talks_is_admin,
             "available_tag_names": available_tag_names,
             "selected_tag_names": selected_tag_names,
@@ -732,8 +666,8 @@ def talks_post_edit(request: HttpRequest, post_id: int) -> HttpResponse:
 
 
 def talks_post_delete(request: HttpRequest, post_id: int) -> HttpResponse:
-    talks_member = _get_talks_member(request)
-    talks_is_admin = _is_talks_admin(request)
+    talks_member = get_talks_member(request)
+    talks_is_admin = is_talks_admin(request)
     if not talks_member and not talks_is_admin:
         return redirect("talks_login")
     if request.method != "POST":
@@ -748,8 +682,8 @@ def talks_post_delete(request: HttpRequest, post_id: int) -> HttpResponse:
 
 
 def talks_comment_edit(request: HttpRequest, comment_id: int) -> HttpResponse:
-    talks_member = _get_talks_member(request)
-    talks_is_admin = _is_talks_admin(request)
+    talks_member = get_talks_member(request)
+    talks_is_admin = is_talks_admin(request)
     if not talks_member and not talks_is_admin:
         return redirect("talks_login")
 
@@ -779,15 +713,15 @@ def talks_comment_edit(request: HttpRequest, comment_id: int) -> HttpResponse:
         {
             "form": form,
             "comment": comment,
-            "talks_member_name": _get_talks_display_name(request, talks_member),
+            "talks_member_name": get_talks_display_name(request, talks_member),
             "talks_is_admin": talks_is_admin,
         },
     )
 
 
 def talks_comment_delete(request: HttpRequest, comment_id: int) -> HttpResponse:
-    talks_member = _get_talks_member(request)
-    talks_is_admin = _is_talks_admin(request)
+    talks_member = get_talks_member(request)
+    talks_is_admin = is_talks_admin(request)
     if not talks_member and not talks_is_admin:
         return redirect("talks_login")
     if request.method != "POST":
