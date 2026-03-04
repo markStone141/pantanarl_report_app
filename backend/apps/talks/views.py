@@ -1,164 +1,93 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
-from datetime import datetime
 
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 
-
-@dataclass(frozen=True)
-class Reply:
-    author: str
-    body: str
-    created_at: str
+from .models import KnowledgeComment, KnowledgePost, KnowledgeTag
 
 
-@dataclass(frozen=True)
-class Comment:
-    author: str
-    body: str
-    created_at: str
-    kind: str
-    replies: tuple[Reply, ...] = ()
+REACTION_CODES = ("good", "keep", "retry", "question")
 
 
-@dataclass(frozen=True)
-class Thread:
-    id: int
-    title: str
-    author: str
-    created_at: str
-    summary: str
-    tags: tuple[str, ...]
-    comment_count: int
-    good_count: int
-    keep_count: int
-    retry_count: int
-    question_count: int
-    last_activity: str
+def _author_name(member_obj, snapshot: str) -> str:
+    if member_obj and member_obj.name:
+        return member_obj.name
+    return snapshot or "不明"
 
 
-THREADS: tuple[Thread, ...] = (
-    Thread(
-        id=1,
-        title="朝の5分ロールプレイを導入したら会話の入りが安定した",
-        author="前田",
-        created_at="2026-03-02 18:30",
-        summary="朝礼の後に1人30秒で声かけ練習。WVでもUNでも初回トークの失敗が減った。",
-        tags=("声かけ", "UN", "WV", "朝礼"),
-        comment_count=8,
-        good_count=4,
-        keep_count=2,
-        retry_count=1,
-        question_count=1,
-        last_activity="2026-03-04 09:12",
-    ),
-    Thread(
-        id=2,
-        title="断られた直後の切り返しテンプレート",
-        author="為廣",
-        created_at="2026-03-01 21:10",
-        summary="断り文句を3パターンに分類し、切り返しを固定したら件数が落ちにくくなった。",
-        tags=("切り返し", "UN", "実践共有"),
-        comment_count=5,
-        good_count=2,
-        keep_count=1,
-        retry_count=1,
-        question_count=1,
-        last_activity="2026-03-03 22:05",
-    ),
-)
+def _format_created_display(dt) -> str:
+    local_dt = timezone.localtime(dt)
+    if local_dt.date() == timezone.localdate():
+        return local_dt.strftime("%H:%M")
+    return local_dt.strftime("%Y-%m-%d")
 
 
-COMMENTS_BY_THREAD_ID: dict[int, tuple[Comment, ...]] = {
-    1: (
-        Comment(
-            author="内藤",
-            body="南町田でも同じ型で試したら、最初の1時間の沈黙が減りました。",
-            created_at="2026-03-03 10:20",
-            kind="good",
-            replies=(
-                Reply(author="前田", body="共有ありがとう。冒頭の質問文だけ変えた版も試してみます。", created_at="2026-03-03 10:42"),
-            ),
-        ),
-        Comment(
-            author="角田",
-            body="WVだと『難民支援』の説明順だけ変えた方が入りやすかったです。",
-            created_at="2026-03-03 12:08",
-            kind="keep",
-        ),
-    ),
-    2: (
-        Comment(
-            author="早坂",
-            body="2パターン目の切り返しは良かったですが、3パターン目は逆に離脱が増えました。",
-            created_at="2026-03-02 19:03",
-            kind="retry",
-        ),
-    ),
-}
+def _post_to_list_item(post: KnowledgePost) -> dict:
+    reactions = Counter()
+    for comment in post.comments.all():
+        code = comment.reaction_type.code if comment.reaction_type else ""
+        if code in REACTION_CODES:
+            reactions[code] += 1
+
+    return {
+        "id": post.id,
+        "title": post.title,
+        "author": _author_name(post.author_member, post.author_name_snapshot),
+        "summary": post.body,
+        "tags": [tag.name for tag in post.tags.all()],
+        "comment_count": post.comments.count(),
+        "good_count": reactions["good"],
+        "keep_count": reactions["keep"],
+        "retry_count": reactions["retry"],
+        "question_count": reactions["question"],
+        "created_display": _format_created_display(post.created_at),
+    }
 
 
-def _parse_datetime(value: str) -> datetime:
-    return datetime.strptime(value, "%Y-%m-%d %H:%M")
-
-
-def _format_created_display(value: str) -> str:
-    created = _parse_datetime(value)
-    if created.date() == timezone.localdate():
-        return created.strftime("%H:%M")
-    return created.strftime("%Y-%m-%d")
-
-
-def _find_thread(thread_id: int) -> Thread:
-    for thread in THREADS:
-        if thread.id == thread_id:
-            return thread
-    raise Http404("Thread not found")
+def _serialize_comment(comment: KnowledgeComment) -> dict:
+    return {
+        "id": comment.id,
+        "author": _author_name(comment.author_member, comment.author_name_snapshot),
+        "created_at": timezone.localtime(comment.created_at).strftime("%Y-%m-%d %H:%M"),
+        "body": comment.body,
+        "kind": comment.reaction_type.code,
+    }
 
 
 def talks_index(request: HttpRequest) -> HttpResponse:
     selected_tags = [tag for tag in request.GET.getlist("tag") if tag]
     selected_author = (request.GET.get("author") or "").strip()
 
-    tag_counter = Counter(tag for thread in THREADS for tag in thread.tags)
-    available_tags = [tag for tag, _ in tag_counter.most_common()]
-    available_authors = sorted({thread.author for thread in THREADS})
+    posts = (
+        KnowledgePost.objects.filter(
+            status=KnowledgePost.Status.PUBLISHED,
+            is_deleted=False,
+        )
+        .select_related("author_member")
+        .prefetch_related("tags", "comments__reaction_type")
+        .order_by("-updated_at")
+    )
+    if selected_tags:
+        posts = posts.filter(tags__name__in=selected_tags).distinct()
 
-    filtered_threads = []
-    for thread in THREADS:
-        if selected_author and thread.author != selected_author:
-            continue
-        if selected_tags and not all(tag in thread.tags for tag in selected_tags):
-            continue
-        filtered_threads.append(thread)
+    thread_items = [_post_to_list_item(post) for post in posts]
+    author_pool = sorted({item["author"] for item in thread_items})
+    if selected_author:
+        thread_items = [item for item in thread_items if item["author"] == selected_author]
 
-    filtered_threads.sort(key=lambda item: _parse_datetime(item.last_activity), reverse=True)
-    display_threads = [
-        {
-            "id": thread.id,
-            "title": thread.title,
-            "author": thread.author,
-            "summary": thread.summary,
-            "tags": thread.tags,
-            "good_count": thread.good_count,
-            "keep_count": thread.keep_count,
-            "retry_count": thread.retry_count,
-            "question_count": thread.question_count,
-            "comment_count": thread.comment_count,
-            "created_display": _format_created_display(thread.created_at),
-        }
-        for thread in filtered_threads
-    ]
+    available_tags = list(
+        KnowledgeTag.objects.filter(is_active=True).order_by("sort_order", "name").values_list("name", flat=True)
+    )
+    available_authors = author_pool
 
     return render(
         request,
         "talks/thread_index.html",
         {
-            "threads": display_threads,
+            "threads": thread_items,
             "selected_tags": selected_tags,
             "selected_author": selected_author,
             "available_tags": available_tags,
@@ -168,14 +97,61 @@ def talks_index(request: HttpRequest) -> HttpResponse:
 
 
 def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
-    thread = _find_thread(thread_id)
-    comments = COMMENTS_BY_THREAD_ID.get(thread_id, ())
+    post = (
+        KnowledgePost.objects.filter(
+            id=thread_id,
+            status=KnowledgePost.Status.PUBLISHED,
+            is_deleted=False,
+        )
+        .select_related("author_member")
+        .prefetch_related(
+            "tags",
+            "comments__reaction_type",
+            "comments__author_member",
+            "comments__replies__reaction_type",
+            "comments__replies__author_member",
+        )
+        .first()
+    )
+    if not post:
+        raise Http404("Thread not found")
+
+    top_level_comments = [c for c in post.comments.all() if c.parent_id is None and not c.is_deleted]
+    top_level_comments.sort(key=lambda c: c.created_at)
+
+    reaction_counts = Counter()
+    comments = []
+    for comment in top_level_comments:
+        code = comment.reaction_type.code if comment.reaction_type else ""
+        if code in REACTION_CODES:
+            reaction_counts[code] += 1
+
+        replies = [
+            {
+                "author": _author_name(reply.author_member, reply.author_name_snapshot),
+                "created_at": timezone.localtime(reply.created_at).strftime("%Y-%m-%d %H:%M"),
+                "body": reply.body,
+            }
+            for reply in sorted(
+                [r for r in comment.replies.all() if not r.is_deleted],
+                key=lambda r: r.created_at,
+            )
+        ]
+        serialized = _serialize_comment(comment)
+        serialized["replies"] = replies
+        comments.append(serialized)
 
     return render(
         request,
         "talks/thread_detail.html",
         {
-            "thread": thread,
+            "thread": post,
+            "thread_author": _author_name(post.author_member, post.author_name_snapshot),
+            "thread_created_at": timezone.localtime(post.created_at).strftime("%Y-%m-%d %H:%M"),
             "comments": comments,
+            "good_count": reaction_counts["good"],
+            "keep_count": reaction_counts["keep"],
+            "retry_count": reaction_counts["retry"],
+            "question_count": reaction_counts["question"],
         },
     )
