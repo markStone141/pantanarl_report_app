@@ -21,6 +21,14 @@
       gap: 8px;
       align-items: end;
     }
+    .knowledge-reset-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .knowledge-filter-search {
+      margin-top: 10px;
+    }
     .knowledge-thread-link {
       padding: 18px !important;
     }
@@ -37,6 +45,69 @@
       display: none;
     }
     .knowledge-overlay {
+      display: none;
+    }
+    .knowledge-create-open {
+      width: auto;
+      min-height: 0;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+    }
+    .knowledge-create-tag-options {
+      margin-top: 8px;
+      max-height: 140px;
+      overflow: auto;
+      border: 1px solid #d7e0e6;
+      border-radius: 10px;
+      padding: 8px;
+      background: #fbfdfe;
+    }
+    .knowledge-create-tag-btn {
+      width: auto;
+      min-height: 0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      background: #eef6f8;
+      color: #0f4d5d;
+      border: 1px solid #c6d8df;
+    }
+    .knowledge-create-selected-tags {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .knowledge-selected-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: #126e82;
+      color: #fff;
+    }
+    .knowledge-selected-tag-remove {
+      width: auto;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #fff;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .knowledge-compact-input {
+      min-height: 36px !important;
+      padding: 7px 10px !important;
+      font-size: 0.92rem;
+    }
+    .knowledge-create-textarea {
+      min-height: 220px;
+    }
+    .knowledge-create-tag-btn.is-hidden-default {
       display: none;
     }
     .knowledge-tag-chip {
@@ -123,6 +194,9 @@
         text-align: center;
         min-height: 44px;
       }
+      .knowledge-create-open {
+        display: none;
+      }
       .knowledge-tag-chip {
         padding: 3px 7px !important;
         font-size: 0.74rem !important;
@@ -147,10 +221,12 @@
   <section class="card knowledge-filter-card" id="knowledge-filter-card">
     <form method="get" class="grid" style="gap:10px;">
       <div>
-        <label>タグで絞り込み（複数可）</label>
-        <div class="knowledge-filter-tags">
+        <div class="knowledge-filter-search">
+          <input id="knowledge-tag-search" type="text" placeholder="タグ名で検索">
+        </div>
+        <div class="knowledge-filter-tags" data-tag-group="desktop">
           {% for tag in available_tags %}
-            <label class="badge" style="cursor:pointer; padding:7px 10px; border:1px solid #c6d8df; background:{% if tag in selected_tags %}#126e82{% else %}#eef6f8{% endif %}; color:{% if tag in selected_tags %}#fff{% else %}#0f4d5d{% endif %};">
+            <label class="badge {% if forloop.counter > 10 %}is-hidden-default{% endif %}" data-tag-option style="{% if forloop.counter > 10 %}display:none; {% endif %}cursor:pointer; padding:7px 10px; border:1px solid #c6d8df; background:{% if tag in selected_tags %}#126e82{% else %}#eef6f8{% endif %}; color:{% if tag in selected_tags %}#fff{% else %}#0f4d5d{% endif %};">
               <input type="checkbox" name="tag" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} style="width:auto; min-height:0; margin-right:6px;">{{ tag }}
             </label>
           {% endfor %}
@@ -169,14 +245,19 @@
         </div>
         <div class="knowledge-filter-actions">
           <button type="submit" class="btn-inline" style="width:auto;">絞り込む</button>
-          <a href="{% url 'talks_index' %}" class="btn-inline" style="background:#5b7280; color:#fff;">リセット</a>
+          <a href="{% url 'talks_index' %}" class="btn-inline knowledge-reset-btn" style="background:#5b7280; color:#fff;">リセット</a>
         </div>
       </div>
     </form>
   </section>
 
   <section class="card">
-    <h2 style="margin:0 0 10px;">スレッド一覧（{{ threads|length }}件）</h2>
+    <div class="row" style="margin-bottom:10px;">
+      <h2 style="margin:0;">スレッド一覧（{{ threads|length }}件）</h2>
+      <button id="knowledge-open-create" type="button" class="knowledge-create-open">
+        <i class="fa-solid fa-plus"></i> 新規投稿
+      </button>
+    </div>
 
     {% if threads %}
       <div class="grid" style="gap:12px;">
@@ -240,10 +321,12 @@
       </div>
       <form method="get" class="grid" style="gap:10px;">
         <div>
-          <label>タグで絞り込み（複数可）</label>
-          <div class="knowledge-filter-tags">
+          <div class="knowledge-filter-search">
+            <input id="knowledge-tag-search-mobile" type="text" placeholder="タグ名で検索">
+          </div>
+          <div class="knowledge-filter-tags" data-tag-group="mobile">
             {% for tag in available_tags %}
-              <label class="badge" style="cursor:pointer; padding:7px 10px; border:1px solid #c6d8df; background:{% if tag in selected_tags %}#126e82{% else %}#eef6f8{% endif %}; color:{% if tag in selected_tags %}#fff{% else %}#0f4d5d{% endif %};">
+              <label class="badge {% if forloop.counter > 10 %}is-hidden-default{% endif %}" data-tag-option style="{% if forloop.counter > 10 %}display:none; {% endif %}cursor:pointer; padding:7px 10px; border:1px solid #c6d8df; background:{% if tag in selected_tags %}#126e82{% else %}#eef6f8{% endif %}; color:{% if tag in selected_tags %}#fff{% else %}#0f4d5d{% endif %};">
                 <input type="checkbox" name="tag" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} style="width:auto; min-height:0; margin-right:6px;">{{ tag }}
               </label>
             {% endfor %}
@@ -260,7 +343,47 @@
         </div>
         <div class="knowledge-filter-actions">
           <button type="submit" class="btn-inline" style="width:auto;">絞り込む</button>
-          <a href="{% url 'talks_index' %}" class="btn-inline" style="background:#5b7280; color:#fff;">リセット</a>
+          <a href="{% url 'talks_index' %}" class="btn-inline knowledge-reset-btn" style="background:#5b7280; color:#fff;">リセット</a>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div id="knowledge-create-overlay" class="knowledge-overlay" aria-hidden="true">
+    <section class="knowledge-sheet">
+      <div class="knowledge-sheet-head">
+        <strong>新規投稿</strong>
+        <button id="knowledge-close-create" class="knowledge-sheet-close" type="button" aria-label="閉じる">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form class="grid" style="gap:10px;">
+        <div>
+          <label for="knowledge-create-title">タイトル</label>
+          <input id="knowledge-create-title" class="knowledge-compact-input" type="text">
+        </div>
+        <div>
+          <label for="knowledge-create-tag-search">タグ</label>
+          <input id="knowledge-create-tag-search" class="knowledge-compact-input" type="text">
+          <div id="knowledge-create-tag-options" class="knowledge-create-tag-options knowledge-filter-tags">
+            {% for tag in available_tags %}
+              <button
+                type="button"
+                class="knowledge-create-tag-btn {% if forloop.counter > 10 %}is-hidden-default{% endif %}"
+                data-create-tag-option="{{ tag }}"
+              >{{ tag }}</button>
+            {% endfor %}
+          </div>
+          <div id="knowledge-create-selected-tags" class="knowledge-create-selected-tags"></div>
+          <div id="knowledge-create-selected-hidden"></div>
+        </div>
+        <div>
+          <label for="knowledge-create-body">本文</label>
+          <textarea id="knowledge-create-body" class="knowledge-create-textarea"></textarea>
+        </div>
+        <div class="knowledge-filter-actions">
+          <button id="knowledge-create-submit" type="button" class="btn-inline" style="width:auto;">投稿する</button>
+          <button id="knowledge-create-cancel" type="button" class="btn-inline" style="width:auto; background:#5b7280;">キャンセル</button>
         </div>
       </form>
     </section>
@@ -270,29 +393,138 @@
   (function () {
     const openFilter = document.getElementById("knowledge-open-filter");
     const closeFilter = document.getElementById("knowledge-close-filter");
-    const overlay = document.getElementById("knowledge-filter-overlay");
+    const filterOverlay = document.getElementById("knowledge-filter-overlay");
     const createButton = document.getElementById("knowledge-create-button");
-    if (!openFilter || !closeFilter || !overlay) return;
+    const createOverlay = document.getElementById("knowledge-create-overlay");
+    const openCreateDesktop = document.getElementById("knowledge-open-create");
+    const closeCreate = document.getElementById("knowledge-close-create");
+    const cancelCreate = document.getElementById("knowledge-create-cancel");
+    const submitCreate = document.getElementById("knowledge-create-submit");
+    const createTagSearch = document.getElementById("knowledge-create-tag-search");
+    const createTagOptions = Array.prototype.slice.call(document.querySelectorAll("[data-create-tag-option]"));
+    const createSelectedTags = document.getElementById("knowledge-create-selected-tags");
+    const createSelectedHidden = document.getElementById("knowledge-create-selected-hidden");
+    const selectedCreateTags = [];
+    if (!openFilter || !closeFilter || !filterOverlay) return;
 
     function openSheet() {
-      overlay.classList.add("open");
-      overlay.setAttribute("aria-hidden", "false");
+      filterOverlay.classList.add("open");
+      filterOverlay.setAttribute("aria-hidden", "false");
     }
     function closeSheet() {
-      overlay.classList.remove("open");
-      overlay.setAttribute("aria-hidden", "true");
+      filterOverlay.classList.remove("open");
+      filterOverlay.setAttribute("aria-hidden", "true");
+    }
+    function openCreateSheet() {
+      if (!createOverlay) return;
+      createOverlay.classList.add("open");
+      createOverlay.setAttribute("aria-hidden", "false");
+    }
+    function closeCreateSheet() {
+      if (!createOverlay) return;
+      createOverlay.classList.remove("open");
+      createOverlay.setAttribute("aria-hidden", "true");
     }
 
     openFilter.addEventListener("click", openSheet);
     closeFilter.addEventListener("click", closeSheet);
-    overlay.addEventListener("click", function (event) {
-      if (event.target === overlay) closeSheet();
+    filterOverlay.addEventListener("click", function (event) {
+      if (event.target === filterOverlay) closeSheet();
     });
     if (createButton) {
-      createButton.addEventListener("click", function () {
-        window.alert("新規投稿フォームは次の実装で接続します。");
+      createButton.addEventListener("click", openCreateSheet);
+    }
+    if (openCreateDesktop) {
+      openCreateDesktop.addEventListener("click", openCreateSheet);
+    }
+    if (closeCreate) {
+      closeCreate.addEventListener("click", closeCreateSheet);
+    }
+    if (cancelCreate) {
+      cancelCreate.addEventListener("click", closeCreateSheet);
+    }
+    if (createOverlay) {
+      createOverlay.addEventListener("click", function (event) {
+        if (event.target === createOverlay) closeCreateSheet();
       });
     }
+    if (submitCreate) {
+      submitCreate.addEventListener("click", function () {
+        window.alert("新規投稿の保存処理は次段階でDB連携します。");
+      });
+    }
+
+    function renderCreateSelectedTags() {
+      if (!createSelectedTags || !createSelectedHidden) return;
+      createSelectedTags.innerHTML = "";
+      createSelectedHidden.innerHTML = "";
+      selectedCreateTags.forEach(function (tag) {
+        const chip = document.createElement("span");
+        chip.className = "knowledge-selected-tag";
+        chip.textContent = tag;
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "knowledge-selected-tag-remove";
+        remove.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        remove.addEventListener("click", function () {
+          const idx = selectedCreateTags.indexOf(tag);
+          if (idx >= 0) selectedCreateTags.splice(idx, 1);
+          renderCreateSelectedTags();
+        });
+        chip.appendChild(remove);
+        createSelectedTags.appendChild(chip);
+
+        const hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = "tags";
+        hidden.value = tag;
+        createSelectedHidden.appendChild(hidden);
+      });
+    }
+
+    createTagOptions.forEach(function (button) {
+      button.addEventListener("click", function () {
+        const tag = button.getAttribute("data-create-tag-option");
+        if (!tag || selectedCreateTags.indexOf(tag) >= 0) return;
+        selectedCreateTags.push(tag);
+        renderCreateSelectedTags();
+      });
+    });
+
+    if (createTagSearch) {
+      createTagSearch.addEventListener("input", function () {
+        const q = (createTagSearch.value || "").trim().toLowerCase();
+        createTagOptions.forEach(function (button) {
+          const text = (button.getAttribute("data-create-tag-option") || "").toLowerCase();
+          if (q === "") {
+            button.style.display = button.classList.contains("is-hidden-default") ? "none" : "";
+            return;
+          }
+          button.style.display = text.indexOf(q) >= 0 ? "" : "none";
+        });
+      });
+    }
+
+    function bindTagSearch(inputId, groupName) {
+      const input = document.getElementById(inputId);
+      const group = document.querySelector('[data-tag-group="' + groupName + '"]');
+      if (!input || !group) return;
+      const options = Array.prototype.slice.call(group.querySelectorAll("[data-tag-option]"));
+      input.addEventListener("input", function () {
+        const q = (input.value || "").trim().toLowerCase();
+        options.forEach(function (el) {
+          const text = (el.textContent || "").trim().toLowerCase();
+          if (q === "") {
+            el.style.display = el.classList.contains("is-hidden-default") ? "none" : "";
+            return;
+          }
+          el.style.display = text.indexOf(q) >= 0 ? "" : "none";
+        });
+      });
+    }
+
+    bindTagSearch("knowledge-tag-search", "desktop");
+    bindTagSearch("knowledge-tag-search-mobile", "mobile");
   })();
 </script>
 {% endblock %}
