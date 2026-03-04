@@ -1,6 +1,7 @@
 ﻿{% extends "base.html" %}
+{% load static %}
 
-{% block title %}ナレッジ共有 | Report App{% endblock %}
+{% block title %}Talks | Report App{% endblock %}
 
 {% block content %}
 <div class="container knowledge-page">
@@ -30,16 +31,83 @@
       margin-top: 10px;
     }
     .knowledge-thread-link {
-      padding: 18px !important;
+      padding: 10px 12px !important;
     }
-    .knowledge-stats-row {
+    .knowledge-thread-title {
+      font-size: 1.03rem;
+    }
+    .knowledge-list-heading {
+      margin: 0;
+      font-size: 1.26rem;
+    }
+    .knowledge-pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0 14px;
+      flex-wrap: wrap;
+    }
+    .knowledge-pagination-main {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .knowledge-pagination-meta {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .knowledge-pagination .btn-inline {
+      min-height: 0;
+      width: auto;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+    }
+    .knowledge-pagination-status {
+      color: #4f6673;
+      font-size: 0.86rem;
+    }
+    .knowledge-page-numbers {
       display: inline-flex;
       align-items: center;
-      gap: 14px;
+      gap: 6px;
       flex-wrap: wrap;
-      margin-top: 10px;
-      font-size: 0.9rem;
-      color: #4f6673;
+      justify-content: center;
+    }
+    .knowledge-page-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      border: 1px solid #c9d7de;
+      color: #1d4f5f;
+      background: #fff;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .knowledge-page-link.is-active {
+      border-color: #126e82;
+      background: #126e82;
+      color: #fff;
+    }
+    .knowledge-page-ellipsis {
+      color: #6e838f;
+      font-size: 0.84rem;
+      padding: 0 2px;
+    }
+    .knowledge-pagination-size {
+      color: #6e838f;
+      font-size: 0.8rem;
     }
     .knowledge-fab-stack {
       display: none;
@@ -114,6 +182,18 @@
       background: #eaf3f7;
       color: #0f4d5d;
       border: 1px solid #c6d8df;
+    }
+    .knowledge-unread-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 3px 8px;
+      background: #fff4e6;
+      color: #8a4d1f;
+      border: 1px solid #f0cf9b;
+      font-size: 0.76rem;
+      font-weight: 700;
     }
     @media (max-width: 768px) {
       .knowledge-page {
@@ -204,16 +284,34 @@
         color: #fff;
         border-color: #0f5e72;
       }
+      .knowledge-list-heading {
+        font-size: 1.07rem;
+      }
+      .knowledge-pagination {
+        gap: 6px;
+      }
+      .knowledge-pagination .btn-inline {
+        padding: 5px 8px;
+        font-size: 0.78rem;
+      }
+      .knowledge-page-link {
+        min-width: 26px;
+        height: 26px;
+        font-size: 0.74rem;
+      }
+      .knowledge-pagination-status,
+      .knowledge-pagination-size {
+        display: none;
+      }
     }
   </style>
   <header class="topbar topbar-desktop-expanded" style="margin-bottom:16px;">
     <div>
-      <strong>ナレッジ共有</strong>
-      <div class="muted" style="color:#e1f1f5;">現場の仮説と実践をスレッドで蓄積</div>
+      <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" style="display:inline-flex; align-items:center;">
+        <img src="{% static 'img/talks_logo.png' %}?v=3" alt="Talks" style="height:44px; width:auto; display:block;">
+      </a>
     </div>
     <nav>
-      <a href="{% url 'dashboard_index' %}">管理者ページ</a>
-      <a href="{% url 'report_index' %}">報告一覧</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
@@ -243,6 +341,20 @@
             {% endfor %}
           </select>
         </div>
+        <div>
+          <label for="sort">並び順</label>
+          <select id="sort" name="sort">
+            {% for value, label in sort_options %}
+              <option value="{{ value }}" {% if selected_sort == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-2" style="gap:10px; align-items:end;">
+        <div>
+          <label for="date-from">日付（以降）</label>
+          <input id="date-from" type="date" name="date_from" value="{{ date_from }}">
+        </div>
         <div class="knowledge-filter-actions">
           <button type="submit" class="btn-inline" style="width:auto;">絞り込む</button>
           <a href="{% url 'talks_index' %}" class="btn-inline knowledge-reset-btn" style="background:#5b7280; color:#fff;">リセット</a>
@@ -253,35 +365,56 @@
 
   <section class="card">
     <div class="row" style="margin-bottom:10px;">
-      <h2 style="margin:0;">スレッド一覧（{{ threads|length }}件）</h2>
+      <h2 class="knowledge-list-heading">スレッド一覧（{{ paginator.count }}件）</h2>
       <button id="knowledge-open-create" type="button" class="knowledge-create-open">
         <i class="fa-solid fa-plus"></i> 新規投稿
       </button>
+    </div>
+    <div class="knowledge-pagination">
+      <div class="knowledge-pagination-main">
+        {% if page_obj.has_previous %}
+          <a
+            class="btn-inline"
+            href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}"
+          >前へ</a>
+        {% endif %}
+        <div class="knowledge-page-numbers">
+          {% for num in paginator.page_range %}
+            {% if num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+              {% if num == page_obj.number %}
+                <span class="knowledge-page-link is-active">{{ num }}</span>
+              {% else %}
+                <a class="knowledge-page-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ num }}">{{ num }}</a>
+              {% endif %}
+            {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
+              <span class="knowledge-page-ellipsis">…</span>
+            {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
+              <span class="knowledge-page-ellipsis">…</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% if page_obj.has_next %}
+          <a
+            class="btn-inline"
+            href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}"
+          >次へ</a>
+        {% endif %}
+      </div>
+      <div class="knowledge-pagination-meta">
+        <span class="knowledge-pagination-status">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
+        <span class="knowledge-pagination-size">20件/ページ</span>
+      </div>
     </div>
 
     {% if threads %}
       <div class="grid" style="gap:12px;">
         {% for thread in threads %}
-          <a href="{% url 'talks_detail' thread.id %}" class="card knowledge-thread-link" style="padding:14px; display:block; color:inherit;">
+          <a href="{% url 'talks_detail' thread.id %}" class="card knowledge-thread-link" style="display:block; color:inherit;">
             <div class="row" style="align-items:center;">
-              <strong style="font-size:1.03rem;">{{ thread.title }}</strong>
-            </div>
-            <div class="knowledge-stats-row">
-              <span title="Good" style="display:inline-flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-thumbs-up" style="color:#1e7c4d;"></i>{{ thread.good_count }}
-              </span>
-              <span title="Keep" style="display:inline-flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-hand" style="color:#355767;"></i>{{ thread.keep_count }}
-              </span>
-              <span title="Retry" style="display:inline-flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-rotate-right" style="color:#9b3838;"></i>{{ thread.retry_count }}
-              </span>
-              <span title="質問" style="display:inline-flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-circle-question" style="color:#7454a6;"></i>{{ thread.question_count }}
-              </span>
-              <span title="コメント" style="display:inline-flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-comment" style="color:#607582;"></i>{{ thread.comment_count }}
-              </span>
+              <strong class="knowledge-thread-title">{{ thread.title }}</strong>
+              {% if thread.is_unread %}
+                <span class="knowledge-unread-badge">新着</span>
+              {% endif %}
             </div>
             <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
               {% for tag in thread.tags %}<span class="badge knowledge-tag-chip">#{{ tag }}</span>{% endfor %}
@@ -293,9 +426,50 @@
               <span style="display:inline-flex; align-items:center; gap:6px;">
                 <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>{{ thread.created_display }}
               </span>
+              <span title="コメント" style="display:inline-flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-comment" style="color:#607582;"></i>{{ thread.comment_count }}
+              </span>
+              <span title="閲覧数" style="display:inline-flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-eye" style="color:#607582;"></i>{{ thread.view_count }}
+              </span>
             </div>
           </a>
         {% endfor %}
+      </div>
+      <div class="knowledge-pagination" style="margin-top:14px; margin-bottom:4px;">
+        <div class="knowledge-pagination-main">
+          {% if page_obj.has_previous %}
+            <a
+              class="btn-inline"
+              href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}"
+            >前へ</a>
+          {% endif %}
+          <div class="knowledge-page-numbers">
+            {% for num in paginator.page_range %}
+              {% if num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                {% if num == page_obj.number %}
+                  <span class="knowledge-page-link is-active">{{ num }}</span>
+                {% else %}
+                  <a class="knowledge-page-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ num }}">{{ num }}</a>
+                {% endif %}
+              {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
+                <span class="knowledge-page-ellipsis">…</span>
+              {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
+                <span class="knowledge-page-ellipsis">…</span>
+              {% endif %}
+            {% endfor %}
+          </div>
+          {% if page_obj.has_next %}
+            <a
+              class="btn-inline"
+              href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}"
+            >次へ</a>
+          {% endif %}
+        </div>
+        <div class="knowledge-pagination-meta">
+          <span class="knowledge-pagination-status">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
+          <span class="knowledge-pagination-size">20件/ページ</span>
+        </div>
       </div>
     {% else %}
       <p class="muted">条件に一致するスレッドはありません。</p>
@@ -340,6 +514,18 @@
               <option value="{{ author }}" {% if selected_author == author %}selected{% endif %}>{{ author }}</option>
             {% endfor %}
           </select>
+        </div>
+        <div>
+          <label for="sort-mobile">並び順</label>
+          <select id="sort-mobile" name="sort">
+            {% for value, label in sort_options %}
+              <option value="{{ value }}" {% if selected_sort == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="date-from-mobile">日付（以降）</label>
+          <input id="date-from-mobile" type="date" name="date_from" value="{{ date_from }}">
         </div>
         <div class="knowledge-filter-actions">
           <button type="submit" class="btn-inline" style="width:auto;">絞り込む</button>

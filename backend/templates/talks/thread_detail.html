@@ -1,4 +1,5 @@
 ﻿{% extends "base.html" %}
+{% load static %}
 
 {% block title %}スレッド詳細 | Report App{% endblock %}
 
@@ -263,18 +264,18 @@
   </style>
   <header class="topbar topbar-desktop-expanded" style="margin-bottom:16px;">
     <div>
-      <strong>スレッド詳細</strong>
-      <div class="muted" style="color:#e1f1f5;">投稿とコメントの確認</div>
+      <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" style="display:inline-flex; align-items:center;">
+        <img src="{% static 'img/talks_logo.png' %}?v=3" alt="Talks" style="height:44px; width:auto; display:block;">
+      </a>
     </div>
     <nav>
       <a href="{% url 'talks_index' %}">一覧へ戻る</a>
-      <a href="{% url 'dashboard_index' %}">管理者ページ</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
 
   <article class="card knowledge-thread-card">
-    <h1 class="knowledge-thread-title" style="margin:0; font-size:0.78rem; font-weight:600; color:#4f6673;">{{ thread.title }}</h1>
+    <h1 class="knowledge-thread-title" style="margin:0; font-size:11px !important; line-height:1.35; font-weight:600; color:#4f6673;">{{ thread.title }}</h1>
     <hr class="knowledge-title-divider">
     <p style="margin-top:12px; font-size:1.175rem; line-height:1.86; color:#1b2a34;">{{ thread.body }}</p>
     <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
@@ -286,6 +287,9 @@
       </span>
       <span style="display:inline-flex; align-items:center; gap:6px;">
         <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>{{ thread_created_at }}
+      </span>
+      <span style="display:inline-flex; align-items:center; gap:6px;">
+        <i class="fa-solid fa-eye" aria-hidden="true"></i>{{ thread.view_count }}
       </span>
     </div>
   </article>

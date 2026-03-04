@@ -52,6 +52,7 @@ class KnowledgePost(models.Model):
     author_name_snapshot = models.CharField(max_length=64, blank=True)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.PUBLISHED)
     is_deleted = models.BooleanField(default=False)
+    view_count = models.PositiveIntegerField(default=0)
     published_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -147,3 +148,27 @@ class KnowledgeUserPreference(models.Model):
 
     def __str__(self) -> str:
         return f"Preference<{self.user_id}>"
+
+
+class KnowledgePostRead(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="knowledge_post_reads",
+    )
+    post = models.ForeignKey(
+        KnowledgePost,
+        on_delete=models.CASCADE,
+        related_name="reads",
+    )
+    read_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "post")
+        indexes = [
+            models.Index(fields=["user", "post"]),
+            models.Index(fields=["post", "-read_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user_id}:{self.post_id}"
