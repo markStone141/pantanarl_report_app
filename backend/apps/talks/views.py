@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from collections import Counter
 from datetime import datetime
@@ -13,6 +13,7 @@ from django.shortcuts import redirect
 from django.shortcuts import render
 from django.utils import timezone
 
+from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, SESSION_ROLE_KEY
 from apps.accounts.models import Member
 
 from .forms import CommentEditForm, PostEditForm, TagManageForm, TalksLoginForm
@@ -208,7 +209,8 @@ def _get_talks_member(request: HttpRequest) -> Member | None:
 
 
 def _is_talks_admin(request: HttpRequest) -> bool:
-    return bool(request.session.get(TALKS_SESSION_IS_ADMIN_KEY))
+    role = request.session.get(SESSION_ROLE_KEY)
+    return role == ROLE_ADMIN or bool(request.session.get(TALKS_SESSION_IS_ADMIN_KEY))
 
 
 def _get_talks_display_name(request: HttpRequest, member: Member | None) -> str:
@@ -280,6 +282,7 @@ def talks_login(request: HttpRequest) -> HttpResponse:
         if login_id == TALKS_ADMIN_LOGIN_ID and password == TALKS_ADMIN_PASSWORD:
             admin_user = _ensure_admin_user()
             auth_login(request, admin_user, backend="django.contrib.auth.backends.ModelBackend")
+            request.session[SESSION_ROLE_KEY] = ROLE_ADMIN
             request.session[TALKS_SESSION_IS_ADMIN_KEY] = True
             request.session[TALKS_SESSION_MEMBER_ID_KEY] = None
             request.session[TALKS_SESSION_MEMBER_NAME_KEY] = "管理者"
@@ -289,6 +292,7 @@ def talks_login(request: HttpRequest) -> HttpResponse:
         if form.is_valid() and form.member:
             user = _ensure_member_user(form.member)
             auth_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+            request.session[SESSION_ROLE_KEY] = ROLE_REPORT
             request.session[TALKS_SESSION_IS_ADMIN_KEY] = False
             request.session[TALKS_SESSION_MEMBER_ID_KEY] = form.member.id
             request.session[TALKS_SESSION_MEMBER_NAME_KEY] = form.member.name
@@ -301,6 +305,7 @@ def talks_login(request: HttpRequest) -> HttpResponse:
 
 def talks_logout(request: HttpRequest) -> HttpResponse:
     auth_logout(request)
+    request.session.pop(SESSION_ROLE_KEY, None)
     request.session.pop(TALKS_SESSION_IS_ADMIN_KEY, None)
     request.session.pop(TALKS_SESSION_MEMBER_ID_KEY, None)
     request.session.pop(TALKS_SESSION_MEMBER_NAME_KEY, None)
@@ -628,6 +633,48 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
     )
 
 
+def talks_deleted_posts_manage(request: HttpRequest) -> HttpResponse:
+    talks_member = _get_talks_member(request)
+    talks_is_admin = _is_talks_admin(request)
+    if not talks_is_admin:
+        messages.error(request, "削除済みトークの管理は管理者のみ実行できます。")
+        return redirect("talks_index")
+
+    if request.method == "POST":
+        action = (request.POST.get("action") or "").strip()
+        post_id_raw = (request.POST.get("post_id") or "").strip()
+        if post_id_raw.isdigit():
+            post = KnowledgePost.objects.filter(id=int(post_id_raw), is_deleted=True).first()
+            if post:
+                if action == "restore":
+                    post.is_deleted = False
+                    post.save(update_fields=["is_deleted", "updated_at"])
+                    messages.success(request, "投稿を復元しました。")
+                elif action == "hard_delete":
+                    post.delete()
+                    messages.success(request, "投稿を完全削除しました。")
+        return redirect("talks_deleted_posts_manage")
+
+    deleted_posts = (
+        KnowledgePost.objects.filter(is_deleted=True)
+        .select_related("author_member")
+        .prefetch_related("tags")
+        .annotate(
+            comment_count=Count("comments"),
+        )
+        .order_by("-updated_at", "-id")
+    )
+    return render(
+        request,
+        "talks/deleted_posts_manage.html",
+        {
+            "deleted_posts": deleted_posts,
+            "talks_member_name": _get_talks_display_name(request, talks_member),
+            "talks_is_admin": talks_is_admin,
+        },
+    )
+
+
 def talks_post_edit(request: HttpRequest, post_id: int) -> HttpResponse:
     talks_member = _get_talks_member(request)
     talks_is_admin = _is_talks_admin(request)
@@ -753,3 +800,4 @@ def talks_comment_delete(request: HttpRequest, comment_id: int) -> HttpResponse:
     comment.save(update_fields=["is_deleted", "updated_at"])
     messages.success(request, "コメントを削除しました。")
     return redirect("talks_detail", thread_id=thread_id)
+

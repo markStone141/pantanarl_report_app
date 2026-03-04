@@ -346,6 +346,7 @@
       <span class="talks-welcome-text">おかえりなさい！{{ talks_member_name }}さん</span>
       {% if talks_is_admin %}
         <a href="{% url 'talks_tag_manage' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">タグ管理</a>
+        <a href="{% url 'talks_deleted_posts_manage' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">削除トーク</a>
       {% endif %}
       <a href="{% url 'talks_index' %}" class="talks-back-link">一覧へ戻る</a>
       <a href="{% url 'talks_logout' %}" class="logout-link talks-logout-link">ログアウト</a>

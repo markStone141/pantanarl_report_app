@@ -4,6 +4,7 @@ from .views import (
     talks_comment_delete,
     talks_comment_edit,
     talks_detail,
+    talks_deleted_posts_manage,
     talks_index,
     talks_login,
     talks_logout,
@@ -20,6 +21,7 @@ urlpatterns = [
     path("comments/<int:comment_id>/edit/", talks_comment_edit, name="talks_comment_edit"),
     path("comments/<int:comment_id>/delete/", talks_comment_delete, name="talks_comment_delete"),
     path("tags/", talks_tag_manage, name="talks_tag_manage"),
+    path("deleted/", talks_deleted_posts_manage, name="talks_deleted_posts_manage"),
     path("", talks_index, name="talks_index"),
     path("<int:thread_id>/", talks_detail, name="talks_detail"),
 ]
