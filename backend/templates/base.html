@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   {% load static %}
@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}Report App{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'app.css' %}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
   {% block content %}{% endblock %}
@@ -23,8 +24,8 @@
         const toggleBtn = document.createElement("button");
         toggleBtn.type = "button";
         toggleBtn.className = "btn-inline topbar-menu-toggle";
-        toggleBtn.textContent = "☰";
-        toggleBtn.setAttribute("aria-label", "メニューを開く");
+        toggleBtn.textContent = "笘ｰ";
+        toggleBtn.setAttribute("aria-label", "繝｡繝九Η繝ｼ繧帝幕縺・);
         toggleBtn.setAttribute("aria-expanded", "false");
         toggleBtn.setAttribute("aria-controls", "topbar-menu-" + idx);
         nav.id = "topbar-menu-" + idx;
@@ -32,16 +33,16 @@
         toggleBtn.addEventListener("click", function () {
           const isOpen = topbar.classList.toggle("menu-open");
           toggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-          toggleBtn.textContent = isOpen ? "✕" : "☰";
-          toggleBtn.setAttribute("aria-label", isOpen ? "メニューを閉じる" : "メニューを開く");
+          toggleBtn.textContent = isOpen ? "笨・ : "笘ｰ";
+          toggleBtn.setAttribute("aria-label", isOpen ? "繝｡繝九Η繝ｼ繧帝哩縺倥ｋ" : "繝｡繝九Η繝ｼ繧帝幕縺・);
         });
 
         nav.addEventListener("click", function (e) {
           if (e.target && e.target.tagName === "A") {
             topbar.classList.remove("menu-open");
             toggleBtn.setAttribute("aria-expanded", "false");
-            toggleBtn.textContent = "☰";
-            toggleBtn.setAttribute("aria-label", "メニューを開く");
+            toggleBtn.textContent = "笘ｰ";
+            toggleBtn.setAttribute("aria-label", "繝｡繝九Η繝ｼ繧帝幕縺・);
           }
         });
 
@@ -51,3 +52,4 @@
   </script>
 </body>
 </html>
+

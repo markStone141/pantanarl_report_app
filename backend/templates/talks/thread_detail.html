@@ -1,0 +1,259 @@
+﻿{% extends "base.html" %}
+
+{% block title %}スレッド詳細 | Report App{% endblock %}
+
+{% block content %}
+<div class="container knowledge-detail-page">
+  <style>
+    .knowledge-detail-page {
+      padding-bottom: 24px;
+    }
+    .knowledge-thread-card {
+      margin-bottom: 16px;
+      padding: 20px !important;
+    }
+    .knowledge-title-divider {
+      border: 0;
+      border-top: 1px solid #e3ebef;
+      margin: 10px 0 12px;
+    }
+    .knowledge-comment-card {
+      padding: 0;
+      border: 0;
+      background: transparent;
+    }
+    .knowledge-followup {
+      border: 1px solid #d7e0e6;
+      border-left: 3px solid #b8d7e2;
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px 10px 10px 12px;
+    }
+    .knowledge-followup-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .knowledge-result-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+    .knowledge-result-good {
+      background: #e5f5ec;
+      color: #1e7c4d;
+    }
+    .knowledge-result-keep {
+      background: #eef3f7;
+      color: #355767;
+    }
+    .knowledge-result-retry {
+      background: #faecec;
+      color: #9b3838;
+    }
+    .knowledge-result-question {
+      background: #f3eefb;
+      color: #6f44ad;
+    }
+    .knowledge-filter-btn {
+      cursor: pointer;
+      border: 1px solid #d9e5ea;
+      background: #f8fbfc;
+      color: #4f6673;
+      border-radius: 999px;
+      padding: 3px 8px;
+      min-height: 0;
+      width: auto;
+      font-size: .95rem;
+      line-height: 1;
+    }
+    .knowledge-filter-btn.is-active {
+      border-color: #126e82;
+      background: #126e82;
+      color: #fff;
+    }
+    .knowledge-filter-btn.is-active i {
+      color: currentColor !important;
+    }
+    .knowledge-followup-body {
+      margin: 8px 0 0;
+      color: #4f6673;
+      line-height: 1.6;
+      font-size: 0.86rem;
+    }
+    .knowledge-reply-block {
+      margin-top: 8px;
+      display: grid;
+      gap: 6px;
+    }
+    .knowledge-reply-item {
+      background: #f8fbfc;
+      border: 1px solid #e0e9ed;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 0.82rem;
+    }
+    .knowledge-reply-meta {
+      color: #6d808b;
+      font-size: 0.72rem;
+      margin-bottom: 4px;
+    }
+    .knowledge-comment-item[hidden] {
+      display: none !important;
+    }
+    .knowledge-tag-chip {
+      background: #eaf3f7;
+      color: #0f4d5d;
+      border: 1px solid #c6d8df;
+    }
+    @media (max-width: 768px) {
+      .knowledge-thread-title {
+        font-size: 1.14rem !important;
+        line-height: 1.45;
+      }
+      .knowledge-thread-meta {
+        font-size: 0.84rem;
+        line-height: 1.45;
+      }
+      .knowledge-comment-card {
+        padding: 0;
+      }
+      .knowledge-thread-card {
+        padding: 18px !important;
+      }
+      .knowledge-reply-item {
+        padding: 8px;
+      }
+      .knowledge-tag-chip {
+        padding: 3px 7px !important;
+        font-size: 0.74rem !important;
+        background: #0f5e72;
+        color: #fff;
+        border-color: #0f5e72;
+      }
+    }
+  </style>
+  <header class="topbar topbar-desktop-expanded" style="margin-bottom:16px;">
+    <div>
+      <strong>スレッド詳細</strong>
+      <div class="muted" style="color:#e1f1f5;">投稿とコメントの確認</div>
+    </div>
+    <nav>
+      <a href="{% url 'talks_index' %}">一覧へ戻る</a>
+      <a href="{% url 'dashboard_index' %}">管理者ページ</a>
+      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+
+  <article class="card knowledge-thread-card">
+    <h1 class="knowledge-thread-title" style="margin:0; font-size:0.78rem; font-weight:600; color:#4f6673;">{{ thread.title }}</h1>
+    <hr class="knowledge-title-divider">
+    <p style="margin-top:12px; font-size:1.3rem; line-height:1.86; color:#1b2a34;">{{ thread.summary }}</p>
+    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+      {% for tag in thread.tags %}<span class="badge knowledge-tag-chip">#{{ tag }}</span>{% endfor %}
+    </div>
+    <div class="muted" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:12px; justify-content:flex-end; text-align:right;">
+      <span style="display:inline-flex; align-items:center; gap:6px;">
+        <i class="fa-solid fa-user" aria-hidden="true"></i>{{ thread.author }}
+      </span>
+      <span style="display:inline-flex; align-items:center; gap:6px;">
+        <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>{{ thread.created_at }}
+      </span>
+    </div>
+  </article>
+
+  <section class="card">
+    <div class="row" style="margin-bottom:10px;">
+      <h2 style="margin:0;">コメント一覧</h2>
+      <div style="display:flex; gap:14px; flex-wrap:wrap; font-size:.95rem; color:#4f6673; justify-content:flex-end;">
+        <button type="button" class="knowledge-filter-btn" data-filter-kind="good" title="Good" style="display:inline-flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-thumbs-up" style="color:#1e7c4d;"></i>{{ thread.good_count }}
+        </button>
+        <button type="button" class="knowledge-filter-btn" data-filter-kind="keep" title="Keep" style="display:inline-flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-hand" style="color:#355767;"></i>{{ thread.keep_count }}
+        </button>
+        <button type="button" class="knowledge-filter-btn" data-filter-kind="retry" title="Retry" style="display:inline-flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-rotate-right" style="color:#9b3838;"></i>{{ thread.retry_count }}
+        </button>
+        <button type="button" class="knowledge-filter-btn" data-filter-kind="question" title="質問" style="display:inline-flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-circle-question" style="color:#7454a6;"></i>{{ thread.question_count }}
+        </button>
+      </div>
+    </div>
+
+    {% if comments %}
+      <div id="knowledge-comment-list" class="grid" style="gap:10px;">
+        {% for comment in comments %}
+          <div class="knowledge-comment-card knowledge-comment-item" data-comment-kind="{{ comment.kind }}">
+            <article class="knowledge-followup">
+              <div class="knowledge-followup-meta">
+                <span class="muted" style="font-size:.84rem;">{{ comment.author }} / {{ comment.created_at }}</span>
+                {% if comment.kind == "good" %}
+                  <span class="knowledge-result-badge knowledge-result-good" title="Good"><i class="fa-solid fa-thumbs-up"></i></span>
+                {% elif comment.kind == "keep" %}
+                  <span class="knowledge-result-badge knowledge-result-keep" title="Keep"><i class="fa-solid fa-hand"></i></span>
+                {% elif comment.kind == "retry" %}
+                  <span class="knowledge-result-badge knowledge-result-retry" title="Retry"><i class="fa-solid fa-rotate-right"></i></span>
+                {% else %}
+                  <span class="knowledge-result-badge knowledge-result-question" title="質問"><i class="fa-solid fa-circle-question"></i></span>
+                {% endif %}
+              </div>
+              <p class="knowledge-followup-body">{{ comment.body }}</p>
+
+              {% if comment.replies %}
+                <div class="knowledge-reply-block">
+                  {% for reply in comment.replies %}
+                    <div class="knowledge-reply-item">
+                      <div class="knowledge-reply-meta">{{ reply.author }} / {{ reply.created_at }}</div>
+                      <div>{{ reply.body }}</div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </article>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">コメントはまだありません。</p>
+    {% endif %}
+  </section>
+</div>
+<script>
+  (function () {
+    const buttons = document.querySelectorAll("[data-filter-kind]");
+    const items = document.querySelectorAll(".knowledge-comment-item");
+    if (!buttons.length || !items.length) return;
+
+    let activeKind = "";
+
+    function render() {
+      items.forEach(function (item) {
+        const kind = item.getAttribute("data-comment-kind") || "";
+        item.hidden = activeKind !== "" && kind !== activeKind;
+      });
+      buttons.forEach(function (btn) {
+        const isActive = (btn.getAttribute("data-filter-kind") || "") === activeKind;
+        btn.classList.toggle("is-active", isActive);
+      });
+    }
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const kind = btn.getAttribute("data-filter-kind") || "";
+        activeKind = activeKind === kind ? "" : kind;
+        render();
+      });
+    });
+  })();
+</script>
+{% endblock %}
+
+
