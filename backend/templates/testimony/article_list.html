@@ -1,50 +1,68 @@
-﻿{% extends "base.html" %}
-{% block title %}Testimony Articles{% endblock %}
-{% block content %}
-<div class="container">
-  <header class="topbar topbar-nav-always">
-    <h1>Testimony</h1>
-    <nav>
-      <a class="btn-inline" href="{% url 'testimony_article_list' %}">記事一覧</a>
-      <a class="btn-inline" href="{% url 'testimony_article_create' %}">新規投稿</a>
-      <a class="btn-inline" href="{% url 'testimony_mypage_favorites' %}">お気に入り</a>
-      <a class="btn-inline" href="{% url 'testimony_mypage_history' %}">閲覧履歴</a>
-    </nav>
-  </header>
+{% extends "testimony/base.html" %}
 
-  <article class="card" style="margin-top:16px;">
-    <form method="get" class="grid" style="grid-template-columns:1fr 220px auto; gap:8px;">
-      <input type="text" name="q" value="{{ request.GET.q }}" placeholder="キーワード" />
-      <select name="sort">
-        <option value="latest" {% if selected_sort == 'latest' %}selected{% endif %}>新着順</option>
-        <option value="views" {% if selected_sort == 'views' %}selected{% endif %}>閲覧数順</option>
-        <option value="favorites" {% if selected_sort == 'favorites' %}selected{% endif %}>お気に入り順</option>
-        <option value="likes" {% if selected_sort == 'likes' %}selected{% endif %}>いいね順</option>
-        <option value="popular" {% if selected_sort == 'popular' %}selected{% endif %}>人気順</option>
-      </select>
-      <button type="submit">適用</button>
-    </form>
-  </article>
+{% block testimony_title %}Testimony Articles{% endblock %}
 
-  <section class="card" style="margin-top:16px;">
-    {% for article in articles %}
-      <div style="padding:12px 0; border-bottom:1px solid #e2ebef;">
-        <a href="{% url 'testimony_article_detail' article.id %}"><strong>{{ article.title }}</strong></a>
-        <div style="margin-top:6px; color:#557; font-size:13px;">
-          投稿者 {{ article.author }} / 閲覧 {{ article.view_count }} / いいね {{ article.like_count }} / お気に入り {{ article.favorite_count }}
+{% block testimony_content %}
+<article class="card" style="margin-top:16px;">
+  <form method="get" class="grid" style="grid-template-columns:1fr 220px auto; gap:8px;">
+    <input type="text" name="q" value="{{ q }}" placeholder="キーワード" />
+    <select name="sort">
+      <option value="latest" {% if selected_sort == 'latest' %}selected{% endif %}>新着順</option>
+      <option value="views" {% if selected_sort == 'views' %}selected{% endif %}>閲覧数順</option>
+      <option value="favorites" {% if selected_sort == 'favorites' %}selected{% endif %}>お気に入り順</option>
+      <option value="likes" {% if selected_sort == 'likes' %}selected{% endif %}>いいね順</option>
+      <option value="popular" {% if selected_sort == 'popular' %}selected{% endif %}>人気順</option>
+    </select>
+    <button type="submit">適用</button>
+  </form>
+</article>
+
+<section class="card" style="margin-top:16px;">
+  <h2 style="margin-bottom:12px;">記事一覧</h2>
+  {% for article in articles %}
+    <div style="padding:12px 0; border-bottom:1px solid #e2ebef;">
+      <a href="{% url 'testimony_article_detail' article.id %}"><strong>{{ article.title }}</strong></a>
+      <div style="margin-top:6px; color:#557; font-size:13px;">
+        <i class="fa-solid fa-user" aria-hidden="true"></i> {{ article.author }}
+        / <i class="fa-solid fa-eye" aria-hidden="true"></i> {{ article.view_count }}
+        / <i class="fa-solid fa-thumbs-up" aria-hidden="true"></i> {{ article.like_count }}
+        / <i class="fa-solid fa-star" aria-hidden="true"></i> {{ article.favorite_count }}
+      </div>
+    </div>
+  {% empty %}
+    <p>記事はまだありません。</p>
+  {% endfor %}
+
+  {% if is_paginated %}
+    <div class="knowledge-pagination">
+      <div class="knowledge-pagination-main">
+        {% if page_obj.has_previous %}
+          <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}">前へ</a>
+        {% endif %}
+        <div class="knowledge-page-numbers">
+          {% for num in paginator.page_range %}
+            {% if num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+              {% if num == page_obj.number %}
+                <span class="knowledge-page-link is-active">{{ num }}</span>
+              {% else %}
+                <a class="knowledge-page-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ num }}">{{ num }}</a>
+              {% endif %}
+            {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
+              <span class="knowledge-page-ellipsis">…</span>
+            {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
+              <span class="knowledge-page-ellipsis">…</span>
+            {% endif %}
+          {% endfor %}
         </div>
+        {% if page_obj.has_next %}
+          <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}">次へ</a>
+        {% endif %}
       </div>
-    {% empty %}
-      <p>記事はまだありません。</p>
-    {% endfor %}
-
-    {% if is_paginated %}
-      <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
-        {% if page_obj.has_previous %}<a class="btn-inline" href="?page={{ page_obj.previous_page_number }}&sort={{ selected_sort }}">前へ</a>{% endif %}
-        <span>{{ page_obj.number }} / {{ paginator.num_pages }}</span>
-        {% if page_obj.has_next %}<a class="btn-inline" href="?page={{ page_obj.next_page_number }}&sort={{ selected_sort }}">次へ</a>{% endif %}
+      <div class="knowledge-pagination-meta">
+        <span class="knowledge-pagination-status">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
+        <span class="knowledge-pagination-size">20件/ページ</span>
       </div>
-    {% endif %}
-  </section>
-</div>
+    </div>
+  {% endif %}
+</section>
 {% endblock %}

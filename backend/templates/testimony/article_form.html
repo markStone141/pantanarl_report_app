@@ -1,22 +1,18 @@
-﻿{% extends "base.html" %}
-{% block title %}Testimony Form{% endblock %}
-{% block content %}
-<div class="container">
-  <header class="topbar topbar-nav-always">
-    <h1>Testimony</h1>
-    <nav>
-      <a class="btn-inline" href="{% url 'testimony_article_list' %}">一覧へ戻る</a>
-    </nav>
-  </header>
+{% extends "testimony/base.html" %}
 
-  <article class="card" style="margin-top:16px;">
-    <form method="post" class="stack">{% csrf_token %}
-      {{ form.as_p }}
-      <div style="display:flex; gap:8px; margin-top:8px;">
-        <button type="submit">保存</button>
-        <a class="btn-inline" href="{% url 'testimony_article_list' %}">キャンセル</a>
-      </div>
-    </form>
-  </article>
-</div>
+{% block testimony_title %}Testimony Form{% endblock %}
+
+{% block testimony_content %}
+<article class="card" style="margin-top:16px;">
+  <h2 style="margin-bottom:10px;">記事入力</h2>
+  <form method="post" class="stack">{% csrf_token %}
+    {{ form.as_p }}
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> 保存</button>
+      <a class="btn-inline" href="{% url 'testimony_article_list' %}">
+        <i class="fa-solid fa-ban" aria-hidden="true"></i> キャンセル
+      </a>
+    </div>
+  </form>
+</article>
 {% endblock %}

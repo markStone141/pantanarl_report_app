@@ -10,9 +10,15 @@ from .views import (
     MyHistoryListView,
     ToggleFavoriteView,
     ToggleLikeView,
+    testimony_login,
+    testimony_logout,
+    testimony_admin_import,
 )
 
 urlpatterns = [
+    path("login/", testimony_login, name="testimony_login"),
+    path("logout/", testimony_logout, name="testimony_logout"),
+    path("admin/import/", testimony_admin_import, name="testimony_admin_import"),
     path("", ArticleListView.as_view(), name="testimony_article_list"),
     path("articles/new/", ArticleCreateView.as_view(), name="testimony_article_create"),
     path("articles/<int:pk>/", ArticleDetailView.as_view(), name="testimony_article_detail"),

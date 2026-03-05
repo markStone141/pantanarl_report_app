@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}{% block testimony_title %}Testimony{% endblock %}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <style>
+    .knowledge-pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0 14px;
+      flex-wrap: wrap;
+    }
+    .knowledge-pagination-main {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .knowledge-pagination-meta {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .knowledge-pagination .btn-inline {
+      min-height: 0;
+      width: auto;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+    }
+    .knowledge-pagination-status {
+      color: #4f6673;
+      font-size: 0.86rem;
+    }
+    .knowledge-page-numbers {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .knowledge-page-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      border: 1px solid #c9d7de;
+      color: #1d4f5f;
+      background: #fff;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .knowledge-page-link.is-active {
+      border-color: #126e82;
+      background: #126e82;
+      color: #fff;
+    }
+    .knowledge-page-ellipsis {
+      color: #6e838f;
+      font-size: 0.84rem;
+      padding: 0 2px;
+    }
+    .knowledge-pagination-size {
+      color: #6e838f;
+      font-size: 0.8rem;
+    }
+  </style>
+  <header class="topbar topbar-nav-always">
+    <div>
+      <strong>Testimony</strong>
+      <div class="muted" style="color:#d8edf2;">
+        記事ナレッジ /
+        {% if request.user.is_authenticated %}
+          ログイン中:
+          {% if request.user.member_profile %}
+            {{ request.user.member_profile.name }}
+          {% else %}
+            {{ request.user.username }}
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    <nav>
+      <a class="btn-inline" href="{% url 'testimony_article_list' %}">記事一覧</a>
+      <a class="btn-inline" href="{% url 'testimony_article_create' %}">新規投稿</a>
+      <a class="btn-inline" href="{% url 'testimony_mypage_favorites' %}">お気に入り</a>
+      <a class="btn-inline" href="{% url 'testimony_mypage_history' %}">閲覧履歴</a>
+      {% if request.user.is_staff or request.user.is_superuser or request.user.username == "admin" %}
+      <a class="btn-inline" href="{% url 'testimony_admin_import' %}">管理者</a>
+      {% endif %}
+      <a class="btn-inline logout-link" href="{% url 'testimony_logout' %}">ログアウト</a>
+    </nav>
+  </header>
+
+  {% block testimony_content %}{% endblock %}
+</div>
+{% endblock %}

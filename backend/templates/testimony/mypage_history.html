@@ -1,20 +1,52 @@
-﻿{% extends "base.html" %}
-{% block title %}My History{% endblock %}
-{% block content %}
-<div class="container">
-  <header class="topbar topbar-nav-always">
-    <h1>閲覧履歴</h1>
-    <nav><a class="btn-inline" href="{% url 'testimony_article_list' %}">記事一覧</a></nav>
-  </header>
-  <article class="card" style="margin-top:16px;">
-    {% for row in histories %}
-      <div style="padding:8px 0; border-bottom:1px solid #e2ebef;">
-        <a href="{% url 'testimony_article_detail' row.article_id %}">{{ row.article.title }}</a>
-        <div style="font-size:12px; color:#557;">最終: {{ row.last_viewed_at|date:"Y-m-d H:i" }} / 回数: {{ row.view_count }}</div>
+{% extends "testimony/base.html" %}
+
+{% block testimony_title %}My History{% endblock %}
+
+{% block testimony_content %}
+<article class="card" style="margin-top:16px;">
+  <h2 style="margin-bottom:10px;">閲覧履歴</h2>
+  {% for row in histories %}
+    <div style="padding:8px 0; border-bottom:1px solid #e2ebef;">
+      <a href="{% url 'testimony_article_detail' row.article_id %}">{{ row.article.title }}</a>
+      <div class="muted">
+        <i class="fa-solid fa-calendar-days" aria-hidden="true"></i> 最終: {{ row.last_viewed_at|date:"Y-m-d H:i" }}
+        / <i class="fa-solid fa-eye" aria-hidden="true"></i> 回数: {{ row.view_count }}
       </div>
-    {% empty %}
-      <p>履歴はありません。</p>
-    {% endfor %}
-  </article>
-</div>
+    </div>
+  {% empty %}
+    <p>履歴はありません。</p>
+  {% endfor %}
+
+  {% if is_paginated %}
+    <div class="knowledge-pagination" style="margin-top:14px;">
+      <div class="knowledge-pagination-main">
+        {% if page_obj.has_previous %}
+          <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}">前へ</a>
+        {% endif %}
+        <div class="knowledge-page-numbers">
+          {% for num in paginator.page_range %}
+            {% if num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+              {% if num == page_obj.number %}
+                <span class="knowledge-page-link is-active">{{ num }}</span>
+              {% else %}
+                <a class="knowledge-page-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ num }}">{{ num }}</a>
+              {% endif %}
+            {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
+              <span class="knowledge-page-ellipsis">…</span>
+            {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
+              <span class="knowledge-page-ellipsis">…</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% if page_obj.has_next %}
+          <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}">次へ</a>
+        {% endif %}
+      </div>
+      <div class="knowledge-pagination-meta">
+        <span class="knowledge-pagination-status">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
+        <span class="knowledge-pagination-size">20件/ページ</span>
+      </div>
+    </div>
+  {% endif %}
+</article>
 {% endblock %}

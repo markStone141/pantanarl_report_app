@@ -1,40 +1,103 @@
-﻿{% extends "base.html" %}
-{% block title %}{{ article.title }}{% endblock %}
-{% block content %}
-<div class="container">
-  <header class="topbar topbar-nav-always">
-    <h1>Testimony</h1>
-    <nav>
-      <a class="btn-inline" href="{% url 'testimony_article_list' %}">一覧</a>
-      <a class="btn-inline" href="{% url 'testimony_mypage_favorites' %}">お気に入り</a>
-      <a class="btn-inline" href="{% url 'testimony_mypage_history' %}">履歴</a>
-    </nav>
-  </header>
+{% extends "testimony/base.html" %}
+{% load static %}
 
-  <article class="card" style="margin-top:16px;">
-    <h2>{{ article.title }}</h2>
-    <p style="color:#557;">投稿者: {{ article.author }} / 日付: {{ article.created_at|date:"Y-m-d H:i" }}</p>
-    <div style="white-space:pre-wrap; margin-top:8px;">{{ article.body }}</div>
-    {% if article.video_url %}
-      <p style="margin-top:8px;"><a href="{{ article.video_url }}" target="_blank" rel="noopener">動画リンク</a></p>
+{% block testimony_title %}{{ article.title }}{% endblock %}
+
+{% block testimony_content %}
+<article class="card" style="margin-top:16px;">
+  <h2>{{ article.title }}</h2>
+  <p class="muted">
+    <i class="fa-solid fa-user" aria-hidden="true"></i> {{ article.author }}
+    / <i class="fa-solid fa-calendar-days" aria-hidden="true"></i> {{ article.created_at|date:"Y-m-d H:i" }}
+  </p>
+  <div style="white-space:pre-wrap; margin-top:8px;">{{ article.body }}</div>
+  {% if article.video_url %}
+    <p style="margin-top:8px;">
+      <a href="{{ article.video_url }}" target="_blank" rel="noopener">
+        <i class="fa-solid fa-video" aria-hidden="true"></i> 動画リンク
+      </a>
+    </p>
+  {% endif %}
+
+  <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+    <form method="post" action="{% url 'testimony_article_favorite' article.id %}" class="js-testimony-toggle" data-kind="favorite">{% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}" />
+      <button type="submit">
+        <i id="favorite-icon" class="fa-{% if is_favorited %}solid{% else %}regular{% endif %} fa-star" aria-hidden="true"></i>
+        <span id="favorite-label">{% if is_favorited %}お気に入り解除{% else %}お気に入り{% endif %}</span>
+      </button>
+    </form>
+    <form method="post" action="{% url 'testimony_article_like' article.id %}" class="js-testimony-toggle" data-kind="like">{% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}" />
+      <button type="submit">
+        <i class="fa-solid fa-thumbs-up" aria-hidden="true"></i>
+        <span id="like-label">{% if is_liked %}いいね解除{% else %}いいね{% endif %}</span>
+      </button>
+    </form>
+    {% if request.user.is_staff or request.user.is_superuser or article.created_by_id == request.user.id %}
+      <a class="btn-inline" href="{% url 'testimony_article_edit' article.id %}">
+        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> 編集
+      </a>
+      <a class="btn-inline" href="{% url 'testimony_article_delete' article.id %}">
+        <i class="fa-solid fa-trash" aria-hidden="true"></i> 削除
+      </a>
     {% endif %}
+  </div>
 
-    <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
-      <form method="post" action="{% url 'testimony_article_favorite' article.id %}">{% csrf_token %}
-        <input type="hidden" name="next" value="{{ request.path }}" />
-        <button type="submit">{% if is_favorited %}お気に入り解除{% else %}お気に入り{% endif %}</button>
-      </form>
-      <form method="post" action="{% url 'testimony_article_like' article.id %}">{% csrf_token %}
-        <input type="hidden" name="next" value="{{ request.path }}" />
-        <button type="submit">{% if is_liked %}いいね解除{% else %}いいね{% endif %}</button>
-      </form>
-      {% if request.user.is_staff or request.user.is_superuser or article.created_by_id == request.user.id %}
-        <a class="btn-inline" href="{% url 'testimony_article_edit' article.id %}">編集</a>
-        <a class="btn-inline" href="{% url 'testimony_article_delete' article.id %}">削除</a>
-      {% endif %}
-    </div>
+  <p class="muted" style="margin-top:10px;">
+    <i class="fa-solid fa-eye" aria-hidden="true"></i> {{ article.view_count }}
+    / <i class="fa-solid fa-thumbs-up" aria-hidden="true"></i> <span id="like-count">{{ article.like_count }}</span>
+    / <i class="fa-solid fa-star" aria-hidden="true"></i> <span id="favorite-count">{{ article.favorite_count }}</span>
+  </p>
+</article>
 
-    <p style="margin-top:10px; color:#557;">閲覧数: {{ article.view_count }} / いいね: {{ article.like_count }} / お気に入り: {{ article.favorite_count }}</p>
-  </article>
-</div>
+<script>
+  (function () {
+    function updateUI(payload) {
+      const favoriteIcon = document.getElementById("favorite-icon");
+      const favoriteLabel = document.getElementById("favorite-label");
+      const likeLabel = document.getElementById("like-label");
+      const favoriteCount = document.getElementById("favorite-count");
+      const likeCount = document.getElementById("like-count");
+
+      if (favoriteIcon) {
+        favoriteIcon.className = payload.is_favorited
+          ? "fa-solid fa-star"
+          : "fa-regular fa-star";
+      }
+      if (favoriteLabel) {
+        favoriteLabel.textContent = payload.is_favorited ? "お気に入り解除" : "お気に入り";
+      }
+      if (likeLabel) {
+        likeLabel.textContent = payload.is_liked ? "いいね解除" : "いいね";
+      }
+      if (favoriteCount) favoriteCount.textContent = payload.favorite_count;
+      if (likeCount) likeCount.textContent = payload.like_count;
+    }
+
+    document.querySelectorAll(".js-testimony-toggle").forEach(function (form) {
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        try {
+          const response = await fetch(form.action, {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          });
+          if (!response.ok) throw new Error("request failed");
+          const payload = await response.json();
+          if (payload && payload.ok) {
+            updateUI(payload);
+          } else {
+            form.submit();
+          }
+        } catch (err) {
+          form.submit();
+        }
+      });
+    });
+  })();
+</script>
 {% endblock %}

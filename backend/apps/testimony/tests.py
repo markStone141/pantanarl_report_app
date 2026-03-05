@@ -8,6 +8,8 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.accounts.models import Member
+
 from .models import Article, ArticleFavorite, ArticleViewHistory, Product
 
 
@@ -78,3 +80,34 @@ class TestimonyReactionTests(TestCase):
         self.assertEqual(history.view_count, 2)
         self.article.refresh_from_db()
         self.assertEqual(self.article.view_count, 2)
+
+
+class TestimonyLoginTests(TestCase):
+    def test_report_user_without_member_can_login(self):
+        user = get_user_model().objects.create_user(username="report", password="report-pass")
+        response = self.client.post(
+            reverse("testimony_login"),
+            {"login_id": "report", "password": "report-pass"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("testimony_article_list"))
+        self.assertIn("_auth_user_id", self.client.session)
+
+    def test_member_linked_user_can_login(self):
+        user = get_user_model().objects.create_user(username="m1", password="pass1")
+        Member.objects.create(name="Member1", user=user, is_active=True)
+        response = self.client.post(
+            reverse("testimony_login"),
+            {"login_id": "m1", "password": "pass1"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("testimony_article_list"))
+
+    def test_non_member_non_ops_user_is_rejected(self):
+        get_user_model().objects.create_user(username="u2", password="pass2")
+        response = self.client.post(
+            reverse("testimony_login"),
+            {"login_id": "u2", "password": "pass2"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "IDまたはパスワードが正しくありません。")
