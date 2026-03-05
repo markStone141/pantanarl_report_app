@@ -3,8 +3,8 @@
 {% block testimony_title %}Testimony Articles{% endblock %}
 
 {% block testimony_content %}
-<article class="card" style="margin-top:16px;">
-  <form method="get" class="grid" style="grid-template-columns:1fr 220px auto; gap:8px;">
+<article class="card testimony-section testimony-filter-desktop">
+  <form method="get" class="testimony-filter-form">
     <input type="text" name="q" value="{{ q }}" placeholder="キーワード" />
     <select name="sort">
       <option value="latest" {% if selected_sort == 'latest' %}selected{% endif %}>新着順</option>
@@ -17,16 +17,16 @@
   </form>
 </article>
 
-<section class="card" style="margin-top:16px;">
+<section class="card testimony-section">
   <h2 style="margin-bottom:12px;">記事一覧</h2>
   {% for article in articles %}
-    <div style="padding:12px 0; border-bottom:1px solid #e2ebef;">
-      <a href="{% url 'testimony_article_detail' article.id %}"><strong>{{ article.title }}</strong></a>
-      <div style="margin-top:6px; color:#557; font-size:13px;">
-        <i class="fa-solid fa-user" aria-hidden="true"></i> {{ article.author }}
-        / <i class="fa-solid fa-eye" aria-hidden="true"></i> {{ article.view_count }}
-        / <i class="fa-solid fa-thumbs-up" aria-hidden="true"></i> {{ article.like_count }}
-        / <i class="fa-solid fa-star" aria-hidden="true"></i> {{ article.favorite_count }}
+    <div class="testimony-list-item">
+      <a class="testimony-list-item-title" href="{% url 'testimony_article_detail' article.id %}">{{ article.title }}</a>
+      <div class="testimony-list-item-meta">
+        <span><i class="fa-solid fa-user" aria-hidden="true"></i> {{ article.author }}</span>
+        <span><i class="fa-solid fa-eye" aria-hidden="true"></i> {{ article.view_count }}</span>
+        <span><i class="fa-solid fa-thumbs-up" aria-hidden="true"></i> {{ article.like_count }}</span>
+        <span><i class="fa-solid fa-star" aria-hidden="true"></i> {{ article.favorite_count }}</span>
       </div>
     </div>
   {% empty %}
@@ -65,4 +65,51 @@
     </div>
   {% endif %}
 </section>
+
+<button id="testimony-open-filter" class="testimony-filter-fab" type="button" aria-label="フィルターを開く">
+  <i class="fa-solid fa-filter" aria-hidden="true"></i>
+</button>
+
+<div id="testimony-filter-overlay" class="testimony-filter-overlay" aria-hidden="true">
+  <section class="testimony-filter-sheet">
+    <div class="testimony-filter-head">
+      <strong>フィルター</strong>
+      <button id="testimony-close-filter" class="testimony-filter-close" type="button" aria-label="閉じる">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <form method="get" class="testimony-filter-form">
+      <input type="text" name="q" value="{{ q }}" placeholder="キーワード" />
+      <select name="sort">
+        <option value="latest" {% if selected_sort == 'latest' %}selected{% endif %}>新着順</option>
+        <option value="views" {% if selected_sort == 'views' %}selected{% endif %}>閲覧数順</option>
+        <option value="favorites" {% if selected_sort == 'favorites' %}selected{% endif %}>お気に入り順</option>
+        <option value="likes" {% if selected_sort == 'likes' %}selected{% endif %}>いいね順</option>
+        <option value="popular" {% if selected_sort == 'popular' %}selected{% endif %}>人気順</option>
+      </select>
+      <button type="submit">適用</button>
+      <a class="btn-inline" href="{% url 'testimony_article_list' %}" style="width:auto;">リセット</a>
+    </form>
+  </section>
+</div>
+
+<script>
+  (function () {
+    const openBtn = document.getElementById("testimony-open-filter");
+    const closeBtn = document.getElementById("testimony-close-filter");
+    const overlay = document.getElementById("testimony-filter-overlay");
+    if (!openBtn || !closeBtn || !overlay) return;
+
+    function setOpen(isOpen) {
+      overlay.classList.toggle("open", isOpen);
+      overlay.setAttribute("aria-hidden", isOpen ? "false" : "true");
+    }
+
+    openBtn.addEventListener("click", function () { setOpen(true); });
+    closeBtn.addEventListener("click", function () { setOpen(false); });
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) setOpen(false);
+    });
+  })();
+</script>
 {% endblock %}

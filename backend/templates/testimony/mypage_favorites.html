@@ -3,14 +3,13 @@
 {% block testimony_title %}My Favorites{% endblock %}
 
 {% block testimony_content %}
-<article class="card" style="margin-top:16px;">
+<article class="card testimony-section">
   <h2 style="margin-bottom:10px;">お気に入り記事</h2>
   {% for row in favorites %}
-    <div style="padding:8px 0; border-bottom:1px solid #e2ebef;">
-      <a href="{% url 'testimony_article_detail' row.article_id %}">{{ row.article.title }}</a>
-      <div class="muted">
-        <i class="fa-solid fa-star" aria-hidden="true"></i>
-        登録: {{ row.created_at|date:"Y-m-d H:i" }}
+    <div class="testimony-list-item">
+      <a class="testimony-list-item-title" href="{% url 'testimony_article_detail' row.article_id %}">{{ row.article.title }}</a>
+      <div class="muted testimony-list-item-meta">
+        <span><i class="fa-solid fa-star" aria-hidden="true"></i> 登録: {{ row.created_at|date:"Y-m-d H:i" }}</span>
       </div>
     </div>
   {% empty %}

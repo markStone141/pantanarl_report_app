@@ -4,11 +4,11 @@
 {% block testimony_title %}{{ article.title }}{% endblock %}
 
 {% block testimony_content %}
-<article class="card" style="margin-top:16px;">
+<article class="card testimony-section">
   <h2>{{ article.title }}</h2>
-  <p class="muted">
-    <i class="fa-solid fa-user" aria-hidden="true"></i> {{ article.author }}
-    / <i class="fa-solid fa-calendar-days" aria-hidden="true"></i> {{ article.created_at|date:"Y-m-d H:i" }}
+  <p class="muted testimony-detail-meta">
+    <span><i class="fa-solid fa-user" aria-hidden="true"></i> {{ article.author }}</span>
+    <span><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> {{ article.created_at|date:"Y-m-d H:i" }}</span>
   </p>
   <div style="white-space:pre-wrap; margin-top:8px;">{{ article.body }}</div>
   {% if article.video_url %}
@@ -19,7 +19,7 @@
     </p>
   {% endif %}
 
-  <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+  <div class="testimony-actions">
     <form method="post" action="{% url 'testimony_article_favorite' article.id %}" class="js-testimony-toggle" data-kind="favorite">{% csrf_token %}
       <input type="hidden" name="next" value="{{ request.path }}" />
       <button type="submit">
@@ -44,10 +44,10 @@
     {% endif %}
   </div>
 
-  <p class="muted" style="margin-top:10px;">
-    <i class="fa-solid fa-eye" aria-hidden="true"></i> {{ article.view_count }}
-    / <i class="fa-solid fa-thumbs-up" aria-hidden="true"></i> <span id="like-count">{{ article.like_count }}</span>
-    / <i class="fa-solid fa-star" aria-hidden="true"></i> <span id="favorite-count">{{ article.favorite_count }}</span>
+  <p class="muted testimony-counts">
+    <span><i class="fa-solid fa-eye" aria-hidden="true"></i> {{ article.view_count }}</span>
+    <span><i class="fa-solid fa-thumbs-up" aria-hidden="true"></i> <span id="like-count">{{ article.like_count }}</span></span>
+    <span><i class="fa-solid fa-star" aria-hidden="true"></i> <span id="favorite-count">{{ article.favorite_count }}</span></span>
   </p>
 </article>
 

@@ -3,14 +3,14 @@
 {% block testimony_title %}My History{% endblock %}
 
 {% block testimony_content %}
-<article class="card" style="margin-top:16px;">
+<article class="card testimony-section">
   <h2 style="margin-bottom:10px;">閲覧履歴</h2>
   {% for row in histories %}
-    <div style="padding:8px 0; border-bottom:1px solid #e2ebef;">
-      <a href="{% url 'testimony_article_detail' row.article_id %}">{{ row.article.title }}</a>
-      <div class="muted">
-        <i class="fa-solid fa-calendar-days" aria-hidden="true"></i> 最終: {{ row.last_viewed_at|date:"Y-m-d H:i" }}
-        / <i class="fa-solid fa-eye" aria-hidden="true"></i> 回数: {{ row.view_count }}
+    <div class="testimony-list-item">
+      <a class="testimony-list-item-title" href="{% url 'testimony_article_detail' row.article_id %}">{{ row.article.title }}</a>
+      <div class="muted testimony-list-item-meta">
+        <span><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> 最終: {{ row.last_viewed_at|date:"Y-m-d H:i" }}</span>
+        <span><i class="fa-solid fa-eye" aria-hidden="true"></i> 回数: {{ row.view_count }}</span>
       </div>
     </div>
   {% empty %}

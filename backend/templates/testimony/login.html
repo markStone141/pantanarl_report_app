@@ -1,11 +1,14 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
+{% load static %}
 
 {% block title %}Testimony Login{% endblock %}
 
 {% block content %}
 <main class="login-wrap">
-  <section class="card login-card">
-    <h2>Testimony Login</h2>
+  <section class="card login-card testimony-login-card">
+    <div class="testimony-login-header">
+      <img src="{% static 'img/testimony_logo.png' %}?v=1" alt="Testimony" style="height:56px; width:auto; max-width:100%;">
+    </div>
     <form method="post" class="grid" style="gap:10px;">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ next }}" />
