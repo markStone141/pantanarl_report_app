@@ -743,9 +743,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
                     member.user = linked_user
                     if auth_login_id:
                         member.login_id = auth_login_id
-                        if auth_password:
-                            member.password = auth_password
-                        member.save(update_fields=["name", "user", "login_id", "password"])
+                        member.save(update_fields=["name", "user", "login_id"])
                     else:
                         member.save(update_fields=["name", "user"])
                     status_message = f"{member.name} を更新しました。"
@@ -765,14 +763,12 @@ def member_settings(request: HttpRequest) -> HttpResponse:
                                 password=auth_password,
                             )
                             login_id = auth_login_id
-                            raw_password = auth_password
                         else:
                             login_id = _build_internal_member_login_id(member_name)
-                            raw_password = ""
                         member = Member.objects.create(
                             name=member_name,
                             login_id=login_id,
-                            password=raw_password,
+                            password="",
                             user=linked_user,
                         )
                         status_message = f"{member.name} を登録しました。"
