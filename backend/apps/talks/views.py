@@ -859,4 +859,3 @@ def talks_post_favorite_toggle(request: HttpRequest, post_id: int) -> HttpRespon
     if redirect_to.startswith("/"):
         return redirect(redirect_to)
     return redirect(reverse("talks_detail", kwargs={"thread_id": post.id}))
-

@@ -15,4 +15,3 @@ class Migration(migrations.Migration):
             name="login_id",
         ),
     ]
-

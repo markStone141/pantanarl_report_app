@@ -1,4 +1,4 @@
-﻿# Talks Seed Manual
+# Talks Seed Manual
 
 ## 概要
 このフォルダには、`talks` アプリの開発用データを投入するためのseedデータを置いています。
