@@ -4,6 +4,7 @@ from django.db.models import Sum
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.dateparse import parse_date
 from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, require_roles
@@ -218,16 +219,41 @@ def report_index(request: HttpRequest) -> HttpResponse:
 
 @require_roles(ROLE_ADMIN)
 def report_history(request: HttpRequest) -> HttpResponse:
-    reports = list(
-        DailyDepartmentReport.objects.select_related("department", "reporter")
-        .prefetch_related("lines__member")
-        .order_by("-report_date", "-created_at")[:100]
+    date_from_str = (request.GET.get("date_from") or "").strip()
+    date_to_str = (request.GET.get("date_to") or "").strip()
+    date_from = parse_date(date_from_str) if date_from_str else None
+    date_to = parse_date(date_to_str) if date_to_str else None
+
+    reports_query = DailyDepartmentReport.objects.select_related("department", "reporter").prefetch_related("lines__member")
+    if date_from:
+        reports_query = reports_query.filter(report_date__gte=date_from)
+    if date_to:
+        reports_query = reports_query.filter(report_date__lte=date_to)
+
+    reports = list(reports_query.order_by("-report_date", "-created_at")[:100])
+    filter_departments = list(
+        Department.objects.filter(
+            is_active=True,
+            code__in=REPORT_ROUTE_BY_DEPARTMENT_CODE.keys(),
+        )
+        .order_by("code")
+        .values("code", "name")
     )
     for report in reports:
         report.followup_count_text = _format_amount_text(report.followup_count)
+        report.edited_at = report.updated_at if (report.updated_at and (report.updated_at - report.created_at) > timedelta(seconds=1)) else None
         for line in report.lines.all():
             line.amount_text = _format_amount_text(line.amount)
-    return render(request, "reports/report_history.html", {"reports": reports})
+    return render(
+        request,
+        "reports/report_history.html",
+        {
+            "reports": reports,
+            "filter_departments": filter_departments,
+            "date_from": date_from_str,
+            "date_to": date_to_str,
+        },
+    )
 
 
 @require_roles(ROLE_REPORT, ROLE_ADMIN)
@@ -266,7 +292,10 @@ def report_delete(request: HttpRequest, dept_code: str, report_id: int) -> HttpR
         raise Http404
 
     report.delete()
-    return redirect(reverse(REPORT_ROUTE_BY_DEPARTMENT_CODE.get(normalized_code, "report_index")))
+    next_target = request.POST.get("next") or request.GET.get("next") or REPORT_ROUTE_BY_DEPARTMENT_CODE.get(normalized_code, "report_index")
+    if next_target not in ALLOWED_EDIT_REDIRECTS:
+        next_target = REPORT_ROUTE_BY_DEPARTMENT_CODE.get(normalized_code, "report_index")
+    return redirect(reverse(next_target))
 
 
 def _members_for_department(department_code: str):

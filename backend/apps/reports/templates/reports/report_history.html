@@ -1,37 +1,63 @@
 {% extends "base.html" %}
 
-{% block title %}保存報告一覧 | Report App{% endblock %}
+{% block title %}?????? | Report App{% endblock %}
 
 {% block content %}
 <div class="container">
   <header class="topbar">
-    <strong>保存報告一覧</strong>
+    <strong>??????</strong>
     <nav>
-      <a href="{% url 'report_index' %}">報告一覧へ戻る</a>
-      <a href="{% url 'dashboard_index' %}">管理者ページ</a>
-      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
+      <a href="{% url 'report_index' %}">???????</a>
+      <a href="{% url 'dashboard_index' %}">??????</a>
+      <a href="{% url 'logout' %}" class="logout-link">?????</a>
     </nav>
   </header>
 
   <section class="card" style="margin-top: 16px;">
-    <h3>送信済みデータ (新しい順)</h3>
+    <form method="get" class="row" style="gap:8px; align-items:end; margin-bottom:10px;">
+      <div>
+        <label for="date_from">???</label>
+        <input id="date_from" type="date" name="date_from" value="{{ date_from }}">
+      </div>
+      <div>
+        <label for="date_to">???</label>
+        <input id="date_to" type="date" name="date_to" value="{{ date_to }}">
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="submit" class="btn-inline">??</button>
+        <a href="{% url 'report_history' %}" class="btn-inline">????</a>
+      </div>
+    </form>
+
+    <div class="row" style="gap:8px; align-items:center;">
+      <h3>???????</h3>
+      <div style="display:flex; flex-wrap:wrap; gap:6px;">
+        <button type="button" class="btn-inline report-filter-btn is-active" data-dept="">???</button>
+        {% for dept in filter_departments %}
+          <button type="button" class="btn-inline report-filter-btn" data-dept="{{ dept.code }}">{{ dept.name }}</button>
+        {% endfor %}
+      </div>
+    </div>
+
     <table style="margin-top: 10px;">
       <thead>
         <tr>
-          <th>報告日</th>
-          <th>部門</th>
-          <th>責任者</th>
-          <th>件数合計</th>
-          <th>金額合計(円)</th>
-          <th>現場</th>
-          <th>メモ</th>
-          <th>登録日時</th>
-          <th>修正</th>
+          <th>???</th>
+          <th>??</th>
+          <th>???</th>
+          <th>????</th>
+          <th>????(?)</th>
+          <th>??</th>
+          <th>??</th>
+          <th>????</th>
+          <th>????</th>
+          <th>??</th>
+          <th>??</th>
         </tr>
       </thead>
       <tbody>
         {% for report in reports %}
-        <tr>
+        <tr data-dept="{{ report.department.code }}">
           <td>{{ report.report_date }}</td>
           <td>{{ report.department.name }}</td>
           <td>{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
@@ -40,31 +66,72 @@
           <td>{{ report.location|default:"-" }}</td>
           <td>{{ report.memo|default:"-" }}</td>
           <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+          <td>{% if report.edited_at %}{{ report.edited_at|date:"Y-m-d H:i" }}{% else %}-{% endif %}</td>
           <td>
             <a href="{% url 'report_edit' report.id %}?next=report_history">
-              <button type="button" class="btn-inline">修正</button>
+              <button type="button" class="btn-inline">??</button>
             </a>
           </td>
+          <td>
+            <form method="post" action="{% url 'report_delete' report.department.code report.id %}" onsubmit="return confirm('????????????');">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="report_history">
+              <button type="submit" class="btn-inline">??</button>
+            </form>
+          </td>
         </tr>
-        <tr>
-          <td colspan="9" style="background: #fafcfd;">
-            <strong>明細:</strong>
+        <tr data-dept="{{ report.department.code }}">
+          <td colspan="11" style="background: #fafcfd;">
+            <strong>??:</strong>
             {% for line in report.lines.all %}
               {% if not forloop.first %} / {% endif %}
-              {% if line.member %}{{ line.member.name }}{% else %}未設定{% endif %}
-              (金額 {{ line.amount_text }}円, 件数 {{ line.count }}, 現場 {{ line.location|default:"-" }})
+              {% if line.member %}{{ line.member.name }}{% else %}???{% endif %}
+              (?? {{ line.amount_text }}?, ?? {{ line.count }}, ?? {{ line.location|default:"-" }})
             {% empty %}
-              明細なし
+              ????
             {% endfor %}
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="9">まだ保存データがありません。</td>
+          <td colspan="11">??????????????</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </section>
 </div>
+
+<script>
+  (function () {
+    const buttons = Array.from(document.querySelectorAll('.report-filter-btn'));
+    const rows = Array.from(document.querySelectorAll('tr[data-dept]'));
+    if (!buttons.length || !rows.length) return;
+
+    function applyFilter(code) {
+      rows.forEach(function (row) {
+        row.style.display = !code || row.dataset.dept === code ? '' : 'none';
+      });
+      buttons.forEach(function (btn) {
+        const isActive = (btn.dataset.dept || '') === code;
+        btn.classList.toggle('is-active', isActive);
+        if (isActive) {
+          btn.style.background = '#126e82';
+          btn.style.color = '#fff';
+        } else {
+          btn.style.background = '';
+          btn.style.color = '';
+        }
+      });
+    }
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        applyFilter(btn.dataset.dept || '');
+      });
+    });
+
+    applyFilter('');
+  })();
+</script>
 {% endblock %}
