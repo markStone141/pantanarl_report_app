@@ -768,7 +768,6 @@ def member_settings(request: HttpRequest) -> HttpResponse:
                         member = Member.objects.create(
                             name=member_name,
                             login_id=login_id,
-                            password="",
                             user=linked_user,
                         )
                         status_message = f"{member.name} を登録しました。"
