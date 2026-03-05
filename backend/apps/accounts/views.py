@@ -1,3 +1,6 @@
+import os
+
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
@@ -6,6 +9,8 @@ from .forms import LoginForm
 
 REPORT_PASSWORD = "0823"
 ADMIN_PASSWORD = "pnadmin"
+REPORT_USERNAME = os.getenv("REPORT_LOGIN_USERNAME", "report")
+ADMIN_USERNAME = os.getenv("ADMIN_LOGIN_USERNAME", "admin")
 
 
 def _redirect_by_role(role: str):
@@ -28,12 +33,22 @@ def home(request: HttpRequest) -> HttpResponse:
             password = form.cleaned_data["password"]
 
             if login_id == ROLE_ADMIN:
+                authenticated_user = authenticate(request, username=ADMIN_USERNAME, password=password)
+                if authenticated_user:
+                    auth_login(request, authenticated_user)
+                    request.session[SESSION_ROLE_KEY] = ROLE_ADMIN
+                    return redirect("dashboard_index")
                 if password != ADMIN_PASSWORD:
                     form.add_error("password", "管理者パスワードが違います。")
                 else:
                     request.session[SESSION_ROLE_KEY] = ROLE_ADMIN
                     return redirect("dashboard_index")
             elif login_id == ROLE_REPORT:
+                authenticated_user = authenticate(request, username=REPORT_USERNAME, password=password)
+                if authenticated_user:
+                    auth_login(request, authenticated_user)
+                    request.session[SESSION_ROLE_KEY] = ROLE_REPORT
+                    return redirect("report_index")
                 if password != REPORT_PASSWORD:
                     form.add_error("password", "報告用パスワードが違います。")
                 else:
@@ -48,5 +63,6 @@ def home(request: HttpRequest) -> HttpResponse:
 
 
 def logout_view(request: HttpRequest) -> HttpResponse:
+    auth_logout(request)
     request.session.pop(SESSION_ROLE_KEY, None)
     return redirect("home")

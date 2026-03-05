@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{# Primary login template. Keep only this file to avoid template resolution conflicts. #}
 
 {% block title %}ログイン | Report App{% endblock %}
 
@@ -24,6 +25,20 @@
 
       <button type="submit" style="margin-top: 14px;">ログイン</button>
     </form>
+    <a
+      href="{% url 'talks_login' %}"
+      style="
+        display: inline-block;
+        margin-top: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid #126e82;
+        color: #126e82;
+        font-weight: 700;
+      "
+    >
+      Talksへ移動
+    </a>
   </section>
 </main>
 {% endblock %}

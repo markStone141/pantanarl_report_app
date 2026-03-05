@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}削除トーク管理 | Report App{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header class="topbar topbar-desktop-expanded" style="margin-bottom:16px;">
+    <div>
+      <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" style="display:inline-flex; align-items:center;">
+        <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" style="height:44px; width:auto; display:block;">
+      </a>
+    </div>
+    <nav class="talks-topbar-nav" style="display:flex; align-items:center; gap:10px;">
+      <span class="talks-welcome-text" style="color:#fff; font-size:0.78rem;">おかえりなさい！{{ talks_member_name }}さん</span>
+      <a href="{% url 'dashboard_index' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">管理者ダッシュボード</a>
+      <a href="{% url 'talks_index' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">一覧へ</a>
+      <a href="{% url 'talks_tag_manage' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">タグ管理</a>
+      <a href="{% url 'talks_logout' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+
+  {% if messages %}
+    <section class="card" style="margin-bottom:12px; padding:10px 12px;">
+      {% for message in messages %}
+        <div style="margin:4px 0; font-size:0.9rem; color:{% if message.tags == 'error' %}#a43737{% else %}#1f6f4a{% endif %};">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  <section class="card">
+    <h2 style="margin:0 0 10px;">削除トーク一覧</h2>
+    <p class="muted" style="margin:0 0 10px;">復元は `is_deleted=False` に戻します。完全削除はDBから物理削除します。</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>タイトル</th>
+            <th>投稿者</th>
+            <th>タグ</th>
+            <th>コメント数</th>
+            <th>更新日時</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for post in deleted_posts %}
+            <tr>
+              <td>{{ post.id }}</td>
+              <td>{{ post.title }}</td>
+              <td>{% if post.author_member %}{{ post.author_member.name }}{% else %}{{ post.author_name_snapshot|default:"-" }}{% endif %}</td>
+              <td>
+                {% for tag in post.tags.all %}
+                  <span class="badge" style="margin-right:4px;">#{{ tag.name }}</span>
+                {% empty %}
+                  -
+                {% endfor %}
+              </td>
+              <td>{{ post.comment_count }}</td>
+              <td>{{ post.updated_at|date:"Y-m-d H:i" }}</td>
+              <td>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <form method="post" action="{% url 'talks_deleted_posts_manage' %}" style="margin:0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="restore">
+                    <input type="hidden" name="post_id" value="{{ post.id }}">
+                    <button type="submit" class="btn-inline" style="width:auto; min-height:0; padding:5px 9px;">復元</button>
+                  </form>
+                  <form method="post" action="{% url 'talks_deleted_posts_manage' %}" style="margin:0;" onsubmit="return confirm('この投稿をDBから完全削除しますか？この操作は取り消せません。');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="hard_delete">
+                    <input type="hidden" name="post_id" value="{{ post.id }}">
+                    <button type="submit" class="btn-inline" style="width:auto; min-height:0; padding:5px 9px; background:#8f4d4d;">完全削除</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7">削除済みトークはありません。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

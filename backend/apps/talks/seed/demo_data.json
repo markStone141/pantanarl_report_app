@@ -1,0 +1,116 @@
+{
+  "reaction_types": [
+    {
+      "code": "good",
+      "label": "Good",
+      "icon_class": "fa-solid fa-thumbs-up",
+      "color": "#1e7c4d",
+      "sort_order": 10
+    },
+    {
+      "code": "keep",
+      "label": "Keep",
+      "icon_class": "fa-solid fa-hand",
+      "color": "#355767",
+      "sort_order": 20
+    },
+    {
+      "code": "retry",
+      "label": "Retry",
+      "icon_class": "fa-solid fa-rotate-right",
+      "color": "#9b3838",
+      "sort_order": 30
+    },
+    {
+      "code": "question",
+      "label": "質問",
+      "icon_class": "fa-solid fa-circle-question",
+      "color": "#7454a6",
+      "sort_order": 40
+    }
+  ],
+  "tags": [
+    {"name": "声かけ", "sort_order": 10},
+    {"name": "切り返し", "sort_order": 20},
+    {"name": "UN", "sort_order": 30},
+    {"name": "WV", "sort_order": 40},
+    {"name": "Style", "sort_order": 50},
+    {"name": "朝礼", "sort_order": 60},
+    {"name": "実践共有", "sort_order": 70},
+    {"name": "質問", "sort_order": 80},
+    {"name": "導入トーク", "sort_order": 90},
+    {"name": "新人向け", "sort_order": 100},
+    {"name": "応酬話法", "sort_order": 110},
+    {"name": "クロージング", "sort_order": 120}
+  ],
+  "posts": [
+    {
+      "key": "post_001",
+      "title": "朝の5分ロールプレイを導入したら会話の入りが安定した",
+      "body": "朝礼の後に1人30秒で声かけ練習。初回トークの失敗が減ったので共有します。",
+      "author_name": "前田",
+      "status": "published",
+      "tags": ["声かけ", "UN", "朝礼", "実践共有"]
+    },
+    {
+      "key": "post_002",
+      "title": "断られた直後の切り返しテンプレート",
+      "body": "断り文句を3パターンに分類し、切り返しを固定したら件数が落ちにくくなりました。",
+      "author_name": "為廣",
+      "status": "published",
+      "tags": ["切り返し", "応酬話法", "UN"]
+    },
+    {
+      "key": "post_003",
+      "title": "WVでの導入順序を変えたら反応が上がった",
+      "body": "価値訴求の前に背景確認を入れると会話継続率が上がったのでメモします。",
+      "author_name": "角田",
+      "status": "published",
+      "tags": ["WV", "導入トーク", "実践共有"]
+    }
+  ],
+  "comments": [
+    {
+      "key": "c_001",
+      "post_key": "post_001",
+      "author_name": "内藤",
+      "reaction_code": "good",
+      "body": "南町田でも同じ型で試したら、最初の1時間の沈黙が減りました。"
+    },
+    {
+      "key": "c_002",
+      "post_key": "post_001",
+      "author_name": "角田",
+      "reaction_code": "keep",
+      "body": "WVだと説明順だけ変えた方が入りやすかったです。"
+    },
+    {
+      "key": "c_003",
+      "post_key": "post_001",
+      "author_name": "前田",
+      "reaction_code": "question",
+      "body": "切り返し前の最初の一言は、どの言い回しが一番入りましたか？"
+    },
+    {
+      "post_key": "post_001",
+      "parent_key": "c_003",
+      "author_name": "内藤",
+      "reaction_code": "good",
+      "body": "私は『まずは状況だけ教えてください』で会話継続率が高かったです。"
+    },
+    {
+      "key": "c_004",
+      "post_key": "post_002",
+      "author_name": "早坂",
+      "reaction_code": "retry",
+      "body": "2パターン目の切り返しは良かったですが、3パターン目は逆に離脱が増えました。"
+    },
+    {
+      "key": "c_005",
+      "post_key": "post_003",
+      "author_name": "渡部",
+      "reaction_code": "good",
+      "body": "価値訴求の前に現状確認を挟むと、最後まで聞いてもらえる率が上がりました。"
+    }
+  ]
+}

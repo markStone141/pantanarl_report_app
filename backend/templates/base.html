@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   {% load static %}
@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}Report App{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'app.css' %}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
   {% block content %}{% endblock %}
@@ -13,6 +14,15 @@
     (function () {
       const topbars = document.querySelectorAll(".topbar");
       const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+      function setToggleState(button, isOpen) {
+        button.innerHTML = isOpen
+          ? '<i class="fa-solid fa-xmark" aria-hidden="true"></i>'
+          : '<i class="fa-solid fa-bars" aria-hidden="true"></i>';
+        button.setAttribute("aria-label", isOpen ? "Close menu" : "Open menu");
+        button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      }
+
       topbars.forEach(function (topbar, idx) {
         if (topbar.classList.contains("topbar-nav-always")) return;
         if (topbar.classList.contains("topbar-desktop-expanded") && !isMobile) return;
@@ -23,25 +33,19 @@
         const toggleBtn = document.createElement("button");
         toggleBtn.type = "button";
         toggleBtn.className = "btn-inline topbar-menu-toggle";
-        toggleBtn.textContent = "☰";
-        toggleBtn.setAttribute("aria-label", "メニューを開く");
-        toggleBtn.setAttribute("aria-expanded", "false");
         toggleBtn.setAttribute("aria-controls", "topbar-menu-" + idx);
+        setToggleState(toggleBtn, false);
         nav.id = "topbar-menu-" + idx;
 
         toggleBtn.addEventListener("click", function () {
           const isOpen = topbar.classList.toggle("menu-open");
-          toggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-          toggleBtn.textContent = isOpen ? "✕" : "☰";
-          toggleBtn.setAttribute("aria-label", isOpen ? "メニューを閉じる" : "メニューを開く");
+          setToggleState(toggleBtn, isOpen);
         });
 
         nav.addEventListener("click", function (e) {
           if (e.target && e.target.tagName === "A") {
             topbar.classList.remove("menu-open");
-            toggleBtn.setAttribute("aria-expanded", "false");
-            toggleBtn.textContent = "☰";
-            toggleBtn.setAttribute("aria-label", "メニューを開く");
+            setToggleState(toggleBtn, false);
           }
         });
 
@@ -51,3 +55,4 @@
   </script>
 </body>
 </html>
+

@@ -6,7 +6,6 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.utils.text import slugify
 
 from apps.accounts.auth import ROLE_ADMIN, require_roles
 from apps.accounts.models import Department, Member, MemberDepartment
@@ -682,16 +681,6 @@ def department_delete(request: HttpRequest, department_id: int) -> HttpResponse:
     return redirect("department_settings")
 
 
-def _build_internal_member_login_id(name: str) -> str:
-    base = slugify(name) or "member"
-    candidate = base
-    suffix = 2
-    while Member.objects.active().filter(login_id=candidate).exists():
-        candidate = f"{base}{suffix}"
-        suffix += 1
-    return candidate
-
-
 @require_roles(ROLE_ADMIN)
 def member_settings(request: HttpRequest) -> HttpResponse:
     status_message = None
@@ -741,13 +730,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
                         linked_user.set_password(auth_password)
                         linked_user.save(update_fields=["password"])
                     member.user = linked_user
-                    if auth_login_id:
-                        member.login_id = auth_login_id
-                        if auth_password:
-                            member.password = auth_password
-                        member.save(update_fields=["name", "user", "login_id", "password"])
-                    else:
-                        member.save(update_fields=["name", "user"])
+                    member.save(update_fields=["name", "user"])
                     status_message = f"{member.name} を更新しました。"
             else:
                 if auth_login_id and not auth_password:
@@ -764,15 +747,8 @@ def member_settings(request: HttpRequest) -> HttpResponse:
                                 username=auth_login_id,
                                 password=auth_password,
                             )
-                            login_id = auth_login_id
-                            raw_password = auth_password
-                        else:
-                            login_id = _build_internal_member_login_id(member_name)
-                            raw_password = ""
                         member = Member.objects.create(
                             name=member_name,
-                            login_id=login_id,
-                            password=raw_password,
                             user=linked_user,
                         )
                         status_message = f"{member.name} を登録しました。"
