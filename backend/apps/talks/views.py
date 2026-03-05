@@ -52,6 +52,17 @@ SORT_OPTIONS = (
 )
 
 
+def _parse_bulk_tag_names(raw_text: str) -> list[str]:
+    names: list[str] = []
+    for line in (raw_text or "").splitlines():
+        parts = line.replace("、", ",").split(",")
+        for part in parts:
+            name = part.strip().lstrip("#").strip()
+            if name and name not in names:
+                names.append(name)
+    return names
+
+
 def _author_name(member_obj, snapshot: str) -> str:
     if member_obj and member_obj.name:
         return member_obj.name
@@ -529,6 +540,7 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
 
     edit_id_raw = (request.GET.get("edit") or "").strip()
     editing_tag = None
+    bulk_input_value = ""
 
     if request.method == "POST":
         action = (request.POST.get("action") or "save").strip()
@@ -541,6 +553,42 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
                     tag.is_active = not tag.is_active
                     tag.save(update_fields=["is_active", "updated_at"])
             return redirect("talks_tag_manage")
+
+        if action == "delete":
+            tag_id_raw = (request.POST.get("tag_id") or "").strip()
+            if tag_id_raw.isdigit():
+                tag = KnowledgeTag.objects.filter(id=int(tag_id_raw)).first()
+                if tag:
+                    is_used = tag.posts.exists()
+                    if tag.is_active:
+                        messages.error(request, "有効なタグは削除できません。先に無効化してください。")
+                    elif is_used:
+                        messages.error(request, "使用中のタグは削除できません。")
+                    else:
+                        tag.delete()
+                        messages.success(request, "タグを削除しました。")
+            return redirect("talks_tag_manage")
+
+        if action == "bulk_add":
+            bulk_input_value = (request.POST.get("bulk_names") or "").strip()
+            names = _parse_bulk_tag_names(bulk_input_value)
+            if not names:
+                messages.error(request, "一括追加するタグ名を入力してください。")
+            else:
+                existing_names = set(
+                    KnowledgeTag.objects.filter(name__in=names).values_list("name", flat=True)
+                )
+                create_names = [name for name in names if name not in existing_names]
+                KnowledgeTag.objects.bulk_create(
+                    [KnowledgeTag(name=name, is_active=True) for name in create_names]
+                )
+                skipped = len(names) - len(create_names)
+                messages.success(
+                    request,
+                    f"{len(create_names)}件のタグを追加しました。"
+                    + (f"（重複{skipped}件はスキップ）" if skipped else ""),
+                )
+                return redirect("talks_tag_manage")
 
         form = TagManageForm(request.POST)
         if form.is_valid():
@@ -590,6 +638,7 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
     tags = (
         KnowledgeTag.objects.annotate(
             post_count=Count("posts", filter=Q(posts__is_deleted=False)),
+            total_post_count=Count("posts"),
         )
         .order_by("-post_count", "name")
     )
@@ -601,6 +650,7 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
             "form": form,
             "tags": tags,
             "editing_tag": editing_tag,
+            "bulk_input_value": bulk_input_value,
             "talks_member_name": get_talks_display_name(request, talks_member),
             "talks_is_admin": talks_is_admin,
         },

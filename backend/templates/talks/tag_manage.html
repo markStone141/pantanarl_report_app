@@ -83,6 +83,21 @@
     </form>
   </section>
 
+  <section class="card" style="margin-bottom:14px;">
+    <h2 style="margin:0 0 10px;">タグ一括追加</h2>
+    <form method="post" class="tag-form-grid">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="bulk_add">
+      <div>
+        <label for="id_bulk_names">タグ名（改行 or カンマ区切り）</label>
+        <textarea id="id_bulk_names" name="bulk_names" rows="5" placeholder="例:&#10;UN&#10;WV&#10;切り返し">{{ bulk_input_value }}</textarea>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="submit" class="btn-inline" style="width:auto;">まとめて追加</button>
+      </div>
+    </form>
+  </section>
+
   <section class="card">
     <h2 style="margin:0 0 10px;">登録済みタグ</h2>
     <div class="table-wrap">
@@ -112,6 +127,16 @@
                       {% if tag.is_active %}無効化{% else %}有効化{% endif %}
                     </button>
                   </form>
+                  {% if not tag.is_active and tag.total_post_count == 0 %}
+                    <form method="post" action="{% url 'talks_tag_manage' %}" style="margin:0;" onsubmit="return confirm('このタグを削除しますか？');">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="delete">
+                      <input type="hidden" name="tag_id" value="{{ tag.id }}">
+                      <button type="submit" class="btn-inline" style="width:auto; min-height:0; padding:5px 9px; background:#a43e3e;">
+                        削除
+                      </button>
+                    </form>
+                  {% endif %}
                 </div>
               </td>
             </tr>

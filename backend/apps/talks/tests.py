@@ -345,6 +345,43 @@ class TalksAdminPermissionTests(TalksBaseTestCase):
         tag.refresh_from_db()
         self.assertFalse(tag.is_active)
 
+    def test_admin_can_bulk_add_tags(self):
+        self._set_role_admin_session()
+        response = self.client.post(
+            reverse("talks_tag_manage"),
+            {
+                "action": "bulk_add",
+                "bulk_names": "新規A\n新規B,新規C\nUN",
+            },
+        )
+        self.assertRedirects(response, reverse("talks_tag_manage"))
+        self.assertTrue(KnowledgeTag.objects.filter(name="新規A").exists())
+        self.assertTrue(KnowledgeTag.objects.filter(name="新規B").exists())
+        self.assertTrue(KnowledgeTag.objects.filter(name="新規C").exists())
+        # Existing tag should not be duplicated.
+        self.assertEqual(KnowledgeTag.objects.filter(name="UN").count(), 1)
+
+    def test_admin_can_delete_inactive_unused_tag(self):
+        self._set_role_admin_session()
+        tag = KnowledgeTag.objects.create(name="削除対象", is_active=False)
+        response = self.client.post(
+            reverse("talks_tag_manage"),
+            {"action": "delete", "tag_id": str(tag.id)},
+        )
+        self.assertRedirects(response, reverse("talks_tag_manage"))
+        self.assertFalse(KnowledgeTag.objects.filter(id=tag.id).exists())
+
+    def test_admin_cannot_delete_inactive_used_tag(self):
+        self._set_role_admin_session()
+        self.tag_un.is_active = False
+        self.tag_un.save(update_fields=["is_active", "updated_at"])
+        response = self.client.post(
+            reverse("talks_tag_manage"),
+            {"action": "delete", "tag_id": str(self.tag_un.id)},
+        )
+        self.assertRedirects(response, reverse("talks_tag_manage"))
+        self.assertTrue(KnowledgeTag.objects.filter(id=self.tag_un.id).exists())
+
     def test_admin_can_manage_other_users_posts(self):
         self._set_role_admin_session()
         response = self.client.post(
