@@ -12,6 +12,7 @@ from apps.accounts.models import Member
 from apps.talks.models import (
     KnowledgeComment,
     KnowledgePost,
+    KnowledgePostFavorite,
     KnowledgePostRead,
     KnowledgePostTag,
     KnowledgeReactionType,
@@ -142,6 +143,12 @@ class TalksModelTests(TalksBaseTestCase):
         with self.assertRaises(IntegrityError):
             KnowledgePostRead.objects.create(user=user, post=self.post1)
 
+    def test_post_favorite_unique_for_user_and_post(self):
+        user = get_user_model().objects.create_user(username="u2")
+        KnowledgePostFavorite.objects.create(user=user, post=self.post1)
+        with self.assertRaises(IntegrityError):
+            KnowledgePostFavorite.objects.create(user=user, post=self.post1)
+
 
 class TalksAuthTests(TalksBaseTestCase):
     def test_member_login_sets_report_role_and_redirects(self):
@@ -231,6 +238,45 @@ class TalksCrudTests(TalksBaseTestCase):
         top.refresh_from_db()
         self.assertTrue(top.is_deleted)
 
+    def test_toggle_favorite(self):
+        self._login_talks_member("alice", "pass1")
+        toggle_on = self.client.post(
+            reverse("talks_post_favorite_toggle", args=[self.post1.id]),
+            {"next": reverse("talks_index")},
+        )
+        self.assertRedirects(toggle_on, reverse("talks_index"))
+        self.assertTrue(
+            KnowledgePostFavorite.objects.filter(
+                user_id=self.client.session.get("_auth_user_id"),
+                post=self.post1,
+            ).exists()
+        )
+
+        toggle_off = self.client.post(
+            reverse("talks_post_favorite_toggle", args=[self.post1.id]),
+            {"next": reverse("talks_index")},
+        )
+        self.assertRedirects(toggle_off, reverse("talks_index"))
+        self.assertFalse(
+            KnowledgePostFavorite.objects.filter(
+                user_id=self.client.session.get("_auth_user_id"),
+                post=self.post1,
+            ).exists()
+        )
+
+    def test_toggle_favorite_returns_json_for_ajax(self):
+        self._login_talks_member("alice", "pass1")
+        response = self.client.post(
+            reverse("talks_post_favorite_toggle", args=[self.post1.id]),
+            {"next": reverse("talks_index")},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["post_id"], self.post1.id)
+        self.assertTrue(payload["is_favorite"])
+
 
 class TalksFilteringAndUnreadTests(TalksBaseTestCase):
     def test_tag_filter_uses_and_condition(self):
@@ -258,6 +304,16 @@ class TalksFilteringAndUnreadTests(TalksBaseTestCase):
         only_unread = self.client.get(reverse("talks_index"), {"unread": "1"})
         ids = [item["id"] for item in only_unread.context["threads"]]
         self.assertIn(self.post1.id, ids)
+
+    def test_favorite_only_filter(self):
+        self._login_talks_member("alice", "pass1")
+        user_id = self.client.session.get("_auth_user_id")
+        KnowledgePostFavorite.objects.create(user_id=user_id, post=self.post2)
+
+        response = self.client.get(reverse("talks_index"), {"favorite": "1"})
+        self.assertEqual(response.status_code, 200)
+        ids = [item["id"] for item in response.context["threads"]]
+        self.assertEqual(ids, [self.post2.id])
 
 
 class TalksAdminPermissionTests(TalksBaseTestCase):

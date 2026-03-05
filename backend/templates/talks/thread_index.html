@@ -527,6 +527,9 @@
     <div class="row" style="margin-bottom:10px;">
       <h2 class="knowledge-list-heading">スレッド一覧（{{ paginator.count }}件）</h2>
       <div class="knowledge-heading-actions">
+        <a href="?{{ favorite_toggle_query }}" class="knowledge-unread-toggle {% if selected_favorite_only %}is-active{% endif %}">
+          <i class="fa-solid fa-star"></i>{% if selected_favorite_only %}お気に入り: ON{% else %}お気に入りのみ{% endif %}
+        </a>
         <a href="?{{ unread_toggle_query }}" class="knowledge-unread-toggle {% if selected_unread_only %}is-active{% endif %}">
           <i class="fa-solid fa-bell"></i>{% if selected_unread_only %}未読のみ: ON{% else %}未読のみ{% endif %}
         </a>
@@ -612,6 +615,17 @@
               <span title="閲覧数" style="display:inline-flex; align-items:center; gap:6px;">
                 <i class="fa-solid fa-eye" style="color:#607582;"></i>{{ thread.view_count }}
               </span>
+              <form method="post" action="{% url 'talks_post_favorite_toggle' thread.id %}" class="js-favorite-form" data-post-id="{{ thread.id }}" style="margin:0;">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ current_full_path }}">
+                <button type="submit" class="knowledge-icon-btn js-favorite-btn" title="{% if thread.is_favorite %}お気に入り解除{% else %}お気に入り{% endif %}" aria-label="{% if thread.is_favorite %}お気に入り解除{% else %}お気に入り{% endif %}">
+                  {% if thread.is_favorite %}
+                    <i class="fa-solid fa-star js-favorite-icon" style="color:#d89b12;"></i>
+                  {% else %}
+                    <i class="fa-regular fa-star js-favorite-icon"></i>
+                  {% endif %}
+                </button>
+              </form>
             </div>
           </article>
         {% endfor %}
@@ -954,6 +968,52 @@
         if (href) window.location.href = href;
       });
     });
+
+    const favoriteOnlyActive = {{ selected_favorite_only|yesno:"true,false" }};
+    function bindFavoriteForms(scope) {
+      const forms = (scope || document).querySelectorAll(".js-favorite-form");
+      forms.forEach(function (form) {
+        if (form.dataset.boundFavorite === "1") return;
+        form.dataset.boundFavorite = "1";
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          const formData = new FormData(form);
+          fetch(form.action, {
+            method: "POST",
+            body: formData,
+            headers: {
+              "X-Requested-With": "XMLHttpRequest",
+              "Accept": "application/json"
+            },
+            credentials: "same-origin"
+          })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+              if (!data || !data.ok) return;
+              const button = form.querySelector(".js-favorite-btn");
+              const icon = form.querySelector(".js-favorite-icon");
+              if (!button || !icon) return;
+              if (data.is_favorite) {
+                button.setAttribute("title", "お気に入り解除");
+                button.setAttribute("aria-label", "お気に入り解除");
+                icon.className = "fa-solid fa-star js-favorite-icon";
+                icon.style.color = "#d89b12";
+              } else {
+                button.setAttribute("title", "お気に入り");
+                button.setAttribute("aria-label", "お気に入り");
+                icon.className = "fa-regular fa-star js-favorite-icon";
+                icon.style.color = "";
+                if (favoriteOnlyActive) {
+                  const card = form.closest(".js-thread-card");
+                  if (card) card.remove();
+                }
+              }
+            })
+            .catch(function () {});
+        });
+      });
+    }
+    bindFavoriteForms(document);
   })();
 </script>
 {% endblock %}

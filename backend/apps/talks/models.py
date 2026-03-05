@@ -172,3 +172,27 @@ class KnowledgePostRead(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user_id}:{self.post_id}"
+
+
+class KnowledgePostFavorite(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="knowledge_post_favorites",
+    )
+    post = models.ForeignKey(
+        KnowledgePost,
+        on_delete=models.CASCADE,
+        related_name="favorites",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "post")
+        indexes = [
+            models.Index(fields=["user", "post"]),
+            models.Index(fields=["post", "-created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user_id}:{self.post_id}"

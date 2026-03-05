@@ -386,6 +386,17 @@
       <span style="display:inline-flex; align-items:center; gap:6px;">
         <i class="fa-solid fa-eye" aria-hidden="true"></i>{{ thread.view_count }}
       </span>
+      <form method="post" action="{% url 'talks_post_favorite_toggle' thread.id %}" class="js-favorite-form" data-post-id="{{ thread.id }}" style="margin:0;">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ current_full_path }}">
+        <button type="submit" class="knowledge-icon-btn js-favorite-btn" title="{% if is_favorite %}お気に入り解除{% else %}お気に入り{% endif %}" aria-label="{% if is_favorite %}お気に入り解除{% else %}お気に入り{% endif %}">
+          {% if is_favorite %}
+            <i class="fa-solid fa-star js-favorite-icon" style="color:#d89b12;"></i>
+          {% else %}
+            <i class="fa-regular fa-star js-favorite-icon"></i>
+          {% endif %}
+        </button>
+      </form>
     </div>
   </article>
 
@@ -612,6 +623,42 @@
         });
       });
     });
+
+    const favoriteForm = document.querySelector(".js-favorite-form");
+    if (favoriteForm) {
+      favoriteForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const formData = new FormData(favoriteForm);
+        fetch(favoriteForm.action, {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "Accept": "application/json"
+          },
+          credentials: "same-origin"
+        })
+          .then(function (response) { return response.json(); })
+          .then(function (data) {
+            if (!data || !data.ok) return;
+            const button = favoriteForm.querySelector(".js-favorite-btn");
+            const icon = favoriteForm.querySelector(".js-favorite-icon");
+            if (!button || !icon) return;
+            if (data.is_favorite) {
+              button.setAttribute("title", "お気に入り解除");
+              button.setAttribute("aria-label", "お気に入り解除");
+              icon.className = "fa-solid fa-star js-favorite-icon";
+              icon.style.color = "#d89b12";
+            } else {
+              button.setAttribute("title", "お気に入り");
+              button.setAttribute("aria-label", "お気に入り");
+              icon.className = "fa-regular fa-star js-favorite-icon";
+              icon.style.color = "";
+            }
+          })
+          .catch(function () {});
+      });
+    }
   })();
 </script>
 {% endblock %}

@@ -7,9 +7,11 @@ from django.contrib import messages
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
 from django.db.models import Count, F, Q
+from django.http import JsonResponse
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, SESSION_ROLE_KEY
@@ -17,6 +19,7 @@ from apps.accounts.models import Member
 
 from .forms import CommentEditForm, PostEditForm, TagManageForm, TalksLoginForm
 from .models import KnowledgeComment, KnowledgePost, KnowledgePostTag, KnowledgeTag
+from .models import KnowledgePostFavorite
 from .models import KnowledgePostRead
 from .models import KnowledgeReactionType
 from .services.session import (
@@ -280,6 +283,7 @@ def talks_index(request: HttpRequest) -> HttpResponse:
             selected_tags.append(clean_tag)
     selected_author = (request.GET.get("author") or "").strip()
     selected_unread_only = (request.GET.get("unread") or "").strip() == "1"
+    selected_favorite_only = (request.GET.get("favorite") or "").strip() == "1"
     selected_sort = (request.GET.get("sort") or SORT_NEWEST).strip()
     if selected_sort not in {key for key, _ in SORT_OPTIONS}:
         selected_sort = SORT_NEWEST
@@ -331,12 +335,22 @@ def talks_index(request: HttpRequest) -> HttpResponse:
     thread_items = [_post_to_list_item(post) for post in posts]
     for item in thread_items:
         item["is_unread"] = False
+        item["is_favorite"] = False
 
     author_pool = sorted({item["author"] for item in thread_items})
     if selected_author:
         thread_items = [item for item in thread_items if item["author"] == selected_author]
 
     if request.user.is_authenticated and thread_items:
+        favorite_post_ids = set(
+            KnowledgePostFavorite.objects.filter(
+                user=request.user,
+                post_id__in=[item["id"] for item in thread_items],
+            ).values_list("post_id", flat=True)
+        )
+        for item in thread_items:
+            item["is_favorite"] = item["id"] in favorite_post_ids
+
         read_map = {
             read.post_id: read.read_at
             for read in KnowledgePostRead.objects.filter(
@@ -350,6 +364,8 @@ def talks_index(request: HttpRequest) -> HttpResponse:
 
     if selected_unread_only:
         thread_items = [item for item in thread_items if item["is_unread"]]
+    if selected_favorite_only:
+        thread_items = [item for item in thread_items if item["is_favorite"]]
 
     paginator = Paginator(thread_items, 20)
     page_number = request.GET.get("page")
@@ -370,6 +386,13 @@ def talks_index(request: HttpRequest) -> HttpResponse:
     else:
         unread_toggle_params["unread"] = "1"
     unread_toggle_query = unread_toggle_params.urlencode()
+    favorite_toggle_params = request.GET.copy()
+    favorite_toggle_params.pop("page", None)
+    if selected_favorite_only:
+        favorite_toggle_params.pop("favorite", None)
+    else:
+        favorite_toggle_params["favorite"] = "1"
+    favorite_toggle_query = favorite_toggle_params.urlencode()
 
     available_tags = list(
         KnowledgeTag.objects.filter(is_active=True).annotate(post_count=Count("posts", filter=Q(posts__is_deleted=False))).order_by("-post_count", "name").values_list("name", flat=True)
@@ -387,6 +410,7 @@ def talks_index(request: HttpRequest) -> HttpResponse:
             "selected_tags": selected_tags,
             "selected_author": selected_author,
             "selected_unread_only": selected_unread_only,
+            "selected_favorite_only": selected_favorite_only,
             "selected_sort": selected_sort,
             "sort_options": SORT_OPTIONS,
             "date_from": date_from_raw,
@@ -395,6 +419,8 @@ def talks_index(request: HttpRequest) -> HttpResponse:
             "talks_member_name": get_talks_display_name(request, talks_member),
             "talks_is_admin": talks_is_admin,
             "unread_toggle_query": unread_toggle_query,
+            "favorite_toggle_query": favorite_toggle_query,
+            "current_full_path": request.get_full_path(),
         },
     )
 
@@ -468,6 +494,10 @@ def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
         serialized["replies"] = replies
         comments.append(serialized)
 
+    is_favorite = False
+    if request.user.is_authenticated:
+        is_favorite = KnowledgePostFavorite.objects.filter(user=request.user, post=post).exists()
+
     return render(
         request,
         "talks/thread_detail.html",
@@ -484,6 +514,8 @@ def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
             "reaction_types": KnowledgeReactionType.objects.filter(is_active=True).order_by("sort_order", "id"),
             "talks_member_name": get_talks_display_name(request, talks_member),
             "talks_is_admin": talks_is_admin,
+            "is_favorite": is_favorite,
+            "current_full_path": request.get_full_path(),
         },
     )
 
@@ -742,4 +774,39 @@ def talks_comment_delete(request: HttpRequest, comment_id: int) -> HttpResponse:
     comment.save(update_fields=["is_deleted", "updated_at"])
     messages.success(request, "コメントを削除しました。")
     return redirect("talks_detail", thread_id=thread_id)
+
+
+def talks_post_favorite_toggle(request: HttpRequest, post_id: int) -> HttpResponse:
+    talks_member = get_talks_member(request)
+    talks_is_admin = is_talks_admin(request)
+    if not talks_member and not talks_is_admin:
+        return redirect("talks_login")
+    if request.method != "POST":
+        return redirect("talks_index")
+
+    post = KnowledgePost.objects.filter(id=post_id, is_deleted=False).first()
+    if not post or not request.user.is_authenticated:
+        return redirect("talks_index")
+
+    favorite = KnowledgePostFavorite.objects.filter(user=request.user, post=post).first()
+    if favorite:
+        favorite.delete()
+        is_favorite = False
+    else:
+        KnowledgePostFavorite.objects.create(user=request.user, post=post)
+        is_favorite = True
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "ok": True,
+                "post_id": post.id,
+                "is_favorite": is_favorite,
+            }
+        )
+
+    redirect_to = (request.POST.get("next") or "").strip()
+    if redirect_to.startswith("/"):
+        return redirect(redirect_to)
+    return redirect(reverse("talks_detail", kwargs={"thread_id": post.id}))
 
