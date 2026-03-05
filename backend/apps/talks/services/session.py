@@ -2,6 +2,7 @@ import os
 
 from django.contrib.auth import get_user_model
 from django.http import HttpRequest
+from django.utils.text import slugify
 
 from apps.accounts.auth import ROLE_ADMIN, SESSION_ROLE_KEY
 from apps.accounts.models import Member
@@ -67,7 +68,7 @@ def ensure_member_user(member: Member):
         return member.user
 
     User = get_user_model()
-    base_username = member.login_id
+    base_username = slugify(member.name) or f"member-{member.id}"
     username = base_username
     suffix = 1
     while User.objects.filter(username=username).exists():

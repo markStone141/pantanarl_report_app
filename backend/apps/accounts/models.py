@@ -7,8 +7,9 @@ class MemberQuerySet(models.QuerySet):
         return self.filter(is_active=True)
 
     def create(self, **kwargs):
-        # Backward compatibility: ignore legacy plaintext password argument.
+        # Backward compatibility: ignore legacy auth fields.
         kwargs.pop("password", None)
+        kwargs.pop("login_id", None)
         return super().create(**kwargs)
 
 
@@ -34,7 +35,6 @@ class Department(models.Model):
 
 class Member(models.Model):
     name = models.CharField(max_length=64)
-    login_id = models.CharField(max_length=64, unique=True)
     is_active = models.BooleanField(default=True)
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -50,7 +50,7 @@ class Member(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"{self.name} ({self.login_id})"
+        return self.name
 
 
 class MemberDepartment(models.Model):
@@ -70,4 +70,4 @@ class MemberDepartment(models.Model):
         unique_together = ("member", "department")
 
     def __str__(self) -> str:
-        return f"{self.member.login_id} -> {self.department.code}"
+        return f"{self.member.name} -> {self.department.code}"

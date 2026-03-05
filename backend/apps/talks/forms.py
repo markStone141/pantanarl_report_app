@@ -1,8 +1,11 @@
 from django import forms
+from django.contrib.auth import get_user_model
 from django.db.models import Count
 
 from apps.accounts.models import Member
 from apps.talks.models import KnowledgeTag
+
+User = get_user_model()
 
 
 class TalksLoginForm(forms.Form):
@@ -22,9 +25,9 @@ class TalksLoginForm(forms.Form):
         if not login_id or not password:
             return cleaned_data
 
-        member = Member.objects.active().filter(login_id=login_id).first()
-        user = member.user if member else None
-        if not member or not user or not user.check_password(password):
+        user = User.objects.filter(username=login_id).first()
+        member = user.member_profile if user else None
+        if not user or not member or not member.is_active or not user.check_password(password):
             raise forms.ValidationError(self.error_messages["invalid_login"])
 
         self.member = member
