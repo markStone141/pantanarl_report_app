@@ -74,109 +74,18 @@
 
   <section class="card">
     <h2 style="margin:0 0 10px;">登録済みタグ（{{ paginator.count }}件）</h2>
-    <form method="get" class="tag-search-row">
+    <div class="tag-search-row">
       <div class="tag-search-box">
         <label for="id_tag_query">タグ検索</label>
         <input id="id_tag_query" type="text" name="q" value="{{ selected_query }}" placeholder="タグ名で検索" autocomplete="off">
-        <div id="tag-search-suggestions" class="tag-search-suggestions" aria-label="検索候補"></div>
       </div>
-      <button type="submit" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">検索</button>
       <a href="{% url 'talks_tag_manage' %}" class="btn-inline tag-reset-btn" style="width:auto; min-height:0; padding:6px 10px; background:#5b7280;">リセット</a>
-    </form>
-    {% if paginator.num_pages > 1 %}
-      <div class="tag-pagination">
-        {% if page_obj.has_previous %}
-          <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}" style="width:auto; min-height:0; padding:5px 9px;">前へ</a>
-        {% endif %}
-        {% for num in paginator.page_range %}
-          {% if num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
-            {% if num == page_obj.number %}
-              <span class="tag-page-link is-active">{{ num }}</span>
-            {% else %}
-              <a class="tag-page-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ num }}">{{ num }}</a>
-            {% endif %}
-          {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
-            <span class="tag-page-ellipsis">…</span>
-          {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
-            <span class="tag-page-ellipsis">…</span>
-          {% endif %}
-        {% endfor %}
-        {% if page_obj.has_next %}
-          <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}" style="width:auto; min-height:0; padding:5px 9px;">次へ</a>
-        {% endif %}
-      </div>
-    {% endif %}
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>タグ名</th>
-            <th>状態</th>
-            <th>利用投稿数</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for tag in tags %}
-            <tr>
-              <td>{{ tag.name }}</td>
-              <td>{% if tag.is_active %}有効{% else %}無効{% endif %}</td>
-              <td>{{ tag.post_count }}</td>
-              <td>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                  <a href="{% url 'talks_tag_manage' %}?edit={{ tag.id }}" class="btn-inline" style="width:auto; min-height:0; padding:5px 9px;">編集</a>
-                  <form method="post" action="{% url 'talks_tag_manage' %}" style="margin:0;">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="toggle">
-                    <input type="hidden" name="tag_id" value="{{ tag.id }}">
-                    <button type="submit" class="btn-inline" style="width:auto; min-height:0; padding:5px 9px; background:{% if tag.is_active %}#8f4d4d{% else %}#3f6f54{% endif %};">
-                      {% if tag.is_active %}無効化{% else %}有効化{% endif %}
-                    </button>
-                  </form>
-                  {% if not tag.is_active and tag.total_post_count == 0 %}
-                    <form method="post" action="{% url 'talks_tag_manage' %}" style="margin:0;" onsubmit="return confirm('このタグを削除しますか？');">
-                      {% csrf_token %}
-                      <input type="hidden" name="action" value="delete">
-                      <input type="hidden" name="tag_id" value="{{ tag.id }}">
-                      <button type="submit" class="btn-inline" style="width:auto; min-height:0; padding:5px 9px; background:#a43e3e;">
-                        削除
-                      </button>
-                    </form>
-                  {% endif %}
-                </div>
-              </td>
-            </tr>
-          {% empty %}
-            <tr><td colspan="4">タグはまだありません。</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
     </div>
-    {% if paginator.num_pages > 1 %}
-      <div class="tag-pagination" style="margin-top:12px; margin-bottom:0;">
-        {% if page_obj.has_previous %}
-          <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}" style="width:auto; min-height:0; padding:5px 9px;">前へ</a>
-        {% endif %}
-        {% for num in paginator.page_range %}
-          {% if num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
-            {% if num == page_obj.number %}
-              <span class="tag-page-link is-active">{{ num }}</span>
-            {% else %}
-              <a class="tag-page-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ num }}">{{ num }}</a>
-            {% endif %}
-          {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
-            <span class="tag-page-ellipsis">…</span>
-          {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
-            <span class="tag-page-ellipsis">…</span>
-          {% endif %}
-        {% endfor %}
-        {% if page_obj.has_next %}
-          <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}" style="width:auto; min-height:0; padding:5px 9px;">次へ</a>
-        {% endif %}
-      </div>
-    {% endif %}
+    <div id="tag-manage-results">
+      {% include "talks/_tag_manage_results.html" %}
+    </div>
   </section>
 </div>
-{{ all_tag_names|json_script:"tag-manage-all-tag-names" }}
+<script id="tag-manage-base-url" type="application/json">"{% url 'talks_tag_manage' %}"</script>
 <script src="{% static 'talks/tag_manage.js' %}?v=1" defer></script>
 {% endblock %}

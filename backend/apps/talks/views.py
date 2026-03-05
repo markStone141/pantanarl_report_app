@@ -12,6 +12,7 @@ from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.urls import reverse
+from django.template.loader import render_to_string
 from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, SESSION_ROLE_KEY
@@ -673,16 +674,28 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
     if selected_query:
         tags = tags.filter(name__icontains=selected_query)
 
-    all_tag_names = list(
-        KnowledgeTag.objects.order_by("name").values_list("name", flat=True)
-    )
-
     paginator = Paginator(tags, 20)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
     query_params = request.GET.copy()
     query_params.pop("page", None)
     pagination_query = query_params.urlencode()
+
+    if (
+        request.method == "GET"
+        and request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    ):
+        html = render_to_string(
+            "talks/_tag_manage_results.html",
+            {
+                "tags": list(page_obj.object_list),
+                "page_obj": page_obj,
+                "paginator": paginator,
+                "pagination_query": pagination_query,
+            },
+            request=request,
+        )
+        return JsonResponse({"ok": True, "html": html})
 
     return render(
         request,
@@ -694,7 +707,6 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
             "paginator": paginator,
             "pagination_query": pagination_query,
             "selected_query": selected_query,
-            "all_tag_names": all_tag_names,
             "editing_tag": editing_tag,
             "bulk_input_value": bulk_input_value,
             "talks_member_name": get_talks_display_name(request, talks_member),
