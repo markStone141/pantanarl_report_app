@@ -1,0 +1,131 @@
+.tag-form-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.tag-active-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.tag-active-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin: 0;
+}
+
+.tag-active-label {
+  margin: 0;
+  font-weight: 700;
+  color: #1f3240;
+}
+
+.tag-active-help {
+  color: #5f7480;
+  font-size: 0.84rem;
+}
+
+.tag-search-row {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.tag-search-row input[type="text"] {
+  max-width: 360px;
+}
+
+.tag-search-box {
+  position: relative;
+}
+
+.tag-search-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 12;
+  border: 1px solid #d7e0e6;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(10, 44, 56, 0.12);
+  max-height: 220px;
+  overflow: auto;
+  display: none;
+}
+
+.tag-search-suggestions.is-open {
+  display: block;
+}
+
+.tag-search-suggestion-item {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #eef3f6;
+  background: #fff;
+  text-align: left;
+  padding: 8px 10px;
+  color: #1f3240;
+  cursor: pointer;
+}
+
+.tag-search-suggestion-item:last-child {
+  border-bottom: 0;
+}
+
+.tag-search-suggestion-item:hover {
+  background: #f3f8fb;
+}
+
+.tag-reset-btn {
+  color: #fff !important;
+}
+
+.tag-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 12px;
+  flex-wrap: wrap;
+}
+
+.tag-page-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid #c9d7de;
+  color: #1d4f5f;
+  background: #fff;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.tag-page-link.is-active {
+  border-color: #126e82;
+  background: #126e82;
+  color: #fff;
+}
+
+.tag-page-ellipsis {
+  color: #6e838f;
+  font-size: 0.84rem;
+  padding: 0 2px;
+}
+
+@media (max-width: 768px) {
+  .tag-page-link {
+    min-width: 26px;
+    height: 26px;
+    font-size: 0.74rem;
+  }
+}

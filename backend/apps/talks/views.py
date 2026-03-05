@@ -22,6 +22,7 @@ from .models import KnowledgeComment, KnowledgePost, KnowledgePostTag, Knowledge
 from .models import KnowledgePostFavorite
 from .models import KnowledgePostRead
 from .models import KnowledgeReactionType
+from .models import KnowledgeUserPreference
 from .services.session import (
     TALKS_ADMIN_LOGIN_ID,
     TALKS_ADMIN_PASSWORD,
@@ -288,6 +289,7 @@ def talks_index(request: HttpRequest) -> HttpResponse:
         return redirect("talks_index")
 
     selected_tags = []
+    has_explicit_tag_query = "tag" in request.GET
     for tag in request.GET.getlist("tag"):
         clean_tag = (tag or "").strip()
         if clean_tag and clean_tag not in selected_tags:
@@ -299,6 +301,22 @@ def talks_index(request: HttpRequest) -> HttpResponse:
     if selected_sort not in {key for key, _ in SORT_OPTIONS}:
         selected_sort = SORT_NEWEST
     date_from_raw = (request.GET.get("date_from") or "").strip()
+
+    if request.user.is_authenticated:
+        preference, _ = KnowledgeUserPreference.objects.get_or_create(user=request.user)
+        if has_explicit_tag_query:
+            if selected_tags:
+                preferred_tags = KnowledgeTag.objects.filter(
+                    is_active=True,
+                    name__in=selected_tags,
+                )
+                preference.preferred_tags.set(preferred_tags)
+            else:
+                preference.preferred_tags.clear()
+        elif not selected_tags:
+            selected_tags = list(
+                preference.preferred_tags.filter(is_active=True).values_list("name", flat=True)
+            )
 
     date_from_dt = None
     if date_from_raw:
@@ -388,9 +406,15 @@ def talks_index(request: HttpRequest) -> HttpResponse:
         )
 
     query_params = request.GET.copy()
+    if not has_explicit_tag_query and selected_tags:
+        for tag in selected_tags:
+            query_params.appendlist("tag", tag)
     query_params.pop("page", None)
     pagination_query = query_params.urlencode()
     unread_toggle_params = request.GET.copy()
+    if not has_explicit_tag_query and selected_tags:
+        for tag in selected_tags:
+            unread_toggle_params.appendlist("tag", tag)
     unread_toggle_params.pop("page", None)
     if selected_unread_only:
         unread_toggle_params.pop("unread", None)
@@ -398,6 +422,9 @@ def talks_index(request: HttpRequest) -> HttpResponse:
         unread_toggle_params["unread"] = "1"
     unread_toggle_query = unread_toggle_params.urlencode()
     favorite_toggle_params = request.GET.copy()
+    if not has_explicit_tag_query and selected_tags:
+        for tag in selected_tags:
+            favorite_toggle_params.appendlist("tag", tag)
     favorite_toggle_params.pop("page", None)
     if selected_favorite_only:
         favorite_toggle_params.pop("favorite", None)
@@ -635,6 +662,7 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
         else:
             form = TagManageForm(initial={"is_active": True})
 
+    selected_query = (request.GET.get("q") or "").strip()
     tags = (
         KnowledgeTag.objects.annotate(
             post_count=Count("posts", filter=Q(posts__is_deleted=False)),
@@ -642,13 +670,31 @@ def talks_tag_manage(request: HttpRequest) -> HttpResponse:
         )
         .order_by("-post_count", "name")
     )
+    if selected_query:
+        tags = tags.filter(name__icontains=selected_query)
+
+    all_tag_names = list(
+        KnowledgeTag.objects.order_by("name").values_list("name", flat=True)
+    )
+
+    paginator = Paginator(tags, 20)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+    pagination_query = query_params.urlencode()
 
     return render(
         request,
         "talks/tag_manage.html",
         {
             "form": form,
-            "tags": tags,
+            "tags": list(page_obj.object_list),
+            "page_obj": page_obj,
+            "paginator": paginator,
+            "pagination_query": pagination_query,
+            "selected_query": selected_query,
+            "all_tag_names": all_tag_names,
             "editing_tag": editing_tag,
             "bulk_input_value": bulk_input_value,
             "talks_member_name": get_talks_display_name(request, talks_member),

@@ -1,0 +1,14 @@
+.comment-edit-cancel-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: #5b7280;
+  color: #fff !important;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+  line-height: 1;
+}

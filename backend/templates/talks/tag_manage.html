@@ -4,34 +4,8 @@
 {% block title %}タグ管理 | Report App{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'talks/tag_manage.css' %}?v=1">
 <div class="container">
-  <style>
-    .tag-form-grid {
-      display: grid;
-      gap: 10px;
-    }
-    .tag-active-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 2px;
-    }
-    .tag-active-row input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      min-height: 18px;
-      margin: 0;
-    }
-    .tag-active-label {
-      margin: 0;
-      font-weight: 700;
-      color: #1f3240;
-    }
-    .tag-active-help {
-      color: #5f7480;
-      font-size: 0.84rem;
-    }
-  </style>
   <header class="topbar topbar-desktop-expanded" style="margin-bottom:16px;">
     <div>
       <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" style="display:inline-flex; align-items:center;">
@@ -99,7 +73,39 @@
   </section>
 
   <section class="card">
-    <h2 style="margin:0 0 10px;">登録済みタグ</h2>
+    <h2 style="margin:0 0 10px;">登録済みタグ（{{ paginator.count }}件）</h2>
+    <form method="get" class="tag-search-row">
+      <div class="tag-search-box">
+        <label for="id_tag_query">タグ検索</label>
+        <input id="id_tag_query" type="text" name="q" value="{{ selected_query }}" placeholder="タグ名で検索" autocomplete="off">
+        <div id="tag-search-suggestions" class="tag-search-suggestions" aria-label="検索候補"></div>
+      </div>
+      <button type="submit" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">検索</button>
+      <a href="{% url 'talks_tag_manage' %}" class="btn-inline tag-reset-btn" style="width:auto; min-height:0; padding:6px 10px; background:#5b7280;">リセット</a>
+    </form>
+    {% if paginator.num_pages > 1 %}
+      <div class="tag-pagination">
+        {% if page_obj.has_previous %}
+          <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}" style="width:auto; min-height:0; padding:5px 9px;">前へ</a>
+        {% endif %}
+        {% for num in paginator.page_range %}
+          {% if num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+            {% if num == page_obj.number %}
+              <span class="tag-page-link is-active">{{ num }}</span>
+            {% else %}
+              <a class="tag-page-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ num }}">{{ num }}</a>
+            {% endif %}
+          {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
+            <span class="tag-page-ellipsis">…</span>
+          {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
+            <span class="tag-page-ellipsis">…</span>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}" style="width:auto; min-height:0; padding:5px 9px;">次へ</a>
+        {% endif %}
+      </div>
+    {% endif %}
     <div class="table-wrap">
       <table>
         <thead>
@@ -146,6 +152,31 @@
         </tbody>
       </table>
     </div>
+    {% if paginator.num_pages > 1 %}
+      <div class="tag-pagination" style="margin-top:12px; margin-bottom:0;">
+        {% if page_obj.has_previous %}
+          <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}" style="width:auto; min-height:0; padding:5px 9px;">前へ</a>
+        {% endif %}
+        {% for num in paginator.page_range %}
+          {% if num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+            {% if num == page_obj.number %}
+              <span class="tag-page-link is-active">{{ num }}</span>
+            {% else %}
+              <a class="tag-page-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ num }}">{{ num }}</a>
+            {% endif %}
+          {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
+            <span class="tag-page-ellipsis">…</span>
+          {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
+            <span class="tag-page-ellipsis">…</span>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}" style="width:auto; min-height:0; padding:5px 9px;">次へ</a>
+        {% endif %}
+      </div>
+    {% endif %}
   </section>
 </div>
+{{ all_tag_names|json_script:"tag-manage-all-tag-names" }}
+<script src="{% static 'talks/tag_manage.js' %}?v=1" defer></script>
 {% endblock %}

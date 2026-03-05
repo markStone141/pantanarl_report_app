@@ -17,6 +17,7 @@ from apps.talks.models import (
     KnowledgePostTag,
     KnowledgeReactionType,
     KnowledgeTag,
+    KnowledgeUserPreference,
 )
 from apps.talks.views import TALKS_SESSION_IS_ADMIN_KEY, TALKS_SESSION_MEMBER_ID_KEY
 
@@ -331,6 +332,26 @@ class TalksFilteringAndUnreadTests(TalksBaseTestCase):
         self.assertEqual(response.status_code, 200)
         ids = [item["id"] for item in response.context["threads"]]
         self.assertEqual(ids, [self.post2.id])
+
+    def test_preferred_tags_are_kept_across_logout_login(self):
+        self._login_talks_member("alice", "pass1")
+        response = self.client.get(reverse("talks_index"), {"tag": ["WV"]})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["id"] for item in response.context["threads"]], [self.post3.id])
+
+        user_id = self.client.session.get("_auth_user_id")
+        pref = KnowledgeUserPreference.objects.get(user_id=user_id)
+        self.assertEqual(
+            list(pref.preferred_tags.order_by("name").values_list("name", flat=True)),
+            ["WV"],
+        )
+
+        self.client.get(reverse("talks_logout"))
+        self._login_talks_member("alice", "pass1")
+        response2 = self.client.get(reverse("talks_index"))
+        self.assertEqual(response2.status_code, 200)
+        self.assertEqual(response2.context["selected_tags"], ["WV"])
+        self.assertEqual([item["id"] for item in response2.context["threads"]], [self.post3.id])
 
 
 class TalksAdminPermissionTests(TalksBaseTestCase):

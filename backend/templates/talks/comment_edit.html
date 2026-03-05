@@ -4,23 +4,8 @@
 {% block title %}コメント編集 | Talks{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'talks/comment_edit.css' %}?v=1">
 <div class="container">
-  <style>
-    .comment-edit-cancel-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 42px;
-      padding: 0 16px;
-      border-radius: 10px;
-      background: #5b7280;
-      color: #fff !important;
-      font-size: 0.92rem;
-      font-weight: 700;
-      text-decoration: none;
-      line-height: 1;
-    }
-  </style>
   <header class="topbar topbar-desktop-expanded" style="margin-bottom:16px;">
     <div>
       <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" style="display:inline-flex; align-items:center;">
