@@ -3,9 +3,9 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
+SECRET_KEY = os.getenv("SECRET_KEY", "local-insecure-secret-key")
 DEBUG = False
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
+ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "").split(",") if host.strip()]
 
 INSTALLED_APPS = [
     "django.contrib.admin",

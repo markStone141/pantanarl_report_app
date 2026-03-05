@@ -1,6 +1,5 @@
 import os
 
-from django.contrib.auth import get_user_model
 from django.http import HttpRequest
 from django.utils.text import slugify
 
@@ -12,7 +11,6 @@ TALKS_SESSION_MEMBER_ID_KEY = "talks_member_id"
 TALKS_SESSION_MEMBER_NAME_KEY = "talks_member_name"
 TALKS_SESSION_IS_ADMIN_KEY = "talks_is_admin"
 TALKS_ADMIN_LOGIN_ID = os.getenv("TALKS_ADMIN_LOGIN_ID", "admin")
-TALKS_ADMIN_PASSWORD = os.getenv("TALKS_ADMIN_PASSWORD", "pnadmin")
 
 
 def get_talks_member(request: HttpRequest) -> Member | None:
@@ -52,18 +50,9 @@ def get_talks_display_name(request: HttpRequest, member: Member | None) -> str:
     return ""
 
 
-def ensure_admin_user():
-    User = get_user_model()
-    user = User.objects.filter(username="talks_admin").first()
-    if user:
-        return user
-    user = User.objects.create(username="talks_admin", is_staff=True)
-    user.set_unusable_password()
-    user.save(update_fields=["password"])
-    return user
-
-
 def ensure_member_user(member: Member):
+    from django.contrib.auth import get_user_model
+
     if member.user:
         return member.user
 

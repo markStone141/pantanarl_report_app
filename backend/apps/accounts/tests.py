@@ -1,15 +1,20 @@
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-from django.contrib.auth import get_user_model
 
 
 class LoginFlowTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        user_model.objects.create_user(username="admin", password="admin-pass", is_staff=True)
+        user_model.objects.create_user(username="report", password="report-pass", is_staff=False)
+
     def test_admin_login_redirects_dashboard(self):
         response = self.client.post(
             reverse("home"),
             {
                 "login_id": "admin",
-                "password": "pnadmin",
+                "password": "admin-pass",
             },
         )
         self.assertEqual(response.status_code, 302)
@@ -21,7 +26,7 @@ class LoginFlowTests(TestCase):
             reverse("home"),
             {
                 "login_id": "report",
-                "password": "0823",
+                "password": "report-pass",
             },
         )
         self.assertEqual(response.status_code, 302)
@@ -37,16 +42,14 @@ class LoginFlowTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "管理者パスワードが違います。")
+        self.assertContains(response, "管理者パスワードが正しくありません。")
 
-    def test_admin_login_uses_django_user_password_if_present(self):
-        user_model = get_user_model()
-        user_model.objects.create_user(username="admin", password="new-admin-pass")
+    def test_admin_login_uses_django_user_password(self):
         response = self.client.post(
             reverse("home"),
             {
                 "login_id": "admin",
-                "password": "new-admin-pass",
+                "password": "admin-pass",
             },
         )
         self.assertEqual(response.status_code, 302)
@@ -54,14 +57,12 @@ class LoginFlowTests(TestCase):
         self.assertEqual(self.client.session.get("role"), "admin")
         self.assertIn("_auth_user_id", self.client.session)
 
-    def test_report_login_uses_django_user_password_if_present(self):
-        user_model = get_user_model()
-        user_model.objects.create_user(username="report", password="new-report-pass")
+    def test_report_login_uses_django_user_password(self):
         response = self.client.post(
             reverse("home"),
             {
                 "login_id": "report",
-                "password": "new-report-pass",
+                "password": "report-pass",
             },
         )
         self.assertEqual(response.status_code, 302)

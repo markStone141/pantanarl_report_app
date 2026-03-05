@@ -78,6 +78,7 @@ class TalksBaseTestCase(TestCase):
         self.member1.save(update_fields=["user"])
         self.member2.user = user_model.objects.create_user(username="bob", password="pass2")
         self.member2.save(update_fields=["user"])
+        user_model.objects.create_user(username="admin", password="admin-pass", is_staff=True)
 
         self.post1 = self._create_post(self.member1, "Post1", "Body1", [self.tag_un, self.tag_retry])
         self.post2 = self._create_post(self.member2, "Post2", "Body2", [self.tag_un])
@@ -163,7 +164,10 @@ class TalksAuthTests(TalksBaseTestCase):
         self.assertEqual(self.client.session.get(SESSION_ROLE_KEY), ROLE_REPORT)
 
     def test_admin_login_sets_admin_role_and_redirects(self):
-        response = self.client.post(reverse("talks_login"), {"login_id": "admin", "password": "pnadmin"})
+        response = self.client.post(
+            reverse("talks_login"),
+            {"login_id": "admin", "password": "admin-pass"},
+        )
         self.assertRedirects(response, reverse("talks_index"))
         self.assertEqual(self.client.session.get(SESSION_ROLE_KEY), ROLE_ADMIN)
 

@@ -4,6 +4,7 @@ from collections import Counter
 from datetime import datetime
 
 from django.contrib import messages
+from django.contrib.auth import authenticate
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
 from django.db.models import Count, F, Q
@@ -26,12 +27,10 @@ from .models import KnowledgeReactionType
 from .models import KnowledgeUserPreference
 from .services.session import (
     TALKS_ADMIN_LOGIN_ID,
-    TALKS_ADMIN_PASSWORD,
     TALKS_SESSION_IS_ADMIN_KEY,
     TALKS_SESSION_MEMBER_ID_KEY,
     TALKS_SESSION_MEMBER_NAME_KEY,
     clear_talks_session,
-    ensure_admin_user,
     ensure_member_user,
     get_talks_display_name,
     get_talks_member,
@@ -244,7 +243,21 @@ def talks_login(request: HttpRequest) -> HttpResponse:
         login_id = (request.POST.get("login_id") or "").strip()
         password = request.POST.get("password") or ""
 
-        if login_id == TALKS_ADMIN_LOGIN_ID and password == TALKS_ADMIN_PASSWORD:
+        if login_id == TALKS_ADMIN_LOGIN_ID:
+            admin_user = authenticate(request, username=TALKS_ADMIN_LOGIN_ID, password=password)
+            if admin_user and (admin_user.is_staff or admin_user.is_superuser):
+                auth_login(request, admin_user)
+                request.session[SESSION_ROLE_KEY] = ROLE_ADMIN
+                request.session[TALKS_SESSION_IS_ADMIN_KEY] = True
+                request.session[TALKS_SESSION_MEMBER_ID_KEY] = None
+                request.session[TALKS_SESSION_MEMBER_NAME_KEY] = "管理者"
+                return redirect("talks_index")
+
+            form = TalksLoginForm(request.POST)
+            form.add_error("password", "IDまたはパスワードが正しくありません。")
+            return render(request, "talks/login.html", {"form": form})
+
+        if False:  # legacy admin fallback disabled
             admin_user = ensure_admin_user()
             auth_login(request, admin_user, backend="django.contrib.auth.backends.ModelBackend")
             request.session[SESSION_ROLE_KEY] = ROLE_ADMIN
