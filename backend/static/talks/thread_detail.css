@@ -302,6 +302,12 @@
   .talks-back-link {
     display: none !important;
   }
+  .knowledge-form-sheet {
+    padding: 18px 16px 20px;
+  }
+  .knowledge-form-head {
+    margin-bottom: 12px;
+  }
   .knowledge-thread-title {
     font-size: 1.14rem !important;
     line-height: 1.45;

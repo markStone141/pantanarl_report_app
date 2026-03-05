@@ -40,8 +40,11 @@
       display: block;
       width: 100%;
     }
-    .knowledge-thread-head {
-      display: block !important;
+.knowledge-thread-head {
+      display: flex !important;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
       width: 100%;
       text-align: left !important;
     }
@@ -338,7 +341,7 @@
   color: #0f4d5d;
       border: 1px solid #c6d8df;
     }
-    .knowledge-unread-badge {
+.knowledge-unread-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -349,6 +352,8 @@
       border: 1px solid #f0cf9b;
       font-size: 0.76rem;
       font-weight: 700;
+      flex: 0 0 auto;
+      margin-top: 2px;
     }
     @media (max-width: 768px) {
       .knowledge-page {
@@ -395,14 +400,14 @@
         overflow: auto;
         background: #fff;
         border-radius: 16px 16px 0 0;
-        padding: 14px;
+        padding: 18px 16px 20px;
         box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
       }
       .knowledge-sheet-head {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 8px;
+        margin-bottom: 12px;
       }
       .knowledge-sheet-close {
         width: 38px;
