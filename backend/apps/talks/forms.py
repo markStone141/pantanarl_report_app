@@ -23,7 +23,8 @@ class TalksLoginForm(forms.Form):
             return cleaned_data
 
         member = Member.objects.active().filter(login_id=login_id).first()
-        if not member or member.password != password:
+        user = member.user if member else None
+        if not member or not user or not user.check_password(password):
             raise forms.ValidationError(self.error_messages["invalid_login"])
 
         self.member = member

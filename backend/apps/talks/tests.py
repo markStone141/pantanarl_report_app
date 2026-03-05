@@ -72,6 +72,11 @@ class TalksBaseTestCase(TestCase):
             password="pass2",
             is_active=True,
         )
+        user_model = get_user_model()
+        self.member1.user = user_model.objects.create_user(username="alice", password="pass1")
+        self.member1.save(update_fields=["user"])
+        self.member2.user = user_model.objects.create_user(username="bob", password="pass2")
+        self.member2.save(update_fields=["user"])
 
         self.post1 = self._create_post(self.member1, "Post1", "Body1", [self.tag_un, self.tag_retry])
         self.post2 = self._create_post(self.member2, "Post2", "Body2", [self.tag_un])
@@ -164,6 +169,18 @@ class TalksAuthTests(TalksBaseTestCase):
     def test_talks_index_requires_authentication(self):
         response = self.client.get(reverse("talks_index"))
         self.assertRedirects(response, reverse("talks_login"))
+
+    def test_member_without_linked_user_cannot_login(self):
+        member = Member.objects.create(
+            name="NoUser",
+            login_id="nouser",
+            password="dummy",
+            is_active=True,
+        )
+        self.assertIsNone(member.user)
+        response = self.client.post(reverse("talks_login"), {"login_id": "nouser", "password": "dummy"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "IDまたはパスワードが違います。")
 
 
 class TalksCrudTests(TalksBaseTestCase):
