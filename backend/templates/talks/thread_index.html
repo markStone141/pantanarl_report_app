@@ -148,43 +148,47 @@
             <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
               {% for tag in thread.tags %}<span class="badge knowledge-tag-chip">#{{ tag }}</span>{% endfor %}
             </div>
-            <div class="muted knowledge-meta-row">
-              {% if thread.can_manage %}
-                <span class="knowledge-item-actions">
-                  <a class="knowledge-icon-btn" href="{% url 'talks_post_edit' thread.id %}" title="投稿を編集" aria-label="投稿を編集">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                  </a>
-                  <form method="post" action="{% url 'talks_post_delete' thread.id %}" style="margin:0;" onsubmit="return confirm('この投稿を削除しますか？');">
-                    {% csrf_token %}
-                    <button type="submit" class="knowledge-icon-btn danger" title="投稿を削除" aria-label="投稿を削除">
-                      <i class="fa-solid fa-trash"></i>
-                    </button>
-                  </form>
+            <div class="muted knowledge-list-meta-wrap">
+              <div class="knowledge-list-icon-row">
+                {% if thread.can_manage %}
+                  <span class="knowledge-item-actions">
+                    <a class="knowledge-icon-btn" href="{% url 'talks_post_edit' thread.id %}" title="投稿を編集" aria-label="投稿を編集">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </a>
+                    <form method="post" action="{% url 'talks_post_delete' thread.id %}" style="margin:0;" onsubmit="return confirm('この投稿を削除しますか？');">
+                      {% csrf_token %}
+                      <button type="submit" class="knowledge-icon-btn danger" title="投稿を削除" aria-label="投稿を削除">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </form>
+                  </span>
+                {% endif %}
+                <span title="コメント" class="knowledge-list-meta-item">
+                  <i class="fa-solid fa-comment" style="color:#607582;"></i>{{ thread.comment_count }}
                 </span>
-              {% endif %}
-              <span style="display:inline-flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-user" aria-hidden="true"></i>{{ thread.author }}
-              </span>
-              <span style="display:inline-flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>{{ thread.created_display }}
-              </span>
-              <span title="コメント" style="display:inline-flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-comment" style="color:#607582;"></i>{{ thread.comment_count }}
-              </span>
-              <span title="閲覧数" style="display:inline-flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-eye" style="color:#607582;"></i>{{ thread.view_count }}
-              </span>
-              <form method="post" action="{% url 'talks_post_favorite_toggle' thread.id %}" class="js-favorite-form" data-post-id="{{ thread.id }}" style="margin:0;">
-                {% csrf_token %}
-                <input type="hidden" name="next" value="{{ current_full_path }}">
-                <button type="submit" class="knowledge-icon-btn js-favorite-btn" title="{% if thread.is_favorite %}お気に入り解除{% else %}お気に入り{% endif %}" aria-label="{% if thread.is_favorite %}お気に入り解除{% else %}お気に入り{% endif %}">
-                  {% if thread.is_favorite %}
-                    <i class="fa-solid fa-star js-favorite-icon" style="color:#d89b12;"></i>
-                  {% else %}
-                    <i class="fa-regular fa-star js-favorite-icon"></i>
-                  {% endif %}
-                </button>
-              </form>
+                <span title="閲覧数" class="knowledge-list-meta-item">
+                  <i class="fa-solid fa-eye" style="color:#607582;"></i>{{ thread.view_count }}
+                </span>
+                <form method="post" action="{% url 'talks_post_favorite_toggle' thread.id %}" class="js-favorite-form" data-post-id="{{ thread.id }}" style="margin:0;">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ current_full_path }}">
+                  <button type="submit" class="knowledge-icon-btn js-favorite-btn" title="{% if thread.is_favorite %}お気に入り解除{% else %}お気に入り{% endif %}" aria-label="{% if thread.is_favorite %}お気に入り解除{% else %}お気に入り{% endif %}">
+                    {% if thread.is_favorite %}
+                      <i class="fa-solid fa-star js-favorite-icon" style="color:#d89b12;"></i>
+                    {% else %}
+                      <i class="fa-regular fa-star js-favorite-icon"></i>
+                    {% endif %}
+                  </button>
+                </form>
+              </div>
+              <div class="knowledge-list-author-row">
+                <span class="knowledge-list-meta-item">
+                  <i class="fa-solid fa-user" aria-hidden="true"></i>{{ thread.author }}
+                </span>
+                <span class="knowledge-list-meta-item">
+                  <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>{{ thread.created_display }}
+                </span>
+              </div>
             </div>
           </article>
         {% endfor %}

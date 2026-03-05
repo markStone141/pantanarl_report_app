@@ -82,7 +82,7 @@
       border-color: #e7c4c4;
       background: #fff7f7;
     }
-    .knowledge-meta-row {
+.knowledge-meta-row {
       margin-top: 8px;
       display: flex;
       flex-wrap: wrap;
@@ -90,6 +90,24 @@
       align-items: center;
       justify-content: flex-start;
       text-align: left;
+    }
+.knowledge-list-meta-wrap {
+      margin-top: 8px;
+      display: grid;
+      gap: 6px;
+      text-align: left;
+    }
+.knowledge-list-icon-row,
+.knowledge-list-author-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+.knowledge-list-meta-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
     .knowledge-list-heading {
       margin: 0;
@@ -439,6 +457,13 @@
         background: #0f5e72;
         color: #fff;
         border-color: #0f5e72;
+      }
+      .knowledge-list-meta-wrap {
+        gap: 7px;
+      }
+      .knowledge-list-author-row {
+        font-size: 0.84rem;
+        color: #5f7480;
       }
       .knowledge-list-heading {
         font-size: 1.07rem;
