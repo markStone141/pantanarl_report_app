@@ -38,6 +38,33 @@
   font-weight: 500;
   color: #1b2a34;
 }
+.knowledge-thread-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.knowledge-thread-meta-wrap {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+}
+.knowledge-thread-icon-row,
+.knowledge-thread-author-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.knowledge-thread-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 .knowledge-item-actions {
   display: inline-flex;
   align-items: center;
@@ -311,6 +338,19 @@
   .knowledge-thread-title {
     font-size: 1.14rem !important;
     line-height: 1.45;
+  }
+  .knowledge-thread-meta-wrap {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .knowledge-thread-icon-row {
+    order: 1;
+  }
+  .knowledge-thread-author-row {
+    order: 2;
+    font-size: 0.84rem;
+    color: #5f7480;
   }
   .knowledge-thread-meta {
     font-size: 0.84rem;
