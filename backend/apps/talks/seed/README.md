@@ -5,6 +5,7 @@
 
 - seedファイル: `demo_data.json`
 - 投入コマンド: `seed_talks_demo`
+- アイコン種別のみ投入コマンド: `seed_talks_reaction_types`
 - 削除コマンド: `clear_talks_data`
 
 ## コマンド
@@ -22,6 +23,11 @@ python manage.py seed_talks_demo --reset
 ### 3. 別seedファイルを指定して投入
 ```bash
 python manage.py seed_talks_demo --file your_seed.json
+```
+
+### 4. アイコン種別（reaction_types）だけ投入
+```bash
+python manage.py seed_talks_reaction_types
 ```
 
 ## データ削除
