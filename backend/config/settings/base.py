@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     "apps.targets",
     "apps.dashboard",
     "apps.talks",
+    "apps.testimony",
 ]
 
 MIDDLEWARE = [

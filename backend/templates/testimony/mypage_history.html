@@ -1,0 +1,20 @@
+﻿{% extends "base.html" %}
+{% block title %}My History{% endblock %}
+{% block content %}
+<div class="container">
+  <header class="topbar topbar-nav-always">
+    <h1>閲覧履歴</h1>
+    <nav><a class="btn-inline" href="{% url 'testimony_article_list' %}">記事一覧</a></nav>
+  </header>
+  <article class="card" style="margin-top:16px;">
+    {% for row in histories %}
+      <div style="padding:8px 0; border-bottom:1px solid #e2ebef;">
+        <a href="{% url 'testimony_article_detail' row.article_id %}">{{ row.article.title }}</a>
+        <div style="font-size:12px; color:#557;">最終: {{ row.last_viewed_at|date:"Y-m-d H:i" }} / 回数: {{ row.view_count }}</div>
+      </div>
+    {% empty %}
+      <p>履歴はありません。</p>
+    {% endfor %}
+  </article>
+</div>
+{% endblock %}

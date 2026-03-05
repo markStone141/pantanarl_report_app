@@ -1,0 +1,50 @@
+﻿{% extends "base.html" %}
+{% block title %}Testimony Articles{% endblock %}
+{% block content %}
+<div class="container">
+  <header class="topbar topbar-nav-always">
+    <h1>Testimony</h1>
+    <nav>
+      <a class="btn-inline" href="{% url 'testimony_article_list' %}">記事一覧</a>
+      <a class="btn-inline" href="{% url 'testimony_article_create' %}">新規投稿</a>
+      <a class="btn-inline" href="{% url 'testimony_mypage_favorites' %}">お気に入り</a>
+      <a class="btn-inline" href="{% url 'testimony_mypage_history' %}">閲覧履歴</a>
+    </nav>
+  </header>
+
+  <article class="card" style="margin-top:16px;">
+    <form method="get" class="grid" style="grid-template-columns:1fr 220px auto; gap:8px;">
+      <input type="text" name="q" value="{{ request.GET.q }}" placeholder="キーワード" />
+      <select name="sort">
+        <option value="latest" {% if selected_sort == 'latest' %}selected{% endif %}>新着順</option>
+        <option value="views" {% if selected_sort == 'views' %}selected{% endif %}>閲覧数順</option>
+        <option value="favorites" {% if selected_sort == 'favorites' %}selected{% endif %}>お気に入り順</option>
+        <option value="likes" {% if selected_sort == 'likes' %}selected{% endif %}>いいね順</option>
+        <option value="popular" {% if selected_sort == 'popular' %}selected{% endif %}>人気順</option>
+      </select>
+      <button type="submit">適用</button>
+    </form>
+  </article>
+
+  <section class="card" style="margin-top:16px;">
+    {% for article in articles %}
+      <div style="padding:12px 0; border-bottom:1px solid #e2ebef;">
+        <a href="{% url 'testimony_article_detail' article.id %}"><strong>{{ article.title }}</strong></a>
+        <div style="margin-top:6px; color:#557; font-size:13px;">
+          投稿者 {{ article.author }} / 閲覧 {{ article.view_count }} / いいね {{ article.like_count }} / お気に入り {{ article.favorite_count }}
+        </div>
+      </div>
+    {% empty %}
+      <p>記事はまだありません。</p>
+    {% endfor %}
+
+    {% if is_paginated %}
+      <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+        {% if page_obj.has_previous %}<a class="btn-inline" href="?page={{ page_obj.previous_page_number }}&sort={{ selected_sort }}">前へ</a>{% endif %}
+        <span>{{ page_obj.number }} / {{ paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a class="btn-inline" href="?page={{ page_obj.next_page_number }}&sort={{ selected_sort }}">次へ</a>{% endif %}
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+﻿{% extends "base.html" %}
+{% block title %}Delete Article{% endblock %}
+{% block content %}
+<div class="container">
+  <article class="card" style="margin-top:16px;">
+    <h2>この記事を削除しますか？</h2>
+    <p>{{ object.title }}</p>
+    <form method="post">{% csrf_token %}
+      <button type="submit">削除</button>
+      <a class="btn-inline" href="{% url 'testimony_article_detail' object.id %}">キャンセル</a>
+    </form>
+  </article>
+</div>
+{% endblock %}
