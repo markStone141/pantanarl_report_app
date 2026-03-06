@@ -1,13 +1,18 @@
 :root {
-  --bg: #f2f5f7;
+  --bg: #eef3f8;
   --card: #ffffff;
-  --ink: #1b2a34;
-  --muted: #5d6f7c;
-  --line: #d7e0e6;
-  --brand: #126e82;
-  --brand-soft: #d7edf2;
-  --ok: #2e8b57;
-  --warn: #d28b1f;
+  --ink: #13232d;
+  --muted: #5a6d79;
+  --line: #d3dee7;
+  --brand: #0f6f8a;
+  --brand-soft: #d8edf5;
+  --ok: #238a60;
+  --warn: #cb8c1f;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --shadow-sm: 0 4px 14px rgba(8, 28, 39, 0.06);
+  --shadow-md: 0 14px 34px rgba(8, 28, 39, 0.09);
 }
 
 * {
@@ -17,8 +22,12 @@
 body {
   margin: 0;
   font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
-  background: radial-gradient(circle at top left, #e8f1f4, var(--bg) 58%);
+  background:
+    radial-gradient(1200px 620px at 0% -10%, #d9ecf7 0%, rgba(217, 236, 247, 0) 65%),
+    radial-gradient(900px 520px at 100% -18%, #e6f6ec 0%, rgba(230, 246, 236, 0) 62%),
+    var(--bg);
   color: var(--ink);
+  line-height: 1.5;
 }
 
 a {
@@ -32,16 +41,17 @@ a {
 }
 
 .topbar {
-  background: linear-gradient(120deg, #0b4f5f, #126e82);
+  background: linear-gradient(120deg, #0b5b71, #0f6f8a 56%, #1483a2);
   color: #fff;
   padding: 16px 20px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
   gap: 12px;
   position: relative;
   flex-wrap: wrap;
+  box-shadow: var(--shadow-md);
 }
 
 .topbar > div:first-child {
@@ -103,7 +113,7 @@ a {
 
 .topbar nav a {
   color: #fff;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.18);
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 0.92rem;
@@ -141,8 +151,9 @@ a {
 .card {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 20px;
+  box-shadow: var(--shadow-sm);
 }
 
 .card h2,
@@ -226,11 +237,27 @@ textarea,
 button {
   width: 100%;
   max-width: 100%;
-  border: 1px solid #c9d7df;
-  border-radius: 10px;
+  border: 1px solid #c5d4de;
+  border-radius: var(--radius-sm);
   padding: 11px 12px;
   font-size: 0.96rem;
   font-family: inherit;
+  transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+
+input,
+select,
+textarea {
+  background: #fbfdff;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus-visible {
+  outline: none;
+  border-color: #67a7be;
+  box-shadow: 0 0 0 3px rgba(22, 130, 160, 0.16);
 }
 
 .report-date-input {
@@ -267,12 +294,22 @@ button {
   border: 0;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15, 111, 138, 0.24);
+}
+
+button:hover {
+  filter: brightness(1.04);
+}
+
+button:active {
+  transform: translateY(1px);
+  box-shadow: 0 5px 12px rgba(15, 111, 138, 0.22);
 }
 
 .btn-inline {
   width: auto;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: 999px;
   font-size: 0.88rem;
 }
 
@@ -312,6 +349,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.94rem;
+  background: #fff;
 }
 
 th,
@@ -323,7 +361,7 @@ td {
 }
 
 th {
-  background: #f7fafb;
+  background: #f3f8fb;
 }
 
 .note {
@@ -400,10 +438,11 @@ th {
   width: min(960px, 96vw);
   height: min(90vh, 900px);
   margin: 0 auto;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
 
 .modal-header {
