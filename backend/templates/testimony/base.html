@@ -55,6 +55,29 @@
       min-height: 0;
       padding: 8px 12px;
     }
+    .testimony-react-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #c7d6de;
+      background: #f7fbfd;
+      color: #214b5b;
+      border-radius: 10px;
+      transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+    }
+    .testimony-react-btn i {
+      transition: color .15s ease;
+    }
+    .testimony-react-btn.testimony-like-btn.is-active {
+      background: #e6f6ee;
+      border-color: #63b58b;
+      color: #145b39;
+    }
+    .testimony-react-btn.testimony-favorite-btn.is-active {
+      background: #fff7dd;
+      border-color: #d7ae40;
+      color: #7a5900;
+    }
     .testimony-counts {
       margin-top: 10px;
       display: flex;

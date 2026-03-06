@@ -214,7 +214,15 @@
     function buildSectionLines(section, periodName, periodRange) {
       const lines = [];
       const amountLabel = section.code && section.code.indexOf("STYLE") === 0 ? "金額" : "支援額";
+      const isStyleSection = section.code && section.code.indexOf("STYLE") === 0;
       const hasPeriod = periodName && periodName !== "-" && periodRange && periodRange !== "-";
+
+      function formatRemainingText(textValue) {
+        const text = textValue || "0件/0円";
+        if (!isStyleSection) return text;
+        const parts = text.split("/");
+        return parts.length > 1 ? parts[parts.length - 1] : text;
+      }
       lines.push(section.heading + "（" + section.name + "）");
       lines.push("全体");
       lines.push("件数" + section.daily_count + "件、" + amountLabel + section.daily_amount_text);
@@ -236,7 +244,7 @@
       } else {
         lines.push("路程目標データなし");
       }
-      lines.push("目標達成まで：" + (section.period_remaining_text || "0件/0円"));
+      lines.push("目標達成まで：" + formatRemainingText(section.period_remaining_text));
       lines.push("【月間目標達成率】");
       if (section.month_lines.length) {
         section.month_lines.forEach(function (line) {
@@ -245,7 +253,7 @@
       } else {
         lines.push("月目標データなし");
       }
-      lines.push("目標達成まで：" + (section.month_remaining_text || "0件/0円"));
+      lines.push("目標達成まで：" + formatRemainingText(section.month_remaining_text));
       return lines;
     }
 
@@ -268,7 +276,15 @@
     function buildSectionLinesV2(section, periodName, periodRange) {
       const lines = [];
       const amountLabel = section.code && section.code.indexOf("STYLE") === 0 ? "金額" : "支援額";
+      const isStyleSection = section.code && section.code.indexOf("STYLE") === 0;
       const hasPeriod = periodName && periodName !== "-" && periodRange && periodRange !== "-";
+
+      function formatRemainingText(textValue) {
+        const text = textValue || "0件/0円";
+        if (!isStyleSection) return text;
+        const parts = text.split("/");
+        return parts.length > 1 ? parts[parts.length - 1] : text;
+      }
       lines.push(section.heading + "（" + section.name + "）");
 
       if (section.has_report) {
@@ -306,7 +322,7 @@
         } else {
           lines.push("路程目標データなし");
         }
-        lines.push("目標達成まで：" + (section.period_remaining_text || "0件/0円"));
+        lines.push("目標達成まで：" + formatRemainingText(section.period_remaining_text));
       }
       lines.push("【月間目標達成率】");
       if (section.month_lines.length) {
@@ -316,7 +332,7 @@
       } else {
         lines.push("月目標データなし");
       }
-      lines.push("目標達成まで：" + (section.month_remaining_text || "0件/0円"));
+      lines.push("目標達成まで：" + formatRemainingText(section.month_remaining_text));
       return lines;
     }
 
