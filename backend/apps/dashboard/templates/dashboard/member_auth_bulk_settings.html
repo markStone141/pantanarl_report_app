@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}ID・パスワード一括管理 | Report App{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header class="topbar topbar-desktop-expanded">
+    <div>
+      <strong>ID・パスワード一括管理</strong>
+      <div class="muted" style="color:#e1f1f5;">20件ずつ表示・空欄は変更しません。</div>
+    </div>
+    <nav>
+      <a href="{% url 'member_settings' %}">メンバー管理</a>
+      <a href="{% url 'dashboard_index' %}">管理者ページ</a>
+      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+
+  <section class="card" style="margin-top:16px;">
+    {% if status_message %}
+      <div class="note" style="margin-bottom:12px;">{{ status_message }}</div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="page" value="{{ current_page_number }}">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>名前</th>
+              <th>ログインID</th>
+              <th>パスワード</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in member_rows %}
+              <tr>
+                <td>{{ row.member.name }}</td>
+                <td>
+                  <input
+                    type="text"
+                    name="login_id_{{ row.member.id }}"
+                    value="{{ row.login_input }}"
+                    placeholder="{% if row.member.user %}現在: {{ row.member.user.username }}{% else %}未連携{% endif %}"
+                  >
+                  {% if row.errors %}
+                    <div class="error-text">{{ row.errors|join:" " }}</div>
+                  {% endif %}
+                </td>
+                <td>
+                  <input
+                    type="password"
+                    name="password_{{ row.member.id }}"
+                    value=""
+                    placeholder="変更時のみ入力"
+                  >
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="3">メンバーが存在しません。</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <button type="submit" style="margin-top:12px;">変更を適用</button>
+    </form>
+
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:14px;">
+      {% if page_obj.has_previous %}
+        <a class="btn-inline" href="?page={{ page_obj.previous_page_number }}">前へ</a>
+      {% endif %}
+      {% for num in paginator.page_range %}
+        {% if num == page_obj.number %}
+          <span class="badge">{{ num }}</span>
+        {% elif num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+          <a class="btn-inline" href="?page={{ num }}">{{ num }}</a>
+        {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
+          <span class="muted">…</span>
+        {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
+          <span class="muted">…</span>
+        {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+        <a class="btn-inline" href="?page={{ page_obj.next_page_number }}">次へ</a>
+      {% endif %}
+      <span class="muted" style="margin-left:auto;">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
+    </div>
+  </section>
+</div>
+{% endblock %}

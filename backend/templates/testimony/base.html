@@ -337,7 +337,9 @@
   </style>
   <header id="testimony-topbar" class="topbar topbar-nav-always testimony-topbar">
     <div>
-      <img src="{% static 'img/testimony_logo.png' %}?v=1" alt="Testimony" style="height:44px; width:auto; display:block;">
+      <a href="{% url 'testimony_article_list' %}" aria-label="Testimonyホームへ" style="display:inline-flex; align-items:center;">
+        <img src="{% static 'img/testimony_logo.png' %}?v=1" alt="Testimony" style="height:44px; width:auto; display:block;">
+      </a>
     </div>
     <button id="testimony-menu-toggle" type="button" class="btn-inline testimony-menu-toggle" aria-label="Open menu" aria-expanded="false">
       <i class="fa-solid fa-bars" aria-hidden="true"></i>
@@ -354,7 +356,10 @@
       </div>
       {% endif %}
       <a class="btn-inline" href="{% url 'testimony_article_list' %}">記事一覧</a>
+      <a class="btn-inline" href="{% url 'talks_index' %}">Talks</a>
+      {% if request.user.is_staff or request.user.is_superuser or request.user.username == "admin" %}
       <a class="btn-inline" href="{% url 'testimony_article_create' %}">新規投稿</a>
+      {% endif %}
       <a class="btn-inline" href="{% url 'testimony_mypage_favorites' %}">お気に入り</a>
       <a class="btn-inline" href="{% url 'testimony_mypage_history' %}">閲覧履歴</a>
       {% if request.user.is_staff or request.user.is_superuser or request.user.username == "admin" %}

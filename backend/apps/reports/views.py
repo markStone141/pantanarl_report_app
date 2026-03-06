@@ -313,7 +313,7 @@ def report_edit(request: HttpRequest, report_id: int) -> HttpResponse:
         dept_code=report.department.code,
         title=f"{report.department.name} 報告フォーム",
         location_label="現場",
-        show_location=report.department.code not in {"STYLE1", "STYLE2"},
+        show_location=False,
         split_counts=report.department.code in SPLIT_COUNT_CODES,
         editing_report=report,
         redirect_target=redirect_target,

@@ -145,6 +145,7 @@ class ArticleListView(TestimonyLoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["selected_sort"] = self.request.GET.get("sort", "latest")
         context["q"] = (self.request.GET.get("q") or "").strip()
+        context["can_create_article"] = _is_testimony_admin(self.request.user)
         params = self.request.GET.copy()
         params.pop("page", None)
         context["pagination_query"] = params.urlencode()
@@ -195,6 +196,11 @@ class ArticleCreateView(TestimonyLoginRequiredMixin, CreateView):
     model = Article
     form_class = ArticleForm
     template_name = "testimony/article_form.html"
+
+    def dispatch(self, request: HttpRequest, *args, **kwargs):
+        if not _is_testimony_admin(request.user):
+            raise Http404()
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         now = timezone.now()

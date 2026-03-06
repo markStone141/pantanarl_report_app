@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Talks ログイン | Report App{% endblock %}
@@ -11,6 +11,7 @@
     </div>
     <form method="post" class="grid" style="gap:10px;">
       {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}" />
       <div>
         <label for="{{ form.login_id.id_for_label }}">ID</label>
         {{ form.login_id }}
@@ -21,6 +22,9 @@
       </div>
       {% if form.non_field_errors %}
         <div class="error-text">{{ form.non_field_errors|join:", " }}</div>
+      {% endif %}
+      {% if form.password.errors %}
+        <div class="error-text">{{ form.password.errors|join:", " }}</div>
       {% endif %}
       <button type="submit">ログイン</button>
     </form>

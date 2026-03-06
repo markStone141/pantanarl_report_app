@@ -113,22 +113,6 @@
       margin: 0;
       font-size: 1.26rem;
     }
-    .talks-topbar-nav {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .talks-welcome-text {
-      display: inline-flex;
-      align-items: center;
-      color: #fff;
-      font-size: 0.78rem;
-      line-height: 1;
-      white-space: nowrap;
-    }
-    .talks-logout-link {
-      margin-left: auto;
-    }
     .knowledge-pagination {
       display: flex;
       justify-content: center;

@@ -14,6 +14,7 @@
       <a href="{% url 'member_settings' %}">メンバー管理</a>
       <a href="{% url 'department_settings' %}">部署管理</a>
       <a href="{% url 'target_index' %}">目標設定</a>
+      <a href="{% url 'report_index' %}">報告アプリ</a>
       <a href="{% url 'talks_index' %}">Talks</a>
       <a href="{% url 'report_history' %}">保存報告一覧</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
@@ -162,7 +163,7 @@
         </table>
       </details>
 
-      <h4 style="margin: 16px 0 8px;">路程目標</h4>
+      <h4 style="margin: 16px 0 8px;">路程目標 {% if target_period_range and target_period_range != "-" %}（{{ target_period_range }}）{% endif %}</h4>
       <details class="mobile-only-accordion" style="margin-top: 10px;">
         <summary style="cursor: pointer;">路程目標（詳細）</summary>
         <table style="margin-top: 8px;">
@@ -235,6 +236,7 @@
       } else {
         lines.push("路程目標データなし");
       }
+      lines.push("目標達成まで：" + (section.period_remaining_text || "0件/0円"));
       lines.push("【月間目標達成率】");
       if (section.month_lines.length) {
         section.month_lines.forEach(function (line) {
@@ -243,6 +245,7 @@
       } else {
         lines.push("月目標データなし");
       }
+      lines.push("目標達成まで：" + (section.month_remaining_text || "0件/0円"));
       return lines;
     }
 
@@ -303,6 +306,7 @@
         } else {
           lines.push("路程目標データなし");
         }
+        lines.push("目標達成まで：" + (section.period_remaining_text || "0件/0円"));
       }
       lines.push("【月間目標達成率】");
       if (section.month_lines.length) {
@@ -312,6 +316,7 @@
       } else {
         lines.push("月目標データなし");
       }
+      lines.push("目標達成まで：" + (section.month_remaining_text || "0件/0円"));
       return lines;
     }
 

@@ -23,6 +23,7 @@ class DailyDepartmentReport(models.Model):
     location = models.CharField(max_length=128, blank=True)
     memo = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-report_date", "-created_at"]

@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container">
-  <header class="topbar">
+  <header class="topbar topbar-desktop-expanded">
     <strong>保存報告一覧</strong>
     <nav>
       <a href="{% url 'report_index' %}">報告一覧へ戻る</a>
@@ -49,7 +49,7 @@
       <input type="hidden" name="date_from" value="{{ date_from }}">
       <input type="hidden" name="date_to" value="{{ date_to }}">
 
-      <div class="row" style="gap:8px; margin-bottom:10px;">
+      <div class="row" style="gap:8px; margin-bottom:10px; justify-content:flex-start;">
         <button type="button" class="btn-inline" id="select-visible-btn">全選択</button>
         <button type="button" class="btn-inline" id="clear-visible-btn">選択解除</button>
         <button type="submit" class="btn-inline" id="bulk-delete-btn">選択削除</button>
@@ -64,8 +64,6 @@
             <th>責任者</th>
             <th>件数合計</th>
             <th>金額合計(円)</th>
-            <th>現場</th>
-            <th>メモ</th>
             <th>登録日時</th>
             <th>編集日時</th>
             <th>修正</th>
@@ -82,8 +80,6 @@
             <td>{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
             <td>{{ report.total_count }}</td>
             <td>{{ report.followup_count_text }}</td>
-            <td>{{ report.location|default:"-" }}</td>
-            <td>{{ report.memo|default:"-" }}</td>
             <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
             <td>{% if report.edited_at %}{{ report.edited_at|date:"Y-m-d H:i" }}{% else %}-{% endif %}</td>
             <td>
@@ -93,12 +89,12 @@
             </td>
           </tr>
           <tr data-dept="{{ report.department.code }}" data-detail-row="1">
-            <td colspan="11" style="background: #fafcfd;">
+            <td colspan="9" style="background: #fafcfd;">
               <strong>明細:</strong>
               {% for line in report.lines.all %}
                 {% if not forloop.first %} / {% endif %}
                 {% if line.member %}{{ line.member.name }}{% else %}未設定{% endif %}
-                (金額 {{ line.amount_text }}円, 件数 {{ line.count }}, 現場 {{ line.location|default:"-" }})
+                (金額 {{ line.amount_text }}円, 件数 {{ line.count }})
               {% empty %}
                 明細なし
               {% endfor %}
@@ -106,7 +102,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="11">まだ保存データがありません。</td>
+            <td colspan="9">まだ保存データがありません。</td>
           </tr>
           {% endfor %}
         </tbody>

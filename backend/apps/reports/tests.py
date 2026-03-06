@@ -138,7 +138,7 @@ class ReportSubmitFlowTests(TestCase):
 
         response = self.client.get(reverse("report_history"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "history check")
+        self.assertContains(response, "3,500")
         self.assertContains(response, "Alice")
         self.assertContains(response, "Bob")
 
@@ -168,8 +168,8 @@ class ReportSubmitFlowTests(TestCase):
 
         response = self.client.get(reverse("report_history"), {"date_on": today.isoformat()})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "today-only")
-        self.assertNotContains(response, "yesterday-only")
+        self.assertContains(response, "2,000")
+        self.assertNotContains(response, "1,000")
 
     def test_report_submit_overwrites_existing_same_day_same_department(self):
         today_str = timezone.localdate().isoformat()

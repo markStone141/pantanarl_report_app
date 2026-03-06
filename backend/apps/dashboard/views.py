@@ -2,6 +2,7 @@ import logging
 import re
 from datetime import timedelta
 
+from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth import get_user_model
@@ -107,12 +108,17 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
         )
         period_start = current_period.start_date
         period_end = current_period.end_date
+        current_period_range = (
+            f"{current_period.start_date.month}/{current_period.start_date.day}"
+            f"～{current_period.end_date.month}/{current_period.end_date.day}"
+        )
     else:
         current_period_label = "-"
         period_status = "-"
         period_target_values_by_code = {code: {} for code in target_codes}
         period_start = None
         period_end = None
+        current_period_range = "-"
 
     month_start = current_month
     if current_month.month == 12:
@@ -301,6 +307,62 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                 ),
             }
 
+        def build_remaining_text(detail_rows):
+            remaining_count = 0
+            remaining_amount = 0
+
+            def _is_amount(code: str, unit: str) -> bool:
+                code_text = (code or "").lower()
+                unit_text = unit or ""
+                return (
+                    code_text == "amount"
+                    or "amount" in code_text
+                    or "yen" in code_text
+                    or "money" in code_text
+                    or "support" in code_text
+                    or "followup" in code_text
+                    or "kingaku" in code_text
+                    or "円" in unit_text
+                )
+
+            def _is_count(code: str, unit: str) -> bool:
+                code_text = (code or "").lower()
+                unit_text = unit or ""
+                return (
+                    code_text == "count"
+                    or "count" in code_text
+                    or "kensu" in code_text
+                    or "case" in code_text
+                    or "num" in code_text
+                    or "cs" in code_text
+                    or "refugee" in code_text
+                    or "nanmin" in code_text
+                    or "件" in unit_text
+                )
+
+            for row in detail_rows:
+                target = row.get("target") or 0
+                actual = row.get("actual") or 0
+                delta = target - actual
+                code = row.get("code") or ""
+                unit = row.get("unit") or ""
+                if _is_amount(code, unit):
+                    remaining_amount += delta
+                elif _is_count(code, unit):
+                    remaining_count += delta
+
+            def _signed_count_text(value: int) -> str:
+                if value < 0:
+                    return f"+{abs(value)}件"
+                return f"{value}件"
+
+            def _signed_yen_text(value: int) -> str:
+                if value < 0:
+                    return f"+{abs(value):,}円"
+                return f"{value:,}円"
+
+            return f"{_signed_count_text(remaining_count)}/{_signed_yen_text(remaining_amount)}"
+
         section_order = [
             ("UN", "UN①"),
             ("WV", "UN②"),
@@ -329,6 +391,8 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                 f"{row['label']} {row['actual_text']}/{row['target_text']}{row['unit']} 達成率{row['rate']}"
                 for row in base_metric_detail_by_code.get(code, {}).get("period", [])
             ]
+            month_remaining_text = build_remaining_text(base_metric_detail_by_code.get(code, {}).get("month", []))
+            period_remaining_text = build_remaining_text(base_metric_detail_by_code.get(code, {}).get("period", []))
             mail_sections.append(
                 {
                     "code": code,
@@ -342,6 +406,8 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                     "member_lines": member_lines,
                     "period_lines": period_metric_lines,
                     "month_lines": month_metric_lines,
+                    "period_remaining_text": period_remaining_text,
+                    "month_remaining_text": month_remaining_text,
                 }
             )
 
@@ -385,6 +451,7 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
         "target_month_status": month_status,
         "target_period_summary": current_period_label,
         "target_period_status": period_status,
+        "target_period_range": current_period_range,
         "current_period_label": current_period_label,
         "target_progress_rows": target_progress_rows,
         "mail_template_payload_map": mail_template_payload_map,
@@ -411,6 +478,7 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
                 "target_month_status": "-",
                 "target_period_summary": "-",
                 "target_period_status": "-",
+                "target_period_range": "-",
                 "current_period_label": "-",
                 "target_progress_rows": [],
                 "mail_template_payload_map": {
@@ -795,5 +863,98 @@ def member_settings(request: HttpRequest) -> HttpResponse:
             "status_message": status_message,
             "department_choices": department_choices,
             "selected_department_ids": selected_department_ids,
+        },
+    )
+
+
+@require_roles(ROLE_ADMIN)
+def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
+    members_qs = Member.objects.select_related("user").order_by("name", "id")
+    paginator = Paginator(members_qs, 20)
+    current_page_number = request.GET.get("page") or "1"
+    page_obj = paginator.get_page(current_page_number)
+    status_message = None
+    row_errors = {}
+    row_login_inputs = {}
+
+    if request.method == "POST":
+        posted_page = request.POST.get("page") or "1"
+        page_obj = paginator.get_page(posted_page)
+        updated_count = 0
+
+        for member in page_obj.object_list:
+            login_key = f"login_id_{member.id}"
+            password_key = f"password_{member.id}"
+            auth_login_id = (request.POST.get(login_key) or "").strip()
+            auth_password = (request.POST.get(password_key) or "").strip()
+            row_login_inputs[member.id] = auth_login_id
+            errors = []
+
+            if not auth_login_id and not auth_password:
+                continue
+
+            linked_user = member.user
+            changed = False
+
+            if linked_user:
+                if auth_login_id:
+                    duplicate_user = User.objects.filter(username=auth_login_id).exclude(id=linked_user.id)
+                    if duplicate_user.exists():
+                        errors.append("このログインIDはすでに使用されています。")
+                    elif linked_user.username != auth_login_id:
+                        linked_user.username = auth_login_id
+                        linked_user.save(update_fields=["username"])
+                        changed = True
+                if auth_password:
+                    linked_user.set_password(auth_password)
+                    linked_user.save(update_fields=["password"])
+                    changed = True
+            else:
+                if auth_password and not auth_login_id:
+                    errors.append("新規連携時はログインIDとパスワードを両方入力してください。")
+                elif auth_login_id and not auth_password:
+                    errors.append("新規連携時はログインIDとパスワードを両方入力してください。")
+                else:
+                    if User.objects.filter(username=auth_login_id).exists():
+                        errors.append("このログインIDはすでに使用されています。")
+                    else:
+                        linked_user = User.objects.create_user(
+                            username=auth_login_id,
+                            password=auth_password,
+                        )
+                        member.user = linked_user
+                        member.save(update_fields=["user"])
+                        changed = True
+
+            if errors:
+                row_errors[member.id] = errors
+            elif changed:
+                updated_count += 1
+
+        if not row_errors:
+            status_message = f"{updated_count}件のログイン情報を更新しました。"
+        else:
+            status_message = "入力内容にエラーがあります。該当行を修正してください。"
+        current_page_number = str(page_obj.number)
+
+    member_rows = []
+    for member in page_obj.object_list:
+        member_rows.append(
+            {
+                "member": member,
+                "login_input": row_login_inputs.get(member.id, ""),
+                "errors": row_errors.get(member.id, []),
+            }
+        )
+
+    return render(
+        request,
+        "dashboard/member_auth_bulk_settings.html",
+        {
+            "page_obj": page_obj,
+            "paginator": paginator,
+            "status_message": status_message,
+            "member_rows": member_rows,
+            "current_page_number": str(current_page_number),
         },
     )

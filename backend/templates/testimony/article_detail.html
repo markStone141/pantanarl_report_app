@@ -4,13 +4,13 @@
 {% block testimony_title %}{{ article.title }}{% endblock %}
 
 {% block testimony_content %}
-<article class="card testimony-section">
-  <h2>{{ article.title }}</h2>
+<article class="card testimony-section" style="padding:23px;">
+  <h2 style="font-size:1.55rem; margin-bottom:10px;">{{ article.title }}</h2>
   <p class="muted testimony-detail-meta">
     <span><i class="fa-solid fa-user" aria-hidden="true"></i> {{ article.author }}</span>
     <span><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> {{ article.created_at|date:"Y-m-d H:i" }}</span>
   </p>
-  <div style="white-space:pre-wrap; margin-top:8px;">{{ article.body }}</div>
+  <div style="white-space:pre-wrap; margin-top:20px;">{{ article.body }}</div>
   {% if article.video_url %}
     <p style="margin-top:8px;">
       <a href="{{ article.video_url }}" target="_blank" rel="noopener">
@@ -23,15 +23,15 @@
     <form method="post" action="{% url 'testimony_article_favorite' article.id %}" class="js-testimony-toggle" data-kind="favorite">{% csrf_token %}
       <input type="hidden" name="next" value="{{ request.path }}" />
       <button type="submit">
-        <i id="favorite-icon" class="fa-{% if is_favorited %}solid{% else %}regular{% endif %} fa-star" aria-hidden="true"></i>
-        <span id="favorite-label">{% if is_favorited %}お気に入り解除{% else %}お気に入り{% endif %}</span>
+        <i id="favorite-icon" class="fa-{% if is_favorited %}solid{% else %}regular{% endif %} fa-star" style="color:{% if is_favorited %}#d89b12{% else %}#6b7f8a{% endif %};" aria-hidden="true"></i>
+        <span id="favorite-label">お気に入り</span>
       </button>
     </form>
     <form method="post" action="{% url 'testimony_article_like' article.id %}" class="js-testimony-toggle" data-kind="like">{% csrf_token %}
       <input type="hidden" name="next" value="{{ request.path }}" />
       <button type="submit">
-        <i class="fa-solid fa-thumbs-up" aria-hidden="true"></i>
-        <span id="like-label">{% if is_liked %}いいね解除{% else %}いいね{% endif %}</span>
+        <i id="like-icon" class="fa-solid fa-thumbs-up" style="color:{% if is_liked %}#1e7c4d{% else %}#6b7f8a{% endif %};" aria-hidden="true"></i>
+        <span id="like-label">いいね</span>
       </button>
     </form>
     {% if request.user.is_staff or request.user.is_superuser or article.created_by_id == request.user.id %}
@@ -55,6 +55,7 @@
   (function () {
     function updateUI(payload) {
       const favoriteIcon = document.getElementById("favorite-icon");
+      const likeIcon = document.getElementById("like-icon");
       const favoriteLabel = document.getElementById("favorite-label");
       const likeLabel = document.getElementById("like-label");
       const favoriteCount = document.getElementById("favorite-count");
@@ -64,12 +65,16 @@
         favoriteIcon.className = payload.is_favorited
           ? "fa-solid fa-star"
           : "fa-regular fa-star";
+        favoriteIcon.style.color = payload.is_favorited ? "#d89b12" : "#6b7f8a";
+      }
+      if (likeIcon) {
+        likeIcon.style.color = payload.is_liked ? "#1e7c4d" : "#6b7f8a";
       }
       if (favoriteLabel) {
-        favoriteLabel.textContent = payload.is_favorited ? "お気に入り解除" : "お気に入り";
+        favoriteLabel.textContent = "お気に入り";
       }
       if (likeLabel) {
-        likeLabel.textContent = payload.is_liked ? "いいね解除" : "いいね";
+        likeLabel.textContent = "いいね";
       }
       if (favoriteCount) favoriteCount.textContent = payload.favorite_count;
       if (likeCount) likeCount.textContent = payload.like_count;

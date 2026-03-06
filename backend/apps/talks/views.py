@@ -235,9 +235,16 @@ def _replace_post_tags(post: KnowledgePost, selected_tag_names: list[str]) -> No
 
 
 def talks_login(request: HttpRequest) -> HttpResponse:
+    next_url = (request.POST.get("next") or request.GET.get("next") or "").strip()
+
+    def _next_or_default(default_name: str):
+        if next_url.startswith("/"):
+            return redirect(next_url)
+        return redirect(default_name)
+
     member = get_talks_member(request)
     if member or is_talks_admin(request):
-        return redirect("talks_index")
+        return _next_or_default("talks_index")
 
     if request.method == "POST":
         login_id = (request.POST.get("login_id") or "").strip()
@@ -251,11 +258,11 @@ def talks_login(request: HttpRequest) -> HttpResponse:
                 request.session[TALKS_SESSION_IS_ADMIN_KEY] = True
                 request.session[TALKS_SESSION_MEMBER_ID_KEY] = None
                 request.session[TALKS_SESSION_MEMBER_NAME_KEY] = "管理者"
-                return redirect("talks_index")
+                return _next_or_default("talks_index")
 
             form = TalksLoginForm(request.POST)
             form.add_error("password", "IDまたはパスワードが正しくありません。")
-            return render(request, "talks/login.html", {"form": form})
+            return render(request, "talks/login.html", {"form": form, "next": next_url})
 
         if False:  # legacy admin fallback disabled
             admin_user = ensure_admin_user()
@@ -274,11 +281,11 @@ def talks_login(request: HttpRequest) -> HttpResponse:
             request.session[TALKS_SESSION_IS_ADMIN_KEY] = False
             request.session[TALKS_SESSION_MEMBER_ID_KEY] = form.member.id
             request.session[TALKS_SESSION_MEMBER_NAME_KEY] = form.member.name
-            return redirect("talks_index")
+            return _next_or_default("talks_index")
     else:
         form = TalksLoginForm()
 
-    return render(request, "talks/login.html", {"form": form})
+    return render(request, "talks/login.html", {"form": form, "next": next_url})
 
 
 def talks_logout(request: HttpRequest) -> HttpResponse:

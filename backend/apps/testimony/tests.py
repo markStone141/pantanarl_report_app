@@ -111,3 +111,17 @@ class TestimonyLoginTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "IDまたはパスワードが正しくありません。")
+
+
+class TestimonyCreatePermissionTests(TestCase):
+    def test_non_admin_cannot_open_create_page(self):
+        user = get_user_model().objects.create_user(username="report", password="report-pass")
+        self.client.force_login(user)
+        response = self.client.get(reverse("testimony_article_create"))
+        self.assertEqual(response.status_code, 404)
+
+    def test_admin_can_open_create_page(self):
+        admin_user = get_user_model().objects.create_user(username="admin", password="admin-pass", is_staff=True)
+        self.client.force_login(admin_user)
+        response = self.client.get(reverse("testimony_article_create"))
+        self.assertEqual(response.status_code, 200)

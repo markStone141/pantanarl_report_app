@@ -4,12 +4,15 @@
 
 {% block content %}
 <div class="container">
-  <header class="topbar">
+  <header class="topbar topbar-desktop-expanded">
     <div>
       <strong>報告画面一覧</strong>
     </div>
     <a href="{% url 'logout' %}" class="topbar-mobile-logout">ログアウト</a>
     <nav>
+      {% if request.user.is_staff %}
+      <a href="{% url 'dashboard_index' %}">管理者ページ</a>
+      {% endif %}
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
