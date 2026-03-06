@@ -70,6 +70,19 @@ class LoginFlowTests(TestCase):
         self.assertEqual(self.client.session.get("role"), "report")
         self.assertIn("_auth_user_id", self.client.session)
 
+    def test_report_login_accepts_fixed_password(self):
+        response = self.client.post(
+            reverse("home"),
+            {
+                "login_id": "report",
+                "password": "0823",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("report_index"))
+        self.assertEqual(self.client.session.get("role"), "report")
+        self.assertIn("_auth_user_id", self.client.session)
+
 
 class RoleGuardTests(TestCase):
     def test_dashboard_requires_admin(self):

@@ -1,6 +1,7 @@
 import os
 
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.contrib.auth import get_user_model
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
@@ -9,6 +10,7 @@ from .forms import LoginForm
 
 REPORT_USERNAME = os.getenv("REPORT_LOGIN_USERNAME", "report")
 ADMIN_USERNAME = os.getenv("ADMIN_LOGIN_USERNAME", "admin")
+REPORT_FIXED_PASSWORD = os.getenv("REPORT_FIXED_PASSWORD", "0823")
 
 
 def _redirect_by_role(role: str):
@@ -38,7 +40,14 @@ def home(request: HttpRequest) -> HttpResponse:
                     return redirect("dashboard_index")
                 form.add_error("password", "管理者パスワードが正しくありません。")
             elif login_id == ROLE_REPORT:
-                authenticated_user = authenticate(request, username=REPORT_USERNAME, password=password)
+                authenticated_user = None
+                if password == REPORT_FIXED_PASSWORD:
+                    authenticated_user = get_user_model().objects.filter(
+                        username=REPORT_USERNAME,
+                        is_active=True,
+                    ).first()
+                if not authenticated_user:
+                    authenticated_user = authenticate(request, username=REPORT_USERNAME, password=password)
                 if authenticated_user:
                     auth_login(request, authenticated_user)
                     request.session[SESSION_ROLE_KEY] = ROLE_REPORT

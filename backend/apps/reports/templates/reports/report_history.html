@@ -14,57 +14,183 @@
   </header>
 
   <section class="card" style="margin-top: 16px;">
-    <h3>送信済みデータ (新しい順)</h3>
-    <table style="margin-top: 10px;">
-      <thead>
-        <tr>
-          <th>報告日</th>
-          <th>部門</th>
-          <th>責任者</th>
-          <th>件数合計</th>
-          <th>金額合計(円)</th>
-          <th>現場</th>
-          <th>メモ</th>
-          <th>登録日時</th>
-          <th>修正</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for report in reports %}
-        <tr>
-          <td>{{ report.report_date }}</td>
-          <td>{{ report.department.name }}</td>
-          <td>{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
-          <td>{{ report.total_count }}</td>
-          <td>{{ report.followup_count_text }}</td>
-          <td>{{ report.location|default:"-" }}</td>
-          <td>{{ report.memo|default:"-" }}</td>
-          <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
-          <td>
-            <a href="{% url 'report_edit' report.id %}?next=report_history">
-              <button type="button" class="btn-inline">修正</button>
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td colspan="9" style="background: #fafcfd;">
-            <strong>明細:</strong>
-            {% for line in report.lines.all %}
-              {% if not forloop.first %} / {% endif %}
-              {% if line.member %}{{ line.member.name }}{% else %}未設定{% endif %}
-              (金額 {{ line.amount_text }}円, 件数 {{ line.count }}, 現場 {{ line.location|default:"-" }})
-            {% empty %}
-              明細なし
-            {% endfor %}
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="9">まだ保存データがありません。</td>
-        </tr>
+    <form method="get" class="row" style="gap:8px; align-items:end; margin-bottom:10px;">
+      <div>
+        <label for="date_on">指定日</label>
+        <input id="date_on" type="date" name="date_on" value="{{ date_on }}">
+      </div>
+      <div>
+        <label for="date_from">開始日</label>
+        <input id="date_from" type="date" name="date_from" value="{{ date_from }}">
+      </div>
+      <div>
+        <label for="date_to">終了日</label>
+        <input id="date_to" type="date" name="date_to" value="{{ date_to }}">
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="submit" class="btn-inline">検索</button>
+        <a href="{% url 'report_history' %}" class="btn-inline">リセット</a>
+      </div>
+    </form>
+
+    <div class="row" style="gap:8px; align-items:center; margin-bottom:10px;">
+      <h3 style="margin:0;">送信済みデータ</h3>
+      <div style="display:flex; flex-wrap:wrap; gap:6px;">
+        <button type="button" class="btn-inline report-filter-btn is-active" data-dept="">すべて</button>
+        {% for dept in filter_departments %}
+          <button type="button" class="btn-inline report-filter-btn" data-dept="{{ dept.code }}">{{ dept.name }}</button>
         {% endfor %}
-      </tbody>
-    </table>
+      </div>
+    </div>
+
+    <form method="post" action="{% url 'report_bulk_delete' %}" id="bulk-delete-form" onsubmit="return confirm('選択した報告を削除します。よろしいですか？');">
+      {% csrf_token %}
+      <input type="hidden" name="date_on" value="{{ date_on }}">
+      <input type="hidden" name="date_from" value="{{ date_from }}">
+      <input type="hidden" name="date_to" value="{{ date_to }}">
+
+      <div class="row" style="gap:8px; margin-bottom:10px;">
+        <button type="button" class="btn-inline" id="select-visible-btn">全選択</button>
+        <button type="button" class="btn-inline" id="clear-visible-btn">選択解除</button>
+        <button type="submit" class="btn-inline" id="bulk-delete-btn">選択削除</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>選択</th>
+            <th>報告日</th>
+            <th>部門</th>
+            <th>責任者</th>
+            <th>件数合計</th>
+            <th>金額合計(円)</th>
+            <th>現場</th>
+            <th>メモ</th>
+            <th>登録日時</th>
+            <th>編集日時</th>
+            <th>修正</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for report in reports %}
+          <tr data-dept="{{ report.department.code }}" data-report-row="1">
+            <td>
+              <input type="checkbox" name="selected_report_ids" value="{{ report.id }}" class="report-select-checkbox">
+            </td>
+            <td>{{ report.report_date }}</td>
+            <td>{{ report.department.name }}</td>
+            <td>{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
+            <td>{{ report.total_count }}</td>
+            <td>{{ report.followup_count_text }}</td>
+            <td>{{ report.location|default:"-" }}</td>
+            <td>{{ report.memo|default:"-" }}</td>
+            <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+            <td>{% if report.edited_at %}{{ report.edited_at|date:"Y-m-d H:i" }}{% else %}-{% endif %}</td>
+            <td>
+              <a href="{% url 'report_edit' report.id %}?next=report_history">
+                <button type="button" class="btn-inline">修正</button>
+              </a>
+            </td>
+          </tr>
+          <tr data-dept="{{ report.department.code }}" data-detail-row="1">
+            <td colspan="11" style="background: #fafcfd;">
+              <strong>明細:</strong>
+              {% for line in report.lines.all %}
+                {% if not forloop.first %} / {% endif %}
+                {% if line.member %}{{ line.member.name }}{% else %}未設定{% endif %}
+                (金額 {{ line.amount_text }}円, 件数 {{ line.count }}, 現場 {{ line.location|default:"-" }})
+              {% empty %}
+                明細なし
+              {% endfor %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="11">まだ保存データがありません。</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
   </section>
 </div>
+
+<script>
+  (function () {
+    const buttons = Array.from(document.querySelectorAll(".report-filter-btn"));
+    const rows = Array.from(document.querySelectorAll("tr[data-dept]"));
+    const mainRows = Array.from(document.querySelectorAll("tr[data-report-row='1']"));
+    const selectVisibleBtn = document.getElementById("select-visible-btn");
+    const clearVisibleBtn = document.getElementById("clear-visible-btn");
+    const bulkDeleteBtn = document.getElementById("bulk-delete-btn");
+
+    function isVisible(element) {
+      return element.style.display !== "none";
+    }
+
+    function updateBulkDeleteState() {
+      const selectedCount = mainRows
+        .filter(function (row) { return isVisible(row); })
+        .map(function (row) { return row.querySelector(".report-select-checkbox"); })
+        .filter(function (checkbox) { return checkbox && checkbox.checked; })
+        .length;
+      bulkDeleteBtn.disabled = selectedCount === 0;
+      bulkDeleteBtn.textContent = selectedCount > 0 ? ("選択削除 (" + selectedCount + ")") : "選択削除";
+    }
+
+    function applyFilter(code) {
+      rows.forEach(function (row) {
+        row.style.display = !code || row.dataset.dept === code ? "" : "none";
+      });
+      buttons.forEach(function (btn) {
+        const isActive = (btn.dataset.dept || "") === code;
+        btn.classList.toggle("is-active", isActive);
+        if (isActive) {
+          btn.style.background = "#126e82";
+          btn.style.color = "#fff";
+        } else {
+          btn.style.background = "";
+          btn.style.color = "";
+        }
+      });
+      updateBulkDeleteState();
+    }
+
+    if (selectVisibleBtn) {
+      selectVisibleBtn.addEventListener("click", function () {
+        mainRows.forEach(function (row) {
+          if (!isVisible(row)) return;
+          const checkbox = row.querySelector(".report-select-checkbox");
+          if (checkbox) checkbox.checked = true;
+        });
+        updateBulkDeleteState();
+      });
+    }
+
+    if (clearVisibleBtn) {
+      clearVisibleBtn.addEventListener("click", function () {
+        mainRows.forEach(function (row) {
+          if (!isVisible(row)) return;
+          const checkbox = row.querySelector(".report-select-checkbox");
+          if (checkbox) checkbox.checked = false;
+        });
+        updateBulkDeleteState();
+      });
+    }
+
+    mainRows.forEach(function (row) {
+      const checkbox = row.querySelector(".report-select-checkbox");
+      if (!checkbox) return;
+      checkbox.addEventListener("change", updateBulkDeleteState);
+    });
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        applyFilter(btn.dataset.dept || "");
+      });
+    });
+
+    applyFilter("");
+  })();
+</script>
 {% endblock %}

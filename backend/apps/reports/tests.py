@@ -142,6 +142,35 @@ class ReportSubmitFlowTests(TestCase):
         self.assertContains(response, "Alice")
         self.assertContains(response, "Bob")
 
+    def test_report_history_single_day_filter(self):
+        department = Department.objects.create(name="UN", code="UN")
+        reporter = Member.objects.create(name="Alice", login_id="single_day_alice", password="x")
+        MemberDepartment.objects.create(member=reporter, department=department)
+        today = timezone.localdate()
+        yesterday = today - timedelta(days=1)
+
+        DailyDepartmentReport.objects.create(
+            department=department,
+            report_date=yesterday,
+            reporter=reporter,
+            total_count=1,
+            followup_count=1000,
+            memo="yesterday-only",
+        )
+        DailyDepartmentReport.objects.create(
+            department=department,
+            report_date=today,
+            reporter=reporter,
+            total_count=2,
+            followup_count=2000,
+            memo="today-only",
+        )
+
+        response = self.client.get(reverse("report_history"), {"date_on": today.isoformat()})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "today-only")
+        self.assertNotContains(response, "yesterday-only")
+
     def test_report_submit_overwrites_existing_same_day_same_department(self):
         today_str = timezone.localdate().isoformat()
         department = Department.objects.create(name="UN", code="UN")
@@ -349,6 +378,50 @@ class ReportSubmitFlowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("report_un"))
         self.assertFalse(DailyDepartmentReport.objects.filter(id=report.id).exists())
+
+    def test_report_history_bulk_delete_selected_reports(self):
+        department = Department.objects.create(name="UN", code="UN")
+        reporter = Member.objects.create(name="Alice", login_id="bulk_delete_alice", password="x")
+        MemberDepartment.objects.create(member=reporter, department=department)
+        today = timezone.localdate()
+
+        keep_report = DailyDepartmentReport.objects.create(
+            department=department,
+            report_date=today,
+            reporter=reporter,
+            total_count=1,
+            followup_count=1000,
+            memo="keep-me",
+        )
+        delete_report_1 = DailyDepartmentReport.objects.create(
+            department=department,
+            report_date=today,
+            reporter=reporter,
+            total_count=2,
+            followup_count=2000,
+            memo="delete-me-1",
+        )
+        delete_report_2 = DailyDepartmentReport.objects.create(
+            department=department,
+            report_date=today,
+            reporter=reporter,
+            total_count=3,
+            followup_count=3000,
+            memo="delete-me-2",
+        )
+
+        response = self.client.post(
+            reverse("report_bulk_delete"),
+            data={
+                "selected_report_ids": [str(delete_report_1.id), str(delete_report_2.id)],
+                "date_on": today.isoformat(),
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, f"{reverse('report_history')}?date_on={today.isoformat()}")
+        self.assertTrue(DailyDepartmentReport.objects.filter(id=keep_report.id).exists())
+        self.assertFalse(DailyDepartmentReport.objects.filter(id=delete_report_1.id).exists())
+        self.assertFalse(DailyDepartmentReport.objects.filter(id=delete_report_2.id).exists())
 
     def test_report_form_mode_prev_shows_previous_day_history(self):
         department = Department.objects.create(name="UN", code="UN")
