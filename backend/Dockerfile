@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir -r requirements/prod.txt
 
 COPY . .
 
-RUN python manage.py collectstatic --noinput
+# Build time only: satisfy production settings validation for collectstatic.
+RUN SECRET_KEY=build-only-secret-key ALLOWED_HOSTS=localhost python manage.py collectstatic --noinput
 
 CMD ["sh", "scripts/start.sh"]
