@@ -1,0 +1,16 @@
+{% extends "testimony/base.html" %}
+
+{% block testimony_title %}Delete Article{% endblock %}
+
+{% block testimony_content %}
+<article class="card testimony-section">
+  <h2>この記事を削除しますか？</h2>
+  <p>{{ object.title }}</p>
+  <form method="post" class="testimony-form-actions" style="margin-top:10px;">{% csrf_token %}
+    <button type="submit"><i class="fa-solid fa-trash" aria-hidden="true"></i> 削除</button>
+    <a class="btn-inline" href="{% url 'testimony_article_detail' object.id %}">
+      <i class="fa-solid fa-ban" aria-hidden="true"></i> キャンセル
+    </a>
+  </form>
+</article>
+{% endblock %}

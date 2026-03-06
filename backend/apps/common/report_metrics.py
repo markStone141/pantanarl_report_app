@@ -13,20 +13,41 @@ def period_status(*, today, start_date, end_date) -> str:
     return "finished"
 
 
-def metric_actual_value(*, metric_code, total_count, total_amount, total_cs_count=0, total_refugee_count=0):
-    if metric_code == "count":
+def _metric_kind(*, metric_code: str, unit: str = "") -> str:
+    code = (metric_code or "").strip().lower()
+    unit_text = (unit or "").strip().lower()
+
+    if "cs" in code:
+        return "cs_count"
+    if "refugee" in code or "nanmin" in code:
+        return "refugee_count"
+
+    amount_hints = ("amount", "yen", "money", "sales", "price", "support", "followup", "kingaku")
+    if code == "amount" or any(hint in code for hint in amount_hints) or ("円" in unit):
+        return "amount"
+
+    count_hints = ("count", "kensu", "case", "cases", "num", "volume")
+    if code == "count" or any(hint in code for hint in count_hints) or ("件" in unit):
+        return "count"
+
+    return "count"
+
+
+def metric_actual_value(*, metric_code, total_count, total_amount, total_cs_count=0, total_refugee_count=0, unit=""):
+    kind = _metric_kind(metric_code=metric_code, unit=unit)
+    if kind == "count":
         return total_count
-    if metric_code == "cs_count":
+    if kind == "cs_count":
         return total_cs_count
-    if metric_code == "refugee_count":
+    if kind == "refugee_count":
         return total_refugee_count
-    if metric_code == "amount":
+    if kind == "amount":
         return total_amount
     return 0
 
 
 def format_metric_value(*, metric_code, value: int) -> str:
-    if metric_code == "amount":
+    if _metric_kind(metric_code=metric_code) == "amount":
         return f"{value:,}"
     return str(value)
 
@@ -70,6 +91,7 @@ def format_metric_triples(*, metrics, target_values, actual_totals):
             total_amount=actual_totals["amount"],
             total_cs_count=actual_totals.get("cs_count", 0),
             total_refugee_count=actual_totals.get("refugee_count", 0),
+            unit=metric.unit or "",
         )
         rate = f"{(actual / target) * 100:.1f}%" if target > 0 else "-"
         target_parts.append(f"{label} {format_metric_value(metric_code=metric.code, value=target)}{unit}")
@@ -88,6 +110,7 @@ def metric_detail_rows(*, metrics, target_values, actual_totals):
             total_amount=actual_totals["amount"],
             total_cs_count=actual_totals.get("cs_count", 0),
             total_refugee_count=actual_totals.get("refugee_count", 0),
+            unit=metric.unit or "",
         )
         rate = f"{(actual / target) * 100:.1f}%" if target > 0 else "-"
         rows.append(

@@ -5,6 +5,7 @@ from .views import (
     department_delete,
     department_settings,
     member_delete,
+    member_auth_bulk_settings,
     member_purge,
     member_settings,
 )
@@ -12,6 +13,7 @@ from .views import (
 urlpatterns = [
     path("", dashboard_index, name="dashboard_index"),
     path("members/", member_settings, name="member_settings"),
+    path("members/auth-bulk/", member_auth_bulk_settings, name="member_auth_bulk_settings"),
     path("members/<int:member_id>/delete/", member_delete, name="member_delete"),
     path("members/<int:member_id>/purge/", member_purge, name="member_purge"),
     path("departments/", department_settings, name="department_settings"),

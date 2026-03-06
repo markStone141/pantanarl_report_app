@@ -1,0 +1,35 @@
+{% extends "testimony/base.html" %}
+
+{% block testimony_title %}Testimony 管理者{% endblock %}
+
+{% block testimony_content %}
+<section class="card testimony-section">
+  <h3>CSVインポート</h3>
+  <p class="muted">products.csv と articles.csv を同時に取り込みます。</p>
+
+  {% if messages %}
+  <div style="margin: 10px 0;">
+    {% for message in messages %}
+    <p style="margin: 6px 0;">{{ message }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" style="display: grid; gap: 10px; margin-top: 10px;">
+    {% csrf_token %}
+    <label>
+      products.csv
+      <input type="file" name="products_csv" accept=".csv" required>
+    </label>
+    <label>
+      articles.csv
+      <input type="file" name="articles_csv" accept=".csv" required>
+    </label>
+    <label>
+      source
+      <input type="text" name="source" value="legacy_testimony">
+    </label>
+    <button type="submit">CSVインポート実行</button>
+  </form>
+</section>
+{% endblock %}

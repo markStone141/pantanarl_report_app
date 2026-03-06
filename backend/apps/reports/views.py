@@ -1,9 +1,10 @@
-from datetime import timedelta
+﻿from datetime import timedelta
 
 from django.db.models import Sum
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import urlencode
 from django.utils.dateparse import parse_date
 from django.utils import timezone
 
@@ -35,6 +36,19 @@ REPORT_ROUTE_BY_DEPARTMENT_CODE = {
     "STYLE2": "report_style2",
 }
 ALLOWED_EDIT_REDIRECTS = {"dashboard_index", "report_history", *REPORT_ROUTE_BY_DEPARTMENT_CODE.values()}
+
+
+def _history_query_string(*, date_from_str: str = "", date_to_str: str = "", date_on_str: str = "") -> str:
+    query_params = {}
+    if date_from_str:
+        query_params["date_from"] = date_from_str
+    if date_to_str:
+        query_params["date_to"] = date_to_str
+    if date_on_str:
+        query_params["date_on"] = date_on_str
+    if not query_params:
+        return ""
+    return f"?{urlencode(query_params)}"
 
 
 def _dashboard_cards_context():
@@ -221,16 +235,21 @@ def report_index(request: HttpRequest) -> HttpResponse:
 def report_history(request: HttpRequest) -> HttpResponse:
     date_from_str = (request.GET.get("date_from") or "").strip()
     date_to_str = (request.GET.get("date_to") or "").strip()
+    date_on_str = (request.GET.get("date_on") or "").strip()
     date_from = parse_date(date_from_str) if date_from_str else None
     date_to = parse_date(date_to_str) if date_to_str else None
+    date_on = parse_date(date_on_str) if date_on_str else None
 
     reports_query = DailyDepartmentReport.objects.select_related("department", "reporter").prefetch_related("lines__member")
-    if date_from:
-        reports_query = reports_query.filter(report_date__gte=date_from)
-    if date_to:
-        reports_query = reports_query.filter(report_date__lte=date_to)
-
+    if date_on:
+        reports_query = reports_query.filter(report_date=date_on)
+    else:
+        if date_from:
+            reports_query = reports_query.filter(report_date__gte=date_from)
+        if date_to:
+            reports_query = reports_query.filter(report_date__lte=date_to)
     reports = list(reports_query.order_by("-report_date", "-created_at")[:100])
+
     filter_departments = list(
         Department.objects.filter(
             is_active=True,
@@ -241,7 +260,6 @@ def report_history(request: HttpRequest) -> HttpResponse:
     )
     for report in reports:
         report.followup_count_text = _format_amount_text(report.followup_count)
-        report.edited_at = report.updated_at if (report.updated_at and (report.updated_at - report.created_at) > timedelta(seconds=1)) else None
         for line in report.lines.all():
             line.amount_text = _format_amount_text(line.amount)
     return render(
@@ -252,8 +270,32 @@ def report_history(request: HttpRequest) -> HttpResponse:
             "filter_departments": filter_departments,
             "date_from": date_from_str,
             "date_to": date_to_str,
+            "date_on": date_on_str,
         },
     )
+
+
+@require_roles(ROLE_ADMIN)
+def report_bulk_delete(request: HttpRequest) -> HttpResponse:
+    if request.method != "POST":
+        raise Http404
+
+    selected_ids = []
+    for raw_id in request.POST.getlist("selected_report_ids"):
+        try:
+            selected_ids.append(int(raw_id))
+        except (TypeError, ValueError):
+            continue
+
+    if selected_ids:
+        DailyDepartmentReport.objects.filter(id__in=selected_ids).delete()
+
+    query_string = _history_query_string(
+        date_from_str=(request.POST.get("date_from") or "").strip(),
+        date_to_str=(request.POST.get("date_to") or "").strip(),
+        date_on_str=(request.POST.get("date_on") or "").strip(),
+    )
+    return redirect(f"{reverse('report_history')}{query_string}")
 
 
 @require_roles(ROLE_REPORT, ROLE_ADMIN)
@@ -271,7 +313,7 @@ def report_edit(request: HttpRequest, report_id: int) -> HttpResponse:
         dept_code=report.department.code,
         title=f"{report.department.name} 報告フォーム",
         location_label="現場",
-        show_location=report.department.code not in {"STYLE1", "STYLE2"},
+        show_location=False,
         split_counts=report.department.code in SPLIT_COUNT_CODES,
         editing_report=report,
         redirect_target=redirect_target,
@@ -469,6 +511,7 @@ def _render_report_form(
                 report.followup_count = total_amount
                 report.location = fallback_location
                 report.memo = form.cleaned_data["memo"].strip()
+                report.edited_at = timezone.now()
                 report.save(
                     update_fields=[
                         "report_date",
@@ -477,6 +520,7 @@ def _render_report_form(
                         "followup_count",
                         "location",
                         "memo",
+                        "edited_at",
                     ]
                 )
                 report.lines.all().delete()
@@ -492,6 +536,7 @@ def _render_report_form(
                     report.followup_count = total_amount
                     report.location = fallback_location
                     report.memo = form.cleaned_data["memo"].strip()
+                    report.edited_at = timezone.now()
                     report.save(
                         update_fields=[
                             "reporter",
@@ -499,6 +544,7 @@ def _render_report_form(
                             "followup_count",
                             "location",
                             "memo",
+                            "edited_at",
                         ]
                     )
                     report.lines.all().delete()

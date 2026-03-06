@@ -11,22 +11,6 @@
   margin: 0;
   text-align: left !important;
 }
-.talks-topbar-nav {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.talks-welcome-text {
-  display: inline-flex;
-  align-items: center;
-  color: #fff;
-  font-size: 0.78rem;
-  line-height: 1;
-  white-space: nowrap;
-}
-.talks-logout-link {
-  margin-left: auto;
-}
 .talks-back-link {
   display: inline-flex;
 }

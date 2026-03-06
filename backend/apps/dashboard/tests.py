@@ -135,6 +135,27 @@ class MemberSettingsViewTests(TestCase):
         member.refresh_from_db()
         self.assertTrue(member.user.check_password("NewPass123"))
 
+    def test_member_auth_bulk_settings_renders(self):
+        response = self.client.get(reverse("member_auth_bulk_settings"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ID・パスワード一括管理")
+
+    def test_member_auth_bulk_settings_updates_existing_user(self):
+        user = User.objects.create_user(username="bulk_user_old", password="OldPass123")
+        member = Member.objects.create(name="Bulk User", user=user)
+        response = self.client.post(
+            reverse("member_auth_bulk_settings"),
+            {
+                "page": "1",
+                f"login_id_{member.id}": "bulk_user_new",
+                f"password_{member.id}": "NewPass123",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        member.refresh_from_db()
+        self.assertEqual(member.user.username, "bulk_user_new")
+        self.assertTrue(member.user.check_password("NewPass123"))
+
 
 class DepartmentSettingsViewTests(TestCase):
     def setUp(self):

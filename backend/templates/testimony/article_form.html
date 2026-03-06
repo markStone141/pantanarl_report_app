@@ -1,0 +1,18 @@
+{% extends "testimony/base.html" %}
+
+{% block testimony_title %}Testimony Form{% endblock %}
+
+{% block testimony_content %}
+<article class="card testimony-section">
+  <h2 style="margin-bottom:10px;">記事入力</h2>
+  <form method="post" class="stack">{% csrf_token %}
+    {{ form.as_p }}
+    <div class="testimony-form-actions">
+      <button type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> 保存</button>
+      <a class="btn-inline" href="{% url 'testimony_article_list' %}">
+        <i class="fa-solid fa-ban" aria-hidden="true"></i> キャンセル
+      </a>
+    </div>
+  </form>
+</article>
+{% endblock %}

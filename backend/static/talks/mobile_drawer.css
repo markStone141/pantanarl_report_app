@@ -1,0 +1,121 @@
+.talks-drawer-topbar {
+  position: relative;
+}
+
+.talks-drawer-toggle {
+  display: none;
+  margin-left: auto;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.talks-drawer-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.talks-drawer-welcome {
+  display: inline-flex;
+  align-items: center;
+  color: #fff;
+  font-size: 0.78rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.talks-drawer-logout {
+  margin-left: auto;
+}
+
+.talks-drawer-backdrop {
+  display: none;
+}
+
+.talks-drawer-greeting {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .talks-drawer-toggle {
+    display: inline-flex;
+  }
+
+  .talks-drawer-topbar .topbar-menu-toggle {
+    display: none !important;
+  }
+
+  .talks-drawer-topbar .talks-drawer-nav {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(84vw, 320px);
+    height: 100vh;
+    background: #0e5f72;
+    box-shadow: none;
+    padding: 72px 14px 18px;
+    z-index: 120;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: visible !important;
+    overflow-y: auto !important;
+    transform: translateX(100%) !important;
+    transition: transform 0.24s ease;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  .talks-drawer-topbar .talks-drawer-nav .btn-inline,
+  .talks-drawer-topbar .talks-drawer-nav .logout-link,
+  .talks-drawer-topbar .talks-drawer-nav .talks-back-link {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .talks-drawer-topbar .talks-drawer-welcome {
+    display: none;
+  }
+
+  .talks-drawer-greeting {
+    display: block;
+    color: #e9f6f9;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    margin: 0 2px 4px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.24);
+  }
+
+  .talks-drawer-topbar.drawer-open .talks-drawer-nav {
+    transform: translateX(0) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    box-shadow: -14px 0 34px rgba(0, 0, 0, 0.25);
+  }
+
+  .talks-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(14, 32, 40, 0.4);
+    z-index: 110;
+  }
+
+  .talks-drawer-backdrop:not([hidden]) {
+    display: block;
+  }
+
+  .talks-back-link {
+    display: none !important;
+  }
+}

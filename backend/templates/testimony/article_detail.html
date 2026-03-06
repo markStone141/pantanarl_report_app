@@ -1,0 +1,108 @@
+{% extends "testimony/base.html" %}
+{% load static %}
+
+{% block testimony_title %}{{ article.title }}{% endblock %}
+
+{% block testimony_content %}
+<article class="card testimony-section" style="padding:23px;">
+  <h2 style="font-size:1.55rem; margin-bottom:10px;">{{ article.title }}</h2>
+  <p class="muted testimony-detail-meta">
+    <span><i class="fa-solid fa-user" aria-hidden="true"></i> {{ article.author }}</span>
+    <span><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> {{ article.created_at|date:"Y-m-d H:i" }}</span>
+  </p>
+  <div style="white-space:pre-wrap; margin-top:20px;">{{ article.body }}</div>
+  {% if article.video_url %}
+    <p style="margin-top:8px;">
+      <a href="{{ article.video_url }}" target="_blank" rel="noopener">
+        <i class="fa-solid fa-video" aria-hidden="true"></i> 動画リンク
+      </a>
+    </p>
+  {% endif %}
+
+  <div class="testimony-actions">
+    <form method="post" action="{% url 'testimony_article_favorite' article.id %}" class="js-testimony-toggle" data-kind="favorite">{% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}" />
+      <button type="submit">
+        <i id="favorite-icon" class="fa-{% if is_favorited %}solid{% else %}regular{% endif %} fa-star" style="color:{% if is_favorited %}#d89b12{% else %}#6b7f8a{% endif %};" aria-hidden="true"></i>
+        <span id="favorite-label">お気に入り</span>
+      </button>
+    </form>
+    <form method="post" action="{% url 'testimony_article_like' article.id %}" class="js-testimony-toggle" data-kind="like">{% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}" />
+      <button type="submit">
+        <i id="like-icon" class="fa-solid fa-thumbs-up" style="color:{% if is_liked %}#1e7c4d{% else %}#6b7f8a{% endif %};" aria-hidden="true"></i>
+        <span id="like-label">いいね</span>
+      </button>
+    </form>
+    {% if request.user.is_staff or request.user.is_superuser or article.created_by_id == request.user.id %}
+      <a class="btn-inline" href="{% url 'testimony_article_edit' article.id %}">
+        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> 編集
+      </a>
+      <a class="btn-inline" href="{% url 'testimony_article_delete' article.id %}">
+        <i class="fa-solid fa-trash" aria-hidden="true"></i> 削除
+      </a>
+    {% endif %}
+  </div>
+
+  <p class="muted testimony-counts">
+    <span><i class="fa-solid fa-eye" aria-hidden="true"></i> {{ article.view_count }}</span>
+    <span><i class="fa-solid fa-thumbs-up" aria-hidden="true"></i> <span id="like-count">{{ article.like_count }}</span></span>
+    <span><i class="fa-solid fa-star" aria-hidden="true"></i> <span id="favorite-count">{{ article.favorite_count }}</span></span>
+  </p>
+</article>
+
+<script>
+  (function () {
+    function updateUI(payload) {
+      const favoriteIcon = document.getElementById("favorite-icon");
+      const likeIcon = document.getElementById("like-icon");
+      const favoriteLabel = document.getElementById("favorite-label");
+      const likeLabel = document.getElementById("like-label");
+      const favoriteCount = document.getElementById("favorite-count");
+      const likeCount = document.getElementById("like-count");
+
+      if (favoriteIcon) {
+        favoriteIcon.className = payload.is_favorited
+          ? "fa-solid fa-star"
+          : "fa-regular fa-star";
+        favoriteIcon.style.color = payload.is_favorited ? "#d89b12" : "#6b7f8a";
+      }
+      if (likeIcon) {
+        likeIcon.style.color = payload.is_liked ? "#1e7c4d" : "#6b7f8a";
+      }
+      if (favoriteLabel) {
+        favoriteLabel.textContent = "お気に入り";
+      }
+      if (likeLabel) {
+        likeLabel.textContent = "いいね";
+      }
+      if (favoriteCount) favoriteCount.textContent = payload.favorite_count;
+      if (likeCount) likeCount.textContent = payload.like_count;
+    }
+
+    document.querySelectorAll(".js-testimony-toggle").forEach(function (form) {
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        try {
+          const response = await fetch(form.action, {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          });
+          if (!response.ok) throw new Error("request failed");
+          const payload = await response.json();
+          if (payload && payload.ok) {
+            updateUI(payload);
+          } else {
+            form.submit();
+          }
+        } catch (err) {
+          form.submit();
+        }
+      });
+    });
+  })();
+</script>
+{% endblock %}

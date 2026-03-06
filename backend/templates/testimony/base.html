@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% block testimony_title %}Testimony{% endblock %}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <style>
+    .testimony-section {
+      margin-top: 16px;
+    }
+    .testimony-filter-form {
+      display: grid;
+      grid-template-columns: 1fr 220px auto;
+      gap: 8px;
+      align-items: end;
+    }
+    .testimony-list-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #e2ebef;
+    }
+    .testimony-list-item-title {
+      display: inline-block;
+      font-weight: 700;
+      color: #102733;
+      text-decoration: none;
+    }
+    .testimony-list-item-meta {
+      margin-top: 6px;
+      color: #557;
+      font-size: 13px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .testimony-detail-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .testimony-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .testimony-actions form {
+      margin: 0;
+    }
+    .testimony-actions button,
+    .testimony-actions .btn-inline {
+      width: auto;
+      min-height: 0;
+      padding: 8px 12px;
+    }
+    .testimony-counts {
+      margin-top: 10px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .testimony-form-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .testimony-form-actions .btn-inline,
+    .testimony-form-actions button {
+      width: auto;
+      min-height: 0;
+      padding: 8px 12px;
+    }
+    .testimony-login-card {
+      width: min(560px, calc(100vw - 28px));
+      margin: 40px auto;
+    }
+    .testimony-login-header {
+      background: #126e82;
+      color: #fff;
+      border-radius: 12px 12px 0 0;
+      padding: 12px 14px;
+      margin: -20px -20px 16px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .testimony-topbar {
+      position: relative;
+    }
+    .testimony-menu-toggle {
+      display: none;
+      margin-left: auto;
+      width: 40px;
+      height: 40px;
+      min-height: 40px;
+      padding: 0;
+      border-radius: 10px;
+      align-items: center;
+      justify-content: center;
+    }
+    .testimony-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .testimony-menu-backdrop {
+      display: none;
+    }
+    .testimony-filter-desktop {
+      display: block;
+    }
+    .testimony-filter-fab {
+      display: none;
+    }
+    .testimony-filter-overlay {
+      display: none;
+    }
+    .testimony-filter-sheet {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 18px 46px rgba(0, 0, 0, 0.24);
+      width: min(760px, calc(100vw - 28px));
+      max-height: 86vh;
+      overflow: auto;
+      padding: 14px;
+    }
+    .testimony-filter-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .testimony-filter-close {
+      width: 36px;
+      height: 36px;
+      min-height: 36px;
+      border-radius: 999px;
+      border: 1px solid #cdd9df;
+      background: #fff;
+      color: #1a4e5e;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .testimony-drawer-greeting {
+      display: none;
+    }
+    .knowledge-pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0 14px;
+      flex-wrap: wrap;
+    }
+    .knowledge-pagination-main {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .knowledge-pagination-meta {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .knowledge-pagination .btn-inline {
+      min-height: 0;
+      width: auto;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+    }
+    .knowledge-pagination-status {
+      color: #4f6673;
+      font-size: 0.86rem;
+    }
+    .knowledge-page-numbers {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .knowledge-page-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      border: 1px solid #c9d7de;
+      color: #1d4f5f;
+      background: #fff;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .knowledge-page-link.is-active {
+      border-color: #126e82;
+      background: #126e82;
+      color: #fff;
+    }
+    .knowledge-page-ellipsis {
+      color: #6e838f;
+      font-size: 0.84rem;
+      padding: 0 2px;
+    }
+    .knowledge-pagination-size {
+      color: #6e838f;
+      font-size: 0.8rem;
+    }
+    @media (max-width: 768px) {
+      .testimony-menu-toggle {
+        display: inline-flex;
+      }
+      .testimony-topbar .testimony-nav {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: min(84vw, 320px);
+        height: 100vh;
+        background: #0e5f72;
+        box-shadow: none;
+        padding: 72px 14px 18px;
+        z-index: 120;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        transform: translateX(100%);
+        transition: transform 0.24s ease;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .testimony-topbar .testimony-nav .btn-inline {
+        width: 100%;
+        justify-content: center;
+      }
+      .testimony-drawer-greeting {
+        display: block;
+        color: #e9f6f9;
+        font-size: 0.92rem;
+        line-height: 1.5;
+        margin: 0 2px 4px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.24);
+      }
+      .testimony-topbar.drawer-open .testimony-nav {
+        transform: translateX(0);
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+        box-shadow: -14px 0 34px rgba(0, 0, 0, 0.25);
+      }
+      .testimony-menu-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(14, 32, 40, 0.4);
+        z-index: 110;
+      }
+      .testimony-menu-backdrop:not([hidden]) {
+        display: block;
+      }
+      .testimony-filter-form {
+        grid-template-columns: 1fr;
+      }
+      .testimony-filter-desktop {
+        display: none;
+      }
+      .testimony-filter-fab {
+        position: fixed;
+        left: 16px;
+        bottom: 18px;
+        width: 58px;
+        height: 58px;
+        min-height: 58px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        background: linear-gradient(135deg, #355f71, #4d7f95);
+        color: #fff;
+        font-size: 1.2rem;
+        box-shadow: 0 12px 30px rgba(18, 80, 98, 0.35);
+        z-index: 95;
+      }
+      .testimony-filter-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(14, 32, 40, 0.45);
+        z-index: 130;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+      }
+      .testimony-filter-overlay.open {
+        display: flex;
+      }
+      .testimony-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .testimony-actions form,
+      .testimony-actions a {
+        width: 100%;
+      }
+      .testimony-actions button,
+      .testimony-actions .btn-inline {
+        width: 100%;
+        justify-content: center;
+      }
+      .testimony-form-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .testimony-form-actions .btn-inline,
+      .testimony-form-actions button {
+        width: 100%;
+        justify-content: center;
+      }
+      .testimony-login-card {
+        margin: 24px auto;
+      }
+    }
+  </style>
+  <header id="testimony-topbar" class="topbar topbar-nav-always testimony-topbar">
+    <div>
+      <a href="{% url 'testimony_article_list' %}" aria-label="Testimonyホームへ" style="display:inline-flex; align-items:center;">
+        <img src="{% static 'img/testimony_logo.png' %}?v=1" alt="Testimony" style="height:44px; width:auto; display:block;">
+      </a>
+    </div>
+    <button id="testimony-menu-toggle" type="button" class="btn-inline testimony-menu-toggle" aria-label="Open menu" aria-expanded="false">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="testimony-nav" class="testimony-nav">
+      {% if request.user.is_authenticated %}
+      <div class="testimony-drawer-greeting">
+        {% if request.user.member_profile %}
+          {{ request.user.member_profile.name }}
+        {% else %}
+          {{ request.user.username }}
+        {% endif %}
+        さん、お疲れ様です
+      </div>
+      {% endif %}
+      <a class="btn-inline" href="{% url 'testimony_article_list' %}">記事一覧</a>
+      <a class="btn-inline" href="{% url 'talks_index' %}">Talks</a>
+      {% if request.user.is_staff or request.user.is_superuser or request.user.username == "admin" %}
+      <a class="btn-inline" href="{% url 'testimony_article_create' %}">新規投稿</a>
+      {% endif %}
+      <a class="btn-inline" href="{% url 'testimony_mypage_favorites' %}">お気に入り</a>
+      <a class="btn-inline" href="{% url 'testimony_mypage_history' %}">閲覧履歴</a>
+      {% if request.user.is_staff or request.user.is_superuser or request.user.username == "admin" %}
+      <a class="btn-inline" href="{% url 'testimony_admin_import' %}">管理者</a>
+      {% endif %}
+      <a class="btn-inline logout-link" href="{% url 'testimony_logout' %}">ログアウト</a>
+    </nav>
+  </header>
+  <div id="testimony-menu-backdrop" class="testimony-menu-backdrop" hidden></div>
+
+  {% block testimony_content %}{% endblock %}
+</div>
+<script>
+  (function () {
+    const topbar = document.getElementById("testimony-topbar");
+    const toggle = document.getElementById("testimony-menu-toggle");
+    const nav = document.getElementById("testimony-nav");
+    const backdrop = document.getElementById("testimony-menu-backdrop");
+    if (!topbar || !toggle || !nav || !backdrop) return;
+
+    function setOpen(isOpen) {
+      topbar.classList.toggle("drawer-open", isOpen);
+      toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      toggle.setAttribute("aria-label", isOpen ? "Close menu" : "Open menu");
+      toggle.innerHTML = isOpen
+        ? '<i class="fa-solid fa-xmark" aria-hidden="true"></i>'
+        : '<i class="fa-solid fa-bars" aria-hidden="true"></i>';
+      backdrop.hidden = !isOpen;
+    }
+
+    toggle.addEventListener("click", function () {
+      setOpen(!topbar.classList.contains("drawer-open"));
+    });
+    backdrop.addEventListener("click", function () {
+      setOpen(false);
+    });
+    nav.addEventListener("click", function (e) {
+      if (e.target && e.target.tagName === "A") {
+        setOpen(false);
+      }
+    });
+    window.addEventListener("resize", function () {
+      if (window.innerWidth > 768) setOpen(false);
+    });
+  })();
+</script>
+{% endblock %}

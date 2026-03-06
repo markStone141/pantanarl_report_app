@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Testimony Login{% endblock %}
+
+{% block content %}
+<main class="login-wrap">
+  <section class="card login-card testimony-login-card">
+    <div class="testimony-login-header">
+      <img src="{% static 'img/testimony_logo.png' %}?v=1" alt="Testimony" style="height:56px; width:auto; max-width:100%;">
+    </div>
+    <form method="post" class="grid" style="gap:10px;">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}" />
+      <div>
+        <label for="{{ form.login_id.id_for_label }}">ID</label>
+        {{ form.login_id }}
+      </div>
+      <div>
+        <label for="{{ form.password.id_for_label }}">パスワード</label>
+        {{ form.password }}
+      </div>
+      {% if form.non_field_errors %}
+      <div class="error-text">{{ form.non_field_errors|join:", " }}</div>
+      {% endif %}
+      {% if form.password.errors %}
+      <div class="error-text">{{ form.password.errors|join:", " }}</div>
+      {% endif %}
+      <button type="submit">ログイン</button>
+    </form>
+  </section>
+</main>
+{% endblock %}
