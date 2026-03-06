@@ -102,37 +102,25 @@
         {% endif %}
         <details class="mobile-only-accordion mt-8">
           <summary class="summary-clickable">個人成績を表示</summary>
-          <div class="table-scroll mt-8">
-          <table>
+          <table class="mt-8 compact-member-table">
             <thead>
-              {% if card.has_split_counts %}
-              <tr><th>メンバー</th><th>CS</th><th>難民</th><th>金額</th></tr>
-              {% else %}
-              <tr><th>メンバー</th><th>件数</th><th>金額</th></tr>
-              {% endif %}
+              <tr><th>メンバー</th><th>件数/金額</th></tr>
             </thead>
             <tbody>
               {% for row in card.members %}
               <tr>
                 <td>{{ row.member_name }}</td>
                 {% if card.has_split_counts %}
-                <td>{{ row.cs_count }}</td>
-                <td>{{ row.refugee_count }}</td>
+                <td>CS {{ row.cs_count }} / 難民 {{ row.refugee_count }} / {{ row.amount_text }}</td>
                 {% else %}
-                <td>{{ row.count }}</td>
+                <td>{{ row.count }} / {{ row.amount_text }}</td>
                 {% endif %}
-                <td>{{ row.amount_text }}</td>
               </tr>
               {% empty %}
-              {% if card.has_split_counts %}
-              <tr><td>-</td><td>-</td><td>-</td><td>-</td></tr>
-              {% else %}
-              <tr><td>-</td><td>-</td><td>-</td></tr>
-              {% endif %}
+              <tr><td>-</td><td>-/-</td></tr>
               {% endfor %}
             </tbody>
           </table>
-          </div>
         </details>
       </article>
       {% endfor %}
