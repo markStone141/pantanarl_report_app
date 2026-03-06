@@ -10,10 +10,10 @@
 
 {% block content %}
 <div class="container">
-  <header id="talks-topbar" class="topbar topbar-desktop-expanded topbar-nav-always talks-drawer-topbar" style="margin-bottom:16px;">
+  <header id="talks-topbar" class="topbar topbar-desktop-expanded topbar-nav-always talks-drawer-topbar talks-topbar-spaced">
     <div>
-      <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" style="display:inline-flex; align-items:center;">
-        <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" style="height:44px; width:auto; display:block;">
+      <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" class="talks-home-link">
+        <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" class="talks-logo">
       </a>
     </div>
     <button id="talks-drawer-toggle" type="button" class="btn-inline talks-drawer-toggle" aria-label="Open menu" aria-expanded="false">
@@ -22,15 +22,15 @@
     <nav id="talks-drawer-nav" class="talks-drawer-nav">
       <div class="talks-drawer-greeting">{{ talks_member_name }}さん、お疲れ様です</div>
       <span class="talks-drawer-welcome">おかえりなさい！{{ talks_member_name }}さん</span>
-      <a href="{% url 'testimony_article_list' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">Testimony</a>
+      <a href="{% url 'testimony_article_list' %}" class="btn-inline talks-nav-link">Testimony</a>
       <a href="{% url 'talks_logout' %}" class="logout-link talks-drawer-logout">ログアウト</a>
     </nav>
   </header>
   <div id="talks-drawer-backdrop" class="talks-drawer-backdrop" hidden></div>
 
   <section class="card">
-    <h2 style="margin-bottom:10px;">投稿を編集</h2>
-    <form method="post" class="grid" style="gap:10px;">
+    <h2 class="post-edit-title">投稿を編集</h2>
+    <form method="post" class="grid talks-form-tight">
       {% csrf_token %}
       <div>
         <label for="{{ form.title.id_for_label }}">タイトル</label>
@@ -60,7 +60,7 @@
       {% if form.non_field_errors %}
         <div class="error-text">{{ form.non_field_errors|join:", " }}</div>
       {% endif %}
-      <div class="row" style="justify-content:flex-end; margin-top: 8px;">
+      <div class="row talks-row-end">
         <a href="{% url 'talks_detail' post.id %}" class="post-edit-cancel-link">キャンセル</a>
         <button type="submit" class="btn-inline">保存する</button>
       </div>

@@ -2,6 +2,86 @@
   position: relative;
 }
 
+.talks-topbar-spaced {
+  margin-bottom: 16px;
+}
+
+.talks-home-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.talks-logo {
+  height: 44px;
+  width: auto;
+  display: block;
+}
+
+.talks-nav-link {
+  width: auto;
+  min-height: 0;
+  padding: 6px 10px;
+}
+
+.talks-message-card {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+}
+
+.talks-message-line {
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+
+.talks-message-line.is-error {
+  color: #a43737;
+}
+
+.talks-message-line.is-ok {
+  color: #1f6f4a;
+}
+
+.talks-form-tight {
+  gap: 10px;
+}
+
+.talks-row-end {
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.talks-inline-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.talks-form-inline {
+  margin: 0;
+}
+
+.talks-title {
+  margin: 0 0 10px;
+}
+
+.talks-note {
+  margin: 0 0 10px;
+}
+
+.talks-tag-badge {
+  margin-right: 4px;
+}
+
+.talks-mini-btn {
+  width: auto;
+  min-height: 0;
+  padding: 5px 9px;
+}
+
+.talks-danger-btn {
+  background: #8f4d4d;
+}
+
 .talks-drawer-toggle {
   display: none;
   margin-left: auto;
@@ -57,7 +137,7 @@
     right: 0;
     width: min(84vw, 320px);
     height: 100vh;
-    background: #0e5f72;
+    background: linear-gradient(150deg, #184f97, var(--brand) 62%, #2a7fd0);
     box-shadow: none;
     padding: 72px 14px 18px;
     z-index: 120;
@@ -80,6 +160,9 @@
   .talks-drawer-topbar .talks-drawer-nav .talks-back-link {
     width: 100%;
     justify-content: center;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    color: #fff;
   }
 
   .talks-drawer-topbar .talks-drawer-welcome {
@@ -88,7 +171,7 @@
 
   .talks-drawer-greeting {
     display: block;
-    color: #e9f6f9;
+    color: #edf5ff;
     font-size: 0.92rem;
     line-height: 1.5;
     margin: 0 2px 4px;
@@ -107,7 +190,7 @@
   .talks-drawer-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(14, 32, 40, 0.4);
+    background: rgba(15, 33, 62, 0.42);
     z-index: 110;
   }
 

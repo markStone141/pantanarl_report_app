@@ -10,10 +10,10 @@
 
 {% block content %}
 <div class="container">
-  <header id="talks-topbar" class="topbar topbar-desktop-expanded topbar-nav-always talks-drawer-topbar" style="margin-bottom:16px;">
+  <header id="talks-topbar" class="topbar topbar-desktop-expanded topbar-nav-always talks-drawer-topbar talks-topbar-spaced">
     <div>
-      <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" style="display:inline-flex; align-items:center;">
-        <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" style="height:44px; width:auto; display:block;">
+      <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" class="talks-home-link">
+        <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" class="talks-logo">
       </a>
     </div>
     <button id="talks-drawer-toggle" type="button" class="btn-inline talks-drawer-toggle" aria-label="Open menu" aria-expanded="false">
@@ -22,31 +22,31 @@
     <nav id="talks-drawer-nav" class="talks-drawer-nav">
       <div class="talks-drawer-greeting">{{ talks_member_name }}さん、お疲れ様です</div>
       <span class="talks-drawer-welcome">おかえりなさい！{{ talks_member_name }}さん</span>
-      <a href="{% url 'testimony_article_list' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">Testimony</a>
-      <a href="{% url 'dashboard_index' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">管理者ダッシュボード</a>
-      <a href="{% url 'talks_index' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">一覧へ</a>
-      <a href="{% url 'talks_deleted_posts_manage' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">削除トーク</a>
+      <a href="{% url 'testimony_article_list' %}" class="btn-inline talks-nav-link">Testimony</a>
+      <a href="{% url 'dashboard_index' %}" class="btn-inline talks-nav-link">管理者ダッシュボード</a>
+      <a href="{% url 'talks_index' %}" class="btn-inline talks-nav-link">一覧へ</a>
+      <a href="{% url 'talks_deleted_posts_manage' %}" class="btn-inline talks-nav-link">削除トーク</a>
       <a href="{% url 'talks_logout' %}" class="logout-link talks-drawer-logout">ログアウト</a>
     </nav>
   </header>
   <div id="talks-drawer-backdrop" class="talks-drawer-backdrop" hidden></div>
 
   {% if messages %}
-    <section class="card" style="margin-bottom:12px; padding:10px 12px;">
+    <section class="card talks-message-card">
       {% for message in messages %}
-        <div style="margin:4px 0; font-size:0.9rem; color:{% if message.tags == 'error' %}#a43737{% else %}#1f6f4a{% endif %};">
+        <div class="talks-message-line {% if message.tags == 'error' %}is-error{% else %}is-ok{% endif %}">
           {{ message }}
         </div>
       {% endfor %}
     </section>
   {% endif %}
 
-  <section class="card" style="margin-bottom:14px;">
-    <h2 style="margin:0 0 10px;">タグ管理</h2>
+  <section class="card tag-card-spaced">
+    <h2 class="tag-title">タグ管理</h2>
     <form method="post" class="tag-form-grid">
       {% csrf_token %}
       {{ form.tag_id }}
-      <div class="grid grid-2" style="gap:10px;">
+      <div class="grid grid-2 tag-grid-gap-10">
         <div>
           <label for="{{ form.name.id_for_label }}">タグ名</label>
           {{ form.name }}
@@ -58,17 +58,17 @@
         <label for="{{ form.is_active.id_for_label }}" class="tag-active-label">有効タグとして使用する</label>
       </div>
       <div class="tag-active-help">チェックあり: 一覧/投稿で選択可能、チェックなし: 非表示（既存投稿には残ります）</div>
-      <div style="display:flex; gap:8px;">
-        <button type="submit" class="btn-inline" style="width:auto;">{% if editing_tag %}更新{% else %}追加{% endif %}</button>
+      <div class="tag-actions-row">
+        <button type="submit" class="btn-inline">{% if editing_tag %}更新{% else %}追加{% endif %}</button>
         {% if editing_tag %}
-          <a href="{% url 'talks_tag_manage' %}" class="btn-inline" style="width:auto; background:#5b7280;">キャンセル</a>
+          <a href="{% url 'talks_tag_manage' %}" class="btn-inline tag-btn-neutral">キャンセル</a>
         {% endif %}
       </div>
     </form>
   </section>
 
-  <section class="card" style="margin-bottom:14px;">
-    <h2 style="margin:0 0 10px;">タグ一括追加</h2>
+  <section class="card tag-card-spaced">
+    <h2 class="tag-title">タグ一括追加</h2>
     <form method="post" class="tag-form-grid">
       {% csrf_token %}
       <input type="hidden" name="action" value="bulk_add">
@@ -76,20 +76,20 @@
         <label for="id_bulk_names">タグ名（改行 or カンマ区切り）</label>
         <textarea id="id_bulk_names" name="bulk_names" rows="5" placeholder="例:&#10;UN&#10;WV&#10;切り返し">{{ bulk_input_value }}</textarea>
       </div>
-      <div style="display:flex; gap:8px;">
-        <button type="submit" class="btn-inline" style="width:auto;">まとめて追加</button>
+      <div class="tag-actions-row">
+        <button type="submit" class="btn-inline">まとめて追加</button>
       </div>
     </form>
   </section>
 
   <section class="card">
-    <h2 style="margin:0 0 10px;">登録済みタグ（{{ paginator.count }}件）</h2>
+    <h2 class="tag-title">登録済みタグ（{{ paginator.count }}件）</h2>
     <div class="tag-search-row">
       <div class="tag-search-box">
         <label for="id_tag_query">タグ検索</label>
         <input id="id_tag_query" type="text" name="q" value="{{ selected_query }}" placeholder="タグ名で検索" autocomplete="off">
       </div>
-      <a href="{% url 'talks_tag_manage' %}" class="btn-inline tag-reset-btn" style="width:auto; min-height:0; padding:6px 10px; background:#5b7280;">リセット</a>
+      <a href="{% url 'talks_tag_manage' %}" class="btn-inline tag-reset-btn tag-btn-neutral">リセット</a>
     </div>
     <div id="tag-manage-results">
       {% include "talks/_tag_manage_results.html" %}

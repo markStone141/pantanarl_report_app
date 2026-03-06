@@ -8,13 +8,17 @@
   .testimony-login-card {
     width: min(560px, calc(100vw - 28px));
     margin: 40px auto;
+    padding: 0;
+    overflow: hidden;
   }
   .testimony-login-header {
-    background: #126e82;
-    border-radius: 12px 12px 0 0;
-    padding: 12px 14px;
-    margin: -20px -20px 16px;
+    background: linear-gradient(120deg, #1b57a8, var(--brand) 62%, #2d84d6);
+    padding: 14px 14px;
     text-align: center;
+  }
+  .testimony-login-form {
+    padding: 18px 20px 20px;
+    gap: 10px;
   }
   .testimony-login-logo {
     height: 56px;
@@ -26,6 +30,12 @@
     .testimony-login-card {
       margin: 24px auto;
     }
+    .testimony-login-form {
+      padding: 14px 12px 12px;
+    }
+    .testimony-login-logo {
+      height: 48px;
+    }
   }
 </style>
 {% endblock %}
@@ -36,7 +46,7 @@
     <div class="testimony-login-header">
       <img class="testimony-login-logo" src="{% static 'img/testimony_logo.png' %}?v=1" alt="Testimony">
     </div>
-    <form method="post" class="grid" style="gap:10px;">
+    <form method="post" class="grid testimony-login-form">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ next }}" />
       <div>

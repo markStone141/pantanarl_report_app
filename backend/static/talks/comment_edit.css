@@ -5,10 +5,14 @@
   min-height: 42px;
   padding: 0 16px;
   border-radius: 10px;
-  background: #5b7280;
+  background: #5c6f86;
   color: #fff !important;
   font-size: 0.92rem;
   font-weight: 700;
   text-decoration: none;
   line-height: 1;
+}
+
+.comment-edit-title {
+  margin-bottom: 10px;
 }

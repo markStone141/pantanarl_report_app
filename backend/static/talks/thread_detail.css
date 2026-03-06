@@ -5,6 +5,83 @@
   margin-bottom: 16px;
   padding: 20px !important;
 }
+.knowledge-thread-title-row {
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+.knowledge-thread-title-compact {
+  margin: 0;
+  font-size: 11px !important;
+  line-height: 1.35;
+  font-weight: 600;
+  color: #4f6673;
+}
+.knowledge-section-row {
+  margin-bottom: 10px;
+}
+.knowledge-heading-row {
+  margin: 0;
+}
+.knowledge-filter-summary {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: .95rem;
+  color: #4f6673;
+  justify-content: flex-end;
+}
+.knowledge-filter-btn-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.knowledge-filter-icon-good {
+  color: #1e7c4d;
+}
+.knowledge-filter-icon-keep {
+  color: #355767;
+}
+.knowledge-filter-icon-retry {
+  color: #9b3838;
+}
+.knowledge-filter-icon-question {
+  color: #7454a6;
+}
+.knowledge-grid-gap-10 {
+  gap: 10px;
+}
+.knowledge-meta-small {
+  font-size: .84rem;
+}
+.knowledge-inline-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.knowledge-form-inline {
+  margin: 0;
+}
+.knowledge-reply-meta-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.knowledge-action-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.knowledge-inline-auto {
+  width: auto;
+}
+.btn-inline.neutral {
+  background: #5c6f86;
+  color: #fff;
+}
+.knowledge-favorite-icon-active {
+  color: #d89b12;
+}
 .knowledge-thread-title {
   display: block;
   width: 100%;
@@ -143,8 +220,8 @@
   line-height: 1;
 }
 .knowledge-filter-btn.is-active {
-  border-color: #126e82;
-  background: #126e82;
+  border-color: var(--brand);
+  background: var(--brand);
   color: #fff;
 }
 .knowledge-filter-btn.is-active i {
@@ -181,6 +258,9 @@
   display: flex;
   justify-content: flex-end;
 }
+.knowledge-followup-actions.is-tight {
+  margin-top: 0;
+}
 .knowledge-followup-footer {
   margin-top: 8px;
   display: flex;
@@ -194,9 +274,9 @@
   padding: 4px 9px;
   border-radius: 999px;
   font-size: 0.76rem;
-  background: #eaf3f6;
-  color: #1f4f5e;
-  border: 1px solid #cfe0e7;
+  background: var(--brand-soft);
+  color: #1a4f87;
+  border: 1px solid #bcd4f1;
   font-weight: 700;
 }
 .knowledge-fab {
@@ -207,12 +287,12 @@
   height: 58px;
   border-radius: 999px;
   border: 0;
-  background: linear-gradient(135deg, #126e82, #1e97b1);
+  background: linear-gradient(135deg, #1b57a8, var(--brand));
   color: #fff;
   font-size: 1.8rem;
   font-weight: 700;
   line-height: 1;
-  box-shadow: 0 8px 20px rgba(8, 70, 85, 0.28);
+  box-shadow: 0 8px 20px rgba(27, 103, 184, 0.28);
   z-index: 60;
   transition: opacity 0.2s ease, transform 0.2s ease;
   display: inline-flex;

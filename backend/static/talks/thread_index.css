@@ -12,9 +12,18 @@
       overflow-y: auto;
       padding-right: 2px;
     }
-    .knowledge-filter-actions {
+.knowledge-filter-actions {
       display: flex;
       gap: 8px;
+      align-items: end;
+    }
+.knowledge-grid-gap-10 {
+      gap: 10px;
+    }
+.knowledge-grid-gap-12 {
+      gap: 12px;
+    }
+.knowledge-grid-align-end {
       align-items: end;
     }
     .knowledge-reset-btn {
@@ -22,12 +31,50 @@
       align-items: center;
       justify-content: center;
     }
+.knowledge-reset-btn.neutral {
+      background: #5c6f86;
+      color: #fff;
+    }
+.btn-inline.neutral {
+      background: #5c6f86;
+      color: #fff;
+    }
+.knowledge-inline-auto {
+      width: auto;
+    }
     .knowledge-filter-search {
       margin-top: 10px;
     }
     .knowledge-thread-link {
       padding: 10px 12px !important;
       text-align: left !important;
+    }
+.knowledge-thread-link-card {
+      display: block;
+      color: inherit;
+      cursor: pointer;
+    }
+.knowledge-tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+.knowledge-section-row {
+      margin-bottom: 10px;
+    }
+.knowledge-form-inline {
+      margin: 0;
+    }
+.knowledge-meta-icon {
+      color: #607582;
+    }
+.knowledge-favorite-icon-active {
+      color: #d89b12;
+    }
+.knowledge-pagination-bottom {
+      margin-top: 14px;
+      margin-bottom: 4px;
     }
     .knowledge-thread-title {
       font-size: 1.03rem;
@@ -169,8 +216,8 @@
       font-weight: 700;
     }
     .knowledge-page-link.is-active {
-      border-color: #126e82;
-      background: #126e82;
+      border-color: var(--brand);
+      background: var(--brand);
       color: #fff;
     }
     .knowledge-page-ellipsis {
@@ -253,9 +300,9 @@
       gap: 6px;
     }
     .knowledge-unread-toggle.is-active {
-      background: #126e82;
+      background: var(--brand);
       color: #fff;
-      border-color: #126e82;
+      border-color: var(--brand);
     }
     .knowledge-create-tag-options {
       margin-top: 8px;
@@ -272,9 +319,9 @@
       padding: 6px 10px;
       border-radius: 999px;
       font-size: 0.82rem;
-      background: #eef6f8;
-      color: #0f4d5d;
-      border: 1px solid #c6d8df;
+      background: var(--brand-soft);
+      color: #1a4f87;
+      border: 1px solid #bcd4f1;
     }
     .knowledge-create-show-all-wrap {
       margin-top: 8px;
@@ -289,8 +336,8 @@
       border-radius: 999px;
       font-size: 0.8rem;
       background: #fff;
-      color: #1b5b6d;
-      border: 1px solid #c6d8df;
+      color: #1a4f87;
+      border: 1px solid #bcd4f1;
       cursor: pointer;
     }
     .knowledge-create-show-all-btn {
@@ -300,8 +347,8 @@
       border-radius: 999px;
       font-size: 0.8rem;
       background: #fff;
-      color: #1b5b6d;
-      border: 1px solid #c6d8df;
+      color: #1a4f87;
+      border: 1px solid #bcd4f1;
       cursor: pointer;
     }
     .knowledge-create-selected-tags {
@@ -317,7 +364,7 @@
       padding: 4px 8px;
       border-radius: 999px;
       font-size: 0.8rem;
-      background: #126e82;
+      background: var(--brand);
       color: #fff;
     }
     .knowledge-selected-tag-remove {
@@ -339,9 +386,9 @@
       min-height: 220px;
     }
 .knowledge-tag-chip {
-  background: #eaf3f7;
-  color: #0f4d5d;
-      border: 1px solid #c6d8df;
+  background: var(--brand-soft);
+  color: #1a4f87;
+      border: 1px solid #bcd4f1;
     }
 .knowledge-unread-badge {
       display: inline-flex;
@@ -385,10 +432,10 @@
         justify-content: center;
       }
       .knowledge-fab-filter {
-        background: linear-gradient(135deg, #375e6c, #4f7b8c);
+        background: linear-gradient(135deg, #355f96, #4f7fb5);
       }
       .knowledge-fab-create {
-        background: linear-gradient(135deg, #126e82, #1e97b1);
+        background: linear-gradient(135deg, #1b57a8, var(--brand));
         font-size: 1.5rem;
         font-weight: 700;
       }
@@ -438,9 +485,9 @@
       .knowledge-tag-chip {
         padding: 3px 7px !important;
         font-size: 0.74rem !important;
-        background: #0f5e72;
+        background: var(--brand);
         color: #fff;
-        border-color: #0f5e72;
+        border-color: var(--brand);
       }
       .knowledge-list-meta-wrap {
         gap: 7px;

@@ -1,12 +1,50 @@
 {% extends "base.html" %}
+{% load static %}
 {# Primary login template. Keep only this file to avoid template resolution conflicts. #}
 
 {% block title %}Login | Report App{% endblock %}
 
+{% block extra_head %}
+<style>
+  .reportapp-login-brand {
+    display: block;
+    width: 100%;
+    margin-bottom: 14px;
+  }
+  .reportapp-logo-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 10px 22px rgba(27, 103, 184, 0.22));
+  }
+  .reportapp-login-shortcuts {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    justify-content: center;
+  }
+  .reportapp-login-shortcuts a {
+    display: inline-block;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--brand);
+    color: var(--brand);
+    font-weight: 700;
+    background: #fff;
+  }
+  .reportapp-submit-btn {
+    margin-top: 14px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <main class="login-wrap">
   <section class="card login-card">
-    <h2>Report App Login</h2>
+    <div class="reportapp-login-brand">
+      <img class="reportapp-logo-image" src="{% static 'img/reportapp_logo.png' %}?v=2" alt="Report App">
+    </div>
 
     <form method="post">
       {% csrf_token %}
@@ -23,34 +61,14 @@
       <div class="error-text">{{ form.password.errors|striptags }}</div>
       {% endif %}
 
-      <button type="submit" style="margin-top: 14px;">Login</button>
+      <button type="submit" class="reportapp-submit-btn">Login</button>
     </form>
 
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
-      <a
-        href="{% url 'talks_login' %}"
-        style="
-          display: inline-block;
-          padding: 10px 14px;
-          border-radius: 10px;
-          border: 1px solid #126e82;
-          color: #126e82;
-          font-weight: 700;
-        "
-      >
+    <div class="reportapp-login-shortcuts">
+      <a href="{% url 'talks_login' %}">
         Talks
       </a>
-      <a
-        href="{% url 'testimony_login' %}?next={% url 'testimony_article_list' %}"
-        style="
-          display: inline-block;
-          padding: 10px 14px;
-          border-radius: 10px;
-          border: 1px solid #126e82;
-          color: #126e82;
-          font-weight: 700;
-        "
-      >
+      <a href="{% url 'testimony_login' %}?next={% url 'testimony_article_list' %}">
         Testimony
       </a>
     </div>

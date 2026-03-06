@@ -1,7 +1,7 @@
 {% if paginator.num_pages > 1 %}
   <div class="tag-pagination">
     {% if page_obj.has_previous %}
-      <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}" style="width:auto; min-height:0; padding:5px 9px;">前へ</a>
+      <a class="btn-inline tag-mini-btn" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}">前へ</a>
     {% endif %}
     {% for num in paginator.page_range %}
       {% if num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
@@ -17,7 +17,7 @@
       {% endif %}
     {% endfor %}
     {% if page_obj.has_next %}
-      <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}" style="width:auto; min-height:0; padding:5px 9px;">次へ</a>
+      <a class="btn-inline tag-mini-btn" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}">次へ</a>
     {% endif %}
   </div>
 {% endif %}
@@ -38,22 +38,22 @@
           <td>{% if tag.is_active %}有効{% else %}無効{% endif %}</td>
           <td>{{ tag.post_count }}</td>
           <td>
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <a href="{% url 'talks_tag_manage' %}?edit={{ tag.id }}" class="btn-inline" style="width:auto; min-height:0; padding:5px 9px;">編集</a>
-              <form method="post" action="{% url 'talks_tag_manage' %}" style="margin:0;">
+            <div class="tag-actions">
+              <a href="{% url 'talks_tag_manage' %}?edit={{ tag.id }}" class="btn-inline tag-mini-btn">編集</a>
+              <form method="post" action="{% url 'talks_tag_manage' %}" class="tag-form-inline">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="toggle">
                 <input type="hidden" name="tag_id" value="{{ tag.id }}">
-                <button type="submit" class="btn-inline" style="width:auto; min-height:0; padding:5px 9px; background:{% if tag.is_active %}#8f4d4d{% else %}#3f6f54{% endif %};">
+                <button type="submit" class="btn-inline tag-mini-btn tag-toggle-btn {% if tag.is_active %}is-disable{% else %}is-enable{% endif %}">
                   {% if tag.is_active %}無効化{% else %}有効化{% endif %}
                 </button>
               </form>
               {% if not tag.is_active and tag.total_post_count == 0 %}
-                <form method="post" action="{% url 'talks_tag_manage' %}" style="margin:0;" onsubmit="return confirm('このタグを削除しますか？');">
+                <form method="post" action="{% url 'talks_tag_manage' %}" class="tag-form-inline" onsubmit="return confirm('このタグを削除しますか？');">
                   {% csrf_token %}
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="tag_id" value="{{ tag.id }}">
-                  <button type="submit" class="btn-inline" style="width:auto; min-height:0; padding:5px 9px; background:#a43e3e;">
+                  <button type="submit" class="btn-inline tag-mini-btn tag-delete-btn">
                     削除
                   </button>
                 </form>
@@ -68,9 +68,9 @@
   </table>
 </div>
 {% if paginator.num_pages > 1 %}
-  <div class="tag-pagination" style="margin-top:12px; margin-bottom:0;">
+  <div class="tag-pagination tag-bottom-pagination">
     {% if page_obj.has_previous %}
-      <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}" style="width:auto; min-height:0; padding:5px 9px;">前へ</a>
+      <a class="btn-inline tag-mini-btn" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}">前へ</a>
     {% endif %}
     {% for num in paginator.page_range %}
       {% if num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
@@ -86,7 +86,7 @@
       {% endif %}
     {% endfor %}
     {% if page_obj.has_next %}
-      <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}" style="width:auto; min-height:0; padding:5px 9px;">次へ</a>
+      <a class="btn-inline tag-mini-btn" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}">次へ</a>
     {% endif %}
   </div>
 {% endif %}

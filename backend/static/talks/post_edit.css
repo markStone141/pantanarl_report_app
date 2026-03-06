@@ -1,6 +1,9 @@
 .post-edit-tag-search {
   margin-bottom: 8px;
 }
+.post-edit-title {
+  margin-bottom: 10px;
+}
 .post-edit-tag-options {
   margin-top: 6px;
   max-height: 180px;
@@ -19,15 +22,15 @@
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 0.82rem;
-  background: #eef6f8;
-  color: #0f4d5d;
-  border: 1px solid #c6d8df;
+  background: var(--brand-soft);
+  color: #1a4f87;
+  border: 1px solid #bcd4f1;
   cursor: pointer;
 }
 .post-edit-tag-btn.is-selected {
-  background: #126e82;
+  background: var(--brand);
   color: #fff;
-  border-color: #126e82;
+  border-color: var(--brand);
 }
 .post-edit-selected-tags {
   margin-top: 8px;
@@ -42,7 +45,7 @@
   padding: 4px 8px;
   border-radius: 999px;
   font-size: 0.8rem;
-  background: #126e82;
+  background: var(--brand);
   color: #fff;
 }
 .post-edit-selected-remove {
@@ -62,7 +65,7 @@
   min-height: 42px;
   padding: 0 16px;
   border-radius: 10px;
-  background: #5b7280;
+  background: #5c6f86;
   color: #fff !important;
   font-size: 0.92rem;
   font-weight: 700;

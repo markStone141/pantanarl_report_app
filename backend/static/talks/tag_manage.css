@@ -3,6 +3,27 @@
   gap: 10px;
 }
 
+.tag-card-spaced {
+  margin-bottom: 14px;
+}
+
+.tag-title {
+  margin: 0 0 10px;
+}
+
+.tag-actions-row {
+  display: flex;
+  gap: 8px;
+}
+.tag-grid-gap-10 {
+  gap: 10px;
+}
+
+.tag-btn-neutral {
+  background: #5c6f86;
+  color: #fff;
+}
+
 .tag-active-row {
   display: flex;
   align-items: center;
@@ -73,8 +94,8 @@
 }
 
 .tag-page-link.is-active {
-  border-color: #126e82;
-  background: #126e82;
+  border-color: var(--brand);
+  background: var(--brand);
   color: #fff;
 }
 
@@ -82,6 +103,39 @@
   color: #6e838f;
   font-size: 0.84rem;
   padding: 0 2px;
+}
+
+.tag-mini-btn {
+  width: auto;
+  min-height: 0;
+  padding: 5px 9px;
+}
+
+.tag-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tag-form-inline {
+  margin: 0;
+}
+
+.tag-bottom-pagination {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.tag-toggle-btn.is-disable {
+  background: #8f4d4d;
+}
+
+.tag-toggle-btn.is-enable {
+  background: #3f6f54;
+}
+
+.tag-delete-btn {
+  background: #a43e3e;
 }
 
 @media (max-width: 768px) {

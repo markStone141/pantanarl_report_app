@@ -3,13 +3,47 @@
 
 {% block title %}Talks ログイン | Report App{% endblock %}
 
+{% block extra_head %}
+<style>
+  .talks-login-brand {
+    margin-bottom: 14px;
+    padding: 20px 12px;
+    min-height: 120px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(120deg, #1b57a8, var(--brand) 62%, #2d84d6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+  }
+  .talks-login-logo {
+    height: 56px;
+    width: auto;
+    max-width: 100%;
+    display: block;
+  }
+  .talks-login-form {
+    gap: 10px;
+  }
+  @media (max-width: 768px) {
+    .talks-login-brand {
+      min-height: 104px;
+      padding: 14px 10px;
+    }
+    .talks-login-logo {
+      height: 48px;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="login-wrap">
   <section class="card login-card">
-    <div style="margin-bottom:14px; padding:20px 12px; min-height:120px; border-radius:12px; background:#126e82; display:flex; align-items:center; justify-content:center;">
-      <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" style="height:56px; width:auto; max-width:100%;">
+    <div class="talks-login-brand">
+      <img class="talks-login-logo" src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks">
     </div>
-    <form method="post" class="grid" style="gap:10px;">
+    <form method="post" class="grid talks-login-form">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ next }}" />
       <div>
