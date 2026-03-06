@@ -37,16 +37,16 @@
   gap: 6px;
 }
 .knowledge-filter-icon-good {
-  color: #1e7c4d;
+  color: #2a8a5e;
 }
 .knowledge-filter-icon-keep {
-  color: #355767;
+  color: #37658c;
 }
 .knowledge-filter-icon-retry {
   color: #9b3838;
 }
 .knowledge-filter-icon-question {
-  color: #7454a6;
+  color: #446fbe;
 }
 .knowledge-grid-gap-10 {
   gap: 10px;
@@ -193,19 +193,19 @@
 }
 .knowledge-result-good {
   background: #e5f5ec;
-  color: #1e7c4d;
+  color: #2a8a5e;
 }
 .knowledge-result-keep {
   background: #eef3f7;
-  color: #355767;
+  color: #37658c;
 }
 .knowledge-result-retry {
   background: #faecec;
   color: #9b3838;
 }
 .knowledge-result-question {
-  background: #f3eefb;
-  color: #6f44ad;
+  background: #edf2ff;
+  color: #446fbe;
 }
 .knowledge-filter-btn {
   cursor: pointer;
@@ -377,17 +377,17 @@
   cursor: pointer;
 }
 .knowledge-reaction-option.is-selected {
-  border-color: #126e82;
-  background: #126e82;
+  border-color: var(--brand);
+  background: var(--brand);
   color: #fff;
 }
 .knowledge-reaction-option.is-selected i {
   color: #fff !important;
 }
 .knowledge-tag-chip {
-  background: #eaf3f7;
-  color: #0f4d5d;
-  border: 1px solid #c6d8df;
+  background: var(--brand-soft);
+  color: #1a4f87;
+  border: 1px solid #bcd4f1;
 }
 @media (max-width: 768px) {
   .talks-back-link {
@@ -432,8 +432,8 @@
   .knowledge-tag-chip {
     padding: 3px 7px !important;
     font-size: 0.74rem !important;
-    background: #0f5e72;
+    background: var(--brand);
     color: #fff;
-    border-color: #0f5e72;
+    border-color: var(--brand);
   }
 }
