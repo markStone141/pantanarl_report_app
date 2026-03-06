@@ -307,8 +307,10 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                 ),
             }
 
-        def build_remaining_text(detail_rows):
+        def build_remaining_values(detail_rows):
             remaining_count = 0
+            remaining_cs_count = 0
+            remaining_refugee_count = 0
             remaining_amount = 0
 
             def _is_amount(code: str, unit: str) -> bool:
@@ -324,6 +326,16 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                     or "kingaku" in code_text
                     or "円" in unit_text
                 )
+
+            def _is_cs_count(code: str, unit: str) -> bool:
+                code_text = (code or "").lower()
+                unit_text = unit or ""
+                return "cs" in code_text or "cs" in unit_text
+
+            def _is_refugee_count(code: str, unit: str) -> bool:
+                code_text = (code or "").lower()
+                unit_text = unit or ""
+                return "refugee" in code_text or "nanmin" in code_text or "難民" in unit_text
 
             def _is_count(code: str, unit: str) -> bool:
                 code_text = (code or "").lower()
@@ -348,6 +360,12 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                 unit = row.get("unit") or ""
                 if _is_amount(code, unit):
                     remaining_amount += delta
+                elif _is_cs_count(code, unit):
+                    remaining_cs_count += delta
+                    remaining_count += delta
+                elif _is_refugee_count(code, unit):
+                    remaining_refugee_count += delta
+                    remaining_count += delta
                 elif _is_count(code, unit):
                     remaining_count += delta
 
@@ -361,7 +379,18 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                     return f"+{abs(value):,}円"
                 return f"{value:,}円"
 
-            return f"{_signed_count_text(remaining_count)}/{_signed_yen_text(remaining_amount)}"
+            return {
+                "count": remaining_count,
+                "cs_count": remaining_cs_count,
+                "refugee_count": remaining_refugee_count,
+                "amount": remaining_amount,
+                "text": f"{_signed_count_text(remaining_count)}/{_signed_yen_text(remaining_amount)}",
+                "split_text": (
+                    f"CS{_signed_count_text(remaining_cs_count)} "
+                    f"難民{_signed_count_text(remaining_refugee_count)}/"
+                    f"{_signed_yen_text(remaining_amount)}"
+                ),
+            }
 
         section_order = [
             ("UN", "UN①"),
@@ -391,8 +420,8 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                 f"{row['label']} {row['actual_text']}/{row['target_text']}{row['unit']} 達成率{row['rate']}"
                 for row in base_metric_detail_by_code.get(code, {}).get("period", [])
             ]
-            month_remaining_text = build_remaining_text(base_metric_detail_by_code.get(code, {}).get("month", []))
-            period_remaining_text = build_remaining_text(base_metric_detail_by_code.get(code, {}).get("period", []))
+            month_remaining = build_remaining_values(base_metric_detail_by_code.get(code, {}).get("month", []))
+            period_remaining = build_remaining_values(base_metric_detail_by_code.get(code, {}).get("period", []))
             mail_sections.append(
                 {
                     "code": code,
@@ -406,8 +435,10 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                     "member_lines": member_lines,
                     "period_lines": period_metric_lines,
                     "month_lines": month_metric_lines,
-                    "period_remaining_text": period_remaining_text,
-                    "month_remaining_text": month_remaining_text,
+                    "period_remaining_text": period_remaining["text"],
+                    "month_remaining_text": month_remaining["text"],
+                    "period_remaining_split_text": period_remaining["split_text"],
+                    "month_remaining_split_text": month_remaining["split_text"],
                 }
             )
 

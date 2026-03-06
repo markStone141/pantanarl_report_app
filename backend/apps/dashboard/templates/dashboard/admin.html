@@ -217,8 +217,11 @@
       const isStyleSection = section.code && section.code.indexOf("STYLE") === 0;
       const hasPeriod = periodName && periodName !== "-" && periodRange && periodRange !== "-";
 
-      function formatRemainingText(textValue) {
+      function formatRemainingText(textValue, splitTextValue) {
         const text = textValue || "0件/0円";
+        if (section.code === "WV") {
+          return splitTextValue || text;
+        }
         if (!isStyleSection) return text;
         const parts = text.split("/");
         return parts.length > 1 ? parts[parts.length - 1] : text;
@@ -244,7 +247,7 @@
       } else {
         lines.push("路程目標データなし");
       }
-      lines.push("目標達成まで：" + formatRemainingText(section.period_remaining_text));
+      lines.push("目標達成まで：" + formatRemainingText(section.period_remaining_text, section.period_remaining_split_text));
       lines.push("【月間目標達成率】");
       if (section.month_lines.length) {
         section.month_lines.forEach(function (line) {
@@ -253,7 +256,7 @@
       } else {
         lines.push("月目標データなし");
       }
-      lines.push("目標達成まで：" + formatRemainingText(section.month_remaining_text));
+      lines.push("目標達成まで：" + formatRemainingText(section.month_remaining_text, section.month_remaining_split_text));
       return lines;
     }
 
@@ -279,8 +282,11 @@
       const isStyleSection = section.code && section.code.indexOf("STYLE") === 0;
       const hasPeriod = periodName && periodName !== "-" && periodRange && periodRange !== "-";
 
-      function formatRemainingText(textValue) {
+      function formatRemainingText(textValue, splitTextValue) {
         const text = textValue || "0件/0円";
+        if (section.code === "WV") {
+          return splitTextValue || text;
+        }
         if (!isStyleSection) return text;
         const parts = text.split("/");
         return parts.length > 1 ? parts[parts.length - 1] : text;
@@ -322,7 +328,7 @@
         } else {
           lines.push("路程目標データなし");
         }
-        lines.push("目標達成まで：" + formatRemainingText(section.period_remaining_text));
+        lines.push("目標達成まで：" + formatRemainingText(section.period_remaining_text, section.period_remaining_split_text));
       }
       lines.push("【月間目標達成率】");
       if (section.month_lines.length) {
@@ -332,7 +338,7 @@
       } else {
         lines.push("月目標データなし");
       }
-      lines.push("目標達成まで：" + formatRemainingText(section.month_remaining_text));
+      lines.push("目標達成まで：" + formatRemainingText(section.month_remaining_text, section.month_remaining_split_text));
       return lines;
     }
 

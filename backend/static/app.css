@@ -1,11 +1,11 @@
 :root {
   --bg: #eef3f8;
   --card: #ffffff;
-  --ink: #13232d;
-  --muted: #5a6d79;
-  --line: #d3dee7;
-  --brand: #0f6f8a;
-  --brand-soft: #d8edf5;
+  --ink: #11253a;
+  --muted: #58708a;
+  --line: #cfdeeb;
+  --brand: #1b67b8;
+  --brand-soft: #d9e9fb;
   --ok: #238a60;
   --warn: #cb8c1f;
   --radius-sm: 10px;
@@ -23,8 +23,8 @@ body {
   margin: 0;
   font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
   background:
-    radial-gradient(1200px 620px at 0% -10%, #d9ecf7 0%, rgba(217, 236, 247, 0) 65%),
-    radial-gradient(900px 520px at 100% -18%, #e6f6ec 0%, rgba(230, 246, 236, 0) 62%),
+    radial-gradient(1200px 620px at 0% -10%, #d7e7fb 0%, rgba(215, 231, 251, 0) 65%),
+    radial-gradient(900px 520px at 100% -18%, #e5efff 0%, rgba(229, 239, 255, 0) 62%),
     var(--bg);
   color: var(--ink);
   line-height: 1.5;
@@ -41,7 +41,7 @@ a {
 }
 
 .topbar {
-  background: linear-gradient(120deg, #0b5b71, #0f6f8a 56%, #1483a2);
+  background: linear-gradient(120deg, #1b57a8, #1b67b8 56%, #2d84d6);
   color: #fff;
   padding: 16px 20px;
   border-radius: var(--radius-lg);
@@ -256,8 +256,8 @@ select:focus,
 textarea:focus,
 button:focus-visible {
   outline: none;
-  border-color: #67a7be;
-  box-shadow: 0 0 0 3px rgba(22, 130, 160, 0.16);
+  border-color: #6698db;
+  box-shadow: 0 0 0 3px rgba(40, 112, 196, 0.18);
 }
 
 .report-date-input {
@@ -294,7 +294,7 @@ button {
   border: 0;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 18px rgba(15, 111, 138, 0.24);
+  box-shadow: 0 8px 18px rgba(27, 103, 184, 0.24);
 }
 
 button:hover {
@@ -303,7 +303,7 @@ button:hover {
 
 button:active {
   transform: translateY(1px);
-  box-shadow: 0 5px 12px rgba(15, 111, 138, 0.22);
+  box-shadow: 0 5px 12px rgba(27, 103, 184, 0.22);
 }
 
 .btn-inline {

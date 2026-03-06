@@ -509,6 +509,10 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertIn("20", wv_progress["month_target"])
         self.assertIn("1", wv_progress["month_actual"])
         self.assertIn("2", wv_progress["month_actual"])
+        payload_map = response.context["mail_template_payload_map"]
+        wv_mail_section = next(s for s in payload_map["today"]["sections"] if s["code"] == "WV")
+        self.assertEqual(wv_mail_section["month_remaining_text"], "27件/0円")
+        self.assertEqual(wv_mail_section["month_remaining_split_text"], "CS9件 難民18件/0円")
 
         style_progress = next(row for row in response.context["target_progress_rows"] if row["label"] == "Style1")
         self.assertIn("10000", style_progress["month_target"])
