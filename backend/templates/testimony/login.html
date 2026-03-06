@@ -3,11 +3,38 @@
 
 {% block title %}Testimony Login{% endblock %}
 
+{% block extra_head %}
+<style>
+  .testimony-login-card {
+    width: min(560px, calc(100vw - 28px));
+    margin: 40px auto;
+  }
+  .testimony-login-header {
+    background: #126e82;
+    border-radius: 12px 12px 0 0;
+    padding: 12px 14px;
+    margin: -20px -20px 16px;
+    text-align: center;
+  }
+  .testimony-login-logo {
+    height: 56px;
+    width: auto;
+    max-width: 100%;
+    display: inline-block;
+  }
+  @media (max-width: 768px) {
+    .testimony-login-card {
+      margin: 24px auto;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <main class="login-wrap">
   <section class="card login-card testimony-login-card">
     <div class="testimony-login-header">
-      <img src="{% static 'img/testimony_logo.png' %}?v=1" alt="Testimony" style="height:56px; width:auto; max-width:100%;">
+      <img class="testimony-login-logo" src="{% static 'img/testimony_logo.png' %}?v=1" alt="Testimony">
     </div>
     <form method="post" class="grid" style="gap:10px;">
       {% csrf_token %}
