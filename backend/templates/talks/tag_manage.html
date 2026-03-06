@@ -22,6 +22,7 @@
     <nav id="talks-drawer-nav" class="talks-drawer-nav">
       <div class="talks-drawer-greeting">{{ talks_member_name }}さん、お疲れ様です</div>
       <span class="talks-drawer-welcome">おかえりなさい！{{ talks_member_name }}さん</span>
+      <a href="{% url 'home' %}" class="btn-inline talks-nav-link">Report App</a>
       <a href="{% url 'testimony_article_list' %}" class="btn-inline talks-nav-link">Testimony</a>
       <a href="{% url 'dashboard_index' %}" class="btn-inline talks-nav-link">管理者ダッシュボード</a>
       <a href="{% url 'talks_index' %}" class="btn-inline talks-nav-link">一覧へ</a>

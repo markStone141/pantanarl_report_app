@@ -392,6 +392,7 @@
       {% endif %}
       <a class="btn-inline" href="{% url 'testimony_article_list' %}">記事一覧</a>
       <a class="btn-inline" href="{% url 'talks_index' %}">Talks</a>
+      <a class="btn-inline" href="{% url 'home' %}">Report App</a>
       {% if request.user.is_staff or request.user.is_superuser or request.user.username == "admin" %}
       <a class="btn-inline" href="{% url 'testimony_article_create' %}">新規投稿</a>
       {% endif %}

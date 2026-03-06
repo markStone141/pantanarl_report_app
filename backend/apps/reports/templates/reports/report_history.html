@@ -1,46 +1,59 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}保存報告一覧 | Report App{% endblock %}
 
 {% block content %}
-<div class="container">
-  <header class="topbar topbar-desktop-expanded">
-    <strong>保存報告一覧</strong>
-    <nav>
+<div class="container report-history-page">
+  <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
+    <div>
+      <strong>保存報告一覧</strong>
+    </div>
+    <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'report_index' %}">報告一覧へ戻る</a>
       <a href="{% url 'dashboard_index' %}">管理者ページ</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
+  <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
-  <section class="card" style="margin-top: 16px;">
-    <form method="get" class="row" style="gap:8px; align-items:end; margin-bottom:10px;">
-      <div>
-        <label for="date_on">指定日</label>
-        <input id="date_on" type="date" name="date_on" value="{{ date_on }}">
-      </div>
-      <div>
-        <label for="date_from">開始日</label>
-        <input id="date_from" type="date" name="date_from" value="{{ date_from }}">
-      </div>
-      <div>
-        <label for="date_to">終了日</label>
-        <input id="date_to" type="date" name="date_to" value="{{ date_to }}">
-      </div>
-      <div style="display:flex; gap:8px;">
-        <button type="submit" class="btn-inline">検索</button>
-        <a href="{% url 'report_history' %}" class="btn-inline">リセット</a>
-      </div>
-    </form>
-
-    <div class="row" style="gap:8px; align-items:center; margin-bottom:10px;">
-      <h3 style="margin:0;">送信済みデータ</h3>
-      <div style="display:flex; flex-wrap:wrap; gap:6px;">
+  <section class="card mt-16 report-history-card">
+    <div class="row mb-10 report-filter-row" style="gap:8px; align-items:center;">
+      <h3>送信済みデータ</h3>
+      <button type="button" id="report-filter-fab" class="btn-inline report-filter-fab" aria-label="部門フィルタを開く" aria-expanded="false">
+        <i class="fa-solid fa-filter" aria-hidden="true"></i> フィルタ
+      </button>
+      <div id="report-filter-panel" class="inline-row report-filter-panel" style="gap:6px;">
+        <button type="button" id="report-filter-close" class="btn-inline report-filter-close" aria-label="部門フィルタを閉じる">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
         <button type="button" class="btn-inline report-filter-btn is-active" data-dept="">すべて</button>
         {% for dept in filter_departments %}
           <button type="button" class="btn-inline report-filter-btn" data-dept="{{ dept.code }}">{{ dept.name }}</button>
         {% endfor %}
+        <form method="get" class="report-filter-search-form">
+          <div>
+            <label for="date_on">指定日</label>
+            <input id="date_on" type="date" name="date_on" value="{{ date_on }}">
+          </div>
+          <div>
+            <label for="date_from">開始日</label>
+            <input id="date_from" type="date" name="date_from" value="{{ date_from }}">
+          </div>
+          <div>
+            <label for="date_to">終了日</label>
+            <input id="date_to" type="date" name="date_to" value="{{ date_to }}">
+          </div>
+          <div class="inline-row">
+            <button type="submit" class="btn-inline">検索</button>
+            <a href="{% url 'report_history' %}" class="btn-inline">リセット</a>
+          </div>
+        </form>
       </div>
+      <div id="report-filter-backdrop" class="report-filter-backdrop" hidden></div>
     </div>
 
     <form method="post" action="{% url 'report_bulk_delete' %}" id="bulk-delete-form" onsubmit="return confirm('選択した報告を削除します。よろしいですか？');">
@@ -49,24 +62,24 @@
       <input type="hidden" name="date_from" value="{{ date_from }}">
       <input type="hidden" name="date_to" value="{{ date_to }}">
 
-      <div class="row" style="gap:8px; margin-bottom:10px; justify-content:flex-start;">
+      <div class="row mb-10 report-bulk-actions" style="gap:8px; justify-content:flex-start;">
         <button type="button" class="btn-inline" id="select-visible-btn">全選択</button>
         <button type="button" class="btn-inline" id="clear-visible-btn">選択解除</button>
         <button type="submit" class="btn-inline" id="bulk-delete-btn">選択削除</button>
       </div>
 
-      <table>
+      <div class="table-scroll">
+      <table class="report-history-table">
         <thead>
           <tr>
             <th>選択</th>
-            <th>報告日</th>
+            <th>日付け</th>
             <th>部門</th>
-            <th>責任者</th>
-            <th>件数合計</th>
-            <th>金額合計(円)</th>
-            <th>登録日時</th>
-            <th>編集日時</th>
-            <th>修正</th>
+            <th class="hide-mobile">責任者</th>
+            <th>件数/金額</th>
+            <th class="hide-mobile">登録日時</th>
+            <th class="hide-mobile">編集日時</th>
+            <th class="report-edit-head">編集</th>
           </tr>
         </thead>
         <tbody>
@@ -75,21 +88,20 @@
             <td>
               <input type="checkbox" name="selected_report_ids" value="{{ report.id }}" class="report-select-checkbox">
             </td>
-            <td>{{ report.report_date }}</td>
+            <td>{{ report.report_date|date:"n/j" }}</td>
             <td>{{ report.department.name }}</td>
-            <td>{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
-            <td>{{ report.total_count }}</td>
-            <td>{{ report.followup_count_text }}</td>
-            <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
-            <td>{% if report.edited_at %}{{ report.edited_at|date:"Y-m-d H:i" }}{% else %}-{% endif %}</td>
-            <td>
-              <a href="{% url 'report_edit' report.id %}?next=report_history">
-                <button type="button" class="btn-inline">修正</button>
+            <td class="hide-mobile">{% if report.reporter %}{{ report.reporter.name }}{% else %}-{% endif %}</td>
+            <td>{{ report.total_count }}/{{ report.followup_count_text }}</td>
+            <td class="hide-mobile">{{ report.created_at|date:"Y-m-d H:i" }}</td>
+            <td class="hide-mobile">{% if report.edited_at %}{{ report.edited_at|date:"Y-m-d H:i" }}{% else %}-{% endif %}</td>
+            <td class="report-edit-cell">
+              <a href="{% url 'report_edit' report.id %}?next=report_history" class="report-edit-icon-btn" aria-label="修正">
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
               </a>
             </td>
           </tr>
-          <tr data-dept="{{ report.department.code }}" data-detail-row="1">
-            <td colspan="9" style="background: #fafcfd;">
+          <tr class="report-history-detail-row" data-dept="{{ report.department.code }}" data-detail-row="1">
+            <td colspan="8" style="background: #fafcfd;">
               <strong>明細:</strong>
               {% for line in report.lines.all %}
                 {% if not forloop.first %} / {% endif %}
@@ -102,11 +114,12 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="9">まだ保存データがありません。</td>
+            <td colspan="8">まだ保存データがありません。</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
+      </div>
     </form>
   </section>
 </div>
@@ -119,9 +132,20 @@
     const selectVisibleBtn = document.getElementById("select-visible-btn");
     const clearVisibleBtn = document.getElementById("clear-visible-btn");
     const bulkDeleteBtn = document.getElementById("bulk-delete-btn");
+    const filterFab = document.getElementById("report-filter-fab");
+    const filterPanel = document.getElementById("report-filter-panel");
+    const filterClose = document.getElementById("report-filter-close");
+    const filterBackdrop = document.getElementById("report-filter-backdrop");
 
     function isVisible(element) {
       return element.style.display !== "none";
+    }
+
+    function setFilterPanelOpen(isOpen) {
+      if (!filterPanel || !filterFab || !filterBackdrop) return;
+      filterPanel.classList.toggle("is-open", isOpen);
+      filterFab.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      filterBackdrop.hidden = !isOpen;
     }
 
     function updateBulkDeleteState() {
@@ -183,10 +207,37 @@
     buttons.forEach(function (btn) {
       btn.addEventListener("click", function () {
         applyFilter(btn.dataset.dept || "");
+        if (window.matchMedia("(max-width: 768px)").matches) {
+          setFilterPanelOpen(false);
+        }
       });
     });
 
+    if (filterFab) {
+      filterFab.addEventListener("click", function () {
+        setFilterPanelOpen(!filterPanel.classList.contains("is-open"));
+      });
+    }
+
+    if (filterClose) {
+      filterClose.addEventListener("click", function () {
+        setFilterPanelOpen(false);
+      });
+    }
+
+    if (filterBackdrop) {
+      filterBackdrop.addEventListener("click", function () {
+        setFilterPanelOpen(false);
+      });
+    }
+
+    window.addEventListener("resize", function () {
+      if (window.innerWidth > 768) setFilterPanelOpen(false);
+    });
+
     applyFilter("");
+    setFilterPanelOpen(false);
   })();
 </script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=1"></script>
 {% endblock %}

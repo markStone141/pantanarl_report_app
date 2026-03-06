@@ -1,21 +1,25 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}報告画面一覧 | Report App{% endblock %}
 
 {% block content %}
 <div class="container">
-  <header class="topbar topbar-desktop-expanded">
+  <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
     <div>
       <strong>報告画面一覧</strong>
     </div>
-    <a href="{% url 'logout' %}" class="topbar-mobile-logout">ログアウト</a>
-    <nav>
+    <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       {% if request.user.is_staff %}
       <a href="{% url 'dashboard_index' %}">管理者ページ</a>
       {% endif %}
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
+  <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
   <section style="margin-top: 16px;">
     <article class="card">
@@ -127,4 +131,5 @@
     </details>
   </section>
 </div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=1"></script>
 {% endblock %}

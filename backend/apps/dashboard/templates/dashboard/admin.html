@@ -1,51 +1,55 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}管理者ページ | Report App{% endblock %}
 
 {% block content %}
 <div class="container">
-  <header class="topbar topbar-desktop-expanded">
+  <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
     <div>
       <strong>管理者ページ</strong>
     </div>
-    <a href="{% url 'logout' %}" class="topbar-mobile-logout">ログアウト</a>
-    <nav>
+    <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dashboard_index' %}">ダッシュボード</a>
       <a href="{% url 'member_settings' %}">メンバー管理</a>
       <a href="{% url 'department_settings' %}">部署管理</a>
       <a href="{% url 'target_index' %}">目標設定</a>
       <a href="{% url 'report_index' %}">報告アプリ</a>
       <a href="{% url 'talks_index' %}">Talks</a>
+      <a href="{% url 'testimony_article_list' %}">Testimony</a>
       <a href="{% url 'report_history' %}">保存報告一覧</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
+  <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
-  <section class="card" style="margin-top: 16px;">
-    <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
-      <a href="{% url 'dashboard_index' %}?mode=today" class="department-button" style="width:auto; {% if selected_mode == 'today' %}{% else %}background:#fff; color:var(--brand); border:1px solid var(--brand);{% endif %}">本日表示</a>
-      <a href="{% url 'dashboard_index' %}?mode=prev" class="department-button" style="width:auto; {% if selected_mode == 'prev' %}{% else %}background:#fff; color:var(--brand); border:1px solid var(--brand);{% endif %}">前日表示</a>
+  <section class="card mt-16">
+    <div class="inline-row">
+      <a href="{% url 'dashboard_index' %}?mode=today" class="department-button" style="{% if selected_mode == 'today' %}{% else %}background:#fff; color:var(--brand); border:1px solid var(--brand);{% endif %}">本日表示</a>
+      <a href="{% url 'dashboard_index' %}?mode=prev" class="department-button" style="{% if selected_mode == 'prev' %}{% else %}background:#fff; color:var(--brand); border:1px solid var(--brand);{% endif %}">前日表示</a>
       <span class="badge">表示日: {{ today_str }}</span>
     </div>
   </section>
 
-  <section class="card" style="margin-top: 16px;">
+  <section class="card mt-16">
     <h3>メール本文作成</h3>
-    <div style="display:flex; gap:8px; margin-top: 8px; align-items: center; flex-wrap: wrap;">
-      <button type="button" id="mail-mode-today" class="btn-inline">本日</button>
-      <button type="button" id="mail-mode-prev" class="btn-inline">前日</button>
+    <div class="inline-row mt-8">
       <span class="badge" id="mail-source-date"></span>
     </div>
     <textarea id="mail-comment" placeholder="コメントを入力"></textarea>
-    <button type="button" id="build-mail" style="margin-top: 10px;">テンプレート生成</button>
+    <button type="button" id="build-mail" class="mt-10">テンプレート生成</button>
   </section>
 
-  <section class="card" style="margin-top: 16px;">
+  <section class="card mt-16">
     <div class="row">
       <h3>提出状況一覧</h3>
       <span class="badge">対象日: {{ today_str }}</span>
     </div>
-    <table class="mobile-card-table">
+    <div class="table-scroll">
+      <table class="mobile-card-table">
       <thead>
         <tr>
           <th>部署</th>
@@ -78,14 +82,15 @@
         </tr>
         {% endfor %}
       </tbody>
-    </table>
+      </table>
+    </div>
   </section>
 
-  <section class="card" style="margin-top: 16px;">
+  <section class="card mt-16">
     <div class="row">
       <h3>本日の部門別実績</h3>
     </div>
-    <div class="grid grid-3" style="margin-top: 12px;">
+    <div class="grid grid-3 mt-12">
       {% for card in kpi_cards %}
       <article class="card">
         <h3>{{ card.title }}</h3>
@@ -95,9 +100,10 @@
         {% else %}
         <p class="muted">{{ card.count }} 件</p>
         {% endif %}
-        <details class="mobile-only-accordion" style="margin-top: 8px;">
-          <summary style="cursor: pointer;">個人成績を表示</summary>
-          <table style="margin-top: 8px;">
+        <details class="mobile-only-accordion mt-8">
+          <summary class="summary-clickable">個人成績を表示</summary>
+          <div class="table-scroll mt-8">
+          <table>
             <thead>
               {% if card.has_split_counts %}
               <tr><th>メンバー</th><th>CS</th><th>難民</th><th>金額</th></tr>
@@ -126,20 +132,22 @@
               {% endfor %}
             </tbody>
           </table>
+          </div>
         </details>
       </article>
       {% endfor %}
     </div>
   </section>
 
-  <section style="margin-top: 16px; display: grid; gap: 16px;">
+  <section class="section-stack">
     <article class="card">
       <h3>目標管理</h3>
       <p class="muted">対象月: {{ target_month_summary }} [{{ target_month_status }}] / 現在路程: {{ target_period_summary }} [{{ target_period_status }}]</p>
 
-      <details class="mobile-only-accordion" style="margin-top: 10px;">
-        <summary style="cursor: pointer;">月目標（詳細）</summary>
-        <table style="margin-top: 8px;">
+      <details class="mobile-only-accordion mt-10">
+        <summary class="summary-clickable">月目標（詳細）</summary>
+        <div class="table-scroll mt-8">
+        <table>
           <thead>
             <tr>
               <th>部署</th>
@@ -161,12 +169,14 @@
             {% endfor %}
           </tbody>
         </table>
+        </div>
       </details>
 
-      <h4 style="margin: 16px 0 8px;">路程目標 {% if target_period_range and target_period_range != "-" %}（{{ target_period_range }}）{% endif %}</h4>
-      <details class="mobile-only-accordion" style="margin-top: 10px;">
-        <summary style="cursor: pointer;">路程目標（詳細）</summary>
-        <table style="margin-top: 8px;">
+      <h4 class="mt-16">路程目標 {% if target_period_range and target_period_range != "-" %}（{{ target_period_range }}）{% endif %}</h4>
+      <details class="mobile-only-accordion mt-10">
+        <summary class="summary-clickable">路程目標（詳細）</summary>
+        <div class="table-scroll mt-8">
+        <table>
           <thead>
             <tr>
               <th>部署</th>
@@ -188,6 +198,7 @@
             {% endfor %}
           </tbody>
         </table>
+        </div>
       </details>
     </article>
   </section>
@@ -374,8 +385,6 @@
     const payloadMapEl = document.getElementById("mail-template-data-map");
     const payloadMap = payloadMapEl ? JSON.parse(payloadMapEl.textContent) : null;
     const buildBtn = document.getElementById("build-mail");
-    const modeTodayBtn = document.getElementById("mail-mode-today");
-    const modePrevBtn = document.getElementById("mail-mode-prev");
     const sourceDateEl = document.getElementById("mail-source-date");
     const commentEl = document.getElementById("mail-comment");
     const modalEl = document.getElementById("mail-preview-modal");
@@ -390,8 +399,6 @@
       !closeModalBtn ||
       !copyPreviewBtn ||
       !previewContent ||
-      !modeTodayBtn ||
-      !modePrevBtn ||
       !sourceDateEl
     ) return;
 
@@ -403,8 +410,6 @@
     }
 
     function syncModeUI() {
-      modeTodayBtn.style.opacity = selectedMode === "today" ? "1" : ".65";
-      modePrevBtn.style.opacity = selectedMode === "prev" ? "1" : ".65";
       const payload = getPayload();
       sourceDateEl.textContent = payload ? ("参照日: " + payload.report_date) : "";
     }
@@ -421,15 +426,6 @@
     function closePreview() {
       modalEl.style.display = "none";
     }
-
-    modeTodayBtn.addEventListener("click", function () {
-      selectedMode = "today";
-      syncModeUI();
-    });
-    modePrevBtn.addEventListener("click", function () {
-      selectedMode = "prev";
-      syncModeUI();
-    });
 
     buildBtn.addEventListener("click", function () {
       const payload = getPayload();
@@ -501,4 +497,5 @@
     window.addEventListener("resize", syncAccordionMode);
   })();
 </script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=1"></script>
 {% endblock %}

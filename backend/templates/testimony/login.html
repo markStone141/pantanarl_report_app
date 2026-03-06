@@ -26,6 +26,22 @@
     max-width: 100%;
     display: inline-block;
   }
+  .testimony-login-shortcuts {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 12px;
+  }
+  .testimony-login-shortcuts a {
+    display: inline-block;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--brand);
+    color: var(--brand);
+    font-weight: 700;
+    background: #fff;
+  }
   @media (max-width: 768px) {
     .testimony-login-card {
       margin: 24px auto;
@@ -65,6 +81,10 @@
       {% endif %}
       <button type="submit">ログイン</button>
     </form>
+    <div class="testimony-login-shortcuts">
+      <a href="{% url 'home' %}">Report App</a>
+      <a href="{% url 'talks_login' %}">Talks</a>
+    </div>
   </section>
 </main>
 {% endblock %}
