@@ -1,4 +1,4 @@
-﻿import csv
+import csv
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
