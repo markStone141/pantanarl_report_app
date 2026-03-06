@@ -3,26 +3,36 @@
 
 {% block title %}スレッド詳細 | Report App{% endblock %}
 
-{% block content %}
+{% block extra_head %}
 <link rel="stylesheet" href="{% static 'talks/thread_detail.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'talks/mobile_drawer.css' %}?v=2">
+{% endblock %}
+
+{% block content %}
 <div class="container knowledge-detail-page">
-  <header class="topbar topbar-desktop-expanded" style="margin-bottom:16px;">
+  <header id="talks-topbar" class="topbar topbar-desktop-expanded topbar-nav-always talks-drawer-topbar" style="margin-bottom:16px;">
     <div>
       <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" style="display:inline-flex; align-items:center;">
         <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" style="height:44px; width:auto; display:block;">
       </a>
     </div>
-    <nav class="talks-topbar-nav">
-      <span class="talks-welcome-text">おかえりなさい！{{ talks_member_name }}さん</span>
+    <button id="talks-drawer-toggle" type="button" class="btn-inline talks-drawer-toggle" aria-label="Open menu" aria-expanded="false">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="talks-drawer-nav" class="talks-drawer-nav">
+      <div class="talks-drawer-greeting">{{ talks_member_name }}さん、お疲れ様です</div>
+      <span class="talks-drawer-welcome">おかえりなさい！{{ talks_member_name }}さん</span>
+      <a href="{% url 'testimony_article_list' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">Testimony</a>
       {% if talks_is_admin %}
         <a href="{% url 'dashboard_index' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">管理者ダッシュボード</a>
         <a href="{% url 'talks_tag_manage' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">タグ管理</a>
         <a href="{% url 'talks_deleted_posts_manage' %}" class="btn-inline" style="width:auto; min-height:0; padding:6px 10px;">削除トーク</a>
       {% endif %}
       <a href="{% url 'talks_index' %}" class="talks-back-link">一覧へ戻る</a>
-      <a href="{% url 'talks_logout' %}" class="logout-link talks-logout-link">ログアウト</a>
+      <a href="{% url 'talks_logout' %}" class="logout-link talks-drawer-logout">ログアウト</a>
     </nav>
   </header>
+  <div id="talks-drawer-backdrop" class="talks-drawer-backdrop" hidden></div>
 
   <article class="card knowledge-thread-card">
     <div class="row" style="align-items:center; justify-content:flex-start; gap:8px;">
@@ -208,4 +218,5 @@
   </section>
 </div>
 <script src="{% static 'talks/thread_detail.js' %}?v=1" defer></script>
+<script src="{% static 'talks/mobile_drawer.js' %}?v=5" defer></script>
 {% endblock %}
