@@ -13,6 +13,18 @@ ADMIN_USERNAME = os.getenv("ADMIN_LOGIN_USERNAME", "admin")
 REPORT_FIXED_PASSWORD = os.getenv("REPORT_FIXED_PASSWORD", "0823")
 
 
+def _get_or_create_report_user():
+    user_model = get_user_model()
+    report_user, created = user_model.objects.get_or_create(
+        username=REPORT_USERNAME,
+        defaults={"is_active": True},
+    )
+    if not created and not report_user.is_active:
+        report_user.is_active = True
+        report_user.save(update_fields=["is_active"])
+    return report_user
+
+
 def _redirect_by_role(role: str):
     if role == ROLE_ADMIN:
         return redirect("dashboard_index")
@@ -42,10 +54,7 @@ def home(request: HttpRequest) -> HttpResponse:
             elif login_id == ROLE_REPORT:
                 authenticated_user = None
                 if password == REPORT_FIXED_PASSWORD:
-                    authenticated_user = get_user_model().objects.filter(
-                        username=REPORT_USERNAME,
-                        is_active=True,
-                    ).first()
+                    authenticated_user = _get_or_create_report_user()
                 if not authenticated_user:
                     authenticated_user = authenticate(request, username=REPORT_USERNAME, password=password)
                 if authenticated_user:

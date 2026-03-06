@@ -83,6 +83,39 @@ class LoginFlowTests(TestCase):
         self.assertEqual(self.client.session.get("role"), "report")
         self.assertIn("_auth_user_id", self.client.session)
 
+    def test_report_login_accepts_fixed_password_without_existing_report_user(self):
+        get_user_model().objects.filter(username="report").delete()
+
+        response = self.client.post(
+            reverse("home"),
+            {
+                "login_id": "report",
+                "password": "0823",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("report_index"))
+        self.assertTrue(get_user_model().objects.filter(username="report", is_active=True).exists())
+
+    def test_report_login_accepts_fixed_password_with_inactive_report_user(self):
+        report_user = get_user_model().objects.get(username="report")
+        report_user.is_active = False
+        report_user.save(update_fields=["is_active"])
+
+        response = self.client.post(
+            reverse("home"),
+            {
+                "login_id": "report",
+                "password": "0823",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("report_index"))
+        report_user.refresh_from_db()
+        self.assertTrue(report_user.is_active)
+
 
 class RoleGuardTests(TestCase):
     def test_dashboard_requires_admin(self):
