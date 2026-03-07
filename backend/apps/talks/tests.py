@@ -357,6 +357,27 @@ class TalksFilteringAndUnreadTests(TalksBaseTestCase):
         self.assertEqual(response2.context["selected_tags"], ["WV"])
         self.assertEqual([item["id"] for item in response2.context["threads"]], [self.post3.id])
 
+    def test_explicit_empty_tag_filter_clears_saved_preference(self):
+        self._login_talks_member("alice", "pass1")
+        self.client.get(reverse("talks_index"), {"tag": ["WV"]})
+
+        cleared = self.client.get(reverse("talks_index"), {"tag_filter_applied": "1"})
+
+        self.assertEqual(cleared.status_code, 200)
+        self.assertEqual(cleared.context["selected_tags"], [])
+        pref = KnowledgeUserPreference.objects.get(user_id=self.client.session.get("_auth_user_id"))
+        self.assertEqual(pref.preferred_tags.count(), 0)
+
+    def test_reset_query_returns_all_threads_after_preference_was_saved(self):
+        self._login_talks_member("alice", "pass1")
+        self.client.get(reverse("talks_index"), {"tag": ["WV"]})
+
+        reset = self.client.get(reverse("talks_index"), {"tag_filter_applied": "1"})
+
+        self.assertEqual(reset.status_code, 200)
+        ids = [item["id"] for item in reset.context["threads"]]
+        self.assertEqual(ids, [self.post3.id, self.post2.id, self.post1.id])
+
 
 class TalksAdminPermissionTests(TalksBaseTestCase):
     def test_tag_manage_requires_admin(self):

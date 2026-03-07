@@ -310,7 +310,7 @@ def talks_index(request: HttpRequest) -> HttpResponse:
         return redirect("talks_index")
 
     selected_tags = []
-    has_explicit_tag_query = "tag" in request.GET
+    has_explicit_tag_query = "tag" in request.GET or (request.GET.get("tag_filter_applied") or "").strip() == "1"
     for tag in request.GET.getlist("tag"):
         clean_tag = (tag or "").strip()
         if clean_tag and clean_tag not in selected_tags:

@@ -45,6 +45,7 @@
 
   <section class="card knowledge-filter-card" id="knowledge-filter-card">
     <form method="get" class="grid talks-form-tight">
+      <input type="hidden" name="tag_filter_applied" value="1">
       <div>
         <div class="knowledge-filter-search">
           <input id="knowledge-tag-search" type="text" placeholder="タグ名で検索">
@@ -87,7 +88,7 @@
         </div>
         <div class="knowledge-filter-actions">
           <button type="submit" class="btn-inline knowledge-inline-auto">絞り込む</button>
-          <a href="{% url 'talks_index' %}" class="btn-inline knowledge-reset-btn neutral">リセット</a>
+          <a href="{% url 'talks_index' %}?tag_filter_applied=1" class="btn-inline knowledge-reset-btn neutral">リセット</a>
         </div>
       </div>
     </form>
@@ -262,6 +263,7 @@
         </button>
       </div>
       <form method="get" class="grid talks-form-tight">
+        <input type="hidden" name="tag_filter_applied" value="1">
         <div>
           <div class="knowledge-filter-search">
             <input id="knowledge-tag-search-mobile" type="text" placeholder="タグ名で検索">
@@ -300,7 +302,7 @@
         </div>
         <div class="knowledge-filter-actions">
           <button type="submit" class="btn-inline knowledge-inline-auto">絞り込む</button>
-          <a href="{% url 'talks_index' %}" class="btn-inline knowledge-reset-btn neutral">リセット</a>
+          <a href="{% url 'talks_index' %}?tag_filter_applied=1" class="btn-inline knowledge-reset-btn neutral">リセット</a>
         </div>
       </form>
     </section>
