@@ -49,6 +49,40 @@
   <div class="dairymetrics-card-actions">
     <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_dashboard' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">ダッシュボードへ戻る</a>
   </div>
+  {% if selected_card.scope_average_metrics %}
+  <section class="dairymetrics-compare-board">
+    <div class="row">
+      <div>
+        <h3>全体平均との比較</h3>
+        <div class="muted">同じタブ範囲の入力があるメンバーを対象に比較します。</div>
+      </div>
+    </div>
+    <div class="dairymetrics-compare-grid">
+      {% for metric in selected_card.scope_average_metrics %}
+      <article class="comparison-card dairymetrics-average-card">
+        <div class="dairymetrics-rank-card-head">
+          <span class="dairymetrics-rank-metric-icon"><i class="fa-solid {{ metric.icon }}" aria-hidden="true"></i></span>
+          <strong>{{ metric.label }}</strong>
+        </div>
+        <div class="dairymetrics-average-stack">
+          <div class="dairymetrics-average-row">
+            <span class="muted">全体平均</span>
+            <strong>{{ metric.average_value|intcomma }}</strong>
+          </div>
+          <div class="dairymetrics-average-row">
+            <span class="muted">自分</span>
+            <strong>{{ metric.self_value|intcomma }}</strong>
+          </div>
+          <div class="dairymetrics-average-row">
+            <span class="muted">平均との差</span>
+            <strong>{{ metric.diff_text }}</strong>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
   {% if selected_card.scope == "today" %}
   <section class="dairymetrics-compare-board">
     <div class="row">

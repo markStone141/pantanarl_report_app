@@ -295,6 +295,11 @@
   gap: 12px;
 }
 
+.dairymetrics-average-card {
+  display: grid;
+  gap: 12px;
+}
+
 .dairymetrics-rank-card-head {
   display: flex;
   align-items: center;
@@ -315,6 +320,18 @@
 .dairymetrics-rank-stack {
   display: grid;
   gap: 8px;
+}
+
+.dairymetrics-average-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.dairymetrics-average-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .dairymetrics-rank-row {

@@ -183,6 +183,10 @@ class DairyMetricsDashboardTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("dairymetrics_compare"))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "全体平均との比較")
+        self.assertContains(response, "全体平均")
+        self.assertContains(response, "自分")
+        self.assertContains(response, "平均との差")
         self.assertContains(response, "今日の比較")
         self.assertContains(response, "アプローチ数")
         self.assertContains(response, "コミュニケーション数")
@@ -194,6 +198,39 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "Member Two")
         self.assertContains(response, 'class="dairymetrics-rank-badge">4<')
         self.assertContains(response, "ダッシュボードへ戻る")
+
+    def test_comparison_page_month_scope_shows_average_cards(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 2),
+            approach_count=6,
+            communication_count=4,
+            support_amount=3000,
+            cs_count=2,
+            refugee_count=1,
+        )
+        teammate_user = get_user_model().objects.create_user(username="member2f", password="pass123")
+        teammate = Member.objects.create(name="Member Month Compare", user=teammate_user)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=teammate,
+            department=self.department,
+            entry_date=date(2026, 3, 3),
+            approach_count=3,
+            communication_count=2,
+            support_amount=1000,
+            cs_count=1,
+            refugee_count=0,
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_compare"), {"scope": "month"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "全体平均との比較")
+        self.assertContains(response, "アプローチ数")
+        self.assertContains(response, "コミュニケーション数")
+        self.assertContains(response, "件数")
+        self.assertContains(response, "金額")
 
     def test_entry_form_updates_existing_record(self):
         entry = MemberDailyMetricEntry.objects.create(

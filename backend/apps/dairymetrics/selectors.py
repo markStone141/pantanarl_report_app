@@ -269,18 +269,52 @@ def _metric_value_for_today(metric_key, department, totals):
     return int(totals["support_amount"])
 
 
-def _build_today_comparison_metrics(member, department, today):
-    today_entries = list(
-        MemberDailyMetricEntry.objects.filter(
-            department=department,
-            entry_date=today,
-        ).select_related("member")
-    )
-    if not today_entries:
-        return []
+def _metric_value_for_scope(metric_key, department, totals):
+    if metric_key == "approach_count":
+        return int(totals["approach_count"])
+    if metric_key == "communication_count":
+        return int(totals["communication_count"])
+    if metric_key == "count_value":
+        return _count_value_for_department(department, totals)
+    return int(totals["support_amount"])
 
-    included_member_ids = {entry.member_id for entry in today_entries}
-    members = list(Member.objects.active().filter(id__in=included_member_ids).order_by("name"))
+
+def _metric_diff_text(value, average):
+    if average <= 0:
+        return "-"
+    diff_rate = round(((value - average) / average) * 100, 1)
+    sign = "+" if diff_rate > 0 else ""
+    return f"{sign}{diff_rate}%"
+
+
+def _members_with_scope_activity(department, start_date, end_date, *, today_only=False):
+    if today_only:
+        member_ids = set(
+            MemberDailyMetricEntry.objects.filter(
+                department=department,
+                entry_date=start_date,
+            ).values_list("member_id", flat=True)
+        )
+    else:
+        member_ids = set(
+            MemberDailyMetricEntry.objects.filter(
+                department=department,
+                entry_date__range=(start_date, end_date),
+            ).values_list("member_id", flat=True)
+        )
+        member_ids.update(
+            MetricAdjustment.objects.filter(
+                department=department,
+                target_date__range=(start_date, end_date),
+            ).values_list("member_id", flat=True)
+        )
+    return list(Member.objects.active().filter(id__in=member_ids).order_by("name"))
+
+
+def _build_today_comparison_metrics(member, department, today):
+    members = _members_with_scope_activity(department, today, today, today_only=True)
+    if not members:
+        return []
     member_totals = {
         current_member.id: _department_totals(current_member, department, today, today)
         for current_member in members
@@ -323,6 +357,37 @@ def _build_today_comparison_metrics(member, department, today):
                     "member_name": self_row["member_name"] if self_row else member.name,
                     "value": self_row["value"] if self_row else 0,
                 },
+            }
+        )
+    return metrics
+
+
+def _build_scope_average_metrics(member, department, start_date, end_date, *, today_only=False):
+    members = _members_with_scope_activity(department, start_date, end_date, today_only=today_only)
+    if not members:
+        return []
+    member_totals = {
+        current_member.id: _department_totals(current_member, department, start_date, end_date)
+        for current_member in members
+    }
+    metric_specs = [
+        {"key": "approach_count", "label": "アプローチ数", "icon": "fa-bullseye"},
+        {"key": "communication_count", "label": "コミュニケーション数", "icon": "fa-comments"},
+        {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
+        {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
+    ]
+    metrics = []
+    for spec in metric_specs:
+        values = [_metric_value_for_scope(spec["key"], department, member_totals[current_member.id]) for current_member in members]
+        average = round(sum(values) / len(values), 1) if values else 0
+        self_value = _metric_value_for_scope(spec["key"], department, member_totals.get(member.id, _zero_totals()))
+        metrics.append(
+            {
+                "label": spec["label"],
+                "icon": spec["icon"],
+                "average_value": average,
+                "self_value": self_value,
+                "diff_text": _metric_diff_text(self_value, average),
             }
         )
     return metrics
@@ -607,6 +672,13 @@ def build_member_dashboard_card(
         "today_comparison_metrics": _build_today_comparison_metrics(member, department, today)
         if scope_data["scope"] == "today"
         else [],
+        "scope_average_metrics": _build_scope_average_metrics(
+            member,
+            department,
+            start_date,
+            end_date,
+            today_only=scope_data["scope"] == "today",
+        ),
         "best_records": best_records,
         "show_average_metrics": scope_data["scope"] != "today",
         "show_best_day": scope_data["scope"] != "today",
