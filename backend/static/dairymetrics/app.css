@@ -74,9 +74,10 @@
 }
 
 .dairymetrics-member-filter-row .dairymetrics-toggle-btn {
-  min-height: 30px;
-  padding: 4px 10px;
-  font-size: 0.82rem;
+  min-height: 28px;
+  padding: 3px 8px;
+  font-size: 0.78rem;
+  border-radius: 999px;
 }
 
 .dairymetrics-member-select-wrap select {
