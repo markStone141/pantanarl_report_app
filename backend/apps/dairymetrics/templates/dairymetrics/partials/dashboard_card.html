@@ -25,13 +25,6 @@
           </span>
           {% endif %}
         </h3>
-        <div class="muted">
-          {% if selected_card.has_target %}
-          あとどれくらいで達成できるかを先に確認します。
-          {% else %}
-          まだ目標が入っていません。
-          {% endif %}
-        </div>
       </div>
       {% if selected_card.scope == "today" and not selected_card.has_target %}
       <button type="button" class="btn-inline dairymetrics-goal-cta" data-open-dairymetrics-entry>目標を入力</button>
