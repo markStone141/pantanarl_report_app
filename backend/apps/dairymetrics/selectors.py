@@ -394,12 +394,12 @@ def _build_scope_ranking_metrics(member, department, start_date, end_date, *, to
         for current_member in members
     }
     metric_specs = [
+        {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
+        {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
         {"key": "approach_count", "label": "アプローチ数", "icon": "fa-bullseye"},
         {"key": "communication_rate", "label": "コミュ率", "icon": "fa-wave-square"},
         {"key": "communication_count", "label": "コミュニケーション数", "icon": "fa-comments"},
         {"key": "participation_rate", "label": "参加率", "icon": "fa-user-check"},
-        {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
-        {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
         {"key": "average_support_amount", "label": "平均支援額", "icon": "fa-coins"},
     ]
     metrics = []

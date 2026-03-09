@@ -49,6 +49,42 @@
   <div class="dairymetrics-card-actions">
     <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_dashboard' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">ダッシュボードへ戻る</a>
   </div>
+  {% if selected_card.ranking_metrics %}
+  <section class="dairymetrics-compare-board">
+    <div class="row">
+      <div>
+        <h3><i class="fa-solid fa-crown" aria-hidden="true"></i> ランキング</h3>
+      </div>
+    </div>
+    <div class="dairymetrics-compare-grid">
+      {% for metric in selected_card.ranking_metrics %}
+      <article class="comparison-card dairymetrics-rank-card">
+        <div class="dairymetrics-rank-card-head">
+          <span class="dairymetrics-rank-metric-icon"><i class="fa-solid {{ metric.icon }}" aria-hidden="true"></i></span>
+          <strong>{{ metric.label }}</strong>
+        </div>
+        <div class="dairymetrics-rank-stack">
+          {% for leader in metric.leaders %}
+          <div class="dairymetrics-rank-row">
+            <span class="dairymetrics-rank-badge">{{ leader.rank }}</span>
+            <span class="dairymetrics-rank-name">{{ leader.member_name }}</span>
+            <strong class="dairymetrics-rank-value">{{ leader.value_text }}</strong>
+          </div>
+          {% endfor %}
+          {% if metric.self_row %}
+          <div class="dairymetrics-rank-divider"></div>
+          <div class="dairymetrics-rank-row is-self">
+            <span class="dairymetrics-rank-badge">{{ metric.self_row.rank }}</span>
+            <span class="dairymetrics-rank-name">{{ metric.self_row.member_name }}</span>
+            <strong class="dairymetrics-rank-value">{{ metric.self_row.value_text }}</strong>
+          </div>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
   {% if selected_card.scope_average_metrics %}
   <section class="dairymetrics-compare-board">
     <div class="row">
@@ -81,42 +117,6 @@
           <div class="dairymetrics-average-row">
             <span class="muted">{{ metric.previous_label }}</span>
             <strong>{{ metric.previous_text }}</strong>
-          </div>
-          {% endif %}
-        </div>
-      </article>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-  {% if selected_card.ranking_metrics %}
-  <section class="dairymetrics-compare-board">
-    <div class="row">
-      <div>
-        <h3><i class="fa-solid fa-crown" aria-hidden="true"></i> ランキング</h3>
-      </div>
-    </div>
-    <div class="dairymetrics-compare-grid">
-      {% for metric in selected_card.ranking_metrics %}
-      <article class="comparison-card dairymetrics-rank-card">
-        <div class="dairymetrics-rank-card-head">
-          <span class="dairymetrics-rank-metric-icon"><i class="fa-solid {{ metric.icon }}" aria-hidden="true"></i></span>
-          <strong>{{ metric.label }}</strong>
-        </div>
-        <div class="dairymetrics-rank-stack">
-          {% for leader in metric.leaders %}
-          <div class="dairymetrics-rank-row">
-            <span class="dairymetrics-rank-badge">{{ leader.rank }}</span>
-            <span class="dairymetrics-rank-name">{{ leader.member_name }}</span>
-            <strong class="dairymetrics-rank-value">{{ leader.value_text }}</strong>
-          </div>
-          {% endfor %}
-          {% if metric.self_row %}
-          <div class="dairymetrics-rank-divider"></div>
-          <div class="dairymetrics-rank-row is-self">
-            <span class="dairymetrics-rank-badge">{{ metric.self_row.rank }}</span>
-            <span class="dairymetrics-rank-name">{{ metric.self_row.member_name }}</span>
-            <strong class="dairymetrics-rank-value">{{ metric.self_row.value_text }}</strong>
           </div>
           {% endif %}
         </div>
