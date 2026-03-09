@@ -245,6 +245,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "コミュ率")
         self.assertContains(response, "参加率")
         self.assertContains(response, "ランキング")
+        self.assertContains(response, "前月比")
+        self.assertContains(response, "+100.0%")
 
     def test_entry_form_updates_existing_record(self):
         entry = MemberDailyMetricEntry.objects.create(

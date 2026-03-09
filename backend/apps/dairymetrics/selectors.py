@@ -337,6 +337,30 @@ def _format_metric_display(metric_key, value):
     return str(value)
 
 
+def _metric_previous_comparison(metric_key, department, current_totals, previous_totals):
+    current_value = _metric_value_for_scope(metric_key, department, current_totals)
+    previous_value = _metric_value_for_scope(metric_key, department, previous_totals)
+    if current_value is None or previous_value is None:
+        return "-"
+    rate_text = _comparison_label(_change_rate(current_value, previous_value))
+    if metric_key in {"communication_rate", "participation_rate"}:
+        delta_value = round(current_value - previous_value, 1)
+        sign = "+" if delta_value > 0 else ""
+        delta_text = f"{sign}{delta_value}pt"
+    else:
+        delta_value = round(current_value - previous_value, 1)
+        if metric_key in {"support_amount", "average_support_amount"}:
+            delta_text = _format_metric_display(metric_key, delta_value)
+            if delta_value > 0:
+                delta_text = f"+{delta_text}"
+        else:
+            if isinstance(delta_value, float) and delta_value.is_integer():
+                delta_value = int(delta_value)
+            sign = "+" if delta_value > 0 else ""
+            delta_text = f"{sign}{delta_value}"
+    return f"{delta_text} / {rate_text}"
+
+
 def _members_with_scope_activity(department, start_date, end_date, *, today_only=False):
     if today_only:
         member_ids = set(
@@ -417,7 +441,7 @@ def _build_scope_ranking_metrics(member, department, start_date, end_date, *, to
     return metrics
 
 
-def _build_scope_average_metrics(member, department, start_date, end_date, *, today_only=False):
+def _build_scope_average_metrics(member, department, start_date, end_date, *, today_only=False, previous_totals=None, previous_label=None):
     members = _members_with_scope_activity(department, start_date, end_date, today_only=today_only)
     if not members:
         return []
@@ -449,6 +473,12 @@ def _build_scope_average_metrics(member, department, start_date, end_date, *, to
                 "average_text": _format_metric_display(spec["key"], average) if metric_values else "-",
                 "self_text": _format_metric_display(spec["key"], self_value),
                 "diff_text": _metric_diff_text(self_value, average),
+                "previous_label": previous_label,
+                "previous_text": (
+                    _metric_previous_comparison(spec["key"], department, member_totals.get(member.id, _zero_totals()), previous_totals)
+                    if previous_totals is not None and previous_label
+                    else None
+                ),
             }
         )
     return metrics
@@ -685,6 +715,7 @@ def build_member_dashboard_card(
     team_average = _team_averages(rankings)
     trend_section = _build_scope_trend(member, department, scope_data=scope_data, end_date=end_date)
     best_records = _build_best_records(member, department, start_date, end_date)
+    previous_scope_label = "前路程比" if scope_data["scope"] == "period" else "前月比" if scope_data["scope"] == "month" else None
     return {
         "department": department,
         "scope": scope_data["scope"],
@@ -749,6 +780,8 @@ def build_member_dashboard_card(
             start_date,
             end_date,
             today_only=scope_data["scope"] == "today",
+            previous_totals=previous_totals if scope_data["scope"] in {"period", "month"} else None,
+            previous_label=previous_scope_label,
         ),
         "best_records": best_records,
         "show_average_metrics": scope_data["scope"] != "today",

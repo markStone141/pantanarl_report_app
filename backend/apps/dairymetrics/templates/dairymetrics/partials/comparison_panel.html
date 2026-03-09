@@ -77,6 +77,12 @@
             <span class="muted">平均との差</span>
             <strong>{{ metric.diff_text }}</strong>
           </div>
+          {% if metric.previous_text %}
+          <div class="dairymetrics-average-row">
+            <span class="muted">{{ metric.previous_label }}</span>
+            <strong>{{ metric.previous_text }}</strong>
+          </div>
+          {% endif %}
         </div>
       </article>
       {% endfor %}
@@ -130,16 +136,6 @@
       <span class="muted">チーム平均との差</span>
       <strong>{{ selected_card.count_average_diff_text }}</strong>
       <span class="muted dairymetrics-subtext">{{ selected_card.count_label }} / 金額 {{ selected_card.amount_average_diff_text }}</span>
-    </div>
-  </div>
-  <div class="dairymetrics-comparison-grid dairymetrics-comparison-grid-compact">
-    <div class="comparison-card">
-      <span class="muted">{{ selected_card.count_label }} 前期間比</span>
-      <strong>{{ selected_card.count_change_rate }}</strong>
-    </div>
-    <div class="comparison-card">
-      <span class="muted">金額 前期間比</span>
-      <strong>{{ selected_card.amount_change_rate }}</strong>
     </div>
   </div>
   <div class="dairymetrics-trend-strip">
