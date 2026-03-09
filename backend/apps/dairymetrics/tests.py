@@ -44,28 +44,45 @@ class DairyMetricsDashboardTests(TestCase):
         MemberDepartment.objects.create(member=self.member, department=self.department)
 
     def test_dashboard_aggregates_entries_and_adjustments(self):
+        teammate_user = get_user_model().objects.create_user(username="member2b", password="pass123")
+        teammate = Member.objects.create(name="Member Teammate", user=teammate_user)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
         MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=self.department,
             entry_date=date(2026, 3, 9),
             approach_count=10,
             communication_count=6,
-            result_count=2,
             support_amount=4000,
+            cs_count=2,
+            refugee_count=1,
         )
         MetricAdjustment.objects.create(
             member=self.member,
             department=self.department,
             target_date=date(2026, 3, 9),
-            result_count=1,
             support_amount=2000,
+            cs_count=1,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=teammate,
+            department=self.department,
+            entry_date=date(2026, 3, 8),
+            approach_count=4,
+            communication_count=3,
+            support_amount=1500,
+            cs_count=1,
         )
         self.client.force_login(self.user)
         response = self.client.get(reverse("dairymetrics_dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "6,000")
-        self.assertContains(response, "3")
+        self.assertContains(response, "4")
         self.assertContains(response, "10")
+        self.assertContains(response, "現在順位")
+        self.assertContains(response, "チーム平均との差")
+        self.assertContains(response, "過去7日の推移")
+        self.assertContains(response, "CS 3 / 難民 1")
 
     def test_entry_form_updates_existing_record(self):
         entry = MemberDailyMetricEntry.objects.create(
