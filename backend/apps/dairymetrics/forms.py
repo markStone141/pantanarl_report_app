@@ -101,6 +101,20 @@ class MemberDailyMetricEntryForm(forms.ModelForm):
         else:
             self.fields.pop("cs_count", None)
             self.fields.pop("refugee_count", None)
+        self.order_fields([
+            "department",
+            "entry_date",
+            "daily_target_count",
+            "daily_target_amount",
+            "approach_count",
+            "communication_count",
+            "result_count",
+            "cs_count",
+            "refugee_count",
+            "support_amount",
+            "location_name",
+            "memo",
+        ])
 
     def _resolve_department_code(self):
         department = None

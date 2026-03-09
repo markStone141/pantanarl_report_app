@@ -230,6 +230,10 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(form.fields["approach_count"].label, "アプローチ")
         self.assertEqual(form.fields["support_amount"].label, "支援金額")
         self.assertEqual(form.fields["daily_target_count"].label, "今日の目標 件数")
+        self.assertEqual(
+            list(form.fields.keys())[:6],
+            ["department", "entry_date", "daily_target_count", "daily_target_amount", "approach_count", "communication_count"],
+        )
 
     def test_non_wv_entry_form_hides_split_counts(self):
         un_department = Department.objects.create(code="UN", name="UN")
@@ -270,6 +274,7 @@ class DairyMetricsDashboardTests(TestCase):
         response = self.client.get(reverse("dairymetrics_dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "目標を入力")
+        self.assertContains(response, "未入力")
 
 
 class DairyMetricsAdminTests(TestCase):

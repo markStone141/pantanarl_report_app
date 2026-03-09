@@ -148,6 +148,17 @@
   gap: 12px;
 }
 
+.dairymetrics-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dairymetrics-title-row h2 {
+  margin: 0;
+}
+
 .dairymetrics-card-actions {
   display: flex;
   justify-content: flex-end;
@@ -327,12 +338,16 @@
   background: linear-gradient(135deg, #1d76cf 0%, #12579f 100%);
   color: #fff;
   border: 1px solid #12579f;
+  min-height: 44px;
+  border-radius: 10px;
 }
 
 .dairymetrics-close-activity-btn {
   background: linear-gradient(135deg, #f29b38 0%, #d77214 100%);
   color: #fff;
   border: 1px solid #c9670e;
+  min-height: 44px;
+  border-radius: 10px;
 }
 
 .dairymetrics-month-filter {
@@ -470,6 +485,10 @@
 
   .dairymetrics-form-actions {
     flex-direction: row;
+  }
+
+  .dairymetrics-title-row {
+    gap: 8px;
   }
 
   .dairymetrics-chart-grid {

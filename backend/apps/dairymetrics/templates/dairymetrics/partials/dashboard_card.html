@@ -52,8 +52,10 @@
   </section>
   <div class="dairymetrics-card-head">
     <div>
-      <h2>{{ selected_card.department.name }}</h2>
-      <div class="badge {% if selected_card.activity_status == '活動終了' %}badge-ok{% endif %}">{{ selected_card.activity_status }}</div>
+      <div class="dairymetrics-title-row">
+        <h2>{{ selected_card.department.name }}</h2>
+        <div class="badge {% if selected_card.activity_status == '活動終了' %}badge-ok{% endif %}">{{ selected_card.activity_status }}</div>
+      </div>
       <div class="muted dairymetrics-scope-summary">{{ selected_card.scope_label }}: {{ selected_card.scope_summary }}</div>
     </div>
     {% if departments|length > 1 %}
