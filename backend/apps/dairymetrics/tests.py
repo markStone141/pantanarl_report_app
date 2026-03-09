@@ -94,6 +94,29 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(entry.approach_count, 9)
         self.assertEqual(MemberDailyMetricEntry.objects.count(), 1)
 
+    def test_dashboard_ajax_switches_department_and_prefills_form(self):
+        second_department = Department.objects.create(code="UN", name="UN")
+        MemberDepartment.objects.create(member=self.member, department=second_department)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=second_department,
+            entry_date=date(2026, 3, 9),
+            approach_count=7,
+            communication_count=3,
+            result_count=1,
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("dairymetrics_dashboard"),
+            {"department": "UN"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["department_code"], "UN")
+        self.assertIn("UN", payload["card_html"])
+        self.assertIn('value="7"', payload["form_html"])
+
 
 class DairyMetricsAdminTests(TestCase):
     def setUp(self):

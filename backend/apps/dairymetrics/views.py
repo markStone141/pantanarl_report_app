@@ -1,6 +1,7 @@
 from django.contrib.auth import login as auth_login, logout as auth_logout
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -11,6 +12,56 @@ from .auth import get_member_profile, require_dairymetrics_admin, require_dairym
 from .forms import DairyMetricsLoginForm, MemberDailyMetricEntryForm, MetricAdjustmentForm
 from .models import MemberDailyMetricEntry, MetricAdjustment
 from .selectors import build_admin_month_overview, build_member_dashboard
+
+
+def _build_entry_form(*, member, data=None, department_code="", entry_date=None):
+    entry_date = entry_date or timezone.localdate()
+    instance = None
+    if department_code:
+        instance = MemberDailyMetricEntry.objects.filter(
+            member=member,
+            department__code=department_code,
+            entry_date=entry_date,
+        ).select_related("department").first()
+    initial = {"entry_date": entry_date}
+    if department_code and not instance:
+        department = Department.objects.filter(
+            is_active=True,
+            code=department_code,
+            member_links__member=member,
+        ).first()
+        if department:
+            initial["department"] = department
+    return MemberDailyMetricEntryForm(
+        data=data,
+        instance=instance,
+        member=member,
+        initial=initial,
+    )
+
+
+def _build_member_dashboard_context(*, request, member):
+    selected_department_code = (request.GET.get("department") or "").strip()
+    dashboard_data = build_member_dashboard(
+        member,
+        today=timezone.localdate(),
+        department_code=selected_department_code,
+    )
+    selected_department = dashboard_data["selected_department"]
+    entry_form = _build_entry_form(
+        member=member,
+        department_code=selected_department.code if selected_department else "",
+        entry_date=timezone.localdate(),
+    )
+    return {
+        "page_title": "DairyMetrics",
+        "member": member,
+        "departments": dashboard_data["departments"],
+        "selected_department": selected_department,
+        "selected_card": dashboard_data["selected_card"],
+        "entry_form": entry_form,
+        "is_admin": request.user.is_staff,
+    }
 
 
 def login_view(request: HttpRequest) -> HttpResponse:
@@ -32,12 +83,31 @@ def logout_view(request: HttpRequest) -> HttpResponse:
 @require_dairymetrics_member
 def dashboard(request: HttpRequest) -> HttpResponse:
     member = get_member_profile(request.user)
-    context = {
+    context = _build_member_dashboard_context(request=request, member=member) if member else {
         "page_title": "DairyMetrics",
-        "member": member,
-        "dashboard_cards": build_member_dashboard(member, today=timezone.localdate()) if member else [],
+        "member": None,
+        "departments": [],
+        "selected_department": None,
+        "selected_card": None,
+        "entry_form": None,
         "is_admin": request.user.is_staff,
     }
+    if request.headers.get("x-requested-with") == "XMLHttpRequest" and member:
+        return JsonResponse(
+            {
+                "card_html": render_to_string(
+                    "dairymetrics/partials/dashboard_card.html",
+                    context,
+                    request=request,
+                ),
+                "form_html": render_to_string(
+                    "dairymetrics/partials/entry_modal_form.html",
+                    context,
+                    request=request,
+                ),
+                "department_code": context["selected_department"].code if context["selected_department"] else "",
+            }
+        )
     return render(request, "dairymetrics/dashboard.html", context)
 
 
@@ -49,15 +119,12 @@ def entry_form(request: HttpRequest) -> HttpResponse:
 
     initial_date = parse_date((request.GET.get("date") or "").strip()) or timezone.localdate()
     selected_department = (request.GET.get("department") or "").strip()
-    instance = None
-    if selected_department:
-        instance = MemberDailyMetricEntry.objects.filter(
-            member=member,
-            department__code=selected_department,
-            entry_date=initial_date,
-        ).select_related("department").first()
-
-    form = MemberDailyMetricEntryForm(request.POST or None, instance=instance, member=member, initial={"entry_date": initial_date})
+    form = _build_entry_form(
+        member=member,
+        data=request.POST or None,
+        department_code=selected_department,
+        entry_date=initial_date,
+    )
     if request.method == "POST" and form.is_valid():
         saved = form.save(commit=False)
         existing = MemberDailyMetricEntry.objects.filter(
@@ -77,6 +144,7 @@ def entry_form(request: HttpRequest) -> HttpResponse:
         "form": form,
         "member": member,
         "departments": departments,
+        "selected_department_code": selected_department,
     }
     return render(request, "dairymetrics/entry_form.html", context)
 

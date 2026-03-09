@@ -30,70 +30,33 @@
     <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
   </header>
 
-  <section class="grid grid-2 dairymetrics-grid">
-    {% for card in dashboard_cards %}
-    <article class="card dairymetrics-card">
-      <div class="row">
-        <div>
-          <h2>{{ card.department.name }}</h2>
-          <div class="badge {% if card.today_status == '入力済み' %}badge-ok{% endif %}">{{ card.today_status }}</div>
-        </div>
-        <a class="btn-inline" href="{% url 'dairymetrics_entry' %}?department={{ card.department.code }}">入力する</a>
-      </div>
-      <div class="grid grid-2 dairymetrics-stat-grid">
-        <div class="metric-card">
-          <span class="muted">累計件数</span>
-          <strong class="kpi">{{ card.month_totals.result_count }}</strong>
-        </div>
-        <div class="metric-card">
-          <span class="muted">累計支援金額</span>
-          <strong class="kpi">{{ card.month_totals.support_amount|intcomma }}</strong>
-        </div>
-        <div class="metric-card">
-          <span class="muted">アプローチ 平均/累計</span>
-          <strong>{{ card.approach_average }} / {{ card.month_totals.approach_count }}</strong>
-        </div>
-        <div class="metric-card">
-          <span class="muted">コミュニケーション 平均/累計</span>
-          <strong>{{ card.communication_average }} / {{ card.month_totals.communication_count }}</strong>
-        </div>
-      </div>
-      <div class="dairymetrics-comparison-grid">
-        <div class="comparison-card">
-          <span class="muted">件数 先週比</span>
-          <strong>{{ card.week_count_rate }}</strong>
-        </div>
-        <div class="comparison-card">
-          <span class="muted">件数 先月比</span>
-          <strong>{{ card.month_count_rate }}</strong>
-        </div>
-        <div class="comparison-card">
-          <span class="muted">金額 先週比</span>
-          <strong>{{ card.week_amount_rate }}</strong>
-        </div>
-        <div class="comparison-card">
-          <span class="muted">金額 先月比</span>
-          <strong>{{ card.month_amount_rate }}</strong>
-        </div>
-      </div>
-      <div class="dairymetrics-trend-strip">
-        <div>
-          <span class="muted">伸びた項目</span>
-          <strong>{% if card.changes.improved %}{{ card.changes.improved.label }}{% else %}-{% endif %}</strong>
-        </div>
-        <div>
-          <span class="muted">落ちた項目</span>
-          <strong>{% if card.changes.declined %}{{ card.changes.declined.label }}{% else %}-{% endif %}</strong>
-        </div>
-      </div>
-    </article>
-    {% empty %}
-    <article class="card">
-      <h2>所属部署がありません</h2>
-      <p class="muted">メンバーに部署が紐づくと、ここに入力と集計が表示されます。</p>
-    </article>
-    {% endfor %}
+  <section class="dairymetrics-grid">
+    <div id="dairymetrics-dashboard-card">
+      {% include "dairymetrics/partials/dashboard_card.html" %}
+    </div>
   </section>
+
+  {% if member and selected_department %}
+  <div class="dairymetrics-fab-stack">
+    <button id="dairymetrics-open-entry" class="dairymetrics-fab" type="button" aria-label="実績入力を開く">
+      <i class="fa-solid fa-pen"></i>
+    </button>
+  </div>
+  <div id="dairymetrics-entry-overlay" class="dairymetrics-overlay" aria-hidden="true">
+    <section class="dairymetrics-sheet">
+      <div class="dairymetrics-sheet-head">
+        <strong>実績入力</strong>
+        <button type="button" class="dairymetrics-sheet-close" id="dairymetrics-close-entry" aria-label="閉じる">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="dairymetrics-entry-modal-body">
+        {% include "dairymetrics/partials/entry_modal_form.html" %}
+      </div>
+    </section>
+  </div>
+  {% endif %}
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
+<script src="{% static 'dairymetrics/dashboard.js' %}?v=1"></script>
 {% endblock %}

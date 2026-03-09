@@ -50,6 +50,42 @@
   gap: 16px;
 }
 
+.dairymetrics-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dairymetrics-card-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dairymetrics-department-toggle {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dairymetrics-toggle-btn {
+  width: auto;
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #bfd3e7;
+  background: #f4f8fd;
+  color: #1c538c;
+  font-weight: 700;
+}
+
+.dairymetrics-toggle-btn.is-active {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
 .dairymetrics-stat-grid {
   gap: 12px;
 }
@@ -141,6 +177,50 @@
   background: #f8fbff;
 }
 
+.dairymetrics-fab-stack {
+  display: none;
+}
+
+.dairymetrics-overlay {
+  display: none;
+}
+
+.dairymetrics-overlay.open {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(19, 34, 40, 0.45);
+  z-index: 130;
+}
+
+.dairymetrics-sheet {
+  width: min(760px, calc(100vw - 28px));
+  max-height: 86vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.24);
+}
+
+.dairymetrics-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.dairymetrics-sheet-close {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 999px;
+}
+
 @media (max-width: 768px) {
   .dairymetrics-login-card {
     width: min(100vw - 20px, 620px);
@@ -148,6 +228,22 @@
 
   .dairymetrics-login-brand {
     padding: 18px 16px;
+  }
+
+  .dairymetrics-card-head,
+  .dairymetrics-card-actions {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .dairymetrics-department-toggle {
+    max-width: 48%;
+  }
+
+  .dairymetrics-desktop-entry-btn {
+    display: none;
   }
 
   .dairymetrics-entry-grid,
@@ -171,5 +267,26 @@
     padding: 10px 8px;
     font-size: 0.88rem;
     word-break: break-word;
+  }
+
+  .dairymetrics-fab-stack {
+    position: fixed;
+    right: 16px;
+    bottom: 18px;
+    display: flex;
+    z-index: 90;
+  }
+
+  .dairymetrics-fab {
+    width: 56px;
+    height: 56px;
+    min-height: 56px;
+    padding: 0;
+    border-radius: 999px;
+    box-shadow: 0 16px 34px rgba(9, 31, 52, 0.24);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
   }
 }
