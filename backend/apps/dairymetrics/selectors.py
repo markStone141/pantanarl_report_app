@@ -410,8 +410,9 @@ def _build_scope_trend(member, department, *, scope_data, end_date):
     return None
 
 
-def _build_best_day(member, department, start_date, end_date):
-    best_day = None
+def _build_best_records(member, department, start_date, end_date):
+    best_count_day = None
+    best_amount_day = None
     for offset in range((end_date - start_date).days + 1):
         current_day = start_date + timedelta(days=offset)
         totals = _department_totals(member, department, current_day, current_day)
@@ -425,11 +426,18 @@ def _build_best_day(member, department, start_date, end_date):
             "amount_value": amount_value,
             "count_text": _count_breakdown_text(department, totals),
         }
-        if not best_day or candidate["count_value"] > best_day["count_value"] or (
-            candidate["count_value"] == best_day["count_value"] and candidate["amount_value"] > best_day["amount_value"]
+        if not best_count_day or candidate["count_value"] > best_count_day["count_value"] or (
+            candidate["count_value"] == best_count_day["count_value"] and candidate["amount_value"] > best_count_day["amount_value"]
         ):
-            best_day = candidate
-    return best_day
+            best_count_day = candidate
+        if not best_amount_day or candidate["amount_value"] > best_amount_day["amount_value"] or (
+            candidate["amount_value"] == best_amount_day["amount_value"] and candidate["count_value"] > best_amount_day["count_value"]
+        ):
+            best_amount_day = candidate
+    return {
+        "count": best_count_day,
+        "amount": best_amount_day,
+    }
 
 
 def build_member_dashboard_card(
@@ -481,7 +489,7 @@ def build_member_dashboard_card(
     amount_rank, _ = _resolve_rank(member.id, rankings, "amount_value")
     team_average = _team_averages(rankings)
     trend_section = _build_scope_trend(member, department, scope_data=scope_data, end_date=end_date)
-    best_day = _build_best_day(member, department, start_date, end_date)
+    best_records = _build_best_records(member, department, start_date, end_date)
     return {
         "department": department,
         "scope": scope_data["scope"],
@@ -527,7 +535,7 @@ def build_member_dashboard_card(
         "count_average_diff_text": _format_signed_diff(round(count_value - team_average["count_value"], 1)),
         "amount_average_diff_text": _format_signed_diff(round(int(scope_totals["support_amount"]) - team_average["amount_value"], 1)),
         "trend_section": trend_section,
-        "best_day": best_day,
+        "best_records": best_records,
         "show_average_metrics": scope_data["scope"] != "today",
         "show_best_day": scope_data["scope"] != "today",
     }

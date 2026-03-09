@@ -171,11 +171,21 @@
   </div>
   {% if selected_card.show_best_day %}
   <div class="dairymetrics-insight-grid">
-    <div class="comparison-card dairymetrics-insight-wide">
-      <span class="muted">{{ selected_card.scope_label }}の自己ベスト</span>
-      {% if selected_card.best_day %}
-      <strong>{{ selected_card.best_day.date|date:"n/j" }}</strong>
-      <span class="muted dairymetrics-subtext">{{ selected_card.count_label }} {{ selected_card.best_day.count_text }} / 金額 {{ selected_card.best_day.amount_value|intcomma }}</span>
+    <div class="comparison-card">
+      <span class="muted">{{ selected_card.count_label }} ベスト</span>
+      {% if selected_card.best_records.count %}
+      <strong>{{ selected_card.best_records.count.date|date:"n/j" }}</strong>
+      <span class="muted dairymetrics-subtext">{{ selected_card.best_records.count.count_text }}</span>
+      {% else %}
+      <strong>-</strong>
+      <span class="muted dairymetrics-subtext">まだ記録がありません</span>
+      {% endif %}
+    </div>
+    <div class="comparison-card">
+      <span class="muted">金額 ベスト</span>
+      {% if selected_card.best_records.amount %}
+      <strong>{{ selected_card.best_records.amount.date|date:"n/j" }}</strong>
+      <span class="muted dairymetrics-subtext">{{ selected_card.best_records.amount.amount_value|intcomma }}</span>
       {% else %}
       <strong>-</strong>
       <span class="muted dairymetrics-subtext">まだ記録がありません</span>

@@ -366,7 +366,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "今路程")
         self.assertContains(response, "第1路程")
-        self.assertContains(response, "今路程の自己ベスト")
+        self.assertContains(response, "CS/難民 ベスト")
+        self.assertContains(response, "金額 ベスト")
         self.assertContains(response, "アプローチ 平均/合計")
         self.assertNotContains(response, "活動中")
         self.assertContains(response, "fa-arrow-trend-up")
@@ -375,6 +376,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "過去4路程の推移")
         self.assertContains(response, "第4路程")
         self.assertContains(response, "第1路程")
+        self.assertContains(response, "3/5")
+        self.assertContains(response, "2,500")
 
     def test_dashboard_period_scope_uses_member_period_target(self):
         period = Period.objects.create(
