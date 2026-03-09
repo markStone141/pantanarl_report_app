@@ -67,11 +67,11 @@
         <div class="dairymetrics-average-stack">
           <div class="dairymetrics-average-row">
             <span class="muted">全体平均</span>
-            <strong>{{ metric.average_value|intcomma }}</strong>
+            <strong>{{ metric.average_text }}</strong>
           </div>
           <div class="dairymetrics-average-row">
             <span class="muted">自分</span>
-            <strong>{{ metric.self_value|intcomma }}</strong>
+            <strong>{{ metric.self_text }}</strong>
           </div>
           <div class="dairymetrics-average-row">
             <span class="muted">平均との差</span>
@@ -103,7 +103,7 @@
           <div class="dairymetrics-rank-row">
             <span class="dairymetrics-rank-badge">{{ leader.rank }}</span>
             <span class="dairymetrics-rank-name">{{ leader.member_name }}</span>
-            <strong class="dairymetrics-rank-value">{{ leader.value|intcomma }}</strong>
+            <strong class="dairymetrics-rank-value">{{ leader.value_text }}</strong>
           </div>
           {% endfor %}
           {% if metric.self_row %}
@@ -111,7 +111,7 @@
           <div class="dairymetrics-rank-row is-self">
             <span class="dairymetrics-rank-badge">{{ metric.self_row.rank }}</span>
             <span class="dairymetrics-rank-name">{{ metric.self_row.member_name }}</span>
-            <strong class="dairymetrics-rank-value">{{ metric.self_row.value|intcomma }}</strong>
+            <strong class="dairymetrics-rank-value">{{ metric.self_row.value_text }}</strong>
           </div>
           {% endif %}
         </div>

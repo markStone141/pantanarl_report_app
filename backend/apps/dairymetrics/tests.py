@@ -101,6 +101,10 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, ">アプローチ<")
         self.assertContains(response, ">コミュニケーション<")
         self.assertContains(response, ">支援金額<")
+        self.assertContains(response, ">コミュ率<")
+        self.assertContains(response, ">参加率<")
+        self.assertContains(response, "60.0%")
+        self.assertContains(response, "66.7%")
         self.assertNotContains(response, "アプローチ 平均/合計")
         self.assertNotContains(response, "今日の自己ベスト")
         self.assertNotContains(response, "伸びた項目")
@@ -192,6 +196,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "コミュニケーション数")
         self.assertContains(response, "件数")
         self.assertContains(response, "金額")
+        self.assertContains(response, "コミュ率")
+        self.assertContains(response, "参加率")
         self.assertContains(response, "Member Compare")
         self.assertContains(response, "Member Third")
         self.assertContains(response, "Member Fourth")
@@ -231,6 +237,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "コミュニケーション数")
         self.assertContains(response, "件数")
         self.assertContains(response, "金額")
+        self.assertContains(response, "コミュ率")
+        self.assertContains(response, "参加率")
 
     def test_entry_form_updates_existing_record(self):
         entry = MemberDailyMetricEntry.objects.create(

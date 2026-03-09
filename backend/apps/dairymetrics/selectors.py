@@ -49,6 +49,19 @@ def _comparison_label(rate):
     return f"{sign}{rate}%"
 
 
+def _rate_value(numerator, denominator):
+    if denominator <= 0:
+        return None
+    return round((numerator / denominator) * 100, 1)
+
+
+def _rate_text(numerator, denominator):
+    value = _rate_value(numerator, denominator)
+    if value is None:
+        return "-"
+    return f"{value}%"
+
+
 def _summarize_changes(current, previous):
     comparisons = []
     labels = {
@@ -266,6 +279,10 @@ def _metric_value_for_today(metric_key, department, totals):
         return int(totals["communication_count"])
     if metric_key == "count_value":
         return _count_value_for_department(department, totals)
+    if metric_key == "communication_rate":
+        return _rate_value(int(totals["communication_count"]), int(totals["approach_count"]))
+    if metric_key == "participation_rate":
+        return _rate_value(_count_value_for_department(department, totals), int(totals["communication_count"]))
     return int(totals["support_amount"])
 
 
@@ -276,15 +293,38 @@ def _metric_value_for_scope(metric_key, department, totals):
         return int(totals["communication_count"])
     if metric_key == "count_value":
         return _count_value_for_department(department, totals)
+    if metric_key == "communication_rate":
+        return _rate_value(int(totals["communication_count"]), int(totals["approach_count"]))
+    if metric_key == "participation_rate":
+        return _rate_value(_count_value_for_department(department, totals), int(totals["communication_count"]))
     return int(totals["support_amount"])
 
 
 def _metric_diff_text(value, average):
+    if value is None:
+        return "-"
     if average <= 0:
         return "-"
     diff_rate = round(((value - average) / average) * 100, 1)
     sign = "+" if diff_rate > 0 else ""
     return f"{sign}{diff_rate}%"
+
+
+def _metric_display_text(metric_key, department, totals):
+    value = _metric_value_for_scope(metric_key, department, totals)
+    return _format_metric_display(metric_key, value)
+
+
+def _format_metric_display(metric_key, value):
+    if value is None:
+        return "-"
+    if metric_key in {"communication_rate", "participation_rate"}:
+        return f"{value}%"
+    if metric_key == "support_amount":
+        return f"{value:,}"
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value)
 
 
 def _members_with_scope_activity(department, start_date, end_date, *, today_only=False):
@@ -324,6 +364,8 @@ def _build_today_comparison_metrics(member, department, today):
         {"key": "communication_count", "label": "コミュニケーション数", "icon": "fa-comments"},
         {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
         {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
+        {"key": "communication_rate", "label": "コミュ率", "icon": "fa-wave-square"},
+        {"key": "participation_rate", "label": "参加率", "icon": "fa-user-check"},
     ]
     metrics = []
     for spec in metric_specs:
@@ -335,9 +377,10 @@ def _build_today_comparison_metrics(member, department, today):
                     "member_id": current_member.id,
                     "member_name": current_member.name,
                     "value": _metric_value_for_today(spec["key"], department, totals),
+                    "value_text": _metric_display_text(spec["key"], department, totals),
                 }
             )
-        ranked_rows.sort(key=lambda row: (-row["value"], row["member_name"]))
+        ranked_rows.sort(key=lambda row: (-(row["value"] if row["value"] is not None else -1), row["member_name"]))
         top_rows = [
             {
                 **row,
@@ -356,6 +399,7 @@ def _build_today_comparison_metrics(member, department, today):
                     "rank": self_rank,
                     "member_name": self_row["member_name"] if self_row else member.name,
                     "value": self_row["value"] if self_row else 0,
+                    "value_text": self_row["value_text"] if self_row else "-",
                 },
             }
         )
@@ -375,11 +419,14 @@ def _build_scope_average_metrics(member, department, start_date, end_date, *, to
         {"key": "communication_count", "label": "コミュニケーション数", "icon": "fa-comments"},
         {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
         {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
+        {"key": "communication_rate", "label": "コミュ率", "icon": "fa-wave-square"},
+        {"key": "participation_rate", "label": "参加率", "icon": "fa-user-check"},
     ]
     metrics = []
     for spec in metric_specs:
         values = [_metric_value_for_scope(spec["key"], department, member_totals[current_member.id]) for current_member in members]
-        average = round(sum(values) / len(values), 1) if values else 0
+        metric_values = [value for value in values if value is not None]
+        average = round(sum(metric_values) / len(metric_values), 1) if metric_values else 0
         self_value = _metric_value_for_scope(spec["key"], department, member_totals.get(member.id, _zero_totals()))
         metrics.append(
             {
@@ -387,6 +434,8 @@ def _build_scope_average_metrics(member, department, start_date, end_date, *, to
                 "icon": spec["icon"],
                 "average_value": average,
                 "self_value": self_value,
+                "average_text": _format_metric_display(spec["key"], average) if metric_values else "-",
+                "self_text": _format_metric_display(spec["key"], self_value),
                 "diff_text": _metric_diff_text(self_value, average),
             }
         )
@@ -655,6 +704,8 @@ def build_member_dashboard_card(
         "communication_average": round(scope_totals["communication_count"] / active_days, 1),
         "count_average": round(count_value / active_days, 1),
         "amount_average": round(int(scope_totals["support_amount"]) / active_days, 1),
+        "communication_rate_text": _rate_text(scope_totals["communication_count"], scope_totals["approach_count"]),
+        "participation_rate_text": _rate_text(count_value, scope_totals["communication_count"]),
         "count_change_rate": _comparison_label(
             _change_rate(count_value, _count_value_for_department(department, previous_totals))
         ),
