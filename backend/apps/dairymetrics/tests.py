@@ -121,7 +121,7 @@ class DairyMetricsDashboardTests(TestCase):
         response = self.client.get(reverse("dairymetrics_dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "is-complete")
-        self.assertContains(response, "fa-spa")
+        self.assertContains(response, "fa-crown")
 
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")
