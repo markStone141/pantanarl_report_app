@@ -27,7 +27,7 @@
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
-      {% if viewer_member %}<a href="{% url 'dairymetrics_member_index' %}">メンバー</a>{% endif %}
+      {% if viewer_member %}<a href="{% url 'dairymetrics_member_index' %}">他メンバーデータ</a>{% endif %}
       {% if member and not readonly_dashboard %}<a href="{% url 'dairymetrics_compare' %}">スコア</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">月次俯瞰</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_adjustment_create' %}">後追い追加</a>{% endif %}
@@ -42,11 +42,11 @@
     <article class="card">
       <div class="dairymetrics-member-switcher">
         <div>
-          <h2>メンバー</h2>
+          <h2>他メンバーデータ</h2>
           <div class="muted">切り替えると、そのまま実績表示だけ更新します。</div>
         </div>
         <div class="dairymetrics-member-select-wrap">
-          <label for="dairymetrics-member-select" class="muted">表示中のメンバー</label>
+          <label for="dairymetrics-member-select" class="muted">表示するメンバー</label>
           <select id="dairymetrics-member-select" data-member-switch>
             {% for row in member_rows %}
             <option value="{% url 'dairymetrics_member_dashboard' row.member.id %}" {% if member and row.member.id == member.id %}selected{% endif %}>
