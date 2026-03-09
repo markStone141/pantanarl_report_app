@@ -10,7 +10,40 @@
   const memberSelect = document.getElementById('dairymetrics-member-select');
   const subtitle = document.getElementById('dairymetrics-dashboard-subtitle');
   const viewedMemberName = document.getElementById('dairymetrics-viewed-member-name');
+  const memberFilterButtons = Array.from(document.querySelectorAll('[data-member-filter-toggle]'));
   if (!cardRoot) return;
+  let activeMemberFilter = 'all';
+
+  function applyMemberFilter(filterValue) {
+    if (!memberSelect) return;
+    activeMemberFilter = filterValue || 'all';
+    const options = Array.from(memberSelect.options);
+    let selectedVisible = false;
+
+    options.forEach(function (option) {
+      const codes = (option.dataset.departmentCodes || '').split(',').filter(Boolean);
+      const isVisible = activeMemberFilter === 'all' || codes.includes(activeMemberFilter);
+      option.hidden = !isVisible;
+      option.disabled = !isVisible;
+      if (isVisible && option.selected) {
+        selectedVisible = true;
+      }
+    });
+
+    memberFilterButtons.forEach(function (button) {
+      const isActive = button.getAttribute('data-member-filter-value') === activeMemberFilter;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+
+    if (!selectedVisible) {
+      const firstVisibleOption = options.find(function (option) { return !option.hidden; });
+      if (firstVisibleOption) {
+        memberSelect.value = firstVisibleOption.value;
+        memberSelect.dispatchEvent(new Event('change'));
+      }
+    }
+  }
 
   function openOverlay(target) {
     if (!target) return;
@@ -72,6 +105,12 @@
       }
       return;
     }
+    const memberFilterToggle = event.target.closest('[data-member-filter-toggle]');
+    if (memberFilterToggle) {
+      event.preventDefault();
+      applyMemberFilter(memberFilterToggle.getAttribute('data-member-filter-value'));
+      return;
+    }
     if (event.target.closest('#dairymetrics-open-entry') || event.target.closest('[data-open-dairymetrics-entry]')) {
       event.preventDefault();
       openOverlay(overlay);
@@ -105,6 +144,7 @@
       });
       refreshDashboard(nextUrl);
     });
+    applyMemberFilter(activeMemberFilter);
   }
 
   if (overlay) {

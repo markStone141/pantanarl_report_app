@@ -630,6 +630,9 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "非アクティブ")
         self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[inactive_member.id]))
         self.assertContains(response, 'data-member-switch')
+        self.assertContains(response, 'data-member-filter-value="all"')
+        self.assertContains(response, 'data-member-filter-value="WV"')
+        self.assertContains(response, 'data-department-codes="WV"')
 
     def test_member_dashboard_ajax_switches_selected_member(self):
         inactive_member = Member.objects.create(name="Inactive Member", is_active=False)

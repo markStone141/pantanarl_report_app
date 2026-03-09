@@ -59,6 +59,14 @@ def _build_member_directory():
     ]
 
 
+def _build_member_filter_departments(member_rows):
+    departments = {}
+    for row in member_rows:
+        for department in row["departments"]:
+            departments[department.code] = department
+    return [departments[code] for code in sorted(departments)]
+
+
 def _build_member_dashboard_context(*, request, member, readonly=False, viewer_member=None):
     selected_department_code = (request.GET.get("department") or "").strip()
     selected_scope = (request.GET.get("scope") or "today").strip()
@@ -95,6 +103,7 @@ def _build_member_dashboard_context(*, request, member, readonly=False, viewer_m
             scope_target_form_action = (
                 f"{reverse('dairymetrics_scope_target')}?department={selected_department.code}&scope={selected_card['scope']}"
             )
+    member_rows = _build_member_directory() if readonly else []
     return {
         "page_title": "DairyMetrics",
         "member": member,
@@ -109,7 +118,8 @@ def _build_member_dashboard_context(*, request, member, readonly=False, viewer_m
         "is_admin": request.user.is_staff,
         "readonly_dashboard": readonly,
         "viewer_member": viewer_member or member,
-        "member_rows": _build_member_directory() if readonly else [],
+        "member_rows": member_rows,
+        "member_filter_departments": _build_member_filter_departments(member_rows) if readonly else [],
     }
 
 
@@ -196,6 +206,7 @@ def member_index(request: HttpRequest) -> HttpResponse:
                 "is_admin": request.user.is_staff,
                 "readonly_dashboard": True,
                 "member_rows": [],
+                "member_filter_departments": [],
             },
         )
     return member_dashboard(request, selected_member.id)

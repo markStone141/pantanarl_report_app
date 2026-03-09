@@ -66,6 +66,12 @@
   min-width: min(320px, 100%);
 }
 
+.dairymetrics-member-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .dairymetrics-member-select-wrap select {
   min-height: 42px;
 }
