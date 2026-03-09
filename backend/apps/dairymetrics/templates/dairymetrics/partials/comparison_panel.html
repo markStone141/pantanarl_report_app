@@ -125,30 +125,6 @@
     </div>
   </section>
   {% endif %}
-  {% if selected_card.scope != "today" %}
-  <div class="dairymetrics-insight-grid">
-    <div class="comparison-card">
-      <span class="muted">{{ selected_card.scope_label }}の順位</span>
-      <strong>{{ selected_card.count_label }} {{ selected_card.count_rank_text }}</strong>
-      <span class="muted dairymetrics-subtext">金額 {{ selected_card.amount_rank_text }}</span>
-    </div>
-    <div class="comparison-card">
-      <span class="muted">チーム平均との差</span>
-      <strong>{{ selected_card.count_average_diff_text }}</strong>
-      <span class="muted dairymetrics-subtext">{{ selected_card.count_label }} / 金額 {{ selected_card.amount_average_diff_text }}</span>
-    </div>
-  </div>
-  <div class="dairymetrics-trend-strip">
-    <div>
-      <span class="muted">伸びた項目</span>
-      <strong>{% if selected_card.changes.improved %}{{ selected_card.changes.improved.label }}{% else %}-{% endif %}</strong>
-    </div>
-    <div>
-      <span class="muted">落ちた項目</span>
-      <strong>{% if selected_card.changes.declined %}{{ selected_card.changes.declined.label }}{% else %}-{% endif %}</strong>
-    </div>
-  </div>
-  {% endif %}
 </article>
 {% else %}
 <article class="card">
