@@ -316,6 +316,9 @@ def build_member_dashboard_card(member, department, *, today=None, scope="today"
         "scope_summary": scope_data["summary"],
         "today_status": "入力済み" if today_entry else "未入力",
         "today_entry": today_entry,
+        "activity_status": (
+            "活動終了" if today_entry and today_entry.activity_closed else "活動中" if today_entry else "未入力"
+        ),
         "scope_totals": scope_totals,
         "count_label": _count_label_for_department(department),
         "count_value": count_value,
@@ -385,6 +388,11 @@ def build_admin_month_overview(*, target_month):
         members = Member.objects.active().filter(department_links__department=department).distinct().order_by("name")
         for member in members:
             totals = _department_totals(member, department, month_start, month_end)
+            latest_entry = MemberDailyMetricEntry.objects.filter(
+                member=member,
+                department=department,
+                entry_date__range=(month_start, month_end),
+            ).order_by("-entry_date", "-updated_at").first()
             entry_days = MemberDailyMetricEntry.objects.filter(member=member, department=department, entry_date__range=(month_start, month_end)).count() or 1
             rows.append(
                 {
@@ -393,6 +401,9 @@ def build_admin_month_overview(*, target_month):
                     "totals": totals,
                     "approach_average": round(totals["approach_count"] / entry_days, 1),
                     "communication_average": round(totals["communication_count"] / entry_days, 1),
+                    "activity_status": (
+                        "活動終了" if latest_entry and latest_entry.activity_closed else "活動中" if latest_entry else "未入力"
+                    ),
                 }
             )
     return rows

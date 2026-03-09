@@ -19,6 +19,8 @@ class MemberDailyMetricEntry(models.Model):
     refugee_count = models.PositiveIntegerField(default=0)
     location_name = models.CharField(max_length=128, blank=True)
     memo = models.TextField(blank=True)
+    activity_closed = models.BooleanField(default=False)
+    activity_closed_at = models.DateTimeField(null=True, blank=True)
     synced_to_report = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

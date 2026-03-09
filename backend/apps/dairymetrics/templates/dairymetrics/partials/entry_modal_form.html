@@ -3,7 +3,8 @@
   {% csrf_token %}
   {% include "dairymetrics/partials/entry_form_fields.html" with form=entry_form %}
   <div class="dairymetrics-field-full dairymetrics-form-actions">
-    <button type="submit">保存する</button>
+    <button type="submit" name="submit_action" value="save">保存する</button>
+    <button type="submit" name="submit_action" value="close_activity" class="btn-inline dairymetrics-close-activity-btn">活動終了</button>
   </div>
 </form>
 {% endif %}

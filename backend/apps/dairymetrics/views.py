@@ -140,6 +140,10 @@ def entry_form(request: HttpRequest) -> HttpResponse:
             saved.pk = existing.pk
             saved.created_at = existing.created_at
         saved.member = member
+        submit_action = (request.POST.get("submit_action") or "save").strip()
+        is_closing = submit_action == "close_activity"
+        saved.activity_closed = is_closing
+        saved.activity_closed_at = timezone.now() if is_closing else None
         saved.save()
         return redirect(f"{reverse('dairymetrics_dashboard')}?saved=1")
 

@@ -44,6 +44,7 @@
           <tr>
             <th>部門</th>
             <th>メンバー</th>
+            <th>状態</th>
             <th>件数/金額</th>
             <th>アプローチ 平均/累計</th>
             <th>コミュニケーション 平均/累計</th>
@@ -54,13 +55,14 @@
           <tr>
             <td>{{ row.department.code }}</td>
             <td>{{ row.member.name }}</td>
+            <td>{{ row.activity_status }}</td>
             <td>{{ row.totals.result_count }} / {{ row.totals.support_amount|intcomma }}</td>
             <td>{{ row.approach_average }} / {{ row.totals.approach_count }}</td>
             <td>{{ row.communication_average }} / {{ row.totals.communication_count }}</td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="5">この月の対象データはまだありません。</td>
+            <td colspan="6">この月の対象データはまだありません。</td>
           </tr>
           {% endfor %}
         </tbody>

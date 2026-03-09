@@ -3,6 +3,7 @@ from datetime import date
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
 from apps.targets.models import Period
@@ -118,6 +119,29 @@ class DairyMetricsDashboardTests(TestCase):
         entry.refresh_from_db()
         self.assertEqual(entry.approach_count, 9)
         self.assertEqual(MemberDailyMetricEntry.objects.count(), 1)
+        self.assertFalse(entry.activity_closed)
+
+    def test_close_activity_sets_flag(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("dairymetrics_entry"),
+            {
+                "department": self.department.id,
+                "entry_date": "2026-03-09",
+                "approach_count": 6,
+                "communication_count": 3,
+                "support_amount": 2500,
+                "daily_target_count": 4,
+                "daily_target_amount": 3000,
+                "cs_count": 2,
+                "refugee_count": 0,
+                "submit_action": "close_activity",
+            },
+        )
+        self.assertRedirects(response, reverse("dairymetrics_dashboard") + "?saved=1")
+        entry = MemberDailyMetricEntry.objects.get()
+        self.assertTrue(entry.activity_closed)
+        self.assertIsNotNone(entry.activity_closed_at)
 
     def test_dashboard_ajax_switches_department_and_prefills_form(self):
         second_department = Department.objects.create(code="UN", name="UN")
@@ -232,3 +256,18 @@ class DairyMetricsAdminTests(TestCase):
         adjustment = MetricAdjustment.objects.get()
         self.assertEqual(adjustment.created_by, self.admin)
         self.assertEqual(adjustment.source_type, "postal")
+
+    def test_admin_overview_shows_activity_status(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            result_count=1,
+            support_amount=1000,
+            activity_closed=True,
+            activity_closed_at=timezone.now(),
+        )
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("dairymetrics_admin_overview"), {"month": "2026-03"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "活動終了")
