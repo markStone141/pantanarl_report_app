@@ -13,7 +13,7 @@
   <div class="dairymetrics-card-head">
     <div>
       <div class="dairymetrics-title-row">
-        <h2>{{ selected_card.department.name }} 見える化</h2>
+        <h2>{{ selected_card.department.name }} スコア</h2>
         {% if selected_card.scope == "today" %}
         <div class="badge dairymetrics-status-badge {% if selected_card.activity_status == '未入力' %}is-empty{% elif selected_card.activity_status == '活動中' %}is-active{% elif selected_card.activity_status == '活動終了' %}is-closed{% endif %}">{{ selected_card.activity_status }}</div>
         {% endif %}

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load humanize static %}
 
-{% block title %}DairyMetrics 見える化{% endblock %}
+{% block title %}DairyMetrics スコア{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=1" />
@@ -13,7 +13,7 @@
     <div>
       <strong>DairyMetrics</strong>
       <div class="topbar-muted">
-        {% if member %}{{ member.name }}さんの見える化ページ{% else %}見える化ページ{% endif %}
+        {% if member %}{{ member.name }}さんのスコアページ{% else %}スコアページ{% endif %}
       </div>
     </div>
     <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="Open menu">
@@ -21,7 +21,7 @@
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
-      <a href="{% url 'dairymetrics_compare' %}">見える化</a>
+      <a href="{% url 'dairymetrics_compare' %}">スコア</a>
       {% if member %}<a href="{% url 'dairymetrics_entry' %}">実績入力</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">月次俯瞰</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_adjustment_create' %}">後追い追加</a>{% endif %}

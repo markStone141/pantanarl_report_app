@@ -96,7 +96,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "残り 1")
         self.assertContains(response, "4/5")
         self.assertContains(response, "6,000/8,000")
-        self.assertContains(response, "見える化を見る")
+        self.assertContains(response, "スコアを見る")
         self.assertNotContains(response, "今日の順位")
         self.assertContains(response, ">アプローチ<")
         self.assertContains(response, ">コミュニケーション<")
