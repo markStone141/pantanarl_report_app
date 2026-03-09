@@ -247,6 +247,15 @@ def _team_averages(rankings):
     }
 
 
+def _normalize_trend_items(trend):
+    max_count = max((item["count_value"] for item in trend), default=0) or 1
+    max_amount = max((item["amount_value"] for item in trend), default=0) or 1
+    for item in trend:
+        item["count_height"] = max(14, round((item["count_value"] / max_count) * 100)) if item["count_value"] else 12
+        item["amount_height"] = max(14, round((item["amount_value"] / max_amount) * 100)) if item["amount_value"] else 12
+    return trend
+
+
 def _build_daily_trend(member, department, *, end_date):
     start_date = end_date - timedelta(days=6)
     entries = MemberDailyMetricEntry.objects.filter(
@@ -298,12 +307,76 @@ def _build_daily_trend(member, department, *, end_date):
                 "amount_value": int(totals["support_amount"]),
             }
         )
-    max_count = max((item["count_value"] for item in trend), default=0) or 1
-    max_amount = max((item["amount_value"] for item in trend), default=0) or 1
-    for item in trend:
-        item["count_height"] = max(14, round((item["count_value"] / max_count) * 100)) if item["count_value"] else 12
-        item["amount_height"] = max(14, round((item["amount_value"] / max_amount) * 100)) if item["amount_value"] else 12
-    return trend
+    return _normalize_trend_items(trend)
+
+
+def _month_start_for(base_date, offset):
+    year = base_date.year
+    month = base_date.month - offset
+    while month <= 0:
+        month += 12
+        year -= 1
+    return date(year, month, 1)
+
+
+def _build_month_trend(member, department, *, end_date, months=6):
+    trend = []
+    for offset in range(months - 1, -1, -1):
+        start_date = _month_start_for(end_date.replace(day=1), offset)
+        end_of_month = date(start_date.year, start_date.month, monthrange(start_date.year, start_date.month)[1])
+        capped_end_date = min(end_of_month, end_date) if offset == 0 else end_of_month
+        totals = _department_totals(member, department, start_date, capped_end_date)
+        trend.append(
+            {
+                "label": start_date.strftime("%y/%-m"),
+                "count_value": _count_value_for_department(department, totals),
+                "amount_value": int(totals["support_amount"]),
+            }
+        )
+    return _normalize_trend_items(trend)
+
+
+def _build_period_trend(member, department, *, current_period, limit=4):
+    if not current_period:
+        return []
+    periods = list(
+        Period.objects.filter(end_date__lte=current_period.end_date)
+        .order_by("-end_date", "-id")[:limit]
+    )
+    periods.reverse()
+    trend = []
+    for period in periods:
+        totals = _department_totals(member, department, period.start_date, period.end_date)
+        trend.append(
+            {
+                "label": period.name,
+                "count_value": _count_value_for_department(department, totals),
+                "amount_value": int(totals["support_amount"]),
+            }
+        )
+    return _normalize_trend_items(trend)
+
+
+def _build_scope_trend(member, department, *, scope_data, end_date):
+    if scope_data["scope"] == "today":
+        return {
+            "title": "過去7日の推移",
+            "description": "休憩中でも、その日の動きが見えるように直近7日を表示します。",
+            "items": _build_daily_trend(member, department, end_date=end_date),
+        }
+    if scope_data["scope"] == "period" and scope_data.get("period"):
+        return {
+            "title": "過去4路程の推移",
+            "description": "今の路程と合わせて、直近4路程の流れを並べます。",
+            "items": _build_period_trend(member, department, current_period=scope_data["period"], limit=4),
+        }
+    if scope_data["scope"] == "month":
+        return {
+            "title": "過去6か月の推移",
+            "description": "今月を含む直近6か月の積み上がりを表示します。",
+            "items": _build_month_trend(member, department, end_date=end_date, months=6),
+        }
+    return None
 
 
 def _build_best_day(member, department, start_date, end_date):
@@ -370,7 +443,7 @@ def build_member_dashboard_card(
     count_rank, member_count = _resolve_rank(member.id, rankings, "count_value")
     amount_rank, _ = _resolve_rank(member.id, rankings, "amount_value")
     team_average = _team_averages(rankings)
-    daily_trend = _build_daily_trend(member, department, end_date=end_date)
+    trend_section = _build_scope_trend(member, department, scope_data=scope_data, end_date=end_date)
     best_day = _build_best_day(member, department, start_date, end_date)
     return {
         "department": department,
@@ -412,7 +485,7 @@ def build_member_dashboard_card(
         "team_amount_average": team_average["amount_value"],
         "count_average_diff_text": _format_signed_diff(round(count_value - team_average["count_value"], 1)),
         "amount_average_diff_text": _format_signed_diff(round(int(scope_totals["support_amount"]) - team_average["amount_value"], 1)),
-        "daily_trend": daily_trend,
+        "trend_section": trend_section,
         "best_day": best_day,
         "show_average_metrics": scope_data["scope"] != "today",
         "show_best_day": scope_data["scope"] != "today",

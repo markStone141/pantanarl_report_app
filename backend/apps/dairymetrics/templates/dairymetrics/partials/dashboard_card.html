@@ -184,15 +184,16 @@
     </div>
   </div>
   {% endif %}
+  {% if selected_card.trend_section %}
   <section class="dairymetrics-mini-chart">
     <div class="row">
       <div>
-        <h3>過去7日の推移</h3>
-        <div class="muted">休憩中でも、その日の動きが見えるように直近7日を表示します。</div>
+        <h3>{{ selected_card.trend_section.title }}</h3>
+        <div class="muted">{{ selected_card.trend_section.description }}</div>
       </div>
     </div>
     <div class="dairymetrics-chart-grid">
-      {% for item in selected_card.daily_trend %}
+      {% for item in selected_card.trend_section.items %}
       <div class="dairymetrics-chart-col">
         <div class="dairymetrics-chart-bars">
           <span class="dairymetrics-chart-bar is-count" style="height: {{ item.count_height }}%;" title="{{ selected_card.count_label }} {{ item.count_value }}"></span>
@@ -207,6 +208,7 @@
       {% endfor %}
     </div>
   </section>
+  {% endif %}
 </article>
 {% else %}
 <article class="card">

@@ -97,6 +97,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertNotContains(response, "今日の自己ベスト")
         self.assertNotContains(response, "伸びた項目")
         self.assertNotContains(response, "落ちた項目")
+        self.assertContains(response, "過去7日の推移")
 
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")
@@ -286,6 +287,27 @@ class DairyMetricsDashboardTests(TestCase):
 
     def test_dashboard_can_switch_to_period_scope(self):
         Period.objects.create(
+            month=date(2026, 2, 1),
+            name="第4路程",
+            status="finished",
+            start_date=date(2026, 2, 1),
+            end_date=date(2026, 2, 7),
+        )
+        Period.objects.create(
+            month=date(2026, 2, 1),
+            name="第5路程",
+            status="finished",
+            start_date=date(2026, 2, 8),
+            end_date=date(2026, 2, 15),
+        )
+        Period.objects.create(
+            month=date(2026, 2, 1),
+            name="第6路程",
+            status="finished",
+            start_date=date(2026, 2, 16),
+            end_date=date(2026, 2, 28),
+        )
+        Period.objects.create(
             month=date(2026, 3, 1),
             name="第1路程",
             status="active",
@@ -321,6 +343,9 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "fa-arrow-trend-up")
         self.assertContains(response, "fa-arrow-trend-down")
         self.assertContains(response, "+100.0%")
+        self.assertContains(response, "過去4路程の推移")
+        self.assertContains(response, "第4路程")
+        self.assertContains(response, "第1路程")
 
     def test_today_scope_without_target_shows_goal_cta(self):
         self.client.force_login(self.user)
@@ -363,6 +388,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(lifetime_response, "合計金額")
         self.assertContains(lifetime_response, "一日平均CS/難民")
         self.assertContains(lifetime_response, "一日平均金額")
+        self.assertNotContains(lifetime_response, "過去7日の推移")
         filtered_response = self.client.get(
             reverse("dairymetrics_dashboard"),
             {"scope": "custom", "start_date": "2026-03-08", "end_date": "2026-03-08"},
@@ -374,6 +400,27 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(filtered_response, "一日平均金額")
         self.assertNotContains(filtered_response, "目標達成率")
         self.assertNotContains(filtered_response, "fa-arrow-trend-up")
+        self.assertNotContains(filtered_response, "過去7日の推移")
+
+    def test_dashboard_month_scope_uses_six_month_trend(self):
+        for month_offset, month_value in enumerate([10, 11, 12, 1, 2, 3], start=0):
+            year = 2025 if month_value >= 10 else 2026
+            MemberDailyMetricEntry.objects.create(
+                member=self.member,
+                department=self.department,
+                entry_date=date(year, month_value, 5),
+                approach_count=month_offset + 1,
+                communication_count=month_offset + 1,
+                support_amount=(month_offset + 1) * 1000,
+                cs_count=month_offset + 1,
+            )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_dashboard"), {"scope": "month"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "過去6か月の推移")
+        self.assertContains(response, "25/10")
+        self.assertContains(response, "26/3")
+        self.assertNotContains(response, "過去7日の推移")
 
 
 class DairyMetricsAdminTests(TestCase):
