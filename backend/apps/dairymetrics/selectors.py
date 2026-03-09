@@ -22,6 +22,16 @@ METRIC_FIELDS = [
     "refugee_count",
 ]
 
+RANKING_METRIC_SPECS = [
+    {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
+    {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
+    {"key": "approach_count", "label": "アプローチ数", "icon": "fa-bullseye"},
+    {"key": "communication_rate", "label": "コミュ率", "icon": "fa-wave-square"},
+    {"key": "communication_count", "label": "コミュニケーション数", "icon": "fa-comments"},
+    {"key": "participation_rate", "label": "参加率", "icon": "fa-user-check"},
+    {"key": "average_support_amount", "label": "平均支援額", "icon": "fa-coins"},
+]
+
 
 def _zero_totals():
     return {field: 0 for field in METRIC_FIELDS}
@@ -393,17 +403,8 @@ def _build_scope_ranking_metrics(member, department, start_date, end_date, *, to
         current_member.id: _department_totals(current_member, department, start_date, end_date)
         for current_member in members
     }
-    metric_specs = [
-        {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
-        {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
-        {"key": "approach_count", "label": "アプローチ数", "icon": "fa-bullseye"},
-        {"key": "communication_rate", "label": "コミュ率", "icon": "fa-wave-square"},
-        {"key": "communication_count", "label": "コミュニケーション数", "icon": "fa-comments"},
-        {"key": "participation_rate", "label": "参加率", "icon": "fa-user-check"},
-        {"key": "average_support_amount", "label": "平均支援額", "icon": "fa-coins"},
-    ]
     metrics = []
-    for spec in metric_specs:
+    for spec in RANKING_METRIC_SPECS:
         ranked_rows = []
         for current_member in members:
             totals = member_totals[current_member.id]
@@ -427,9 +428,18 @@ def _build_scope_ranking_metrics(member, department, start_date, end_date, *, to
         self_rank = next((index for index, row in enumerate(ranked_rows, start=1) if row["member_id"] == member.id), None)
         metrics.append(
             {
+                "key": spec["key"],
                 "label": spec["label"],
                 "icon": spec["icon"],
                 "leaders": top_rows,
+                "rows": [
+                    {
+                        **row,
+                        "rank": index,
+                        "is_self": row["member_id"] == member.id,
+                    }
+                    for index, row in enumerate(ranked_rows, start=1)
+                ],
                 "self_row": None if self_rank and self_rank <= 3 else {
                     "rank": self_rank,
                     "member_name": self_row["member_name"] if self_row else member.name,
@@ -831,6 +841,30 @@ def build_member_dashboard(member, *, today=None, department_code=None, scope="t
         ),
         "scope_options": scope_options,
         "selected_scope": scope_data["scope"],
+    }
+
+
+def build_member_ranking_detail(member, *, today=None, department_code=None, scope="today", start_date=None, end_date=None, metric_key=""):
+    dashboard = build_member_dashboard(
+        member,
+        today=today,
+        department_code=department_code,
+        scope=scope,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    selected_card = dashboard["selected_card"]
+    if not selected_card:
+        return None
+    metric = next(
+        (item for item in selected_card["ranking_metrics"] if item["key"] == metric_key),
+        None,
+    )
+    if not metric:
+        return None
+    return {
+        "selected_card": selected_card,
+        "metric": metric,
     }
 
 

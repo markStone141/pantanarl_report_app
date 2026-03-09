@@ -11,7 +11,7 @@ from apps.accounts.models import Department, Member
 from .auth import get_member_profile, require_dairymetrics_admin, require_dairymetrics_member
 from .forms import DairyMetricsLoginForm, MemberDailyMetricEntryForm, MemberScopeTargetForm, MetricAdjustmentForm
 from .models import MemberDailyMetricEntry, MetricAdjustment
-from .selectors import build_admin_month_overview, build_member_dashboard
+from .selectors import build_admin_month_overview, build_member_dashboard, build_member_ranking_detail
 
 
 def _build_entry_form(*, member, data=None, department_code="", entry_date=None):
@@ -253,6 +253,40 @@ def comparison_view(request: HttpRequest) -> HttpResponse:
         "is_admin": request.user.is_staff,
     }
     return render(request, "dairymetrics/comparison.html", context)
+
+
+@require_dairymetrics_member
+def comparison_ranking_detail(request: HttpRequest) -> HttpResponse:
+    member = get_member_profile(request.user)
+    if not member:
+        return JsonResponse({"error": "member_not_found"}, status=404)
+
+    metric_key = (request.GET.get("metric") or "").strip()
+    selected_department_code = (request.GET.get("department") or "").strip()
+    selected_scope = (request.GET.get("scope") or "today").strip()
+    selected_start_date = parse_date((request.GET.get("start_date") or "").strip())
+    selected_end_date = parse_date((request.GET.get("end_date") or "").strip())
+    detail = build_member_ranking_detail(
+        member,
+        today=timezone.localdate(),
+        department_code=selected_department_code,
+        scope=selected_scope,
+        start_date=selected_start_date,
+        end_date=selected_end_date,
+        metric_key=metric_key,
+    )
+    if not detail:
+        return JsonResponse({"error": "metric_not_found"}, status=404)
+
+    return JsonResponse(
+        {
+            "modal_html": render_to_string(
+                "dairymetrics/partials/ranking_detail_modal.html",
+                detail,
+                request=request,
+            ),
+        }
+    )
 
 
 @require_dairymetrics_member

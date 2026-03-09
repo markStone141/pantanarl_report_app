@@ -357,7 +357,22 @@
 .dairymetrics-rank-card-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
+}
+
+.dairymetrics-rank-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dairymetrics-rank-detail-btn {
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  flex: 0 0 auto;
 }
 
 .dairymetrics-rank-metric-icon {
@@ -656,6 +671,24 @@
   border-radius: 999px;
 }
 
+.dairymetrics-ranking-sheet {
+  width: min(560px, calc(100vw - 28px));
+}
+
+.dairymetrics-ranking-detail {
+  display: grid;
+  gap: 14px;
+}
+
+.dairymetrics-ranking-detail-head h3 {
+  margin: 0 0 4px;
+}
+
+.dairymetrics-ranking-detail-stack {
+  display: grid;
+  gap: 8px;
+}
+
 @media (max-width: 768px) {
   .dairymetrics-login-card {
     width: min(100vw - 20px, 620px);
@@ -671,6 +704,14 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
+  }
+
+  .dairymetrics-rank-card-head {
+    align-items: flex-start;
+  }
+
+  .dairymetrics-rank-detail-btn {
+    padding-inline: 8px;
   }
 
   .dairymetrics-department-select-wrap {

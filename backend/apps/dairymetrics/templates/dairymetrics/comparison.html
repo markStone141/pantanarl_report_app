@@ -35,5 +35,24 @@
     {% include "dairymetrics/partials/comparison_panel.html" %}
   </section>
 </div>
+<div
+  id="dairymetrics-ranking-overlay"
+  class="dairymetrics-overlay"
+  aria-hidden="true"
+  data-ranking-detail-url="{% url 'dairymetrics_compare_ranking_detail' %}"
+>
+  <div class="dairymetrics-sheet dairymetrics-ranking-sheet">
+    <div class="dairymetrics-sheet-head">
+      <div>
+        <strong>ランキング詳細</strong>
+      </div>
+      <button type="button" class="dairymetrics-sheet-close" id="dairymetrics-close-ranking" aria-label="閉じる">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div id="dairymetrics-ranking-modal-body"></div>
+  </div>
+</div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
+<script src="{% static 'dairymetrics/comparison.js' %}?v=1"></script>
 {% endblock %}

@@ -248,6 +248,42 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "前月比")
         self.assertContains(response, "+100.0%")
 
+    def test_comparison_ranking_detail_returns_full_modal_html(self):
+        teammate_user = get_user_model().objects.create_user(username="member2g", password="pass123")
+        teammate = Member.objects.create(name="Member Modal", user=teammate_user)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            approach_count=3,
+            communication_count=2,
+            support_amount=900,
+            cs_count=1,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=teammate,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            approach_count=6,
+            communication_count=4,
+            support_amount=2500,
+            cs_count=2,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_compare_ranking_detail"),
+            {"department": "WV", "scope": "today", "metric": "support_amount"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn("金額", payload["modal_html"])
+        self.assertIn("Member Modal", payload["modal_html"])
+        self.assertIn("Member Two", payload["modal_html"])
+
     def test_entry_form_updates_existing_record(self):
         entry = MemberDailyMetricEntry.objects.create(
             member=self.member,
