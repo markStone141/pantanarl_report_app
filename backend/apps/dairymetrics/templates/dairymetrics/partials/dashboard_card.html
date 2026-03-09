@@ -70,6 +70,9 @@
     </div>
   </section>
   {% endif %}
+  {% if readonly_dashboard %}
+  <div id="dairymetrics-viewed-member-name" class="muted">表示中: {{ member.name }}</div>
+  {% endif %}
   {% if selected_card.scope == "custom" %}
   <form method="get" action="{% url 'dairymetrics_dashboard' %}" class="dairymetrics-range-form">
     <input type="hidden" name="department" value="{{ selected_card.department.code }}">

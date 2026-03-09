@@ -43,10 +43,8 @@
       <div class="dairymetrics-member-switcher">
         <div>
           <h2>他メンバーデータ</h2>
-          <div id="dairymetrics-viewed-member-name" class="muted">表示中: {{ member.name }}</div>
         </div>
         <div class="dairymetrics-member-select-wrap">
-          <label for="dairymetrics-member-select" class="muted">表示するメンバー</label>
           <select id="dairymetrics-member-select" data-member-switch>
             {% for row in member_rows %}
             <option
