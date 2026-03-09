@@ -70,6 +70,21 @@ def _department_totals(member, department, start_date, end_date):
     return _aggregate_totals(entries, adjustments)
 
 
+def _target_totals(member, department, start_date, end_date):
+    entry_totals = MemberDailyMetricEntry.objects.filter(
+        member=member,
+        department=department,
+        entry_date__range=(start_date, end_date),
+    ).aggregate(
+        daily_target_count=Sum("daily_target_count"),
+        daily_target_amount=Sum("daily_target_amount"),
+    )
+    return {
+        "count": int(entry_totals.get("daily_target_count") or 0),
+        "amount": int(entry_totals.get("daily_target_amount") or 0),
+    }
+
+
 def _count_value_for_department(department, totals):
     if department.code == "WV":
         return int(totals["cs_count"]) + int(totals["refugee_count"])
@@ -90,6 +105,19 @@ def _format_signed_diff(value):
     if value > 0:
         return f"+{value}"
     return str(value)
+
+
+def _progress_rate(actual, target):
+    if target <= 0:
+        return None
+    return round((actual / target) * 100, 1)
+
+
+def _progress_label(actual, target):
+    rate = _progress_rate(actual, target)
+    if rate is None:
+        return "-"
+    return f"{rate}%"
 
 
 def _previous_range(start_date, end_date):
@@ -274,6 +302,7 @@ def build_member_dashboard_card(member, department, *, today=None, scope="today"
     ).count() or 1
     changes = _summarize_changes(scope_totals, previous_totals)
     count_value = _count_value_for_department(department, scope_totals)
+    target_totals = _target_totals(member, department, start_date, end_date)
     rankings = _build_member_rankings(department, department_members, start_date, end_date)
     count_rank, member_count = _resolve_rank(member.id, rankings, "count_value")
     amount_rank, _ = _resolve_rank(member.id, rankings, "amount_value")
@@ -291,6 +320,13 @@ def build_member_dashboard_card(member, department, *, today=None, scope="today"
         "count_label": _count_label_for_department(department),
         "count_value": count_value,
         "count_text": _count_breakdown_text(department, scope_totals),
+        "target_count": target_totals["count"],
+        "target_amount": target_totals["amount"],
+        "count_rate_text": _progress_label(count_value, target_totals["count"]),
+        "amount_rate_text": _progress_label(int(scope_totals["support_amount"]), target_totals["amount"]),
+        "count_remaining": max(target_totals["count"] - count_value, 0),
+        "amount_remaining": max(target_totals["amount"] - int(scope_totals["support_amount"]), 0),
+        "has_target": target_totals["count"] > 0 or target_totals["amount"] > 0,
         "approach_average": round(scope_totals["approach_count"] / active_days, 1),
         "communication_average": round(scope_totals["communication_count"] / active_days, 1),
         "count_change_rate": _comparison_label(

@@ -55,6 +55,8 @@ class DairyMetricsDashboardTests(TestCase):
             approach_count=10,
             communication_count=6,
             support_amount=4000,
+            daily_target_count=5,
+            daily_target_amount=8000,
             cs_count=2,
             refugee_count=1,
         )
@@ -85,6 +87,9 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "過去7日の推移")
         self.assertContains(response, "CS 3 / 難民 1")
         self.assertContains(response, "今日:")
+        self.assertContains(response, "今日の目標達成率")
+        self.assertContains(response, "80.0%")
+        self.assertContains(response, "残り 1")
 
     def test_entry_form_updates_existing_record(self):
         entry = MemberDailyMetricEntry.objects.create(
@@ -146,8 +151,11 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertIn("cs_count", form.fields)
         self.assertIn("refugee_count", form.fields)
         self.assertNotIn("result_count", form.fields)
+        self.assertIn("daily_target_count", form.fields)
+        self.assertIn("daily_target_amount", form.fields)
         self.assertEqual(form.fields["approach_count"].label, "アプローチ")
         self.assertEqual(form.fields["support_amount"].label, "支援金額")
+        self.assertEqual(form.fields["daily_target_count"].label, "今日の目標 件数")
 
     def test_non_wv_entry_form_hides_split_counts(self):
         un_department = Department.objects.create(code="UN", name="UN")
@@ -182,6 +190,12 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "今路程")
         self.assertContains(response, "第1路程")
+
+    def test_today_scope_without_target_shows_goal_cta(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "目標を入力")
 
 
 class DairyMetricsAdminTests(TestCase):

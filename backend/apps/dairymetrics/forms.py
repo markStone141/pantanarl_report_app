@@ -44,6 +44,8 @@ class MemberDailyMetricEntryForm(forms.ModelForm):
         "communication_count": "コミュニケーション",
         "result_count": "件数",
         "support_amount": "支援金額",
+        "daily_target_count": "今日の目標 件数",
+        "daily_target_amount": "今日の目標 金額",
         "cs_count": "CS",
         "refugee_count": "難民",
         "location_name": "現場名",
@@ -59,6 +61,8 @@ class MemberDailyMetricEntryForm(forms.ModelForm):
             "communication_count",
             "result_count",
             "support_amount",
+            "daily_target_count",
+            "daily_target_amount",
             "cs_count",
             "refugee_count",
             "location_name",
@@ -83,10 +87,14 @@ class MemberDailyMetricEntryForm(forms.ModelForm):
             "communication_count",
             "result_count",
             "support_amount",
+            "daily_target_count",
+            "daily_target_amount",
             "cs_count",
             "refugee_count",
         ]:
             self.fields[name].min_value = 0
+            self.fields[name].required = False
+            self.fields[name].initial = 0
         department_code = self._resolve_department_code()
         if department_code == "WV":
             self.fields.pop("result_count", None)
@@ -111,6 +119,22 @@ class MemberDailyMetricEntryForm(forms.ModelForm):
             return department
         department_obj = self.fields["department"].queryset.filter(pk=department).first()
         return department_obj.code if department_obj else ""
+
+    def clean(self):
+        cleaned_data = super().clean()
+        for name in [
+            "approach_count",
+            "communication_count",
+            "result_count",
+            "support_amount",
+            "daily_target_count",
+            "daily_target_amount",
+            "cs_count",
+            "refugee_count",
+        ]:
+            if name in self.fields and cleaned_data.get(name) in {None, ""}:
+                cleaned_data[name] = 0
+        return cleaned_data
 
 
 class MetricAdjustmentForm(forms.ModelForm):

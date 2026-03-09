@@ -13,6 +13,43 @@
     >{{ option.label }}</button>
     {% endfor %}
   </div>
+  <section class="dairymetrics-goal-hero">
+    <div class="dairymetrics-goal-hero-head">
+      <div>
+        <h3>{{ selected_card.scope_label }}の目標達成率</h3>
+        <div class="muted">
+          {% if selected_card.has_target %}
+          あとどれくらいで達成できるかを先に確認します。
+          {% else %}
+          まだ目標が入っていません。
+          {% endif %}
+        </div>
+      </div>
+      {% if selected_card.scope == "today" and not selected_card.has_target %}
+      <button type="button" class="btn-inline dairymetrics-goal-cta" data-open-dairymetrics-entry>目標を入力</button>
+      {% endif %}
+    </div>
+    <div class="dairymetrics-goal-grid">
+      <div class="metric-card">
+        <span class="muted">{{ selected_card.count_label }} 達成率</span>
+        <strong class="kpi">{{ selected_card.count_rate_text }}</strong>
+        {% if selected_card.target_count %}
+        <span class="muted dairymetrics-subtext">残り {{ selected_card.count_remaining }}</span>
+        {% else %}
+        <span class="muted dairymetrics-subtext">目標未設定</span>
+        {% endif %}
+      </div>
+      <div class="metric-card">
+        <span class="muted">金額 達成率</span>
+        <strong class="kpi">{{ selected_card.amount_rate_text }}</strong>
+        {% if selected_card.target_amount %}
+        <span class="muted dairymetrics-subtext">残り {{ selected_card.amount_remaining|intcomma }}</span>
+        {% else %}
+        <span class="muted dairymetrics-subtext">目標未設定</span>
+        {% endif %}
+      </div>
+    </div>
+  </section>
   <div class="dairymetrics-card-head">
     <div>
       <h2>{{ selected_card.department.name }}</h2>

@@ -13,6 +13,8 @@ class MemberDailyMetricEntry(models.Model):
     communication_count = models.PositiveIntegerField(default=0)
     result_count = models.PositiveIntegerField(default=0)
     support_amount = models.PositiveIntegerField(default=0)
+    daily_target_count = models.PositiveIntegerField(default=0)
+    daily_target_amount = models.PositiveIntegerField(default=0)
     cs_count = models.PositiveIntegerField(default=0)
     refugee_count = models.PositiveIntegerField(default=0)
     location_name = models.CharField(max_length=128, blank=True)

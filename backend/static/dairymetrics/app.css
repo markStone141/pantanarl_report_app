@@ -58,10 +58,11 @@
   gap: 0;
   margin: -14px -20px 4px;
   padding: 0 14px;
-  border-bottom: 1px solid #cfddeb;
+  border-bottom: 1px solid #d5e0ea;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
+  background: transparent;
 }
 
 .dairymetrics-scope-tabbar::-webkit-scrollbar {
@@ -84,11 +85,11 @@
 }
 
 .dairymetrics-scope-tab.is-active {
-  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  background: linear-gradient(180deg, #f7fbff 0%, #f2f8ff 100%);
   border-color: #c7d8ea;
   color: #163f6b;
   z-index: 2;
-  box-shadow: 0 -6px 16px rgba(22, 63, 107, 0.08);
+  box-shadow: 0 -6px 16px rgba(22, 63, 107, 0.06);
 }
 
 .dairymetrics-scope-tab.is-active::after {
@@ -99,6 +100,37 @@
   bottom: -1px;
   height: 2px;
   background: #fff;
+}
+
+.dairymetrics-goal-hero {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid #cfe0f1;
+  background: linear-gradient(135deg, #edf5ff 0%, #f8fbff 60%, #eef7ff 100%);
+}
+
+.dairymetrics-goal-hero-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dairymetrics-goal-hero-head h3 {
+  margin: 0 0 4px;
+}
+
+.dairymetrics-goal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dairymetrics-goal-cta {
+  width: auto;
+  white-space: nowrap;
 }
 
 .dairymetrics-scope-tab:disabled {
@@ -388,6 +420,7 @@
   }
 
   .dairymetrics-entry-grid,
+  .dairymetrics-goal-grid,
   .dairymetrics-insight-grid,
   .dairymetrics-comparison-grid,
   .dairymetrics-trend-strip {
@@ -412,6 +445,10 @@
     letter-spacing: 0;
     text-align: center;
     white-space: nowrap;
+  }
+
+  .dairymetrics-goal-hero-head {
+    flex-direction: column;
   }
 
   .dairymetrics-chart-grid {

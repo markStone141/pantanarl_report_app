@@ -59,7 +59,7 @@
       }
       return;
     }
-    if (event.target.closest('#dairymetrics-open-entry')) {
+    if (event.target.closest('#dairymetrics-open-entry') || event.target.closest('[data-open-dairymetrics-entry]')) {
       event.preventDefault();
       openOverlay();
       return;
