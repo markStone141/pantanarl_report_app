@@ -132,32 +132,67 @@ class DairyMetricsDashboardTests(TestCase):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")
         teammate = Member.objects.create(name="Member Compare", user=teammate_user)
         MemberDepartment.objects.create(member=teammate, department=self.department)
+        third_user = get_user_model().objects.create_user(username="member2d", password="pass123")
+        third = Member.objects.create(name="Member Third", user=third_user)
+        MemberDepartment.objects.create(member=third, department=self.department)
+        fourth_user = get_user_model().objects.create_user(username="member2e", password="pass123")
+        fourth = Member.objects.create(name="Member Fourth", user=fourth_user)
+        MemberDepartment.objects.create(member=fourth, department=self.department)
         MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=self.department,
             entry_date=date(2026, 3, 9),
-            approach_count=8,
-            communication_count=5,
-            support_amount=3200,
-            cs_count=2,
-            refugee_count=1,
+            approach_count=3,
+            communication_count=2,
+            support_amount=900,
+            cs_count=1,
+            refugee_count=0,
         )
         MemberDailyMetricEntry.objects.create(
             member=teammate,
             department=self.department,
             entry_date=date(2026, 3, 9),
+            approach_count=9,
+            communication_count=6,
+            support_amount=3200,
+            cs_count=2,
+            refugee_count=1,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=third,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
             approach_count=5,
-            communication_count=2,
-            support_amount=1000,
+            communication_count=4,
+            support_amount=2200,
+            cs_count=1,
+            refugee_count=1,
+            activity_closed=True,
+            activity_closed_at=timezone.now(),
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=fourth,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            approach_count=4,
+            communication_count=3,
+            support_amount=1500,
             cs_count=1,
             refugee_count=0,
         )
         self.client.force_login(self.user)
         response = self.client.get(reverse("dairymetrics_compare"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "今日の順位")
-        self.assertContains(response, "チーム平均との差")
-        self.assertContains(response, "前期間比")
+        self.assertContains(response, "今日の比較")
+        self.assertContains(response, "アプローチ数")
+        self.assertContains(response, "コミュニケーション数")
+        self.assertContains(response, "件数")
+        self.assertContains(response, "金額")
+        self.assertContains(response, "Member Compare")
+        self.assertContains(response, "Member Third")
+        self.assertContains(response, "Member Fourth")
+        self.assertContains(response, "Member Two")
+        self.assertContains(response, 'class="dairymetrics-rank-badge">4<')
         self.assertContains(response, "ダッシュボードへ戻る")
 
     def test_entry_form_updates_existing_record(self):

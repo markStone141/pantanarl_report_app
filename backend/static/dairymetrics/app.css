@@ -279,6 +279,82 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.dairymetrics-compare-board {
+  display: grid;
+  gap: 14px;
+}
+
+.dairymetrics-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dairymetrics-rank-card {
+  display: grid;
+  gap: 12px;
+}
+
+.dairymetrics-rank-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dairymetrics-rank-metric-icon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #eaf3ff;
+  color: #2c69ab;
+}
+
+.dairymetrics-rank-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.dairymetrics-rank-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.dairymetrics-rank-row.is-self {
+  padding-top: 4px;
+}
+
+.dairymetrics-rank-badge {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #f1f6fc;
+  color: #47607c;
+  font-weight: 700;
+}
+
+.dairymetrics-rank-name {
+  min-width: 0;
+  font-weight: 600;
+}
+
+.dairymetrics-rank-value {
+  text-align: right;
+}
+
+.dairymetrics-rank-divider {
+  height: 1px;
+  background: #d6e2ee;
+  margin: 2px 0;
+}
+
 .dairymetrics-trend-strip {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -537,6 +613,7 @@
   .dairymetrics-entry-grid,
   .dairymetrics-goal-grid,
   .dairymetrics-insight-grid,
+  .dairymetrics-compare-grid,
   .dairymetrics-comparison-grid,
   .dairymetrics-trend-strip {
     grid-template-columns: 1fr;

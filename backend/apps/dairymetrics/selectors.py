@@ -259,6 +259,75 @@ def _build_member_rankings(department, members, start_date, end_date):
     return rankings
 
 
+def _metric_value_for_today(metric_key, department, totals):
+    if metric_key == "approach_count":
+        return int(totals["approach_count"])
+    if metric_key == "communication_count":
+        return int(totals["communication_count"])
+    if metric_key == "count_value":
+        return _count_value_for_department(department, totals)
+    return int(totals["support_amount"])
+
+
+def _build_today_comparison_metrics(member, department, today):
+    today_entries = list(
+        MemberDailyMetricEntry.objects.filter(
+            department=department,
+            entry_date=today,
+        ).select_related("member")
+    )
+    if not today_entries:
+        return []
+
+    included_member_ids = {entry.member_id for entry in today_entries}
+    members = list(Member.objects.active().filter(id__in=included_member_ids).order_by("name"))
+    member_totals = {
+        current_member.id: _department_totals(current_member, department, today, today)
+        for current_member in members
+    }
+    metric_specs = [
+        {"key": "approach_count", "label": "アプローチ数", "icon": "fa-bullseye"},
+        {"key": "communication_count", "label": "コミュニケーション数", "icon": "fa-comments"},
+        {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
+        {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
+    ]
+    metrics = []
+    for spec in metric_specs:
+        ranked_rows = []
+        for current_member in members:
+            totals = member_totals[current_member.id]
+            ranked_rows.append(
+                {
+                    "member_id": current_member.id,
+                    "member_name": current_member.name,
+                    "value": _metric_value_for_today(spec["key"], department, totals),
+                }
+            )
+        ranked_rows.sort(key=lambda row: (-row["value"], row["member_name"]))
+        top_rows = [
+            {
+                **row,
+                "rank": index,
+            }
+            for index, row in enumerate(ranked_rows[:3], start=1)
+        ]
+        self_row = next((row for index, row in enumerate(ranked_rows, start=1) if row["member_id"] == member.id), None)
+        self_rank = next((index for index, row in enumerate(ranked_rows, start=1) if row["member_id"] == member.id), None)
+        metrics.append(
+            {
+                "label": spec["label"],
+                "icon": spec["icon"],
+                "leaders": top_rows,
+                "self_row": None if self_rank and self_rank <= 3 else {
+                    "rank": self_rank,
+                    "member_name": self_row["member_name"] if self_row else member.name,
+                    "value": self_row["value"] if self_row else 0,
+                },
+            }
+        )
+    return metrics
+
+
 def _resolve_rank(member_id, rankings, key):
     ordered = sorted(rankings, key=lambda item: item[key], reverse=True)
     for index, row in enumerate(ordered, start=1):
@@ -535,6 +604,9 @@ def build_member_dashboard_card(
         "count_average_diff_text": _format_signed_diff(round(count_value - team_average["count_value"], 1)),
         "amount_average_diff_text": _format_signed_diff(round(int(scope_totals["support_amount"]) - team_average["amount_value"], 1)),
         "trend_section": trend_section,
+        "today_comparison_metrics": _build_today_comparison_metrics(member, department, today)
+        if scope_data["scope"] == "today"
+        else [],
         "best_records": best_records,
         "show_average_metrics": scope_data["scope"] != "today",
         "show_best_day": scope_data["scope"] != "today",
