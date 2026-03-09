@@ -62,6 +62,12 @@ def _rate_text(numerator, denominator):
     return f"{value}%"
 
 
+def _average_support_amount_value(amount_value, count_value):
+    if count_value <= 0:
+        return None
+    return round(amount_value / count_value, 1)
+
+
 def _summarize_changes(current, previous):
     comparisons = []
     labels = {
@@ -283,6 +289,8 @@ def _metric_value_for_today(metric_key, department, totals):
         return _rate_value(int(totals["communication_count"]), int(totals["approach_count"]))
     if metric_key == "participation_rate":
         return _rate_value(_count_value_for_department(department, totals), int(totals["communication_count"]))
+    if metric_key == "average_support_amount":
+        return _average_support_amount_value(int(totals["support_amount"]), _count_value_for_department(department, totals))
     return int(totals["support_amount"])
 
 
@@ -297,6 +305,8 @@ def _metric_value_for_scope(metric_key, department, totals):
         return _rate_value(int(totals["communication_count"]), int(totals["approach_count"]))
     if metric_key == "participation_rate":
         return _rate_value(_count_value_for_department(department, totals), int(totals["communication_count"]))
+    if metric_key == "average_support_amount":
+        return _average_support_amount_value(int(totals["support_amount"]), _count_value_for_department(department, totals))
     return int(totals["support_amount"])
 
 
@@ -320,7 +330,7 @@ def _format_metric_display(metric_key, value):
         return "-"
     if metric_key in {"communication_rate", "participation_rate"}:
         return f"{value}%"
-    if metric_key == "support_amount":
+    if metric_key in {"support_amount", "average_support_amount"}:
         return f"{value:,}"
     if isinstance(value, float) and value.is_integer():
         return str(int(value))
@@ -364,6 +374,7 @@ def _build_today_comparison_metrics(member, department, today):
         {"key": "communication_count", "label": "コミュニケーション数", "icon": "fa-comments"},
         {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
         {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
+        {"key": "average_support_amount", "label": "平均支援額", "icon": "fa-coins"},
         {"key": "communication_rate", "label": "コミュ率", "icon": "fa-wave-square"},
         {"key": "participation_rate", "label": "参加率", "icon": "fa-user-check"},
     ]
@@ -419,6 +430,7 @@ def _build_scope_average_metrics(member, department, start_date, end_date, *, to
         {"key": "communication_count", "label": "コミュニケーション数", "icon": "fa-comments"},
         {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
         {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
+        {"key": "average_support_amount", "label": "平均支援額", "icon": "fa-coins"},
         {"key": "communication_rate", "label": "コミュ率", "icon": "fa-wave-square"},
         {"key": "participation_rate", "label": "参加率", "icon": "fa-user-check"},
     ]
@@ -706,6 +718,10 @@ def build_member_dashboard_card(
         "amount_average": round(int(scope_totals["support_amount"]) / active_days, 1),
         "communication_rate_text": _rate_text(scope_totals["communication_count"], scope_totals["approach_count"]),
         "participation_rate_text": _rate_text(count_value, scope_totals["communication_count"]),
+        "average_support_amount_text": _format_metric_display(
+            "average_support_amount",
+            _average_support_amount_value(int(scope_totals["support_amount"]), count_value),
+        ),
         "count_change_rate": _comparison_label(
             _change_rate(count_value, _count_value_for_department(department, previous_totals))
         ),

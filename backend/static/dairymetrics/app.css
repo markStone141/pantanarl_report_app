@@ -256,6 +256,10 @@
   font-size: 1.08rem;
 }
 
+.dairymetrics-metric-wide {
+  grid-column: 1 / -1;
+}
+
 .dairymetrics-subtext {
   display: block;
   margin-top: 4px;

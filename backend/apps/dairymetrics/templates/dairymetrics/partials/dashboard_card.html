@@ -147,6 +147,10 @@
       <span class="muted">参加率</span>
       <strong class="kpi">{{ selected_card.participation_rate_text }}</strong>
     </div>
+    <div class="metric-card dairymetrics-metric-wide">
+      <span class="muted">平均支援額</span>
+      <strong class="kpi">{{ selected_card.average_support_amount_text }}</strong>
+    </div>
     {% else %}
     <div class="metric-card">
       <span class="muted">アプローチ</span>
@@ -180,6 +184,10 @@
     <div class="metric-card">
       <span class="muted">支援金額</span>
       <strong class="kpi">{{ selected_card.scope_totals.support_amount|intcomma }}</strong>
+    </div>
+    <div class="metric-card dairymetrics-metric-wide">
+      <span class="muted">平均支援額</span>
+      <strong class="kpi">{{ selected_card.average_support_amount_text }}</strong>
     </div>
     {% endif %}
   </div>
