@@ -119,8 +119,8 @@
 }
 
 .dairymetrics-goal-hero.is-complete {
-  border-color: #d8e7c4;
-  background: linear-gradient(135deg, #f3f9df 0%, #fffdf0 52%, #eef8da 100%);
+  border-color: #efc9d6;
+  background: linear-gradient(135deg, #fff1f5 0%, #fff8fb 52%, #fde9f0 100%);
 }
 
 .dairymetrics-goal-hero-head {
@@ -144,9 +144,9 @@
   width: 28px;
   height: 28px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: #d49519;
-  box-shadow: 0 6px 14px rgba(212, 149, 25, 0.14);
+  background: #ffe3ec;
+  color: #d35b84;
+  box-shadow: 0 6px 14px rgba(211, 91, 132, 0.16);
 }
 
 .dairymetrics-goal-grid {
