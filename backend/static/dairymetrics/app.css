@@ -408,10 +408,13 @@
   grid-template-columns: 34px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
+  padding: 8px 10px;
+  border-radius: 12px;
 }
 
 .dairymetrics-rank-row.is-self {
-  padding-top: 4px;
+  background: linear-gradient(180deg, #edf5ff 0%, #e4f0ff 100%);
+  border: 1px solid #cfe0fb;
 }
 
 .dairymetrics-rank-badge {

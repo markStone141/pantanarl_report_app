@@ -77,7 +77,7 @@
         </div>
         <div class="dairymetrics-rank-stack">
           {% for leader in metric.leaders %}
-          <div class="dairymetrics-rank-row">
+          <div class="dairymetrics-rank-row{% if leader.member_id == member.id %} is-self{% endif %}">
             <span class="dairymetrics-rank-badge">{{ leader.rank }}</span>
             <span class="dairymetrics-rank-name">{{ leader.member_name }}</span>
             <strong class="dairymetrics-rank-value">{{ leader.value_text }}</strong>
