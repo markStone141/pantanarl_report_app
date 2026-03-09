@@ -371,12 +371,12 @@ def _build_today_comparison_metrics(member, department, today):
     }
     metric_specs = [
         {"key": "approach_count", "label": "アプローチ数", "icon": "fa-bullseye"},
+        {"key": "communication_rate", "label": "コミュ率", "icon": "fa-wave-square"},
         {"key": "communication_count", "label": "コミュニケーション数", "icon": "fa-comments"},
+        {"key": "participation_rate", "label": "参加率", "icon": "fa-user-check"},
         {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
         {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
         {"key": "average_support_amount", "label": "平均支援額", "icon": "fa-coins"},
-        {"key": "communication_rate", "label": "コミュ率", "icon": "fa-wave-square"},
-        {"key": "participation_rate", "label": "参加率", "icon": "fa-user-check"},
     ]
     metrics = []
     for spec in metric_specs:
@@ -427,12 +427,12 @@ def _build_scope_average_metrics(member, department, start_date, end_date, *, to
     }
     metric_specs = [
         {"key": "approach_count", "label": "アプローチ数", "icon": "fa-bullseye"},
+        {"key": "communication_rate", "label": "コミュ率", "icon": "fa-wave-square"},
         {"key": "communication_count", "label": "コミュニケーション数", "icon": "fa-comments"},
+        {"key": "participation_rate", "label": "参加率", "icon": "fa-user-check"},
         {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
         {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
         {"key": "average_support_amount", "label": "平均支援額", "icon": "fa-coins"},
-        {"key": "communication_rate", "label": "コミュ率", "icon": "fa-wave-square"},
-        {"key": "participation_rate", "label": "参加率", "icon": "fa-user-check"},
     ]
     metrics = []
     for spec in metric_specs:
