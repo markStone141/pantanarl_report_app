@@ -20,7 +20,11 @@
 
   async function switchDepartment(code) {
     const url = new URL(window.location.href);
-    url.searchParams.set('department', code);
+    if (code) {
+      url.searchParams.set('department', code);
+    } else {
+      url.searchParams.delete('department');
+    }
     const response = await fetch(url.toString(), {
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
@@ -41,6 +45,18 @@
       event.preventDefault();
       const code = toggle.getAttribute('data-department-code');
       if (code) switchDepartment(code);
+      return;
+    }
+    const scopeToggle = event.target.closest('[data-scope-toggle]');
+    if (scopeToggle && !scopeToggle.disabled) {
+      event.preventDefault();
+      const scope = scopeToggle.getAttribute('data-scope-value');
+      if (scope) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('scope', scope);
+        window.history.replaceState({}, '', url.toString());
+        switchDepartment(url.searchParams.get('department') || '');
+      }
       return;
     }
     if (event.target.closest('#dairymetrics-open-entry')) {

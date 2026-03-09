@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from django.db.models import Sum
 
 from apps.accounts.models import Department, Member
+from apps.targets.models import Period
 
 from .models import MemberDailyMetricEntry, MetricAdjustment
 
@@ -91,14 +92,57 @@ def _format_signed_diff(value):
     return str(value)
 
 
-def _build_member_rankings(department, members, month_start, month_end):
+def _previous_range(start_date, end_date):
+    span_days = (end_date - start_date).days + 1
+    previous_end = start_date - timedelta(days=1)
+    previous_start = previous_end - timedelta(days=span_days - 1)
+    return previous_start, previous_end
+
+
+def _resolve_scope(today, scope):
+    month_start = today.replace(day=1)
+    month_end = today.replace(day=monthrange(today.year, today.month)[1])
+    current_period = (
+        Period.objects.filter(start_date__lte=today, end_date__gte=today)
+        .order_by("-month", "start_date", "id")
+        .first()
+    )
+    if scope == "period" and current_period:
+        return {
+            "scope": "period",
+            "label": "今路程",
+            "summary": current_period.name,
+            "start_date": current_period.start_date,
+            "end_date": today,
+            "period": current_period,
+        }
+    if scope == "month":
+        return {
+            "scope": "month",
+            "label": "今月",
+            "summary": today.strftime("%Y/%m"),
+            "start_date": month_start,
+            "end_date": today,
+            "period": current_period,
+        }
+    return {
+        "scope": "today",
+        "label": "今日",
+        "summary": today.strftime("%Y/%m/%d"),
+        "start_date": today,
+        "end_date": today,
+        "period": current_period,
+    }
+
+
+def _build_member_rankings(department, members, start_date, end_date):
     rankings = []
     for ranked_member in members:
-        totals = _department_totals(ranked_member, department, month_start, month_end)
+        totals = _department_totals(ranked_member, department, start_date, end_date)
         active_days = MemberDailyMetricEntry.objects.filter(
             member=ranked_member,
             department=department,
-            entry_date__range=(month_start, month_end),
+            entry_date__range=(start_date, end_date),
         ).count() or 1
         rankings.append(
             {
@@ -189,10 +233,10 @@ def _build_daily_trend(member, department, *, end_date):
     return trend
 
 
-def _build_best_day(member, department, month_start, month_end):
+def _build_best_day(member, department, start_date, end_date):
     best_day = None
-    for offset in range((month_end - month_start).days + 1):
-        current_day = month_start + timedelta(days=offset)
+    for offset in range((end_date - start_date).days + 1):
+        current_day = start_date + timedelta(days=offset)
         totals = _department_totals(member, department, current_day, current_day)
         count_value = _count_value_for_department(department, totals)
         amount_value = int(totals["support_amount"])
@@ -211,66 +255,63 @@ def _build_best_day(member, department, month_start, month_end):
     return best_day
 
 
-def build_member_dashboard_card(member, department, *, today=None):
+def build_member_dashboard_card(member, department, *, today=None, scope="today"):
     today = today or date.today()
-    month_start = today.replace(day=1)
-    last_day = monthrange(today.year, today.month)[1]
-    month_end = today.replace(day=last_day)
-    prev_month_end = month_start - timedelta(days=1)
-    prev_month_start = prev_month_end.replace(day=1)
-    same_day = min(today.day, monthrange(prev_month_start.year, prev_month_start.month)[1])
-    prev_month_cutoff = prev_month_start.replace(day=same_day)
-    seven_days_ago = today - timedelta(days=6)
-    previous_week_start = seven_days_ago - timedelta(days=7)
-    previous_week_end = seven_days_ago - timedelta(days=1)
+    scope_data = _resolve_scope(today, scope)
+    start_date = scope_data["start_date"]
+    end_date = scope_data["end_date"]
+    previous_start, previous_end = _previous_range(start_date, end_date)
     department_members = list(
         Member.objects.active().filter(department_links__department=department).distinct().order_by("name")
     )
     today_entry = MemberDailyMetricEntry.objects.filter(member=member, department=department, entry_date=today).first()
-    month_totals = _department_totals(member, department, month_start, month_end)
-    week_totals = _department_totals(member, department, seven_days_ago, today)
-    prev_week_totals = _department_totals(member, department, previous_week_start, previous_week_end)
-    prev_month_totals = _department_totals(member, department, prev_month_start, prev_month_cutoff)
+    scope_totals = _department_totals(member, department, start_date, end_date)
+    previous_totals = _department_totals(member, department, previous_start, previous_end)
     active_days = MemberDailyMetricEntry.objects.filter(
         member=member,
         department=department,
-        entry_date__range=(month_start, today),
+        entry_date__range=(start_date, end_date),
     ).count() or 1
-    changes = _summarize_changes(week_totals, prev_week_totals)
-    count_value = _count_value_for_department(department, month_totals)
-    rankings = _build_member_rankings(department, department_members, month_start, month_end)
+    changes = _summarize_changes(scope_totals, previous_totals)
+    count_value = _count_value_for_department(department, scope_totals)
+    rankings = _build_member_rankings(department, department_members, start_date, end_date)
     count_rank, member_count = _resolve_rank(member.id, rankings, "count_value")
     amount_rank, _ = _resolve_rank(member.id, rankings, "amount_value")
     team_average = _team_averages(rankings)
     daily_trend = _build_daily_trend(member, department, end_date=today)
-    best_day = _build_best_day(member, department, month_start, today)
+    best_day = _build_best_day(member, department, start_date, end_date)
     return {
         "department": department,
+        "scope": scope_data["scope"],
+        "scope_label": scope_data["label"],
+        "scope_summary": scope_data["summary"],
         "today_status": "入力済み" if today_entry else "未入力",
         "today_entry": today_entry,
-        "month_totals": month_totals,
+        "scope_totals": scope_totals,
         "count_label": _count_label_for_department(department),
         "count_value": count_value,
-        "count_text": _count_breakdown_text(department, month_totals),
-        "approach_average": round(month_totals["approach_count"] / active_days, 1),
-        "communication_average": round(month_totals["communication_count"] / active_days, 1),
-        "week_count_rate": _comparison_label(_change_rate(_count_value_for_department(department, week_totals), _count_value_for_department(department, prev_week_totals))),
-        "month_count_rate": _comparison_label(_change_rate(count_value, _count_value_for_department(department, prev_month_totals))),
-        "week_amount_rate": _comparison_label(_change_rate(week_totals["support_amount"], prev_week_totals["support_amount"])),
-        "month_amount_rate": _comparison_label(_change_rate(month_totals["support_amount"], prev_month_totals["support_amount"])),
+        "count_text": _count_breakdown_text(department, scope_totals),
+        "approach_average": round(scope_totals["approach_count"] / active_days, 1),
+        "communication_average": round(scope_totals["communication_count"] / active_days, 1),
+        "count_change_rate": _comparison_label(
+            _change_rate(count_value, _count_value_for_department(department, previous_totals))
+        ),
+        "amount_change_rate": _comparison_label(
+            _change_rate(scope_totals["support_amount"], previous_totals["support_amount"])
+        ),
         "changes": changes,
         "count_rank_text": f"{count_rank} / {member_count}" if count_rank else "-",
         "amount_rank_text": f"{amount_rank} / {member_count}" if amount_rank else "-",
         "team_count_average": team_average["count_value"],
         "team_amount_average": team_average["amount_value"],
         "count_average_diff_text": _format_signed_diff(round(count_value - team_average["count_value"], 1)),
-        "amount_average_diff_text": _format_signed_diff(round(int(month_totals["support_amount"]) - team_average["amount_value"], 1)),
+        "amount_average_diff_text": _format_signed_diff(round(int(scope_totals["support_amount"]) - team_average["amount_value"], 1)),
         "daily_trend": daily_trend,
         "best_day": best_day,
     }
 
 
-def build_member_dashboard(member, *, today=None, department_code=None):
+def build_member_dashboard(member, *, today=None, department_code=None, scope="today"):
     today = today or date.today()
     departments = list(
         Department.objects.filter(is_active=True, member_links__member=member).distinct().order_by("code")
@@ -280,12 +321,22 @@ def build_member_dashboard(member, *, today=None, department_code=None):
             "departments": [],
             "selected_department": None,
             "selected_card": None,
+            "scope_options": [],
+            "selected_scope": "today",
         }
     selected_department = next((department for department in departments if department.code == department_code), departments[0])
+    scope_data = _resolve_scope(today, scope)
+    scope_options = [
+        {"value": "today", "label": "今日", "is_active": scope_data["scope"] == "today"},
+        {"value": "period", "label": "今路程", "is_active": scope_data["scope"] == "period", "is_disabled": scope_data["period"] is None},
+        {"value": "month", "label": "今月", "is_active": scope_data["scope"] == "month"},
+    ]
     return {
         "departments": departments,
         "selected_department": selected_department,
-        "selected_card": build_member_dashboard_card(member, selected_department, today=today),
+        "selected_card": build_member_dashboard_card(member, selected_department, today=today, scope=scope_data["scope"]),
+        "scope_options": scope_options,
+        "selected_scope": scope_data["scope"],
     }
 
 

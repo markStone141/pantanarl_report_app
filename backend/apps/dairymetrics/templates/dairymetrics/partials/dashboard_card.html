@@ -1,10 +1,23 @@
 {% load humanize %}
 {% if selected_card %}
 <article class="card dairymetrics-card" data-department-code="{{ selected_card.department.code }}">
+  <div class="dairymetrics-scope-toggle" role="tablist" aria-label="表示期間切り替え">
+    {% for option in scope_options %}
+    <button
+      type="button"
+      class="dairymetrics-scope-btn {% if option.is_active %}is-active{% endif %}"
+      data-scope-toggle
+      data-scope-value="{{ option.value }}"
+      {% if option.is_disabled %}disabled{% endif %}
+      aria-pressed="{% if option.is_active %}true{% else %}false{% endif %}"
+    >{{ option.label }}</button>
+    {% endfor %}
+  </div>
   <div class="dairymetrics-card-head">
     <div>
       <h2>{{ selected_card.department.name }}</h2>
       <div class="badge {% if selected_card.today_status == '入力済み' %}badge-ok{% endif %}">{{ selected_card.today_status }}</div>
+      <div class="muted dairymetrics-scope-summary">{{ selected_card.scope_label }}: {{ selected_card.scope_summary }}</div>
     </div>
     {% if departments|length > 1 %}
     <div class="dairymetrics-department-toggle" role="tablist" aria-label="部署切り替え">
@@ -25,26 +38,26 @@
   </div>
   <div class="grid grid-2 dairymetrics-stat-grid">
     <div class="metric-card">
-      <span class="muted">累計{{ selected_card.count_label }}</span>
+      <span class="muted">{{ selected_card.scope_label }}の{{ selected_card.count_label }}</span>
       <strong class="kpi">{{ selected_card.count_value }}</strong>
       <span class="muted dairymetrics-subtext">{{ selected_card.count_text }}</span>
     </div>
     <div class="metric-card">
-      <span class="muted">累計支援金額</span>
-      <strong class="kpi">{{ selected_card.month_totals.support_amount|intcomma }}</strong>
+      <span class="muted">{{ selected_card.scope_label }}の支援金額</span>
+      <strong class="kpi">{{ selected_card.scope_totals.support_amount|intcomma }}</strong>
     </div>
     <div class="metric-card">
-      <span class="muted">アプローチ 平均/累計</span>
-      <strong>{{ selected_card.approach_average }} / {{ selected_card.month_totals.approach_count }}</strong>
+      <span class="muted">アプローチ 平均/合計</span>
+      <strong>{{ selected_card.approach_average }} / {{ selected_card.scope_totals.approach_count }}</strong>
     </div>
     <div class="metric-card">
-      <span class="muted">コミュニケーション 平均/累計</span>
-      <strong>{{ selected_card.communication_average }} / {{ selected_card.month_totals.communication_count }}</strong>
+      <span class="muted">コミュニケーション 平均/合計</span>
+      <strong>{{ selected_card.communication_average }} / {{ selected_card.scope_totals.communication_count }}</strong>
     </div>
   </div>
   <div class="dairymetrics-insight-grid">
     <div class="comparison-card">
-      <span class="muted">現在順位</span>
+      <span class="muted">{{ selected_card.scope_label }}の順位</span>
       <strong>{{ selected_card.count_label }} {{ selected_card.count_rank_text }}</strong>
       <span class="muted dairymetrics-subtext">金額 {{ selected_card.amount_rank_text }}</span>
     </div>
@@ -54,7 +67,7 @@
       <span class="muted dairymetrics-subtext">{{ selected_card.count_label }} / 金額 {{ selected_card.amount_average_diff_text }}</span>
     </div>
     <div class="comparison-card dairymetrics-insight-wide">
-      <span class="muted">今月の自己ベスト</span>
+      <span class="muted">{{ selected_card.scope_label }}の自己ベスト</span>
       {% if selected_card.best_day %}
       <strong>{{ selected_card.best_day.date|date:"n/j" }}</strong>
       <span class="muted dairymetrics-subtext">{{ selected_card.count_label }} {{ selected_card.best_day.count_text }} / 金額 {{ selected_card.best_day.amount_value|intcomma }}</span>
@@ -64,22 +77,14 @@
       {% endif %}
     </div>
   </div>
-  <div class="dairymetrics-comparison-grid">
+  <div class="dairymetrics-comparison-grid dairymetrics-comparison-grid-compact">
     <div class="comparison-card">
-      <span class="muted">{{ selected_card.count_label }} 先週比</span>
-      <strong>{{ selected_card.week_count_rate }}</strong>
+      <span class="muted">{{ selected_card.count_label }} 前期間比</span>
+      <strong>{{ selected_card.count_change_rate }}</strong>
     </div>
     <div class="comparison-card">
-      <span class="muted">{{ selected_card.count_label }} 先月比</span>
-      <strong>{{ selected_card.month_count_rate }}</strong>
-    </div>
-    <div class="comparison-card">
-      <span class="muted">金額 先週比</span>
-      <strong>{{ selected_card.week_amount_rate }}</strong>
-    </div>
-    <div class="comparison-card">
-      <span class="muted">金額 先月比</span>
-      <strong>{{ selected_card.month_amount_rate }}</strong>
+      <span class="muted">金額 前期間比</span>
+      <strong>{{ selected_card.amount_change_rate }}</strong>
     </div>
   </div>
   <div class="dairymetrics-trend-strip">
@@ -96,7 +101,7 @@
     <div class="row">
       <div>
         <h3>過去7日の推移</h3>
-        <div class="muted">毎日の{{ selected_card.count_label }}と支援金額の動きです。</div>
+        <div class="muted">休憩中でも、その日の動きが見えるように直近7日を表示します。</div>
       </div>
     </div>
     <div class="dairymetrics-chart-grid">

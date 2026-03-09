@@ -5,6 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.targets.models import Period
 
 from .forms import MemberDailyMetricEntryForm
 from .models import MemberDailyMetricEntry, MetricAdjustment
@@ -79,10 +80,11 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "6,000")
         self.assertContains(response, "4")
         self.assertContains(response, "10")
-        self.assertContains(response, "現在順位")
+        self.assertContains(response, "今日の順位")
         self.assertContains(response, "チーム平均との差")
         self.assertContains(response, "過去7日の推移")
         self.assertContains(response, "CS 3 / 難民 1")
+        self.assertContains(response, "今日:")
 
     def test_entry_form_updates_existing_record(self):
         entry = MemberDailyMetricEntry.objects.create(
@@ -134,6 +136,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(payload["department_code"], "UN")
         self.assertIn("UN", payload["card_html"])
         self.assertIn('value="7"', payload["form_html"])
+        self.assertIn("今日", payload["card_html"])
 
     def test_wv_entry_form_hides_result_count_and_uses_japanese_labels(self):
         form = MemberDailyMetricEntryForm(
@@ -156,6 +159,29 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertIn("result_count", form.fields)
         self.assertNotIn("cs_count", form.fields)
         self.assertNotIn("refugee_count", form.fields)
+
+    def test_dashboard_can_switch_to_period_scope(self):
+        Period.objects.create(
+            month=date(2026, 3, 1),
+            name="第1路程",
+            status="active",
+            start_date=date(2026, 3, 1),
+            end_date=date(2026, 3, 15),
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 5),
+            approach_count=8,
+            communication_count=4,
+            support_amount=2500,
+            cs_count=2,
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_dashboard"), {"scope": "period"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "今路程")
+        self.assertContains(response, "第1路程")
 
 
 class DairyMetricsAdminTests(TestCase):

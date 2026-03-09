@@ -42,10 +42,12 @@ def _build_entry_form(*, member, data=None, department_code="", entry_date=None)
 
 def _build_member_dashboard_context(*, request, member):
     selected_department_code = (request.GET.get("department") or "").strip()
+    selected_scope = (request.GET.get("scope") or "today").strip()
     dashboard_data = build_member_dashboard(
         member,
         today=timezone.localdate(),
         department_code=selected_department_code,
+        scope=selected_scope,
     )
     selected_department = dashboard_data["selected_department"]
     entry_form = _build_entry_form(
@@ -59,6 +61,8 @@ def _build_member_dashboard_context(*, request, member):
         "departments": dashboard_data["departments"],
         "selected_department": selected_department,
         "selected_card": dashboard_data["selected_card"],
+        "scope_options": dashboard_data["scope_options"],
+        "selected_scope": dashboard_data["selected_scope"],
         "entry_form": entry_form,
         "is_admin": request.user.is_staff,
     }
