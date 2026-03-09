@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load humanize static %}
+
+{% block title %}DairyMetrics{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=1" />
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
+    <div>
+      <strong>DairyMetrics</strong>
+      <div class="topbar-muted">
+        {% if member %}{{ member.name }}さんのダッシュボード{% else %}管理者ダッシュボード{% endif %}
+      </div>
+    </div>
+    <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="Open menu">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
+      <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
+      {% if member %}<a href="{% url 'dairymetrics_entry' %}">実績入力</a>{% endif %}
+      {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">月次俯瞰</a>{% endif %}
+      {% if is_admin %}<a href="{% url 'dairymetrics_adjustment_create' %}">後追い追加</a>{% endif %}
+      <a href="{% url 'report_index' %}">Report App</a>
+      <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
+    </nav>
+    <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+  </header>
+
+  <section class="grid grid-2 dairymetrics-grid">
+    {% for card in dashboard_cards %}
+    <article class="card dairymetrics-card">
+      <div class="row">
+        <div>
+          <h2>{{ card.department.name }}</h2>
+          <div class="badge {% if card.today_status == '入力済み' %}badge-ok{% endif %}">{{ card.today_status }}</div>
+        </div>
+        <a class="btn-inline" href="{% url 'dairymetrics_entry' %}?department={{ card.department.code }}">入力する</a>
+      </div>
+      <div class="grid grid-2 dairymetrics-stat-grid">
+        <div class="metric-card">
+          <span class="muted">累計件数</span>
+          <strong class="kpi">{{ card.month_totals.result_count }}</strong>
+        </div>
+        <div class="metric-card">
+          <span class="muted">累計支援金額</span>
+          <strong class="kpi">{{ card.month_totals.support_amount|intcomma }}</strong>
+        </div>
+        <div class="metric-card">
+          <span class="muted">アプローチ 平均/累計</span>
+          <strong>{{ card.approach_average }} / {{ card.month_totals.approach_count }}</strong>
+        </div>
+        <div class="metric-card">
+          <span class="muted">コミュニケーション 平均/累計</span>
+          <strong>{{ card.communication_average }} / {{ card.month_totals.communication_count }}</strong>
+        </div>
+      </div>
+      <div class="dairymetrics-comparison-grid">
+        <div class="comparison-card">
+          <span class="muted">件数 先週比</span>
+          <strong>{{ card.week_count_rate }}</strong>
+        </div>
+        <div class="comparison-card">
+          <span class="muted">件数 先月比</span>
+          <strong>{{ card.month_count_rate }}</strong>
+        </div>
+        <div class="comparison-card">
+          <span class="muted">金額 先週比</span>
+          <strong>{{ card.week_amount_rate }}</strong>
+        </div>
+        <div class="comparison-card">
+          <span class="muted">金額 先月比</span>
+          <strong>{{ card.month_amount_rate }}</strong>
+        </div>
+      </div>
+      <div class="dairymetrics-trend-strip">
+        <div>
+          <span class="muted">伸びた項目</span>
+          <strong>{% if card.changes.improved %}{{ card.changes.improved.label }}{% else %}-{% endif %}</strong>
+        </div>
+        <div>
+          <span class="muted">落ちた項目</span>
+          <strong>{% if card.changes.declined %}{{ card.changes.declined.label }}{% else %}-{% endif %}</strong>
+        </div>
+      </div>
+    </article>
+    {% empty %}
+    <article class="card">
+      <h2>所属部署がありません</h2>
+      <p class="muted">メンバーに部署が紐づくと、ここに入力と集計が表示されます。</p>
+    </article>
+    {% endfor %}
+  </section>
+</div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
+{% endblock %}

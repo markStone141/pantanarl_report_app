@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}DairyMetrics ログイン | Report App{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=1" />
+{% endblock %}
+
+{% block content %}
+<main class="login-wrap">
+  <section class="card login-card dairymetrics-login-card">
+    <div class="dairymetrics-login-brand">
+      <div>
+        <p class="dairymetrics-eyebrow">Daily Input</p>
+        <h1>DairyMetrics</h1>
+        <p class="muted">毎日の実績をすばやく入力して、積み上がりを見える化します。</p>
+      </div>
+    </div>
+    <form method="post" class="grid dairymetrics-login-form">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}" />
+      <div>
+        <label for="{{ form.login_id.id_for_label }}">ID</label>
+        {{ form.login_id }}
+      </div>
+      <div>
+        <label for="{{ form.password.id_for_label }}">パスワード</label>
+        {{ form.password }}
+      </div>
+      {% if form.non_field_errors %}
+      <div class="error-text">{{ form.non_field_errors|join:", " }}</div>
+      {% endif %}
+      <button type="submit">ログイン</button>
+    </form>
+    <div class="reportapp-login-shortcuts">
+      <a href="{% url 'home' %}">Report App</a>
+      <a href="{% url 'talks_login' %}">Talks</a>
+      <a href="{% url 'testimony_login' %}?next={% url 'testimony_article_list' %}">Testimony</a>
+    </div>
+  </section>
+</main>
+{% endblock %}

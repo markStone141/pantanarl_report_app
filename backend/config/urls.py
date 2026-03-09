@@ -9,4 +9,5 @@ urlpatterns = [
     path("dashboard/", include("apps.dashboard.urls")),
     path("talks/", include("apps.talks.urls")),
     path("testimony/", include("apps.testimony.urls")),
+    path("metrics/", include("apps.dairymetrics.urls")),
 ]
