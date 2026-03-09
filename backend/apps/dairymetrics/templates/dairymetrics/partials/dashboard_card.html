@@ -138,23 +138,27 @@
     </div>
   </div>
   {% endif %}
-  {% if selected_card.scope != "today" %}
+  {% if selected_card.scope == "period" or selected_card.scope == "month" %}
   <div class="dairymetrics-trend-strip">
     <div>
-      <span class="muted">伸びた項目</span>
+      <span class="muted dairymetrics-trend-label" title="伸びた項目" aria-label="伸びた項目">
+        <i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
+      </span>
       <strong>
         {% if selected_card.changes.improved %}
         {{ selected_card.changes.improved.label }}
-        {% if selected_card.scope == "period" or selected_card.scope == "month" %} {{ selected_card.changes.improved.rate_text }}{% endif %}
+        {{ selected_card.changes.improved.rate_text }}
         {% else %}-{% endif %}
       </strong>
     </div>
     <div>
-      <span class="muted">落ちた項目</span>
+      <span class="muted dairymetrics-trend-label" title="落ちた項目" aria-label="落ちた項目">
+        <i class="fa-solid fa-arrow-trend-down" aria-hidden="true"></i>
+      </span>
       <strong>
         {% if selected_card.changes.declined %}
         {{ selected_card.changes.declined.label }}
-        {% if selected_card.scope == "period" or selected_card.scope == "month" %} {{ selected_card.changes.declined.rate_text }}{% endif %}
+        {{ selected_card.changes.declined.rate_text }}
         {% else %}-{% endif %}
       </strong>
     </div>

@@ -318,8 +318,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "今路程の自己ベスト")
         self.assertContains(response, "アプローチ 平均/合計")
         self.assertNotContains(response, "活動中")
-        self.assertContains(response, "伸びた項目")
-        self.assertContains(response, "落ちた項目")
+        self.assertContains(response, "fa-arrow-trend-up")
+        self.assertContains(response, "fa-arrow-trend-down")
         self.assertContains(response, "+100.0%")
 
     def test_today_scope_without_target_shows_goal_cta(self):
@@ -357,6 +357,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(lifetime_response, 'name="start_date"')
         self.assertNotContains(lifetime_response, "目標達成率")
         self.assertNotContains(lifetime_response, "未入力")
+        self.assertNotContains(lifetime_response, "fa-arrow-trend-up")
+        self.assertNotContains(lifetime_response, "fa-arrow-trend-down")
         filtered_response = self.client.get(
             reverse("dairymetrics_dashboard"),
             {"scope": "custom", "start_date": "2026-03-08", "end_date": "2026-03-08"},
@@ -366,6 +368,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(filtered_response, "CS 2 / 難民 1")
         self.assertContains(filtered_response, "2,200")
         self.assertNotContains(filtered_response, "目標達成率")
+        self.assertNotContains(filtered_response, "fa-arrow-trend-up")
 
 
 class DairyMetricsAdminTests(TestCase):
