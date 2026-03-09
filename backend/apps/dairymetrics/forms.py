@@ -37,6 +37,19 @@ class DairyMetricsLoginForm(forms.Form):
 
 
 class MemberDailyMetricEntryForm(forms.ModelForm):
+    LABELS = {
+        "department": "部署",
+        "entry_date": "日付",
+        "approach_count": "アプローチ",
+        "communication_count": "コミュニケーション",
+        "result_count": "件数",
+        "support_amount": "支援金額",
+        "cs_count": "CS",
+        "refugee_count": "難民",
+        "location_name": "現場名",
+        "memo": "メモ",
+    }
+
     class Meta:
         model = MemberDailyMetricEntry
         fields = [
@@ -62,6 +75,9 @@ class MemberDailyMetricEntryForm(forms.ModelForm):
         if member is not None:
             departments = departments.filter(member_links__member=member).distinct()
         self.fields["department"].queryset = departments.order_by("code")
+        for name, label in self.LABELS.items():
+            if name in self.fields:
+                self.fields[name].label = label
         for name in [
             "approach_count",
             "communication_count",
@@ -71,6 +87,30 @@ class MemberDailyMetricEntryForm(forms.ModelForm):
             "refugee_count",
         ]:
             self.fields[name].min_value = 0
+        department_code = self._resolve_department_code()
+        if department_code == "WV":
+            self.fields.pop("result_count", None)
+        else:
+            self.fields.pop("cs_count", None)
+            self.fields.pop("refugee_count", None)
+
+    def _resolve_department_code(self):
+        department = None
+        if self.is_bound:
+            department = self.data.get(self.add_prefix("department")) or self.data.get("department")
+        if not department:
+            initial_department = self.initial.get("department")
+            if hasattr(initial_department, "code"):
+                return initial_department.code
+            department = initial_department
+        if not department and self.instance and getattr(self.instance, "department_id", None):
+            return self.instance.department.code
+        if not department:
+            return ""
+        if isinstance(department, str) and not department.isdigit():
+            return department
+        department_obj = self.fields["department"].queryset.filter(pk=department).first()
+        return department_obj.code if department_obj else ""
 
 
 class MetricAdjustmentForm(forms.ModelForm):

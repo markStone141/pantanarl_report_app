@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from apps.accounts.models import Department, Member, MemberDepartment
 
+from .forms import MemberDailyMetricEntryForm
 from .models import MemberDailyMetricEntry, MetricAdjustment
 
 
@@ -116,6 +117,28 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(payload["department_code"], "UN")
         self.assertIn("UN", payload["card_html"])
         self.assertIn('value="7"', payload["form_html"])
+
+    def test_wv_entry_form_hides_result_count_and_uses_japanese_labels(self):
+        form = MemberDailyMetricEntryForm(
+            member=self.member,
+            initial={"department": self.department},
+        )
+        self.assertIn("cs_count", form.fields)
+        self.assertIn("refugee_count", form.fields)
+        self.assertNotIn("result_count", form.fields)
+        self.assertEqual(form.fields["approach_count"].label, "アプローチ")
+        self.assertEqual(form.fields["support_amount"].label, "支援金額")
+
+    def test_non_wv_entry_form_hides_split_counts(self):
+        un_department = Department.objects.create(code="UN", name="UN")
+        MemberDepartment.objects.create(member=self.member, department=un_department)
+        form = MemberDailyMetricEntryForm(
+            member=self.member,
+            initial={"department": un_department},
+        )
+        self.assertIn("result_count", form.fields)
+        self.assertNotIn("cs_count", form.fields)
+        self.assertNotIn("refugee_count", form.fields)
 
 
 class DairyMetricsAdminTests(TestCase):
