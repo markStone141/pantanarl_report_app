@@ -7,6 +7,8 @@
   const openButton = document.getElementById('dairymetrics-open-entry');
   const closeButton = document.getElementById('dairymetrics-close-entry');
   const closeTargetButton = document.getElementById('dairymetrics-close-target');
+  const memberSelect = document.getElementById('dairymetrics-member-select');
+  const subtitle = document.getElementById('dairymetrics-dashboard-subtitle');
   if (!cardRoot) return;
 
   function openOverlay(target) {
@@ -21,13 +23,7 @@
     target.setAttribute('aria-hidden', 'true');
   }
 
-  async function switchDepartment(code) {
-    const url = new URL(window.location.href);
-    if (code) {
-      url.searchParams.set('department', code);
-    } else {
-      url.searchParams.delete('department');
-    }
+  async function refreshDashboard(url) {
     const response = await fetch(url.toString(), {
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
@@ -38,9 +34,20 @@
     if (!response.ok) return;
     const data = await response.json();
     if (data.card_html) cardRoot.innerHTML = data.card_html;
-    if (data.form_html && modalBody) modalBody.innerHTML = data.form_html;
+    if (typeof data.form_html === 'string' && modalBody) modalBody.innerHTML = data.form_html;
     if (typeof data.target_form_html === 'string' && targetModalBody) targetModalBody.innerHTML = data.target_form_html;
+    if (data.page_subtitle && subtitle) subtitle.textContent = data.page_subtitle;
     window.history.replaceState({}, '', url.toString());
+  }
+
+  async function switchDepartment(code) {
+    const url = new URL(window.location.href);
+    if (code) {
+      url.searchParams.set('department', code);
+    } else {
+      url.searchParams.delete('department');
+    }
+    await refreshDashboard(url);
   }
 
   document.addEventListener('click', function (event) {
@@ -83,6 +90,20 @@
       closeOverlay(targetOverlay);
     }
   });
+
+  if (memberSelect) {
+    memberSelect.addEventListener('change', function () {
+      if (!memberSelect.value) return;
+      const currentUrl = new URL(window.location.href);
+      const nextUrl = new URL(memberSelect.value, window.location.origin);
+      ['scope', 'department', 'start_date', 'end_date'].forEach(function (key) {
+        if (currentUrl.searchParams.has(key)) {
+          nextUrl.searchParams.set(key, currentUrl.searchParams.get(key));
+        }
+      });
+      refreshDashboard(nextUrl);
+    });
+  }
 
   if (overlay) {
     overlay.addEventListener('click', function (event) {

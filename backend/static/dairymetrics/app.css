@@ -52,6 +52,24 @@
   padding-top: 14px;
 }
 
+.dairymetrics-member-switcher {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dairymetrics-member-select-wrap {
+  display: grid;
+  gap: 6px;
+  min-width: min(320px, 100%);
+}
+
+.dairymetrics-member-select-wrap select {
+  min-height: 42px;
+}
+
 .dairymetrics-scope-tabbar {
   display: flex;
   align-items: end;
@@ -702,6 +720,11 @@
   }
 
   .dairymetrics-range-form {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .dairymetrics-member-switcher {
     display: grid;
     grid-template-columns: 1fr;
   }

@@ -39,13 +39,17 @@ def _build_entry_form(*, member, data=None, department_code="", entry_date=None)
         initial=initial,
     )
 
-def _build_member_directory():
-    members = (
+def _member_directory_queryset():
+    return (
         Member.objects.filter(department_links__department__is_active=True)
         .distinct()
         .order_by("name")
         .prefetch_related("department_links__department")
     )
+
+
+def _build_member_directory():
+    members = _member_directory_queryset()
     return [
         {
             "member": member,
@@ -105,6 +109,7 @@ def _build_member_dashboard_context(*, request, member, readonly=False, viewer_m
         "is_admin": request.user.is_staff,
         "readonly_dashboard": readonly,
         "viewer_member": viewer_member or member,
+        "member_rows": _build_member_directory() if readonly else [],
     }
 
 
@@ -165,23 +170,41 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 @require_dairymetrics_member
 def member_index(request: HttpRequest) -> HttpResponse:
     viewer_member = get_member_profile(request.user)
-    return render(
-        request,
-        "dairymetrics/member_index.html",
-        {
-            "page_title": "DairyMetrics",
-            "member": viewer_member,
-            "viewer_member": viewer_member,
-            "is_admin": request.user.is_staff,
-            "member_rows": _build_member_directory(),
-        },
-    )
+    member_rows = _build_member_directory()
+    selected_member_id = request.GET.get("member")
+    selected_member = None
+    if selected_member_id:
+        selected_member = next((row["member"] for row in member_rows if str(row["member"].id) == selected_member_id), None)
+    if not selected_member and member_rows:
+        selected_member = member_rows[0]["member"]
+    if not selected_member:
+        return render(
+            request,
+            "dairymetrics/dashboard.html",
+            {
+                "page_title": "DairyMetrics",
+                "member": None,
+                "viewer_member": viewer_member,
+                "departments": [],
+                "selected_department": None,
+                "selected_card": None,
+                "scope_options": [],
+                "selected_scope": "today",
+                "entry_form": None,
+                "scope_target_form": None,
+                "scope_target_form_action": "",
+                "is_admin": request.user.is_staff,
+                "readonly_dashboard": True,
+                "member_rows": [],
+            },
+        )
+    return member_dashboard(request, selected_member.id)
 
 
 @require_dairymetrics_member
 def member_dashboard(request: HttpRequest, member_id: int) -> HttpResponse:
     viewer_member = get_member_profile(request.user)
-    target_member = get_object_or_404(Member.objects.prefetch_related("department_links__department"), pk=member_id)
+    target_member = get_object_or_404(_member_directory_queryset(), pk=member_id)
     context = _build_member_dashboard_context(
         request=request,
         member=target_member,
@@ -199,6 +222,7 @@ def member_dashboard(request: HttpRequest, member_id: int) -> HttpResponse:
                 "form_html": "",
                 "target_form_html": "",
                 "department_code": context["selected_department"].code if context["selected_department"] else "",
+                "page_subtitle": f"{target_member.name}さんのダッシュボード",
             }
         )
     return render(request, "dairymetrics/dashboard.html", context)

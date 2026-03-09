@@ -629,6 +629,30 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "Inactive Member")
         self.assertContains(response, "非アクティブ")
         self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[inactive_member.id]))
+        self.assertContains(response, 'data-member-switch')
+
+    def test_member_dashboard_ajax_switches_selected_member(self):
+        inactive_member = Member.objects.create(name="Inactive Member", is_active=False)
+        MemberDepartment.objects.create(member=inactive_member, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=inactive_member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            approach_count=7,
+            communication_count=5,
+            support_amount=3500,
+            cs_count=2,
+            refugee_count=1,
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("dairymetrics_member_dashboard", args=[inactive_member.id]),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn("Inactive Memberさんのダッシュボード", payload["page_subtitle"])
+        self.assertIn("3,500", payload["card_html"])
 
     def test_member_dashboard_is_readonly_and_allows_inactive_member(self):
         inactive_member = Member.objects.create(name="Inactive Member", is_active=False)

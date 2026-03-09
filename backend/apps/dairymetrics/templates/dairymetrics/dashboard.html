@@ -12,7 +12,7 @@
   <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
     <div>
       <strong>DairyMetrics</strong>
-      <div class="topbar-muted">
+      <div id="dairymetrics-dashboard-subtitle" class="topbar-muted">
         {% if readonly_dashboard and member %}
         {{ member.name }}さんのダッシュボード
         {% elif member %}
@@ -38,6 +38,26 @@
   </header>
 
   <section class="dairymetrics-grid">
+    {% if readonly_dashboard and member_rows %}
+    <article class="card">
+      <div class="dairymetrics-member-switcher">
+        <div>
+          <h2>メンバー</h2>
+          <div class="muted">切り替えると、そのまま実績表示だけ更新します。</div>
+        </div>
+        <div class="dairymetrics-member-select-wrap">
+          <label for="dairymetrics-member-select" class="muted">表示中のメンバー</label>
+          <select id="dairymetrics-member-select" data-member-switch>
+            {% for row in member_rows %}
+            <option value="{% url 'dairymetrics_member_dashboard' row.member.id %}" {% if member and row.member.id == member.id %}selected{% endif %}>
+              {{ row.member.name }}{% if not row.member.is_active %}（非アクティブ）{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </article>
+    {% endif %}
     <div id="dairymetrics-dashboard-card">
       {% include "dairymetrics/partials/dashboard_card.html" %}
     </div>
