@@ -63,6 +63,7 @@
   overflow-y: hidden;
   scrollbar-width: none;
   background: transparent;
+  justify-content: flex-start;
 }
 
 .dairymetrics-scope-tabbar::-webkit-scrollbar {
@@ -71,7 +72,7 @@
 
 .dairymetrics-scope-tab {
   position: relative;
-  flex: 0 0 auto;
+  flex: 0 0 136px;
   min-height: 42px;
   padding: 10px 18px 9px;
   border-radius: 16px 16px 0 0;
