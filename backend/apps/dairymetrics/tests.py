@@ -277,6 +277,16 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(MemberDailyMetricEntry.objects.count(), 1)
         self.assertFalse(entry.activity_closed)
 
+    def test_entry_form_shows_close_activity_button(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_entry"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "保存する")
+        self.assertContains(response, "活動終了")
+        self.assertNotContains(response, "ダッシュボードへ戻る")
+
     def test_close_activity_sets_flag(self):
         self.client.force_login(self.user)
         response = self.client.post(
