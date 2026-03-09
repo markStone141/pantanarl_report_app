@@ -13,7 +13,16 @@ from .models import (
     MetricAdjustment,
 )
 
-METRIC_FIELDS = [
+ENTRY_METRIC_FIELDS = [
+    "approach_count",
+    "communication_count",
+    "result_count",
+    "support_amount",
+    "cs_count",
+    "refugee_count",
+]
+
+ADJUSTMENT_METRIC_FIELDS = [
     "approach_count",
     "communication_count",
     "result_count",
@@ -38,15 +47,17 @@ RANKING_METRIC_SPECS = [
 
 
 def _zero_totals():
-    return {field: 0 for field in METRIC_FIELDS}
+    return {field: 0 for field in {*ENTRY_METRIC_FIELDS, *ADJUSTMENT_METRIC_FIELDS}}
 
 
 def _aggregate_totals(entries, adjustments):
     totals = _zero_totals()
-    entry_totals = entries.aggregate(**{field: Sum(field) for field in METRIC_FIELDS})
-    adjustment_totals = adjustments.aggregate(**{field: Sum(field) for field in METRIC_FIELDS})
-    for field in METRIC_FIELDS:
-        totals[field] = int(entry_totals.get(field) or 0) + int(adjustment_totals.get(field) or 0)
+    entry_totals = entries.aggregate(**{field: Sum(field) for field in ENTRY_METRIC_FIELDS})
+    adjustment_totals = adjustments.aggregate(**{field: Sum(field) for field in ADJUSTMENT_METRIC_FIELDS})
+    for field in ENTRY_METRIC_FIELDS:
+        totals[field] = int(entry_totals.get(field) or 0)
+    for field in ADJUSTMENT_METRIC_FIELDS:
+        totals[field] = int(totals.get(field) or 0) + int(adjustment_totals.get(field) or 0)
     return totals
 
 
@@ -137,9 +148,11 @@ def _summarize_changes(current, previous, department, *, include_returns=False):
     }
 
 
-def _department_totals(member, department, start_date, end_date):
+def _department_totals(member, department, start_date, end_date, *, include_adjustments=True):
     entries = MemberDailyMetricEntry.objects.filter(member=member, department=department, entry_date__range=(start_date, end_date))
-    adjustments = MetricAdjustment.objects.filter(member=member, department=department, target_date__range=(start_date, end_date))
+    adjustments = MetricAdjustment.objects.none()
+    if include_adjustments:
+        adjustments = MetricAdjustment.objects.filter(member=member, department=department, target_date__range=(start_date, end_date))
     return _aggregate_totals(entries, adjustments)
 
 
@@ -302,10 +315,16 @@ def _resolve_scope(today, scope, *, member=None, department=None, requested_star
     }
 
 
-def _build_member_rankings(department, members, start_date, end_date, *, include_returns=False):
+def _build_member_rankings(department, members, start_date, end_date, *, include_returns=False, include_adjustments=True):
     rankings = []
     for ranked_member in members:
-        totals = _department_totals(ranked_member, department, start_date, end_date)
+        totals = _department_totals(
+            ranked_member,
+            department,
+            start_date,
+            end_date,
+            include_adjustments=include_adjustments,
+        )
         active_days = MemberDailyMetricEntry.objects.filter(
             member=ranked_member,
             department=department,
@@ -440,8 +459,15 @@ def _build_scope_ranking_metrics(member, department, start_date, end_date, *, to
     if not members:
         return []
     include_returns = not today_only
+    include_adjustments = not today_only
     member_totals = {
-        current_member.id: _department_totals(current_member, department, start_date, end_date)
+        current_member.id: _department_totals(
+            current_member,
+            department,
+            start_date,
+            end_date,
+            include_adjustments=include_adjustments,
+        )
         for current_member in members
     }
     metrics = []
@@ -497,8 +523,15 @@ def _build_scope_average_metrics(member, department, start_date, end_date, *, to
     if not members:
         return []
     include_returns = not today_only
+    include_adjustments = not today_only
     member_totals = {
-        current_member.id: _department_totals(current_member, department, start_date, end_date)
+        current_member.id: _department_totals(
+            current_member,
+            department,
+            start_date,
+            end_date,
+            include_adjustments=include_adjustments,
+        )
         for current_member in members
     }
     metric_specs = [
@@ -585,25 +618,9 @@ def _build_daily_trend(member, department, *, end_date):
         department=department,
         entry_date__range=(start_date, end_date),
     )
-    adjustments = MetricAdjustment.objects.filter(
-        member=member,
-        department=department,
-        target_date__range=(start_date, end_date),
-    )
     entry_map = {
         row["entry_date"]: row
         for row in entries.values("entry_date").annotate(
-            approach_count=Sum("approach_count"),
-            communication_count=Sum("communication_count"),
-            result_count=Sum("result_count"),
-            support_amount=Sum("support_amount"),
-            cs_count=Sum("cs_count"),
-            refugee_count=Sum("refugee_count"),
-        )
-    }
-    adjustment_map = {
-        row["target_date"]: row
-        for row in adjustments.values("target_date").annotate(
             approach_count=Sum("approach_count"),
             communication_count=Sum("communication_count"),
             result_count=Sum("result_count"),
@@ -617,11 +634,8 @@ def _build_daily_trend(member, department, *, end_date):
         current_day = start_date + timedelta(days=offset)
         totals = _zero_totals()
         if current_day in entry_map:
-            for field in METRIC_FIELDS:
+            for field in ENTRY_METRIC_FIELDS:
                 totals[field] += int(entry_map[current_day].get(field) or 0)
-        if current_day in adjustment_map:
-            for field in METRIC_FIELDS:
-                totals[field] += int(adjustment_map[current_day].get(field) or 0)
         trend.append(
             {
                 "label": current_day.strftime("%-m/%-d"),
@@ -701,12 +715,18 @@ def _build_scope_trend(member, department, *, scope_data, end_date):
     return None
 
 
-def _build_best_records(member, department, start_date, end_date, *, include_returns=False):
+def _build_best_records(member, department, start_date, end_date, *, include_returns=False, include_adjustments=True):
     best_count_day = None
     best_amount_day = None
     for offset in range((end_date - start_date).days + 1):
         current_day = start_date + timedelta(days=offset)
-        totals = _department_totals(member, department, current_day, current_day)
+        totals = _department_totals(
+            member,
+            department,
+            current_day,
+            current_day,
+            include_adjustments=include_adjustments,
+        )
         count_value = _count_value_for_department(department, totals, include_returns=include_returns)
         amount_value = _display_amount_value(totals, include_returns=include_returns)
         if count_value <= 0 and amount_value <= 0:
@@ -755,13 +775,20 @@ def build_member_dashboard_card(
     start_date = scope_data["start_date"]
     end_date = scope_data["end_date"]
     include_returns = scope_data["scope"] != "today"
+    include_adjustments = scope_data["scope"] != "today"
     previous_start, previous_end = _previous_range(start_date, end_date)
     department_members = list(
         Member.objects.active().filter(department_links__department=department).distinct().order_by("name")
     )
     today_entry = MemberDailyMetricEntry.objects.filter(member=member, department=department, entry_date=today).first()
-    scope_totals = _department_totals(member, department, start_date, end_date)
-    previous_totals = _department_totals(member, department, previous_start, previous_end)
+    scope_totals = _department_totals(member, department, start_date, end_date, include_adjustments=include_adjustments)
+    previous_totals = _department_totals(
+        member,
+        department,
+        previous_start,
+        previous_end,
+        include_adjustments=include_adjustments,
+    )
     active_days = MemberDailyMetricEntry.objects.filter(
         member=member,
         department=department,
@@ -777,12 +804,26 @@ def build_member_dashboard_card(
         and count_value >= target_totals["count"]
         and amount_value >= target_totals["amount"]
     )
-    rankings = _build_member_rankings(department, department_members, start_date, end_date, include_returns=include_returns)
+    rankings = _build_member_rankings(
+        department,
+        department_members,
+        start_date,
+        end_date,
+        include_returns=include_returns,
+        include_adjustments=include_adjustments,
+    )
     count_rank, member_count = _resolve_rank(member.id, rankings, "count_value")
     amount_rank, _ = _resolve_rank(member.id, rankings, "amount_value")
     team_average = _team_averages(rankings)
     trend_section = _build_scope_trend(member, department, scope_data=scope_data, end_date=end_date)
-    best_records = _build_best_records(member, department, start_date, end_date, include_returns=include_returns)
+    best_records = _build_best_records(
+        member,
+        department,
+        start_date,
+        end_date,
+        include_returns=include_returns,
+        include_adjustments=include_adjustments,
+    )
     previous_scope_label = "前路程比" if scope_data["scope"] == "period" else "前月比" if scope_data["scope"] == "month" else None
     return {
         "department": department,

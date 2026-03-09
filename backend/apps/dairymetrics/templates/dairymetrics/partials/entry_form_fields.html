@@ -1,4 +1,4 @@
-{% with department_field=form.department entry_date_field=form.entry_date daily_target_count_field=form.daily_target_count daily_target_amount_field=form.daily_target_amount approach_field=form.approach_count communication_field=form.communication_count result_field=form.result_count cs_field=form.cs_count refugee_field=form.refugee_count support_field=form.support_amount return_postal_count_field=form.return_postal_count return_postal_amount_field=form.return_postal_amount return_qr_count_field=form.return_qr_count return_qr_amount_field=form.return_qr_amount location_field=form.location_name memo_field=form.memo %}
+{% with department_field=form.department entry_date_field=form.entry_date daily_target_count_field=form.daily_target_count daily_target_amount_field=form.daily_target_amount approach_field=form.approach_count communication_field=form.communication_count result_field=form.result_count cs_field=form.cs_count refugee_field=form.refugee_count support_field=form.support_amount location_field=form.location_name memo_field=form.memo %}
 <div class="dairymetrics-field">
   <label for="{{ department_field.id_for_label }}">{{ department_field.label }}</label>
   {{ department_field }}
@@ -58,38 +58,6 @@
       <label for="{{ support_field.id_for_label }}">{{ support_field.label }}</label>
       {{ support_field }}
       {% if support_field.errors %}<div class="error-text">{{ support_field.errors|join:', ' }}</div>{% endif %}
-    </div>
-  </div>
-</div>
-
-<div class="dairymetrics-field-full dairymetrics-entry-section">
-  <div class="dairymetrics-entry-section-head">戻り・郵送</div>
-  <div class="dairymetrics-entry-section-grid">
-    <div class="dairymetrics-field">
-      <label for="{{ return_postal_count_field.id_for_label }}">{{ return_postal_count_field.label }}</label>
-      {{ return_postal_count_field }}
-      {% if return_postal_count_field.errors %}<div class="error-text">{{ return_postal_count_field.errors|join:', ' }}</div>{% endif %}
-    </div>
-    <div class="dairymetrics-field">
-      <label for="{{ return_postal_amount_field.id_for_label }}">{{ return_postal_amount_field.label }}</label>
-      {{ return_postal_amount_field }}
-      {% if return_postal_amount_field.errors %}<div class="error-text">{{ return_postal_amount_field.errors|join:', ' }}</div>{% endif %}
-    </div>
-  </div>
-</div>
-
-<div class="dairymetrics-field-full dairymetrics-entry-section">
-  <div class="dairymetrics-entry-section-head">戻り・QR</div>
-  <div class="dairymetrics-entry-section-grid">
-    <div class="dairymetrics-field">
-      <label for="{{ return_qr_count_field.id_for_label }}">{{ return_qr_count_field.label }}</label>
-      {{ return_qr_count_field }}
-      {% if return_qr_count_field.errors %}<div class="error-text">{{ return_qr_count_field.errors|join:', ' }}</div>{% endif %}
-    </div>
-    <div class="dairymetrics-field">
-      <label for="{{ return_qr_amount_field.id_for_label }}">{{ return_qr_amount_field.label }}</label>
-      {{ return_qr_amount_field }}
-      {% if return_qr_amount_field.errors %}<div class="error-text">{{ return_qr_amount_field.errors|join:', ' }}</div>{% endif %}
     </div>
   </div>
 </div>

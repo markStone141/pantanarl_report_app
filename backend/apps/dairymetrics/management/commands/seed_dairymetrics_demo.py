@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
-from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMonthMetricTarget, MemberPeriodMetricTarget
+from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMonthMetricTarget, MemberPeriodMetricTarget, MetricAdjustment
 from apps.targets.models import Period, TARGET_STATUS_ACTIVE, TARGET_STATUS_FINISHED
 
 
@@ -66,6 +66,7 @@ class Command(BaseCommand):
             members=members,
         )
         self._seed_entries(today=today, departments=departments, members=members)
+        self._seed_adjustments(today=today, departments=departments, members=members)
 
         self.stdout.write(self.style.SUCCESS("DairyMetrics demo seed completed."))
         self.stdout.write("Login credentials:")
@@ -186,10 +187,6 @@ class Command(BaseCommand):
                 communication=3 + (offset % 4),
                 result=offset % 3,
                 amount=1800 + (offset * 120),
-                return_postal_count=1 if offset % 5 == 0 else 0,
-                return_postal_amount=1200 if offset % 5 == 0 else 0,
-                return_qr_count=1 if offset % 6 == 0 else 0,
-                return_qr_amount=900 if offset % 6 == 0 else 0,
                 closed=entry_date < today or False,
                 daily_target_count=2 if entry_date == today else 0,
                 daily_target_amount=4500 if entry_date == today else 0,
@@ -226,10 +223,6 @@ class Command(BaseCommand):
                 cs=offset % 2,
                 refugee=1 if offset % 4 == 0 else 0,
                 amount=1900 + (offset * 140),
-                return_postal_count=1 if offset % 4 == 0 else 0,
-                return_postal_amount=1100 if offset % 4 == 0 else 0,
-                return_qr_count=1 if offset % 6 == 0 else 0,
-                return_qr_amount=700 if offset % 6 == 0 else 0,
                 closed=entry_date < today,
                 daily_target_count=2 if entry_date == today else 0,
                 daily_target_amount=4200 if entry_date == today else 0,
@@ -280,10 +273,6 @@ class Command(BaseCommand):
         result,
         amount,
         closed,
-        return_postal_count=0,
-        return_postal_amount=0,
-        return_qr_count=0,
-        return_qr_amount=0,
         daily_target_count=0,
         daily_target_amount=0,
     ):
@@ -296,10 +285,6 @@ class Command(BaseCommand):
                 "communication_count": communication,
                 "result_count": result,
                 "support_amount": amount,
-                "return_postal_count": return_postal_count,
-                "return_postal_amount": return_postal_amount,
-                "return_qr_count": return_qr_count,
-                "return_qr_amount": return_qr_amount,
                 "daily_target_count": daily_target_count,
                 "daily_target_amount": daily_target_amount,
                 "cs_count": 0,
@@ -323,10 +308,6 @@ class Command(BaseCommand):
         refugee,
         amount,
         closed,
-        return_postal_count=0,
-        return_postal_amount=0,
-        return_qr_count=0,
-        return_qr_amount=0,
         daily_target_count=0,
         daily_target_amount=0,
     ):
@@ -339,10 +320,6 @@ class Command(BaseCommand):
                 "communication_count": communication,
                 "result_count": 0,
                 "support_amount": amount,
-                "return_postal_count": return_postal_count,
-                "return_postal_amount": return_postal_amount,
-                "return_qr_count": return_qr_count,
-                "return_qr_amount": return_qr_amount,
                 "daily_target_count": daily_target_count,
                 "daily_target_amount": daily_target_amount,
                 "cs_count": cs,
@@ -353,3 +330,59 @@ class Command(BaseCommand):
                 "activity_closed_at": timezone.now() if closed else None,
             },
         )
+
+    def _seed_adjustments(self, *, today, departments, members):
+        adjustment_specs = [
+            {
+                "member": members["dm_un_hana"],
+                "department": departments["UN"],
+                "target_date": today - timedelta(days=4),
+                "source_type": MetricAdjustment.SOURCE_POSTAL,
+                "return_postal_count": 1,
+                "return_postal_amount": 1200,
+            },
+            {
+                "member": members["dm_un_hana"],
+                "department": departments["UN"],
+                "target_date": today - timedelta(days=6),
+                "source_type": MetricAdjustment.SOURCE_OTHER,
+                "return_qr_count": 1,
+                "return_qr_amount": 900,
+            },
+            {
+                "member": members["dm_wv_rin"],
+                "department": departments["WV"],
+                "target_date": today - timedelta(days=3),
+                "source_type": MetricAdjustment.SOURCE_POSTAL,
+                "return_postal_count": 1,
+                "return_postal_amount": 1100,
+            },
+            {
+                "member": members["dm_wv_rin"],
+                "department": departments["WV"],
+                "target_date": today - timedelta(days=5),
+                "source_type": MetricAdjustment.SOURCE_OTHER,
+                "return_qr_count": 1,
+                "return_qr_amount": 700,
+            },
+        ]
+        for spec in adjustment_specs:
+            MetricAdjustment.objects.update_or_create(
+                member=spec["member"],
+                department=spec["department"],
+                target_date=spec["target_date"],
+                source_type=spec["source_type"],
+                defaults={
+                    "approach_count": 0,
+                    "communication_count": 0,
+                    "result_count": 0,
+                    "support_amount": 0,
+                    "return_postal_count": spec.get("return_postal_count", 0),
+                    "return_postal_amount": spec.get("return_postal_amount", 0),
+                    "return_qr_count": spec.get("return_qr_count", 0),
+                    "return_qr_amount": spec.get("return_qr_amount", 0),
+                    "cs_count": 0,
+                    "refugee_count": 0,
+                    "note": "demo adjustment",
+                },
+            )

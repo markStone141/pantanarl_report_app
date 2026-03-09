@@ -85,17 +85,17 @@ class DairyMetricsDashboardTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("dairymetrics_dashboard"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "6,000")
-        self.assertContains(response, "4")
+        self.assertContains(response, "4,000")
+        self.assertContains(response, "3")
         self.assertContains(response, "10")
         self.assertContains(response, "過去7日の推移")
-        self.assertContains(response, "CS 3 / 難民 1")
+        self.assertContains(response, "現場 CS 2 / 難民 1")
         self.assertContains(response, "今日:")
         self.assertContains(response, "目標達成率")
-        self.assertContains(response, "80.0%")
-        self.assertContains(response, "残り 1")
-        self.assertContains(response, "4/5")
-        self.assertContains(response, "6,000/8,000")
+        self.assertContains(response, "60.0%")
+        self.assertContains(response, "残り 2")
+        self.assertContains(response, "3/5")
+        self.assertContains(response, "4,000/8,000")
         self.assertContains(response, "スコアを見る")
         self.assertNotContains(response, "今日の順位")
         self.assertContains(response, ">アプローチ<")
@@ -105,8 +105,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, ">参加率<")
         self.assertContains(response, ">平均支援額<")
         self.assertContains(response, "60.0%")
-        self.assertContains(response, "66.7%")
-        self.assertContains(response, "1,500")
+        self.assertContains(response, "50.0%")
+        self.assertContains(response, "1,333.3")
         self.assertNotContains(response, "アプローチ 平均/合計")
         self.assertNotContains(response, "今日の自己ベスト")
         self.assertNotContains(response, "伸びた項目")
@@ -125,12 +125,18 @@ class DairyMetricsDashboardTests(TestCase):
             approach_count=8,
             communication_count=5,
             support_amount=1200,
+            cs_count=2,
+            refugee_count=1,
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 9),
+            source_type="postal",
             return_postal_count=2,
             return_postal_amount=3000,
             return_qr_count=1,
             return_qr_amount=800,
-            cs_count=2,
-            refugee_count=1,
         )
         self.client.force_login(self.user)
 
@@ -150,12 +156,18 @@ class DairyMetricsDashboardTests(TestCase):
             approach_count=8,
             communication_count=5,
             support_amount=1200,
+            cs_count=2,
+            refugee_count=1,
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 9),
+            source_type="postal",
             return_postal_count=2,
             return_postal_amount=3000,
             return_qr_count=1,
             return_qr_amount=800,
-            cs_count=2,
-            refugee_count=1,
         )
         self.client.force_login(self.user)
 
@@ -479,13 +491,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertNotIn("result_count", form.fields)
         self.assertIn("daily_target_count", form.fields)
         self.assertIn("daily_target_amount", form.fields)
-        self.assertIn("return_postal_count", form.fields)
-        self.assertIn("return_postal_amount", form.fields)
-        self.assertIn("return_qr_count", form.fields)
-        self.assertIn("return_qr_amount", form.fields)
         self.assertEqual(form.fields["approach_count"].label, "アプローチ")
         self.assertEqual(form.fields["support_amount"].label, "支援金額")
-        self.assertEqual(form.fields["return_postal_count"].label, "戻り・郵送 件数")
         self.assertEqual(form.fields["daily_target_count"].label, "今日の目標 件数")
         self.assertEqual(
             list(form.fields.keys())[:6],
