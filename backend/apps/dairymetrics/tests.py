@@ -143,6 +143,36 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertTrue(entry.activity_closed)
         self.assertIsNotNone(entry.activity_closed_at)
 
+    def test_save_turns_off_activity_closed_flag(self):
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            approach_count=6,
+            activity_closed=True,
+            activity_closed_at=timezone.now(),
+        )
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("dairymetrics_entry"),
+            {
+                "department": self.department.id,
+                "entry_date": "2026-03-09",
+                "approach_count": 8,
+                "communication_count": 2,
+                "support_amount": 2000,
+                "daily_target_count": 4,
+                "daily_target_amount": 2500,
+                "cs_count": 1,
+                "refugee_count": 1,
+                "submit_action": "save",
+            },
+        )
+        self.assertRedirects(response, reverse("dairymetrics_dashboard") + "?saved=1")
+        entry.refresh_from_db()
+        self.assertFalse(entry.activity_closed)
+        self.assertIsNone(entry.activity_closed_at)
+
     def test_dashboard_ajax_switches_department_and_prefills_form(self):
         second_department = Department.objects.create(code="UN", name="UN")
         MemberDepartment.objects.create(member=self.member, department=second_department)
@@ -166,6 +196,26 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertIn("UN", payload["card_html"])
         self.assertIn('value="7"', payload["form_html"])
         self.assertIn("今日", payload["card_html"])
+
+    def test_dashboard_initial_modal_prefills_existing_entry(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            approach_count=11,
+            communication_count=5,
+            support_amount=3500,
+            daily_target_count=6,
+            daily_target_amount=5000,
+            cs_count=2,
+            refugee_count=1,
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'value="11"')
+        self.assertContains(response, 'value="3500"')
+        self.assertContains(response, 'value="6"')
 
     def test_wv_entry_form_hides_result_count_and_uses_japanese_labels(self):
         form = MemberDailyMetricEntryForm(
