@@ -22,7 +22,6 @@
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
       {% if member %}<a href="{% url 'dairymetrics_compare' %}">スコア</a>{% endif %}
-      {% if member %}<a href="{% url 'dairymetrics_entry' %}">実績入力</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">月次俯瞰</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_adjustment_create' %}">後追い追加</a>{% endif %}
       <a href="{% url 'report_index' %}">Report App</a>
