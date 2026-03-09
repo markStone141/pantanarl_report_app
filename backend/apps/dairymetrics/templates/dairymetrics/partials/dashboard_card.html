@@ -118,7 +118,7 @@
   </div>
   <div class="dairymetrics-card-actions">
     <a class="btn-inline dairymetrics-desktop-entry-btn" href="{% url 'dairymetrics_entry' %}?department={{ selected_card.department.code }}">入力する</a>
-    <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_compare' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">比較を見る</a>
+    <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_compare' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">見える化を見る</a>
   </div>
   <div class="grid grid-2 dairymetrics-stat-grid">
     {% if selected_card.scope == "custom" %}
