@@ -86,13 +86,6 @@
   }
 
   document.addEventListener('click', function (event) {
-    const toggle = event.target.closest('[data-department-toggle]');
-    if (toggle) {
-      event.preventDefault();
-      const code = toggle.getAttribute('data-department-code');
-      if (code) switchDepartment(code);
-      return;
-    }
     const scopeToggle = event.target.closest('[data-scope-toggle]');
     if (scopeToggle && !scopeToggle.disabled) {
       event.preventDefault();
@@ -132,18 +125,29 @@
     }
   });
 
-  if (memberSelect) {
-    memberSelect.addEventListener('change', function () {
-      if (!memberSelect.value) return;
+  document.addEventListener('change', function (event) {
+    const changedDepartmentSelect = event.target.closest('[data-department-select]');
+    if (changedDepartmentSelect) {
+      if (changedDepartmentSelect.value) {
+        switchDepartment(changedDepartmentSelect.value);
+      }
+      return;
+    }
+    const changedMemberSelect = event.target.closest('[data-member-switch]');
+    if (changedMemberSelect) {
+      if (!changedMemberSelect.value) return;
       const currentUrl = new URL(window.location.href);
-      const nextUrl = new URL(memberSelect.value, window.location.origin);
+      const nextUrl = new URL(changedMemberSelect.value, window.location.origin);
       ['scope', 'department', 'start_date', 'end_date'].forEach(function (key) {
         if (currentUrl.searchParams.has(key)) {
           nextUrl.searchParams.set(key, currentUrl.searchParams.get(key));
         }
       });
       refreshDashboard(nextUrl);
-    });
+    }
+  });
+
+  if (memberSelect) {
     applyMemberFilter(activeMemberFilter);
   }
 

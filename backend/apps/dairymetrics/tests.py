@@ -350,6 +350,7 @@ class DairyMetricsDashboardTests(TestCase):
         payload = response.json()
         self.assertEqual(payload["department_code"], "UN")
         self.assertIn("UN", payload["card_html"])
+        self.assertIn('data-department-select', payload["card_html"])
         self.assertIn('value="7"', payload["form_html"])
         self.assertIn("今日", payload["card_html"])
 

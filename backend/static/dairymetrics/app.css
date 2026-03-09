@@ -237,11 +237,14 @@
   flex-wrap: wrap;
 }
 
-.dairymetrics-department-toggle {
-  display: inline-flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+.dairymetrics-department-select-wrap {
+  display: grid;
+  gap: 6px;
+  min-width: 96px;
+}
+
+.dairymetrics-department-select-wrap select {
+  min-height: 38px;
 }
 
 .dairymetrics-toggle-btn {
@@ -670,7 +673,7 @@
     gap: 10px;
   }
 
-  .dairymetrics-department-toggle {
+  .dairymetrics-department-select-wrap {
     max-width: 48%;
   }
 

@@ -96,16 +96,13 @@
       <div class="muted dairymetrics-scope-summary">{{ selected_card.scope_label }}: {{ selected_card.scope_summary }}</div>
     </div>
     {% if departments|length > 1 %}
-    <div class="dairymetrics-department-toggle" role="tablist" aria-label="部署切り替え">
-      {% for department in departments %}
-      <button
-        type="button"
-        class="dairymetrics-toggle-btn {% if selected_department and department.code == selected_department.code %}is-active{% endif %}"
-        data-department-toggle
-        data-department-code="{{ department.code }}"
-        aria-pressed="{% if selected_department and department.code == selected_department.code %}true{% else %}false{% endif %}"
-      >{{ department.code }}</button>
-      {% endfor %}
+    <div class="dairymetrics-department-select-wrap">
+      <label for="dairymetrics-department-select" class="muted">部署</label>
+      <select id="dairymetrics-department-select" data-department-select>
+        {% for department in departments %}
+        <option value="{{ department.code }}" {% if selected_department and department.code == selected_department.code %}selected{% endif %}>{{ department.code }}</option>
+        {% endfor %}
+      </select>
     </div>
     {% endif %}
   </div>
