@@ -116,6 +116,21 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 
 
 @require_dairymetrics_member
+def comparison_view(request: HttpRequest) -> HttpResponse:
+    member = get_member_profile(request.user)
+    context = _build_member_dashboard_context(request=request, member=member) if member else {
+        "page_title": "DairyMetrics",
+        "member": None,
+        "departments": [],
+        "selected_department": None,
+        "selected_card": None,
+        "entry_form": None,
+        "is_admin": request.user.is_staff,
+    }
+    return render(request, "dairymetrics/comparison.html", context)
+
+
+@require_dairymetrics_member
 def entry_form(request: HttpRequest) -> HttpResponse:
     member = get_member_profile(request.user)
     if not member:

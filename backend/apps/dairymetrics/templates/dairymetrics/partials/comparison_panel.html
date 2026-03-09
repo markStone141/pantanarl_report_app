@@ -1,0 +1,73 @@
+{% load humanize %}
+{% if selected_card %}
+<article class="card dairymetrics-card">
+  <div class="dairymetrics-scope-tabbar" role="tablist" aria-label="表示期間切り替え">
+    {% for option in scope_options %}
+    <a
+      class="dairymetrics-scope-tab {% if option.is_active %}is-active{% endif %}{% if option.is_disabled %} is-disabled{% endif %}"
+      href="{% if option.is_disabled %}#{% else %}{% url 'dairymetrics_compare' %}?department={{ selected_card.department.code }}&scope={{ option.value }}{% endif %}"
+      {% if option.is_disabled %}aria-disabled="true"{% endif %}
+    >{{ option.label }}</a>
+    {% endfor %}
+  </div>
+  <div class="dairymetrics-card-head">
+    <div>
+      <div class="dairymetrics-title-row">
+        <h2>{{ selected_card.department.name }} 比較</h2>
+        <div class="badge dairymetrics-status-badge {% if selected_card.activity_status == '未入力' %}is-empty{% elif selected_card.activity_status == '活動中' %}is-active{% elif selected_card.activity_status == '活動終了' %}is-closed{% endif %}">{{ selected_card.activity_status }}</div>
+      </div>
+      <div class="muted dairymetrics-scope-summary">{{ selected_card.scope_label }}: {{ selected_card.scope_summary }}</div>
+    </div>
+    {% if departments|length > 1 %}
+    <div class="dairymetrics-department-toggle" role="tablist" aria-label="部署切り替え">
+      {% for department in departments %}
+      <a
+        class="dairymetrics-toggle-btn {% if selected_department and department.code == selected_department.code %}is-active{% endif %}"
+        href="{% url 'dairymetrics_compare' %}?department={{ department.code }}&scope={{ selected_scope }}"
+      >{{ department.code }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="dairymetrics-card-actions">
+    <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_dashboard' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">ダッシュボードへ戻る</a>
+  </div>
+  <div class="dairymetrics-insight-grid">
+    <div class="comparison-card">
+      <span class="muted">{{ selected_card.scope_label }}の順位</span>
+      <strong>{{ selected_card.count_label }} {{ selected_card.count_rank_text }}</strong>
+      <span class="muted dairymetrics-subtext">金額 {{ selected_card.amount_rank_text }}</span>
+    </div>
+    <div class="comparison-card">
+      <span class="muted">チーム平均との差</span>
+      <strong>{{ selected_card.count_average_diff_text }}</strong>
+      <span class="muted dairymetrics-subtext">{{ selected_card.count_label }} / 金額 {{ selected_card.amount_average_diff_text }}</span>
+    </div>
+  </div>
+  <div class="dairymetrics-comparison-grid dairymetrics-comparison-grid-compact">
+    <div class="comparison-card">
+      <span class="muted">{{ selected_card.count_label }} 前期間比</span>
+      <strong>{{ selected_card.count_change_rate }}</strong>
+    </div>
+    <div class="comparison-card">
+      <span class="muted">金額 前期間比</span>
+      <strong>{{ selected_card.amount_change_rate }}</strong>
+    </div>
+  </div>
+  <div class="dairymetrics-trend-strip">
+    <div>
+      <span class="muted">伸びた項目</span>
+      <strong>{% if selected_card.changes.improved %}{{ selected_card.changes.improved.label }}{% else %}-{% endif %}</strong>
+    </div>
+    <div>
+      <span class="muted">落ちた項目</span>
+      <strong>{% if selected_card.changes.declined %}{{ selected_card.changes.declined.label }}{% else %}-{% endif %}</strong>
+    </div>
+  </div>
+</article>
+{% else %}
+<article class="card">
+  <h2>所属部署がありません</h2>
+  <p class="muted">メンバーに部署が紐づくと、ここに比較情報が表示されます。</p>
+</article>
+{% endif %}

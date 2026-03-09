@@ -54,7 +54,7 @@
     <div>
       <div class="dairymetrics-title-row">
         <h2>{{ selected_card.department.name }}</h2>
-        <div class="badge {% if selected_card.activity_status == '活動終了' %}badge-ok{% endif %}">{{ selected_card.activity_status }}</div>
+        <div class="badge dairymetrics-status-badge {% if selected_card.activity_status == '未入力' %}is-empty{% elif selected_card.activity_status == '活動中' %}is-active{% elif selected_card.activity_status == '活動終了' %}is-closed{% endif %}">{{ selected_card.activity_status }}</div>
       </div>
       <div class="muted dairymetrics-scope-summary">{{ selected_card.scope_label }}: {{ selected_card.scope_summary }}</div>
     </div>
@@ -74,6 +74,7 @@
   </div>
   <div class="dairymetrics-card-actions">
     <a class="btn-inline dairymetrics-desktop-entry-btn" href="{% url 'dairymetrics_entry' %}?department={{ selected_card.department.code }}">入力する</a>
+    <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_compare' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">比較を見る</a>
   </div>
   <div class="grid grid-2 dairymetrics-stat-grid">
     <div class="metric-card">
@@ -95,16 +96,6 @@
     </div>
   </div>
   <div class="dairymetrics-insight-grid">
-    <div class="comparison-card">
-      <span class="muted">{{ selected_card.scope_label }}の順位</span>
-      <strong>{{ selected_card.count_label }} {{ selected_card.count_rank_text }}</strong>
-      <span class="muted dairymetrics-subtext">金額 {{ selected_card.amount_rank_text }}</span>
-    </div>
-    <div class="comparison-card">
-      <span class="muted">チーム平均との差</span>
-      <strong>{{ selected_card.count_average_diff_text }}</strong>
-      <span class="muted dairymetrics-subtext">{{ selected_card.count_label }} / 金額 {{ selected_card.amount_average_diff_text }}</span>
-    </div>
     <div class="comparison-card dairymetrics-insight-wide">
       <span class="muted">{{ selected_card.scope_label }}の自己ベスト</span>
       {% if selected_card.best_day %}
@@ -114,16 +105,6 @@
       <strong>-</strong>
       <span class="muted dairymetrics-subtext">まだ記録がありません</span>
       {% endif %}
-    </div>
-  </div>
-  <div class="dairymetrics-comparison-grid dairymetrics-comparison-grid-compact">
-    <div class="comparison-card">
-      <span class="muted">{{ selected_card.count_label }} 前期間比</span>
-      <strong>{{ selected_card.count_change_rate }}</strong>
-    </div>
-    <div class="comparison-card">
-      <span class="muted">金額 前期間比</span>
-      <strong>{{ selected_card.amount_change_rate }}</strong>
     </div>
   </div>
   <div class="dairymetrics-trend-strip">
