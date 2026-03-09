@@ -361,12 +361,12 @@ def _members_with_scope_activity(department, start_date, end_date, *, today_only
     return list(Member.objects.active().filter(id__in=member_ids).order_by("name"))
 
 
-def _build_today_comparison_metrics(member, department, today):
-    members = _members_with_scope_activity(department, today, today, today_only=True)
+def _build_scope_ranking_metrics(member, department, start_date, end_date, *, today_only=False):
+    members = _members_with_scope_activity(department, start_date, end_date, today_only=today_only)
     if not members:
         return []
     member_totals = {
-        current_member.id: _department_totals(current_member, department, today, today)
+        current_member.id: _department_totals(current_member, department, start_date, end_date)
         for current_member in members
     }
     metric_specs = [
@@ -387,7 +387,7 @@ def _build_today_comparison_metrics(member, department, today):
                 {
                     "member_id": current_member.id,
                     "member_name": current_member.name,
-                    "value": _metric_value_for_today(spec["key"], department, totals),
+                    "value": _metric_value_for_scope(spec["key"], department, totals),
                     "value_text": _metric_display_text(spec["key"], department, totals),
                 }
             )
@@ -736,9 +736,13 @@ def build_member_dashboard_card(
         "count_average_diff_text": _format_signed_diff(round(count_value - team_average["count_value"], 1)),
         "amount_average_diff_text": _format_signed_diff(round(int(scope_totals["support_amount"]) - team_average["amount_value"], 1)),
         "trend_section": trend_section,
-        "today_comparison_metrics": _build_today_comparison_metrics(member, department, today)
-        if scope_data["scope"] == "today"
-        else [],
+        "ranking_metrics": _build_scope_ranking_metrics(
+            member,
+            department,
+            start_date,
+            end_date,
+            today_only=scope_data["scope"] == "today",
+        ),
         "scope_average_metrics": _build_scope_average_metrics(
             member,
             department,

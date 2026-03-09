@@ -193,7 +193,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "全体平均")
         self.assertContains(response, "自分")
         self.assertContains(response, "平均との差")
-        self.assertContains(response, "今日の比較")
+        self.assertContains(response, "ランキング")
+        self.assertContains(response, "fa-crown")
         self.assertContains(response, "アプローチ数")
         self.assertContains(response, "コミュニケーション数")
         self.assertContains(response, "件数")
@@ -243,6 +244,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "平均支援額")
         self.assertContains(response, "コミュ率")
         self.assertContains(response, "参加率")
+        self.assertContains(response, "ランキング")
 
     def test_entry_form_updates_existing_record(self):
         entry = MemberDailyMetricEntry.objects.create(

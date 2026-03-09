@@ -83,16 +83,15 @@
     </div>
   </section>
   {% endif %}
-  {% if selected_card.scope == "today" %}
+  {% if selected_card.ranking_metrics %}
   <section class="dairymetrics-compare-board">
     <div class="row">
       <div>
-        <h3>今日の比較</h3>
-        <div class="muted">活動中または活動終了の入力があるメンバーだけを対象に表示します。</div>
+        <h3><i class="fa-solid fa-crown" aria-hidden="true"></i> ランキング</h3>
       </div>
     </div>
     <div class="dairymetrics-compare-grid">
-      {% for metric in selected_card.today_comparison_metrics %}
+      {% for metric in selected_card.ranking_metrics %}
       <article class="comparison-card dairymetrics-rank-card">
         <div class="dairymetrics-rank-card-head">
           <span class="dairymetrics-rank-metric-icon"><i class="fa-solid {{ metric.icon }}" aria-hidden="true"></i></span>
@@ -119,7 +118,8 @@
       {% endfor %}
     </div>
   </section>
-  {% else %}
+  {% endif %}
+  {% if selected_card.scope != "today" %}
   <div class="dairymetrics-insight-grid">
     <div class="comparison-card">
       <span class="muted">{{ selected_card.scope_label }}の順位</span>
