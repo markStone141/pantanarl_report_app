@@ -8,6 +8,7 @@ urlpatterns = [
     path("", views.dashboard, name="dairymetrics_dashboard"),
     path("compare/", views.comparison_view, name="dairymetrics_compare"),
     path("entry/", views.entry_form, name="dairymetrics_entry"),
+    path("targets/scope/", views.scope_target_form, name="dairymetrics_scope_target"),
     path("admin/", views.admin_overview, name="dairymetrics_admin_overview"),
     path("admin/adjustments/new/", views.adjustment_create, name="dairymetrics_adjustment_create"),
 ]

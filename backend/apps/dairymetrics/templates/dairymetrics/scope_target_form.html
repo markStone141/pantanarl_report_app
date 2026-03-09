@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}DairyMetrics 目標設定{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=1" />
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card dairymetrics-form-card">
+    <h1>{% if scope == "period" %}路程目標{% else %}月目標{% endif %}を設定</h1>
+    <div class="muted">{{ department.name }}</div>
+    <div style="margin-top: 16px;">
+      {% include "dairymetrics/partials/scope_target_modal_form.html" with scope_target_form=form %}
+    </div>
+  </div>
+</div>
+{% endblock %}

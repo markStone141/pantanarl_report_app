@@ -6,7 +6,12 @@ from django.db.models import Sum
 from apps.accounts.models import Department, Member
 from apps.targets.models import Period
 
-from .models import MemberDailyMetricEntry, MetricAdjustment
+from .models import (
+    MemberDailyMetricEntry,
+    MemberMonthMetricTarget,
+    MemberPeriodMetricTarget,
+    MetricAdjustment,
+)
 
 METRIC_FIELDS = [
     "approach_count",
@@ -92,6 +97,32 @@ def _target_totals(member, department, start_date, end_date):
         "count": int(entry_totals.get("daily_target_count") or 0),
         "amount": int(entry_totals.get("daily_target_amount") or 0),
     }
+
+
+def _scope_target_totals(member, department, scope_data):
+    if scope_data["scope"] == "today":
+        return _target_totals(member, department, scope_data["start_date"], scope_data["end_date"])
+    if scope_data["scope"] == "period" and scope_data.get("period"):
+        target = MemberPeriodMetricTarget.objects.filter(
+            member=member,
+            department=department,
+            period=scope_data["period"],
+        ).first()
+        return {
+            "count": int(target.target_count if target else 0),
+            "amount": int(target.target_amount if target else 0),
+        }
+    if scope_data["scope"] == "month":
+        target = MemberMonthMetricTarget.objects.filter(
+            member=member,
+            department=department,
+            target_month=scope_data["start_date"],
+        ).first()
+        return {
+            "count": int(target.target_count if target else 0),
+            "amount": int(target.target_amount if target else 0),
+        }
+    return {"count": 0, "amount": 0}
 
 
 def _count_value_for_department(department, totals):
@@ -438,7 +469,7 @@ def build_member_dashboard_card(
     ).count() or 1
     changes = _summarize_changes(scope_totals, previous_totals)
     count_value = _count_value_for_department(department, scope_totals)
-    target_totals = _target_totals(member, department, start_date, end_date)
+    target_totals = _scope_target_totals(member, department, scope_data)
     goal_completed = (
         target_totals["count"] > 0
         and target_totals["amount"] > 0
@@ -456,6 +487,8 @@ def build_member_dashboard_card(
         "scope": scope_data["scope"],
         "scope_label": scope_data["label"],
         "scope_summary": scope_data["summary"],
+        "period_obj": scope_data.get("period"),
+        "month_start": scope_data["start_date"] if scope_data["scope"] == "month" else None,
         "custom_start_date": scope_data.get("custom_start_date"),
         "custom_end_date": scope_data.get("custom_end_date"),
         "today_status": "入力済み" if today_entry else "未入力",
@@ -470,6 +503,7 @@ def build_member_dashboard_card(
         "target_count": target_totals["count"],
         "target_amount": target_totals["amount"],
         "goal_completed": goal_completed,
+        "can_edit_scope_target": scope_data["scope"] in {"period", "month"},
         "count_rate_text": _progress_label(count_value, target_totals["count"]),
         "amount_rate_text": _progress_label(int(scope_totals["support_amount"]), target_totals["amount"]),
         "count_remaining": max(target_totals["count"] - count_value, 0),

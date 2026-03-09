@@ -35,6 +35,10 @@
       </div>
       {% if selected_card.scope == "today" and not selected_card.has_target %}
       <button type="button" class="btn-inline dairymetrics-goal-cta" data-open-dairymetrics-entry>目標を入力</button>
+      {% elif selected_card.can_edit_scope_target %}
+      <button type="button" class="btn-inline dairymetrics-goal-cta" data-open-dairymetrics-target>
+        {% if selected_card.has_target %}目標を編集{% else %}目標を設定{% endif %}
+      </button>
       {% endif %}
     </div>
     <div class="dairymetrics-goal-grid">

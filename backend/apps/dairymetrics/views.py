@@ -9,7 +9,7 @@ from django.utils.dateparse import parse_date
 from apps.accounts.models import Department
 
 from .auth import get_member_profile, require_dairymetrics_admin, require_dairymetrics_member
-from .forms import DairyMetricsLoginForm, MemberDailyMetricEntryForm, MetricAdjustmentForm
+from .forms import DairyMetricsLoginForm, MemberDailyMetricEntryForm, MemberScopeTargetForm, MetricAdjustmentForm
 from .models import MemberDailyMetricEntry, MetricAdjustment
 from .selectors import build_admin_month_overview, build_member_dashboard
 
@@ -39,7 +39,6 @@ def _build_entry_form(*, member, data=None, department_code="", entry_date=None)
         initial=initial,
     )
 
-
 def _build_member_dashboard_context(*, request, member):
     selected_department_code = (request.GET.get("department") or "").strip()
     selected_scope = (request.GET.get("scope") or "today").strip()
@@ -59,6 +58,21 @@ def _build_member_dashboard_context(*, request, member):
         department_code=selected_department.code if selected_department else "",
         entry_date=timezone.localdate(),
     )
+    scope_target_form = None
+    scope_target_form_action = ""
+    if selected_department and dashboard_data["selected_card"]:
+        selected_card = dashboard_data["selected_card"]
+        if selected_card["scope"] in {"period", "month"}:
+            scope_target_form = MemberScopeTargetForm(
+                member=member,
+                scope=selected_card["scope"],
+                department=selected_department,
+                period=selected_card.get("period_obj"),
+                target_month=selected_card.get("month_start"),
+            )
+            scope_target_form_action = (
+                f"{reverse('dairymetrics_scope_target')}?department={selected_department.code}&scope={selected_card['scope']}"
+            )
     return {
         "page_title": "DairyMetrics",
         "member": member,
@@ -68,6 +82,8 @@ def _build_member_dashboard_context(*, request, member):
         "scope_options": dashboard_data["scope_options"],
         "selected_scope": dashboard_data["selected_scope"],
         "entry_form": entry_form,
+        "scope_target_form": scope_target_form,
+        "scope_target_form_action": scope_target_form_action,
         "is_admin": request.user.is_staff,
     }
 
@@ -113,6 +129,11 @@ def dashboard(request: HttpRequest) -> HttpResponse:
                     context,
                     request=request,
                 ),
+                "target_form_html": render_to_string(
+                    "dairymetrics/partials/scope_target_modal_form.html",
+                    context,
+                    request=request,
+                ),
                 "department_code": context["selected_department"].code if context["selected_department"] else "",
             }
         )
@@ -132,6 +153,55 @@ def comparison_view(request: HttpRequest) -> HttpResponse:
         "is_admin": request.user.is_staff,
     }
     return render(request, "dairymetrics/comparison.html", context)
+
+
+@require_dairymetrics_member
+def scope_target_form(request: HttpRequest) -> HttpResponse:
+    member = get_member_profile(request.user)
+    if not member:
+        return redirect("dairymetrics_dashboard")
+
+    scope = (request.GET.get("scope") or "").strip()
+    department_code = (request.GET.get("department") or "").strip()
+    department = Department.objects.filter(
+        is_active=True,
+        code=department_code,
+        member_links__member=member,
+    ).first()
+    if scope not in {"period", "month"} or not department:
+        return redirect("dairymetrics_dashboard")
+
+    today = timezone.localdate()
+    selected_card = build_member_dashboard(
+        member,
+        today=today,
+        department_code=department.code,
+        scope=scope,
+    )["selected_card"]
+    if not selected_card or selected_card["scope"] != scope:
+        return redirect("dairymetrics_dashboard")
+    form = MemberScopeTargetForm(
+        request.POST or None,
+        member=member,
+        scope=scope,
+        department=department,
+        period=selected_card.get("period_obj"),
+        target_month=selected_card.get("month_start"),
+    )
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect(f"{reverse('dairymetrics_dashboard')}?department={department.code}&scope={scope}&saved=1")
+    return render(
+        request,
+        "dairymetrics/scope_target_form.html",
+        {
+            "form": form,
+            "scope_target_form": form,
+            "scope_target_form_action": f"{reverse('dairymetrics_scope_target')}?department={department.code}&scope={scope}",
+            "scope": scope,
+            "department": department,
+        },
+    )
 
 
 @require_dairymetrics_member

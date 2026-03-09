@@ -9,7 +9,12 @@ from apps.accounts.models import Department, Member, MemberDepartment
 from apps.targets.models import Period
 
 from .forms import MemberDailyMetricEntryForm
-from .models import MemberDailyMetricEntry, MetricAdjustment
+from .models import (
+    MemberDailyMetricEntry,
+    MemberMonthMetricTarget,
+    MemberPeriodMetricTarget,
+    MetricAdjustment,
+)
 
 
 class DairyMetricsLoginTests(TestCase):
@@ -371,6 +376,58 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "第4路程")
         self.assertContains(response, "第1路程")
 
+    def test_dashboard_period_scope_uses_member_period_target(self):
+        period = Period.objects.create(
+            month=date(2026, 3, 1),
+            name="第1路程",
+            status="active",
+            start_date=date(2026, 3, 1),
+            end_date=date(2026, 3, 15),
+        )
+        MemberPeriodMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            period=period,
+            target_count=5,
+            target_amount=10000,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 5),
+            support_amount=4000,
+            cs_count=2,
+            refugee_count=1,
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_dashboard"), {"scope": "period"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "3/5")
+        self.assertContains(response, "4,000/10,000")
+        self.assertContains(response, "目標を編集")
+
+    def test_member_can_save_period_target(self):
+        period = Period.objects.create(
+            month=date(2026, 3, 1),
+            name="第1路程",
+            status="active",
+            start_date=date(2026, 3, 1),
+            end_date=date(2026, 3, 15),
+        )
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("dairymetrics_scope_target") + "?department=WV&scope=period",
+            {
+                "department": self.department.id,
+                "target_count": 7,
+                "target_amount": 15000,
+            },
+        )
+        self.assertRedirects(response, reverse("dairymetrics_dashboard") + "?department=WV&scope=period&saved=1")
+        target = MemberPeriodMetricTarget.objects.get(period=period)
+        self.assertEqual(target.target_count, 7)
+        self.assertEqual(target.target_amount, 15000)
+
     def test_today_scope_without_target_shows_goal_cta(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("dairymetrics_dashboard"))
@@ -445,6 +502,28 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "25/10")
         self.assertContains(response, "26/3")
         self.assertNotContains(response, "過去7日の推移")
+
+    def test_dashboard_month_scope_uses_member_month_target(self):
+        MemberMonthMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            target_month=date(2026, 3, 1),
+            target_count=10,
+            target_amount=20000,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 5),
+            support_amount=6000,
+            cs_count=4,
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_dashboard"), {"scope": "month"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "4/10")
+        self.assertContains(response, "6,000/20,000")
+        self.assertContains(response, "目標を編集")
 
 
 class DairyMetricsAdminTests(TestCase):

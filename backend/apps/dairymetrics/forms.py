@@ -1,9 +1,10 @@
 from django import forms
 from django.contrib.auth import authenticate
+from django.utils import timezone
 
 from apps.accounts.models import Department, Member
 
-from .models import MemberDailyMetricEntry, MetricAdjustment
+from .models import MemberDailyMetricEntry, MemberMonthMetricTarget, MemberPeriodMetricTarget, MetricAdjustment
 
 
 class DairyMetricsLoginForm(forms.Form):
@@ -185,3 +186,76 @@ class MetricAdjustmentForm(forms.ModelForm):
             "refugee_count",
         ]:
             self.fields[name].min_value = 0
+
+
+class MemberScopeTargetForm(forms.Form):
+    department = forms.ModelChoiceField(queryset=Department.objects.none(), label="部署")
+    target_count = forms.IntegerField(label="目標 件数", min_value=0, required=False, initial=0)
+    target_amount = forms.IntegerField(label="目標 金額", min_value=0, required=False, initial=0)
+
+    def __init__(self, *args, member=None, scope="month", department=None, period=None, target_month=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        departments = Department.objects.filter(is_active=True)
+        if member is not None:
+            departments = departments.filter(member_links__member=member).distinct()
+        self.fields["department"].queryset = departments.order_by("code")
+        self.member = member
+        self.scope = scope
+        self.period = period
+        self.target_month = target_month or timezone.localdate().replace(day=1)
+        self.target_instance = None
+
+        if department is not None:
+            self.initial.setdefault("department", department)
+        if scope == "period":
+            self.fields["period_name"] = forms.CharField(label="対象路程", required=False, disabled=True)
+            self.order_fields(["department", "period_name", "target_count", "target_amount"])
+            if period is not None:
+                self.initial.setdefault("period_name", period.name)
+                if member and department:
+                    self.target_instance = MemberPeriodMetricTarget.objects.filter(
+                        member=member,
+                        department=department,
+                        period=period,
+                    ).first()
+        else:
+            self.fields["target_month_label"] = forms.CharField(label="対象月", required=False, disabled=True)
+            self.order_fields(["department", "target_month_label", "target_count", "target_amount"])
+            self.initial.setdefault("target_month_label", self.target_month.strftime("%Y/%m"))
+            if member and department:
+                self.target_instance = MemberMonthMetricTarget.objects.filter(
+                    member=member,
+                    department=department,
+                    target_month=self.target_month,
+                ).first()
+
+        if self.target_instance:
+            self.initial.setdefault("target_count", self.target_instance.target_count)
+            self.initial.setdefault("target_amount", self.target_instance.target_amount)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        cleaned_data["target_count"] = cleaned_data.get("target_count") or 0
+        cleaned_data["target_amount"] = cleaned_data.get("target_amount") or 0
+        return cleaned_data
+
+    def save(self):
+        department = self.cleaned_data["department"]
+        if self.scope == "period":
+            instance = self.target_instance or MemberPeriodMetricTarget(
+                member=self.member,
+                department=department,
+                period=self.period,
+            )
+        else:
+            instance = self.target_instance or MemberMonthMetricTarget(
+                member=self.member,
+                department=department,
+                target_month=self.target_month,
+            )
+        instance.member = self.member
+        instance.department = department
+        instance.target_count = self.cleaned_data["target_count"]
+        instance.target_amount = self.cleaned_data["target_amount"]
+        instance.save()
+        return instance

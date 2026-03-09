@@ -1,21 +1,24 @@
 (function () {
   const cardRoot = document.getElementById('dairymetrics-dashboard-card');
   const modalBody = document.getElementById('dairymetrics-entry-modal-body');
+  const targetModalBody = document.getElementById('dairymetrics-target-modal-body');
   const overlay = document.getElementById('dairymetrics-entry-overlay');
+  const targetOverlay = document.getElementById('dairymetrics-target-overlay');
   const openButton = document.getElementById('dairymetrics-open-entry');
   const closeButton = document.getElementById('dairymetrics-close-entry');
+  const closeTargetButton = document.getElementById('dairymetrics-close-target');
   if (!cardRoot) return;
 
-  function openOverlay() {
-    if (!overlay) return;
-    overlay.classList.add('open');
-    overlay.setAttribute('aria-hidden', 'false');
+  function openOverlay(target) {
+    if (!target) return;
+    target.classList.add('open');
+    target.setAttribute('aria-hidden', 'false');
   }
 
-  function closeOverlay() {
-    if (!overlay) return;
-    overlay.classList.remove('open');
-    overlay.setAttribute('aria-hidden', 'true');
+  function closeOverlay(target) {
+    if (!target) return;
+    target.classList.remove('open');
+    target.setAttribute('aria-hidden', 'true');
   }
 
   async function switchDepartment(code) {
@@ -36,6 +39,7 @@
     const data = await response.json();
     if (data.card_html) cardRoot.innerHTML = data.card_html;
     if (data.form_html && modalBody) modalBody.innerHTML = data.form_html;
+    if (typeof data.target_form_html === 'string' && targetModalBody) targetModalBody.innerHTML = data.target_form_html;
     window.history.replaceState({}, '', url.toString());
   }
 
@@ -61,25 +65,49 @@
     }
     if (event.target.closest('#dairymetrics-open-entry') || event.target.closest('[data-open-dairymetrics-entry]')) {
       event.preventDefault();
-      openOverlay();
+      openOverlay(overlay);
+      return;
+    }
+    if (event.target.closest('[data-open-dairymetrics-target]')) {
+      event.preventDefault();
+      openOverlay(targetOverlay);
       return;
     }
     if (event.target.closest('#dairymetrics-close-entry') || event.target.closest('[data-close-dairymetrics-modal]')) {
       event.preventDefault();
-      closeOverlay();
+      closeOverlay(overlay);
+      return;
+    }
+    if (event.target.closest('#dairymetrics-close-target')) {
+      event.preventDefault();
+      closeOverlay(targetOverlay);
     }
   });
 
   if (overlay) {
     overlay.addEventListener('click', function (event) {
-      if (event.target === overlay) closeOverlay();
+      if (event.target === overlay) closeOverlay(overlay);
+    });
+  }
+  if (targetOverlay) {
+    targetOverlay.addEventListener('click', function (event) {
+      if (event.target === targetOverlay) closeOverlay(targetOverlay);
     });
   }
 
   if (openButton) {
-    openButton.addEventListener('click', openOverlay);
+    openButton.addEventListener('click', function () {
+      openOverlay(overlay);
+    });
   }
   if (closeButton) {
-    closeButton.addEventListener('click', closeOverlay);
+    closeButton.addEventListener('click', function () {
+      closeOverlay(overlay);
+    });
+  }
+  if (closeTargetButton) {
+    closeTargetButton.addEventListener('click', function () {
+      closeOverlay(targetOverlay);
+    });
   }
 })();

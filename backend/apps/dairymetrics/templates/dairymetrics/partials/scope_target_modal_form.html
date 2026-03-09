@@ -1,0 +1,21 @@
+{% if scope_target_form %}
+<form
+  method="post"
+  action="{{ scope_target_form_action }}"
+  class="grid dairymetrics-entry-grid"
+>
+  {% csrf_token %}
+  {% for field in scope_target_form %}
+  <div class="dairymetrics-field {% if field.name == 'note' %}dairymetrics-field-full{% endif %}">
+    {{ field.label_tag }}
+    {{ field }}
+    {% if field.errors %}
+    <div class="form-errors">{{ field.errors|join:", " }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  <div class="dairymetrics-field-full dairymetrics-form-actions">
+    <button type="submit" class="btn-inline dairymetrics-save-btn">保存する</button>
+  </div>
+</form>
+{% endif %}

@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member
+from apps.targets.models import Period
 
 
 class MemberDailyMetricEntry(models.Model):
@@ -73,3 +74,47 @@ class MetricAdjustment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.member.name} {self.department.code} {self.target_date} {self.source_type}"
+
+
+class MemberPeriodMetricTarget(models.Model):
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="period_metric_targets")
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="member_period_metric_targets")
+    period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name="member_metric_targets")
+    target_count = models.PositiveIntegerField(default=0)
+    target_amount = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-period__start_date", "member__name", "department__code"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["member", "department", "period"],
+                name="unique_member_department_period_target",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.member.name} {self.department.code} {self.period.name}"
+
+
+class MemberMonthMetricTarget(models.Model):
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="month_metric_targets")
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="member_month_metric_targets")
+    target_month = models.DateField()
+    target_count = models.PositiveIntegerField(default=0)
+    target_amount = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-target_month", "member__name", "department__code"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["member", "department", "target_month"],
+                name="unique_member_department_month_target",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.member.name} {self.department.code} {self.target_month:%Y-%m}"

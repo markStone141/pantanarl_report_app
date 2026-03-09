@@ -56,6 +56,19 @@
       </div>
     </section>
   </div>
+  <div id="dairymetrics-target-overlay" class="dairymetrics-overlay" aria-hidden="true">
+    <section class="dairymetrics-sheet">
+      <div class="dairymetrics-sheet-head">
+        <strong>目標設定</strong>
+        <button type="button" class="dairymetrics-sheet-close" id="dairymetrics-close-target" aria-label="閉じる">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="dairymetrics-target-modal-body">
+        {% include "dairymetrics/partials/scope_target_modal_form.html" %}
+      </div>
+    </section>
+  </div>
   {% endif %}
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
