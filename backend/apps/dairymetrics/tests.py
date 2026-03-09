@@ -95,6 +95,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "今日のコミュニケーション")
         self.assertNotContains(response, "アプローチ 平均/合計")
         self.assertNotContains(response, "今日の自己ベスト")
+        self.assertNotContains(response, "伸びた項目")
+        self.assertNotContains(response, "落ちた項目")
 
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")
@@ -307,6 +309,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "今路程の自己ベスト")
         self.assertContains(response, "アプローチ 平均/合計")
         self.assertNotContains(response, "活動中")
+        self.assertContains(response, "伸びた項目")
+        self.assertContains(response, "落ちた項目")
 
     def test_today_scope_without_target_shows_goal_cta(self):
         self.client.force_login(self.user)

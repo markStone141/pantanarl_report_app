@@ -138,6 +138,7 @@
     </div>
   </div>
   {% endif %}
+  {% if selected_card.scope != "today" %}
   <div class="dairymetrics-trend-strip">
     <div>
       <span class="muted">伸びた項目</span>
@@ -148,6 +149,7 @@
       <strong>{% if selected_card.changes.declined %}{{ selected_card.changes.declined.label }}{% else %}-{% endif %}</strong>
     </div>
   </div>
+  {% endif %}
   <section class="dairymetrics-mini-chart">
     <div class="row">
       <div>
