@@ -54,7 +54,16 @@ def _summarize_changes(current, previous):
     }
     for field, label in labels.items():
         delta = current[field] - previous[field]
-        comparisons.append({"field": field, "label": label, "delta": delta, "rate": _change_rate(current[field], previous[field])})
+        rate = _change_rate(current[field], previous[field])
+        comparisons.append(
+            {
+                "field": field,
+                "label": label,
+                "delta": delta,
+                "rate": rate,
+                "rate_text": _comparison_label(rate),
+            }
+        )
     improved = max(comparisons, key=lambda item: item["delta"])
     declined = min(comparisons, key=lambda item: item["delta"])
     return {

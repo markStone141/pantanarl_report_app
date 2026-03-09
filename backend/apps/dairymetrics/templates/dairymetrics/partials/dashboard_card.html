@@ -142,11 +142,21 @@
   <div class="dairymetrics-trend-strip">
     <div>
       <span class="muted">伸びた項目</span>
-      <strong>{% if selected_card.changes.improved %}{{ selected_card.changes.improved.label }}{% else %}-{% endif %}</strong>
+      <strong>
+        {% if selected_card.changes.improved %}
+        {{ selected_card.changes.improved.label }}
+        {% if selected_card.scope == "period" or selected_card.scope == "month" %} {{ selected_card.changes.improved.rate_text }}{% endif %}
+        {% else %}-{% endif %}
+      </strong>
     </div>
     <div>
       <span class="muted">落ちた項目</span>
-      <strong>{% if selected_card.changes.declined %}{{ selected_card.changes.declined.label }}{% else %}-{% endif %}</strong>
+      <strong>
+        {% if selected_card.changes.declined %}
+        {{ selected_card.changes.declined.label }}
+        {% if selected_card.scope == "period" or selected_card.scope == "month" %} {{ selected_card.changes.declined.rate_text }}{% endif %}
+        {% else %}-{% endif %}
+      </strong>
     </div>
   </div>
   {% endif %}

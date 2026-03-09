@@ -295,6 +295,15 @@ class DairyMetricsDashboardTests(TestCase):
         MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=self.department,
+            entry_date=date(2026, 2, 18),
+            approach_count=2,
+            communication_count=1,
+            support_amount=1000,
+            cs_count=1,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
             entry_date=date(2026, 3, 5),
             approach_count=8,
             communication_count=4,
@@ -311,6 +320,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertNotContains(response, "活動中")
         self.assertContains(response, "伸びた項目")
         self.assertContains(response, "落ちた項目")
+        self.assertContains(response, "+100.0%")
 
     def test_today_scope_without_target_shows_goal_cta(self):
         self.client.force_login(self.user)
