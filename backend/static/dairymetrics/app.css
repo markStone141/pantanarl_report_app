@@ -70,6 +70,13 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-top: 8px;
+}
+
+.dairymetrics-member-filter-row .dairymetrics-toggle-btn {
+  min-height: 30px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
 }
 
 .dairymetrics-member-select-wrap select {

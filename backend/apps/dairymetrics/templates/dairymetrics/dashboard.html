@@ -47,12 +47,6 @@
         </div>
         <div class="dairymetrics-member-select-wrap">
           <label for="dairymetrics-member-select" class="muted">表示するメンバー</label>
-          <div class="dairymetrics-member-filter-row" role="tablist" aria-label="部署で絞り込み">
-            <button type="button" class="dairymetrics-toggle-btn is-active" data-member-filter-toggle data-member-filter-value="all" aria-pressed="true">すべて</button>
-            {% for department in member_filter_departments %}
-            <button type="button" class="dairymetrics-toggle-btn" data-member-filter-toggle data-member-filter-value="{{ department.code }}" aria-pressed="false">{{ department.code }}</button>
-            {% endfor %}
-          </div>
           <select id="dairymetrics-member-select" data-member-switch>
             {% for row in member_rows %}
             <option
@@ -64,6 +58,12 @@
             </option>
             {% endfor %}
           </select>
+          <div class="dairymetrics-member-filter-row" role="tablist" aria-label="部署で絞り込み">
+            <button type="button" class="dairymetrics-toggle-btn is-active" data-member-filter-toggle data-member-filter-value="all" aria-pressed="true">すべて</button>
+            {% for department in member_filter_departments %}
+            <button type="button" class="dairymetrics-toggle-btn" data-member-filter-toggle data-member-filter-value="{{ department.code }}" aria-pressed="false">{{ department.code }}</button>
+            {% endfor %}
+          </div>
         </div>
       </div>
     </article>
