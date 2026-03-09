@@ -18,6 +18,10 @@ METRIC_FIELDS = [
     "communication_count",
     "result_count",
     "support_amount",
+    "return_postal_count",
+    "return_postal_amount",
+    "return_qr_count",
+    "return_qr_amount",
     "cs_count",
     "refugee_count",
 ]
@@ -78,7 +82,24 @@ def _average_support_amount_value(amount_value, count_value):
     return round(amount_value / count_value, 1)
 
 
-def _summarize_changes(current, previous):
+def _display_amount_value(totals, *, include_returns=False):
+    amount_value = int(totals["support_amount"])
+    if include_returns:
+        amount_value += int(totals["return_postal_amount"]) + int(totals["return_qr_amount"])
+    return amount_value
+
+
+def _count_value_for_department(department, totals, *, include_returns=False):
+    if department.code == "WV":
+        count_value = int(totals["cs_count"]) + int(totals["refugee_count"])
+    else:
+        count_value = int(totals["result_count"])
+    if include_returns:
+        count_value += int(totals["return_postal_count"]) + int(totals["return_qr_count"])
+    return count_value
+
+
+def _summarize_changes(current, previous, department, *, include_returns=False):
     comparisons = []
     labels = {
         "approach_count": "アプローチ",
@@ -87,8 +108,17 @@ def _summarize_changes(current, previous):
         "support_amount": "金額",
     }
     for field, label in labels.items():
-        delta = current[field] - previous[field]
-        rate = _change_rate(current[field], previous[field])
+        if field == "result_count":
+            current_value = _count_value_for_department(department, current, include_returns=include_returns)
+            previous_value = _count_value_for_department(department, previous, include_returns=include_returns)
+        elif field == "support_amount":
+            current_value = _display_amount_value(current, include_returns=include_returns)
+            previous_value = _display_amount_value(previous, include_returns=include_returns)
+        else:
+            current_value = current[field]
+            previous_value = previous[field]
+        delta = current_value - previous_value
+        rate = _change_rate(current_value, previous_value)
         comparisons.append(
             {
                 "field": field,
@@ -154,20 +184,24 @@ def _scope_target_totals(member, department, scope_data):
     return {"count": 0, "amount": 0}
 
 
-def _count_value_for_department(department, totals):
-    if department.code == "WV":
-        return int(totals["cs_count"]) + int(totals["refugee_count"])
-    return int(totals["result_count"])
-
-
 def _count_label_for_department(department):
     return "CS/難民" if department.code == "WV" else "件数"
 
 
-def _count_breakdown_text(department, totals):
+def _count_breakdown_text(department, totals, *, include_returns=False):
     if department.code != "WV":
-        return str(int(totals["result_count"]))
-    return f"CS {int(totals['cs_count'])} / 難民 {int(totals['refugee_count'])}"
+        base_text = f"現場 {int(totals['result_count'])}"
+    else:
+        base_text = f"現場 CS {int(totals['cs_count'])} / 難民 {int(totals['refugee_count'])}"
+    if not include_returns:
+        return base_text
+    return " / ".join(
+        [
+            base_text,
+            f"郵送 {int(totals['return_postal_count'])}",
+            f"QR {int(totals['return_qr_count'])}",
+        ]
+    )
 
 
 def _format_signed_diff(value):
@@ -268,7 +302,7 @@ def _resolve_scope(today, scope, *, member=None, department=None, requested_star
     }
 
 
-def _build_member_rankings(department, members, start_date, end_date):
+def _build_member_rankings(department, members, start_date, end_date, *, include_returns=False):
     rankings = []
     for ranked_member in members:
         totals = _department_totals(ranked_member, department, start_date, end_date)
@@ -280,8 +314,8 @@ def _build_member_rankings(department, members, start_date, end_date):
         rankings.append(
             {
                 "member_id": ranked_member.id,
-                "count_value": _count_value_for_department(department, totals),
-                "amount_value": int(totals["support_amount"]),
+                "count_value": _count_value_for_department(department, totals, include_returns=include_returns),
+                "amount_value": _display_amount_value(totals, include_returns=include_returns),
                 "approach_average": round(int(totals["approach_count"]) / active_days, 1),
             }
         )
@@ -304,20 +338,26 @@ def _metric_value_for_today(metric_key, department, totals):
     return int(totals["support_amount"])
 
 
-def _metric_value_for_scope(metric_key, department, totals):
+def _metric_value_for_scope(metric_key, department, totals, *, include_returns=False):
     if metric_key == "approach_count":
         return int(totals["approach_count"])
     if metric_key == "communication_count":
         return int(totals["communication_count"])
     if metric_key == "count_value":
-        return _count_value_for_department(department, totals)
+        return _count_value_for_department(department, totals, include_returns=include_returns)
     if metric_key == "communication_rate":
         return _rate_value(int(totals["communication_count"]), int(totals["approach_count"]))
     if metric_key == "participation_rate":
-        return _rate_value(_count_value_for_department(department, totals), int(totals["communication_count"]))
+        return _rate_value(
+            _count_value_for_department(department, totals, include_returns=include_returns),
+            int(totals["communication_count"]),
+        )
     if metric_key == "average_support_amount":
-        return _average_support_amount_value(int(totals["support_amount"]), _count_value_for_department(department, totals))
-    return int(totals["support_amount"])
+        return _average_support_amount_value(
+            _display_amount_value(totals, include_returns=include_returns),
+            _count_value_for_department(department, totals, include_returns=include_returns),
+        )
+    return _display_amount_value(totals, include_returns=include_returns)
 
 
 def _metric_diff_text(value, average):
@@ -330,8 +370,8 @@ def _metric_diff_text(value, average):
     return f"{sign}{diff_rate}%"
 
 
-def _metric_display_text(metric_key, department, totals):
-    value = _metric_value_for_scope(metric_key, department, totals)
+def _metric_display_text(metric_key, department, totals, *, include_returns=False):
+    value = _metric_value_for_scope(metric_key, department, totals, include_returns=include_returns)
     return _format_metric_display(metric_key, value)
 
 
@@ -347,9 +387,9 @@ def _format_metric_display(metric_key, value):
     return str(value)
 
 
-def _metric_previous_comparison(metric_key, department, current_totals, previous_totals):
-    current_value = _metric_value_for_scope(metric_key, department, current_totals)
-    previous_value = _metric_value_for_scope(metric_key, department, previous_totals)
+def _metric_previous_comparison(metric_key, department, current_totals, previous_totals, *, include_returns=False):
+    current_value = _metric_value_for_scope(metric_key, department, current_totals, include_returns=include_returns)
+    previous_value = _metric_value_for_scope(metric_key, department, previous_totals, include_returns=include_returns)
     if current_value is None or previous_value is None:
         return "-"
     rate_text = _comparison_label(_change_rate(current_value, previous_value))
@@ -399,6 +439,7 @@ def _build_scope_ranking_metrics(member, department, start_date, end_date, *, to
     members = _members_with_scope_activity(department, start_date, end_date, today_only=today_only)
     if not members:
         return []
+    include_returns = not today_only
     member_totals = {
         current_member.id: _department_totals(current_member, department, start_date, end_date)
         for current_member in members
@@ -412,8 +453,8 @@ def _build_scope_ranking_metrics(member, department, start_date, end_date, *, to
                 {
                     "member_id": current_member.id,
                     "member_name": current_member.name,
-                    "value": _metric_value_for_scope(spec["key"], department, totals),
-                    "value_text": _metric_display_text(spec["key"], department, totals),
+                    "value": _metric_value_for_scope(spec["key"], department, totals, include_returns=include_returns),
+                    "value_text": _metric_display_text(spec["key"], department, totals, include_returns=include_returns),
                 }
             )
         ranked_rows.sort(key=lambda row: (-(row["value"] if row["value"] is not None else -1), row["member_name"]))
@@ -455,6 +496,7 @@ def _build_scope_average_metrics(member, department, start_date, end_date, *, to
     members = _members_with_scope_activity(department, start_date, end_date, today_only=today_only)
     if not members:
         return []
+    include_returns = not today_only
     member_totals = {
         current_member.id: _department_totals(current_member, department, start_date, end_date)
         for current_member in members
@@ -470,10 +512,18 @@ def _build_scope_average_metrics(member, department, start_date, end_date, *, to
     ]
     metrics = []
     for spec in metric_specs:
-        values = [_metric_value_for_scope(spec["key"], department, member_totals[current_member.id]) for current_member in members]
+        values = [
+            _metric_value_for_scope(spec["key"], department, member_totals[current_member.id], include_returns=include_returns)
+            for current_member in members
+        ]
         metric_values = [value for value in values if value is not None]
         average = round(sum(metric_values) / len(metric_values), 1) if metric_values else 0
-        self_value = _metric_value_for_scope(spec["key"], department, member_totals.get(member.id, _zero_totals()))
+        self_value = _metric_value_for_scope(
+            spec["key"],
+            department,
+            member_totals.get(member.id, _zero_totals()),
+            include_returns=include_returns,
+        )
         metrics.append(
             {
                 "label": spec["label"],
@@ -485,7 +535,13 @@ def _build_scope_average_metrics(member, department, start_date, end_date, *, to
                 "diff_text": _metric_diff_text(self_value, average),
                 "previous_label": previous_label,
                 "previous_text": (
-                    _metric_previous_comparison(spec["key"], department, member_totals.get(member.id, _zero_totals()), previous_totals)
+                    _metric_previous_comparison(
+                        spec["key"],
+                        department,
+                        member_totals.get(member.id, _zero_totals()),
+                        previous_totals,
+                        include_returns=include_returns,
+                    )
                     if previous_totals is not None and previous_label
                     else None
                 ),
@@ -595,8 +651,8 @@ def _build_month_trend(member, department, *, end_date, months=6):
         trend.append(
             {
                 "label": start_date.strftime("%y/%-m"),
-                "count_value": _count_value_for_department(department, totals),
-                "amount_value": int(totals["support_amount"]),
+                "count_value": _count_value_for_department(department, totals, include_returns=True),
+                "amount_value": _display_amount_value(totals, include_returns=True),
             }
         )
     return _normalize_trend_items(trend)
@@ -616,8 +672,8 @@ def _build_period_trend(member, department, *, current_period, limit=4):
         trend.append(
             {
                 "label": period.name,
-                "count_value": _count_value_for_department(department, totals),
-                "amount_value": int(totals["support_amount"]),
+                "count_value": _count_value_for_department(department, totals, include_returns=True),
+                "amount_value": _display_amount_value(totals, include_returns=True),
             }
         )
     return _normalize_trend_items(trend)
@@ -645,21 +701,21 @@ def _build_scope_trend(member, department, *, scope_data, end_date):
     return None
 
 
-def _build_best_records(member, department, start_date, end_date):
+def _build_best_records(member, department, start_date, end_date, *, include_returns=False):
     best_count_day = None
     best_amount_day = None
     for offset in range((end_date - start_date).days + 1):
         current_day = start_date + timedelta(days=offset)
         totals = _department_totals(member, department, current_day, current_day)
-        count_value = _count_value_for_department(department, totals)
-        amount_value = int(totals["support_amount"])
+        count_value = _count_value_for_department(department, totals, include_returns=include_returns)
+        amount_value = _display_amount_value(totals, include_returns=include_returns)
         if count_value <= 0 and amount_value <= 0:
             continue
         candidate = {
             "date": current_day,
             "count_value": count_value,
             "amount_value": amount_value,
-            "count_text": _count_breakdown_text(department, totals),
+            "count_text": _count_breakdown_text(department, totals, include_returns=include_returns),
         }
         if not best_count_day or candidate["count_value"] > best_count_day["count_value"] or (
             candidate["count_value"] == best_count_day["count_value"] and candidate["amount_value"] > best_count_day["amount_value"]
@@ -698,6 +754,7 @@ def build_member_dashboard_card(
         scope_data["summary"] = "生涯"
     start_date = scope_data["start_date"]
     end_date = scope_data["end_date"]
+    include_returns = scope_data["scope"] != "today"
     previous_start, previous_end = _previous_range(start_date, end_date)
     department_members = list(
         Member.objects.active().filter(department_links__department=department).distinct().order_by("name")
@@ -710,21 +767,22 @@ def build_member_dashboard_card(
         department=department,
         entry_date__range=(start_date, end_date),
     ).count() or 1
-    changes = _summarize_changes(scope_totals, previous_totals)
-    count_value = _count_value_for_department(department, scope_totals)
+    changes = _summarize_changes(scope_totals, previous_totals, department, include_returns=include_returns)
+    count_value = _count_value_for_department(department, scope_totals, include_returns=include_returns)
+    amount_value = _display_amount_value(scope_totals, include_returns=include_returns)
     target_totals = _scope_target_totals(member, department, scope_data)
     goal_completed = (
         target_totals["count"] > 0
         and target_totals["amount"] > 0
         and count_value >= target_totals["count"]
-        and int(scope_totals["support_amount"]) >= target_totals["amount"]
+        and amount_value >= target_totals["amount"]
     )
-    rankings = _build_member_rankings(department, department_members, start_date, end_date)
+    rankings = _build_member_rankings(department, department_members, start_date, end_date, include_returns=include_returns)
     count_rank, member_count = _resolve_rank(member.id, rankings, "count_value")
     amount_rank, _ = _resolve_rank(member.id, rankings, "amount_value")
     team_average = _team_averages(rankings)
     trend_section = _build_scope_trend(member, department, scope_data=scope_data, end_date=end_date)
-    best_records = _build_best_records(member, department, start_date, end_date)
+    best_records = _build_best_records(member, department, start_date, end_date, include_returns=include_returns)
     previous_scope_label = "前路程比" if scope_data["scope"] == "period" else "前月比" if scope_data["scope"] == "month" else None
     return {
         "department": department,
@@ -743,31 +801,32 @@ def build_member_dashboard_card(
         "scope_totals": scope_totals,
         "count_label": _count_label_for_department(department),
         "count_value": count_value,
-        "count_text": _count_breakdown_text(department, scope_totals),
+        "count_text": _count_breakdown_text(department, scope_totals, include_returns=include_returns),
+        "amount_value": amount_value,
         "target_count": target_totals["count"],
         "target_amount": target_totals["amount"],
         "goal_completed": goal_completed,
         "can_edit_scope_target": scope_data["scope"] in {"period", "month"},
         "count_rate_text": _progress_label(count_value, target_totals["count"]),
-        "amount_rate_text": _progress_label(int(scope_totals["support_amount"]), target_totals["amount"]),
+        "amount_rate_text": _progress_label(amount_value, target_totals["amount"]),
         "count_remaining": max(target_totals["count"] - count_value, 0),
-        "amount_remaining": max(target_totals["amount"] - int(scope_totals["support_amount"]), 0),
+        "amount_remaining": max(target_totals["amount"] - amount_value, 0),
         "has_target": target_totals["count"] > 0 or target_totals["amount"] > 0,
         "approach_average": round(scope_totals["approach_count"] / active_days, 1),
         "communication_average": round(scope_totals["communication_count"] / active_days, 1),
         "count_average": round(count_value / active_days, 1),
-        "amount_average": round(int(scope_totals["support_amount"]) / active_days, 1),
+        "amount_average": round(amount_value / active_days, 1),
         "communication_rate_text": _rate_text(scope_totals["communication_count"], scope_totals["approach_count"]),
         "participation_rate_text": _rate_text(count_value, scope_totals["communication_count"]),
         "average_support_amount_text": _format_metric_display(
             "average_support_amount",
-            _average_support_amount_value(int(scope_totals["support_amount"]), count_value),
+            _average_support_amount_value(amount_value, count_value),
         ),
         "count_change_rate": _comparison_label(
-            _change_rate(count_value, _count_value_for_department(department, previous_totals))
+            _change_rate(count_value, _count_value_for_department(department, previous_totals, include_returns=include_returns))
         ),
         "amount_change_rate": _comparison_label(
-            _change_rate(scope_totals["support_amount"], previous_totals["support_amount"])
+            _change_rate(amount_value, _display_amount_value(previous_totals, include_returns=include_returns))
         ),
         "changes": changes,
         "count_rank_text": f"{count_rank} / {member_count}" if count_rank else "-",
@@ -775,7 +834,7 @@ def build_member_dashboard_card(
         "team_count_average": team_average["count_value"],
         "team_amount_average": team_average["amount_value"],
         "count_average_diff_text": _format_signed_diff(round(count_value - team_average["count_value"], 1)),
-        "amount_average_diff_text": _format_signed_diff(round(int(scope_totals["support_amount"]) - team_average["amount_value"], 1)),
+        "amount_average_diff_text": _format_signed_diff(round(amount_value - team_average["amount_value"], 1)),
         "trend_section": trend_section,
         "ranking_metrics": _build_scope_ranking_metrics(
             member,

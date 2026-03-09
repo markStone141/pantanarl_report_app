@@ -55,9 +55,9 @@
         <span class="muted">金額</span>
         <strong class="kpi">
           {% if selected_card.target_amount %}
-          {{ selected_card.scope_totals.support_amount|intcomma }}/{{ selected_card.target_amount|intcomma }}
+          {{ selected_card.amount_value|intcomma }}/{{ selected_card.target_amount|intcomma }}
           {% else %}
-          {{ selected_card.scope_totals.support_amount|intcomma }}/-
+          {{ selected_card.amount_value|intcomma }}/-
           {% endif %}
         </strong>
         <span class="muted dairymetrics-subtext">達成率 {{ selected_card.amount_rate_text }}</span>
@@ -130,7 +130,7 @@
     </div>
     <div class="metric-card">
       <span class="muted">合計金額</span>
-      <strong class="kpi">{{ selected_card.scope_totals.support_amount|intcomma }}</strong>
+      <strong class="kpi">{{ selected_card.amount_value|intcomma }}</strong>
     </div>
     <div class="metric-card">
       <span class="muted">一日平均金額</span>
@@ -180,7 +180,7 @@
     </div>
     <div class="metric-card">
       <span class="muted">支援金額</span>
-      <strong class="kpi">{{ selected_card.scope_totals.support_amount|intcomma }}</strong>
+      <strong class="kpi">{{ selected_card.amount_value|intcomma }}</strong>
     </div>
     <div class="metric-card dairymetrics-metric-wide">
       <span class="muted">平均支援額</span>
