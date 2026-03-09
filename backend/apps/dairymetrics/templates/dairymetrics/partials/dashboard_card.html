@@ -32,21 +32,35 @@
     </div>
     <div class="dairymetrics-goal-grid">
       <div class="metric-card">
-        <span class="muted">{{ selected_card.count_label }} 達成率</span>
-        <strong class="kpi">{{ selected_card.count_rate_text }}</strong>
+        <span class="muted">{{ selected_card.count_label }}</span>
+        <strong class="kpi">
+          {% if selected_card.target_count %}
+          {{ selected_card.count_value }}/{{ selected_card.target_count }}
+          {% else %}
+          {{ selected_card.count_value }}/-
+          {% endif %}
+        </strong>
+        <span class="muted dairymetrics-subtext">達成率 {{ selected_card.count_rate_text }}</span>
         {% if selected_card.target_count %}
         <span class="muted dairymetrics-subtext">残り {{ selected_card.count_remaining }}</span>
         {% else %}
-        <span class="muted dairymetrics-subtext">目標未設定</span>
+        <span class="muted dairymetrics-subtext">残り -</span>
         {% endif %}
       </div>
       <div class="metric-card">
-        <span class="muted">金額 達成率</span>
-        <strong class="kpi">{{ selected_card.amount_rate_text }}</strong>
+        <span class="muted">金額</span>
+        <strong class="kpi">
+          {% if selected_card.target_amount %}
+          {{ selected_card.scope_totals.support_amount|intcomma }}/{{ selected_card.target_amount|intcomma }}
+          {% else %}
+          {{ selected_card.scope_totals.support_amount|intcomma }}/-
+          {% endif %}
+        </strong>
+        <span class="muted dairymetrics-subtext">達成率 {{ selected_card.amount_rate_text }}</span>
         {% if selected_card.target_amount %}
         <span class="muted dairymetrics-subtext">残り {{ selected_card.amount_remaining|intcomma }}</span>
         {% else %}
-        <span class="muted dairymetrics-subtext">目標未設定</span>
+        <span class="muted dairymetrics-subtext">残り -</span>
         {% endif %}
       </div>
     </div>
@@ -116,12 +130,12 @@
     </div>
     {% else %}
     <div class="metric-card">
-      <span class="muted">{{ selected_card.scope_label }}の{{ selected_card.count_label }}</span>
+      <span class="muted">{{ selected_card.count_label }}</span>
       <strong class="kpi">{{ selected_card.count_value }}</strong>
       <span class="muted dairymetrics-subtext">{{ selected_card.count_text }}</span>
     </div>
     <div class="metric-card">
-      <span class="muted">{{ selected_card.scope_label }}の支援金額</span>
+      <span class="muted">支援金額</span>
       <strong class="kpi">{{ selected_card.scope_totals.support_amount|intcomma }}</strong>
     </div>
     <div class="metric-card">
@@ -129,7 +143,7 @@
       <span class="muted">アプローチ 平均/合計</span>
       <strong>{{ selected_card.approach_average }} / {{ selected_card.scope_totals.approach_count }}</strong>
       {% else %}
-      <span class="muted">今日のアプローチ</span>
+      <span class="muted">アプローチ</span>
       <strong>{{ selected_card.scope_totals.approach_count }}</strong>
       {% endif %}
     </div>
@@ -138,7 +152,7 @@
       <span class="muted">コミュニケーション 平均/合計</span>
       <strong>{{ selected_card.communication_average }} / {{ selected_card.scope_totals.communication_count }}</strong>
       {% else %}
-      <span class="muted">今日のコミュニケーション</span>
+      <span class="muted">コミュニケーション</span>
       <strong>{{ selected_card.scope_totals.communication_count }}</strong>
       {% endif %}
     </div>
