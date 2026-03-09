@@ -359,6 +359,10 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertNotContains(lifetime_response, "未入力")
         self.assertNotContains(lifetime_response, "fa-arrow-trend-up")
         self.assertNotContains(lifetime_response, "fa-arrow-trend-down")
+        self.assertContains(lifetime_response, "合計CS/難民")
+        self.assertContains(lifetime_response, "合計金額")
+        self.assertContains(lifetime_response, "一日平均CS/難民")
+        self.assertContains(lifetime_response, "一日平均金額")
         filtered_response = self.client.get(
             reverse("dairymetrics_dashboard"),
             {"scope": "custom", "start_date": "2026-03-08", "end_date": "2026-03-08"},
@@ -367,6 +371,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(filtered_response, "2026/03/08 - 2026/03/08")
         self.assertContains(filtered_response, "CS 2 / 難民 1")
         self.assertContains(filtered_response, "2,200")
+        self.assertContains(filtered_response, "一日平均金額")
         self.assertNotContains(filtered_response, "目標達成率")
         self.assertNotContains(filtered_response, "fa-arrow-trend-up")
 

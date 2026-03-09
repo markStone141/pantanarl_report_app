@@ -96,6 +96,25 @@
     <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_compare' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">比較を見る</a>
   </div>
   <div class="grid grid-2 dairymetrics-stat-grid">
+    {% if selected_card.scope == "custom" %}
+    <div class="metric-card">
+      <span class="muted">合計{{ selected_card.count_label }}</span>
+      <strong class="kpi">{{ selected_card.count_value }}</strong>
+      <span class="muted dairymetrics-subtext">{{ selected_card.count_text }}</span>
+    </div>
+    <div class="metric-card">
+      <span class="muted">合計金額</span>
+      <strong class="kpi">{{ selected_card.scope_totals.support_amount|intcomma }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="muted">一日平均{{ selected_card.count_label }}</span>
+      <strong class="kpi">{{ selected_card.count_average }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="muted">一日平均金額</span>
+      <strong class="kpi">{{ selected_card.amount_average|intcomma }}</strong>
+    </div>
+    {% else %}
     <div class="metric-card">
       <span class="muted">{{ selected_card.scope_label }}の{{ selected_card.count_label }}</span>
       <strong class="kpi">{{ selected_card.count_value }}</strong>
@@ -123,6 +142,7 @@
       <strong>{{ selected_card.scope_totals.communication_count }}</strong>
       {% endif %}
     </div>
+    {% endif %}
   </div>
   {% if selected_card.show_best_day %}
   <div class="dairymetrics-insight-grid">

@@ -397,6 +397,8 @@ def build_member_dashboard_card(
         "has_target": target_totals["count"] > 0 or target_totals["amount"] > 0,
         "approach_average": round(scope_totals["approach_count"] / active_days, 1),
         "communication_average": round(scope_totals["communication_count"] / active_days, 1),
+        "count_average": round(count_value / active_days, 1),
+        "amount_average": round(int(scope_totals["support_amount"]) / active_days, 1),
         "count_change_rate": _comparison_label(
             _change_rate(count_value, _count_value_for_department(department, previous_totals))
         ),
