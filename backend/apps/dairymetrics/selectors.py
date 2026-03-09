@@ -368,13 +368,13 @@ def _metric_value_for_scope(metric_key, department, totals, *, include_returns=F
         return _rate_value(int(totals["communication_count"]), int(totals["approach_count"]))
     if metric_key == "participation_rate":
         return _rate_value(
-            _count_value_for_department(department, totals, include_returns=include_returns),
+            _count_value_for_department(department, totals),
             int(totals["communication_count"]),
         )
     if metric_key == "average_support_amount":
         return _average_support_amount_value(
-            _display_amount_value(totals, include_returns=include_returns),
-            _count_value_for_department(department, totals, include_returns=include_returns),
+            int(totals["support_amount"]),
+            _count_value_for_department(department, totals),
         )
     return _display_amount_value(totals, include_returns=include_returns)
 
@@ -858,10 +858,16 @@ def build_member_dashboard_card(
         "count_average": round(count_value / active_days, 1),
         "amount_average": round(amount_value / active_days, 1),
         "communication_rate_text": _rate_text(scope_totals["communication_count"], scope_totals["approach_count"]),
-        "participation_rate_text": _rate_text(count_value, scope_totals["communication_count"]),
+        "participation_rate_text": _rate_text(
+            _count_value_for_department(department, scope_totals),
+            scope_totals["communication_count"],
+        ),
         "average_support_amount_text": _format_metric_display(
             "average_support_amount",
-            _average_support_amount_value(amount_value, count_value),
+            _average_support_amount_value(
+                int(scope_totals["support_amount"]),
+                _count_value_for_department(department, scope_totals),
+            ),
         ),
         "count_change_rate": _comparison_label(
             _change_rate(count_value, _count_value_for_department(department, previous_totals, include_returns=include_returns))
