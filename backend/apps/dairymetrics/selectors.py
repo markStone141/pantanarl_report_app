@@ -127,7 +127,25 @@ def _previous_range(start_date, end_date):
     return previous_start, previous_end
 
 
-def _resolve_scope(today, scope):
+def _member_activity_bounds(member, department, today):
+    entry = (
+        MemberDailyMetricEntry.objects.filter(member=member, department=department)
+        .order_by("entry_date")
+        .values_list("entry_date", flat=True)
+        .first()
+    )
+    adjustment = (
+        MetricAdjustment.objects.filter(member=member, department=department)
+        .order_by("target_date")
+        .values_list("target_date", flat=True)
+        .first()
+    )
+    dates = [item for item in [entry, adjustment] if item]
+    start_date = min(dates) if dates else today
+    return {"start_date": start_date, "end_date": today}
+
+
+def _resolve_scope(today, scope, *, member=None, department=None, requested_start_date=None, requested_end_date=None):
     month_start = today.replace(day=1)
     month_end = today.replace(day=monthrange(today.year, today.month)[1])
     current_period = (
@@ -152,6 +170,24 @@ def _resolve_scope(today, scope):
             "start_date": month_start,
             "end_date": today,
             "period": current_period,
+        }
+    if scope == "custom" and member and department:
+        bounds = _member_activity_bounds(member, department, today)
+        start_date = requested_start_date or bounds["start_date"]
+        end_date = requested_end_date or bounds["end_date"]
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+        is_lifetime = requested_start_date is None and requested_end_date is None
+        return {
+            "scope": "custom",
+            "label": "期間指定",
+            "summary": "生涯" if is_lifetime else f"{start_date.strftime('%Y/%m/%d')} - {end_date.strftime('%Y/%m/%d')}",
+            "start_date": start_date,
+            "end_date": end_date,
+            "period": current_period,
+            "custom_start_date": start_date,
+            "custom_end_date": end_date,
+            "is_lifetime": is_lifetime,
         }
     return {
         "scope": "today",
@@ -283,9 +319,27 @@ def _build_best_day(member, department, start_date, end_date):
     return best_day
 
 
-def build_member_dashboard_card(member, department, *, today=None, scope="today"):
+def build_member_dashboard_card(
+    member,
+    department,
+    *,
+    today=None,
+    scope="today",
+    start_date=None,
+    end_date=None,
+    is_lifetime=False,
+):
     today = today or date.today()
-    scope_data = _resolve_scope(today, scope)
+    scope_data = _resolve_scope(
+        today,
+        scope,
+        member=member,
+        department=department,
+        requested_start_date=start_date,
+        requested_end_date=end_date,
+    )
+    if scope_data["scope"] == "custom" and is_lifetime:
+        scope_data["summary"] = "生涯"
     start_date = scope_data["start_date"]
     end_date = scope_data["end_date"]
     previous_start, previous_end = _previous_range(start_date, end_date)
@@ -307,13 +361,15 @@ def build_member_dashboard_card(member, department, *, today=None, scope="today"
     count_rank, member_count = _resolve_rank(member.id, rankings, "count_value")
     amount_rank, _ = _resolve_rank(member.id, rankings, "amount_value")
     team_average = _team_averages(rankings)
-    daily_trend = _build_daily_trend(member, department, end_date=today)
+    daily_trend = _build_daily_trend(member, department, end_date=end_date)
     best_day = _build_best_day(member, department, start_date, end_date)
     return {
         "department": department,
         "scope": scope_data["scope"],
         "scope_label": scope_data["label"],
         "scope_summary": scope_data["summary"],
+        "custom_start_date": scope_data.get("custom_start_date"),
+        "custom_end_date": scope_data.get("custom_end_date"),
         "today_status": "入力済み" if today_entry else "未入力",
         "today_entry": today_entry,
         "activity_status": (
@@ -347,10 +403,12 @@ def build_member_dashboard_card(member, department, *, today=None, scope="today"
         "amount_average_diff_text": _format_signed_diff(round(int(scope_totals["support_amount"]) - team_average["amount_value"], 1)),
         "daily_trend": daily_trend,
         "best_day": best_day,
+        "show_average_metrics": scope_data["scope"] != "today",
+        "show_best_day": scope_data["scope"] != "today",
     }
 
 
-def build_member_dashboard(member, *, today=None, department_code=None, scope="today"):
+def build_member_dashboard(member, *, today=None, department_code=None, scope="today", start_date=None, end_date=None):
     today = today or date.today()
     departments = list(
         Department.objects.filter(is_active=True, member_links__member=member).distinct().order_by("code")
@@ -364,16 +422,32 @@ def build_member_dashboard(member, *, today=None, department_code=None, scope="t
             "selected_scope": "today",
         }
     selected_department = next((department for department in departments if department.code == department_code), departments[0])
-    scope_data = _resolve_scope(today, scope)
+    scope_data = _resolve_scope(
+        today,
+        scope,
+        member=member,
+        department=selected_department,
+        requested_start_date=start_date,
+        requested_end_date=end_date,
+    )
     scope_options = [
         {"value": "today", "label": "今日", "is_active": scope_data["scope"] == "today"},
         {"value": "period", "label": "今路程", "is_active": scope_data["scope"] == "period", "is_disabled": scope_data["period"] is None},
         {"value": "month", "label": "今月", "is_active": scope_data["scope"] == "month"},
+        {"value": "custom", "label": "期間指定", "is_active": scope_data["scope"] == "custom"},
     ]
     return {
         "departments": departments,
         "selected_department": selected_department,
-        "selected_card": build_member_dashboard_card(member, selected_department, today=today, scope=scope_data["scope"]),
+        "selected_card": build_member_dashboard_card(
+            member,
+            selected_department,
+            today=today,
+            scope=scope_data["scope"],
+            start_date=scope_data.get("custom_start_date"),
+            end_date=scope_data.get("custom_end_date"),
+            is_lifetime=scope_data.get("is_lifetime", False),
+        ),
         "scope_options": scope_options,
         "selected_scope": scope_data["scope"],
     }

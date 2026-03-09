@@ -139,6 +139,18 @@
   white-space: nowrap;
 }
 
+.dairymetrics-range-form {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.dairymetrics-range-form > div {
+  min-width: 0;
+  flex: 1 1 160px;
+}
+
 .dairymetrics-scope-tab:disabled {
   opacity: 0.4;
 }
@@ -494,7 +506,7 @@
     margin-inline: -12px;
     padding-inline: 10px;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0;
     overflow: hidden;
   }
@@ -531,6 +543,11 @@
   }
 
   .dairymetrics-month-filter {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .dairymetrics-range-form {
     display: grid;
     grid-template-columns: 1fr;
   }

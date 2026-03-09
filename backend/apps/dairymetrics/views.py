@@ -43,11 +43,15 @@ def _build_entry_form(*, member, data=None, department_code="", entry_date=None)
 def _build_member_dashboard_context(*, request, member):
     selected_department_code = (request.GET.get("department") or "").strip()
     selected_scope = (request.GET.get("scope") or "today").strip()
+    selected_start_date = parse_date((request.GET.get("start_date") or "").strip())
+    selected_end_date = parse_date((request.GET.get("end_date") or "").strip())
     dashboard_data = build_member_dashboard(
         member,
         today=timezone.localdate(),
         department_code=selected_department_code,
         scope=selected_scope,
+        start_date=selected_start_date,
+        end_date=selected_end_date,
     )
     selected_department = dashboard_data["selected_department"]
     entry_form = _build_entry_form(

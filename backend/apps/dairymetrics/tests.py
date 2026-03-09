@@ -91,6 +91,10 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "残り 1")
         self.assertContains(response, "比較を見る")
         self.assertNotContains(response, "今日の順位")
+        self.assertContains(response, "今日のアプローチ")
+        self.assertContains(response, "今日のコミュニケーション")
+        self.assertNotContains(response, "アプローチ 平均/合計")
+        self.assertNotContains(response, "今日の自己ベスト")
 
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")
@@ -300,6 +304,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "今路程")
         self.assertContains(response, "第1路程")
+        self.assertContains(response, "今路程の自己ベスト")
+        self.assertContains(response, "アプローチ 平均/合計")
 
     def test_today_scope_without_target_shows_goal_cta(self):
         self.client.force_login(self.user)
@@ -307,6 +313,41 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "目標を入力")
         self.assertContains(response, "未入力")
+
+    def test_dashboard_custom_scope_defaults_to_lifetime_and_accepts_date_range(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 2),
+            approach_count=3,
+            communication_count=2,
+            support_amount=1200,
+            cs_count=1,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 8),
+            approach_count=5,
+            communication_count=4,
+            support_amount=2200,
+            cs_count=2,
+            refugee_count=1,
+        )
+        self.client.force_login(self.user)
+        lifetime_response = self.client.get(reverse("dairymetrics_dashboard"), {"scope": "custom"})
+        self.assertEqual(lifetime_response.status_code, 200)
+        self.assertContains(lifetime_response, "期間指定")
+        self.assertContains(lifetime_response, "生涯")
+        self.assertContains(lifetime_response, 'name="start_date"')
+        filtered_response = self.client.get(
+            reverse("dairymetrics_dashboard"),
+            {"scope": "custom", "start_date": "2026-03-08", "end_date": "2026-03-08"},
+        )
+        self.assertEqual(filtered_response.status_code, 200)
+        self.assertContains(filtered_response, "2026/03/08 - 2026/03/08")
+        self.assertContains(filtered_response, "CS 2 / 難民 1")
+        self.assertContains(filtered_response, "2,200")
 
 
 class DairyMetricsAdminTests(TestCase):

@@ -29,6 +29,21 @@
     </div>
     {% endif %}
   </div>
+  {% if selected_card.scope == "custom" %}
+  <form method="get" action="{% url 'dairymetrics_compare' %}" class="dairymetrics-range-form">
+    <input type="hidden" name="department" value="{{ selected_card.department.code }}">
+    <input type="hidden" name="scope" value="custom">
+    <div>
+      <label for="dairymetrics-compare-start-date">開始日</label>
+      <input id="dairymetrics-compare-start-date" type="date" name="start_date" value="{{ selected_card.custom_start_date|date:'Y-m-d' }}">
+    </div>
+    <div>
+      <label for="dairymetrics-compare-end-date">終了日</label>
+      <input id="dairymetrics-compare-end-date" type="date" name="end_date" value="{{ selected_card.custom_end_date|date:'Y-m-d' }}">
+    </div>
+    <button type="submit" class="btn-inline dairymetrics-secondary-btn">集計する</button>
+  </form>
+  {% endif %}
   <div class="dairymetrics-card-actions">
     <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_dashboard' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">ダッシュボードへ戻る</a>
   </div>

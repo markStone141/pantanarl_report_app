@@ -50,6 +50,21 @@
       </div>
     </div>
   </section>
+  {% if selected_card.scope == "custom" %}
+  <form method="get" action="{% url 'dairymetrics_dashboard' %}" class="dairymetrics-range-form">
+    <input type="hidden" name="department" value="{{ selected_card.department.code }}">
+    <input type="hidden" name="scope" value="custom">
+    <div>
+      <label for="dairymetrics-start-date">開始日</label>
+      <input id="dairymetrics-start-date" type="date" name="start_date" value="{{ selected_card.custom_start_date|date:'Y-m-d' }}">
+    </div>
+    <div>
+      <label for="dairymetrics-end-date">終了日</label>
+      <input id="dairymetrics-end-date" type="date" name="end_date" value="{{ selected_card.custom_end_date|date:'Y-m-d' }}">
+    </div>
+    <button type="submit" class="btn-inline dairymetrics-secondary-btn">集計する</button>
+  </form>
+  {% endif %}
   <div class="dairymetrics-card-head">
     <div>
       <div class="dairymetrics-title-row">
@@ -87,14 +102,25 @@
       <strong class="kpi">{{ selected_card.scope_totals.support_amount|intcomma }}</strong>
     </div>
     <div class="metric-card">
+      {% if selected_card.show_average_metrics %}
       <span class="muted">アプローチ 平均/合計</span>
       <strong>{{ selected_card.approach_average }} / {{ selected_card.scope_totals.approach_count }}</strong>
+      {% else %}
+      <span class="muted">今日のアプローチ</span>
+      <strong>{{ selected_card.scope_totals.approach_count }}</strong>
+      {% endif %}
     </div>
     <div class="metric-card">
+      {% if selected_card.show_average_metrics %}
       <span class="muted">コミュニケーション 平均/合計</span>
       <strong>{{ selected_card.communication_average }} / {{ selected_card.scope_totals.communication_count }}</strong>
+      {% else %}
+      <span class="muted">今日のコミュニケーション</span>
+      <strong>{{ selected_card.scope_totals.communication_count }}</strong>
+      {% endif %}
     </div>
   </div>
+  {% if selected_card.show_best_day %}
   <div class="dairymetrics-insight-grid">
     <div class="comparison-card dairymetrics-insight-wide">
       <span class="muted">{{ selected_card.scope_label }}の自己ベスト</span>
@@ -107,6 +133,7 @@
       {% endif %}
     </div>
   </div>
+  {% endif %}
   <div class="dairymetrics-trend-strip">
     <div>
       <span class="muted">伸びた項目</span>
