@@ -1,12 +1,12 @@
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
-from apps.accounts.models import Department
+from apps.accounts.models import Department, Member
 
 from .auth import get_member_profile, require_dairymetrics_admin, require_dairymetrics_member
 from .forms import DairyMetricsLoginForm, MemberDailyMetricEntryForm, MemberScopeTargetForm, MetricAdjustmentForm
@@ -39,7 +39,23 @@ def _build_entry_form(*, member, data=None, department_code="", entry_date=None)
         initial=initial,
     )
 
-def _build_member_dashboard_context(*, request, member):
+def _build_member_directory():
+    members = (
+        Member.objects.filter(department_links__department__is_active=True)
+        .distinct()
+        .order_by("name")
+        .prefetch_related("department_links__department")
+    )
+    return [
+        {
+            "member": member,
+            "departments": [link.department for link in member.department_links.all() if link.department.is_active],
+        }
+        for member in members
+    ]
+
+
+def _build_member_dashboard_context(*, request, member, readonly=False, viewer_member=None):
     selected_department_code = (request.GET.get("department") or "").strip()
     selected_scope = (request.GET.get("scope") or "today").strip()
     selected_start_date = parse_date((request.GET.get("start_date") or "").strip())
@@ -53,14 +69,16 @@ def _build_member_dashboard_context(*, request, member):
         end_date=selected_end_date,
     )
     selected_department = dashboard_data["selected_department"]
-    entry_form = _build_entry_form(
-        member=member,
-        department_code=selected_department.code if selected_department else "",
-        entry_date=timezone.localdate(),
-    )
+    entry_form = None
     scope_target_form = None
     scope_target_form_action = ""
-    if selected_department and dashboard_data["selected_card"]:
+    if not readonly:
+        entry_form = _build_entry_form(
+            member=member,
+            department_code=selected_department.code if selected_department else "",
+            entry_date=timezone.localdate(),
+        )
+    if not readonly and selected_department and dashboard_data["selected_card"]:
         selected_card = dashboard_data["selected_card"]
         if selected_card["scope"] in {"period", "month"}:
             scope_target_form = MemberScopeTargetForm(
@@ -85,6 +103,8 @@ def _build_member_dashboard_context(*, request, member):
         "scope_target_form": scope_target_form,
         "scope_target_form_action": scope_target_form_action,
         "is_admin": request.user.is_staff,
+        "readonly_dashboard": readonly,
+        "viewer_member": viewer_member or member,
     }
 
 
@@ -115,6 +135,8 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         "selected_card": None,
         "entry_form": None,
         "is_admin": request.user.is_staff,
+        "readonly_dashboard": False,
+        "viewer_member": None,
     }
     if request.headers.get("x-requested-with") == "XMLHttpRequest" and member:
         return JsonResponse(
@@ -134,6 +156,48 @@ def dashboard(request: HttpRequest) -> HttpResponse:
                     context,
                     request=request,
                 ),
+                "department_code": context["selected_department"].code if context["selected_department"] else "",
+            }
+        )
+    return render(request, "dairymetrics/dashboard.html", context)
+
+
+@require_dairymetrics_member
+def member_index(request: HttpRequest) -> HttpResponse:
+    viewer_member = get_member_profile(request.user)
+    return render(
+        request,
+        "dairymetrics/member_index.html",
+        {
+            "page_title": "DairyMetrics",
+            "member": viewer_member,
+            "viewer_member": viewer_member,
+            "is_admin": request.user.is_staff,
+            "member_rows": _build_member_directory(),
+        },
+    )
+
+
+@require_dairymetrics_member
+def member_dashboard(request: HttpRequest, member_id: int) -> HttpResponse:
+    viewer_member = get_member_profile(request.user)
+    target_member = get_object_or_404(Member.objects.prefetch_related("department_links__department"), pk=member_id)
+    context = _build_member_dashboard_context(
+        request=request,
+        member=target_member,
+        readonly=True,
+        viewer_member=viewer_member,
+    )
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "card_html": render_to_string(
+                    "dairymetrics/partials/dashboard_card.html",
+                    context,
+                    request=request,
+                ),
+                "form_html": "",
+                "target_form_html": "",
                 "department_code": context["selected_department"].code if context["selected_department"] else "",
             }
         )

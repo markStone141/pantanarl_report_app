@@ -296,6 +296,19 @@
   gap: 12px;
 }
 
+.dairymetrics-member-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.dairymetrics-member-card {
+  display: grid;
+  gap: 8px;
+  color: inherit;
+}
+
 .dairymetrics-rank-card {
   display: grid;
   gap: 12px;
@@ -637,6 +650,7 @@
   .dairymetrics-goal-grid,
   .dairymetrics-insight-grid,
   .dairymetrics-compare-grid,
+  .dairymetrics-member-grid,
   .dairymetrics-comparison-grid,
   .dairymetrics-trend-strip {
     grid-template-columns: 1fr;

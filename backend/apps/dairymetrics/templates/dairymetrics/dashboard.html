@@ -13,7 +13,13 @@
     <div>
       <strong>DairyMetrics</strong>
       <div class="topbar-muted">
-        {% if member %}{{ member.name }}さんのダッシュボード{% else %}管理者ダッシュボード{% endif %}
+        {% if readonly_dashboard and member %}
+        {{ member.name }}さんのダッシュボード
+        {% elif member %}
+        {{ member.name }}さんのダッシュボード
+        {% else %}
+        管理者ダッシュボード
+        {% endif %}
       </div>
     </div>
     <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="Open menu">
@@ -21,7 +27,8 @@
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
-      {% if member %}<a href="{% url 'dairymetrics_compare' %}">スコア</a>{% endif %}
+      {% if viewer_member %}<a href="{% url 'dairymetrics_member_index' %}">メンバー</a>{% endif %}
+      {% if member and not readonly_dashboard %}<a href="{% url 'dairymetrics_compare' %}">スコア</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">月次俯瞰</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_adjustment_create' %}">後追い追加</a>{% endif %}
       <a href="{% url 'report_index' %}">Report App</a>
@@ -36,7 +43,7 @@
     </div>
   </section>
 
-  {% if member and selected_department %}
+  {% if member and selected_department and not readonly_dashboard %}
   <div class="dairymetrics-fab-stack">
     <button id="dairymetrics-open-entry" class="dairymetrics-fab" type="button" aria-label="実績入力を開く">
       <i class="fa-solid fa-pen"></i>

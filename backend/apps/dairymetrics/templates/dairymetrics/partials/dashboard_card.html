@@ -26,9 +26,9 @@
           {% endif %}
         </h3>
       </div>
-      {% if selected_card.scope == "today" and not selected_card.has_target %}
+      {% if not readonly_dashboard and selected_card.scope == "today" and not selected_card.has_target %}
       <button type="button" class="btn-inline dairymetrics-goal-cta" data-open-dairymetrics-entry>目標を入力</button>
-      {% elif selected_card.can_edit_scope_target %}
+      {% elif not readonly_dashboard and selected_card.can_edit_scope_target %}
       <button type="button" class="btn-inline dairymetrics-goal-cta" data-open-dairymetrics-target>
         {% if selected_card.has_target %}目標を編集{% else %}目標を設定{% endif %}
       </button>
@@ -110,8 +110,12 @@
     {% endif %}
   </div>
   <div class="dairymetrics-card-actions">
+    {% if readonly_dashboard %}
+    <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">メンバー一覧へ戻る</a>
+    {% else %}
     <a class="btn-inline dairymetrics-desktop-entry-btn" href="{% url 'dairymetrics_entry' %}?department={{ selected_card.department.code }}">入力する</a>
     <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_compare' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">スコアを見る</a>
+    {% endif %}
   </div>
   <div class="grid grid-2 dairymetrics-stat-grid">
     {% if selected_card.scope == "custom" %}
