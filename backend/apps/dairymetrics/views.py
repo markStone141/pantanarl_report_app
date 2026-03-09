@@ -222,7 +222,7 @@ def member_dashboard(request: HttpRequest, member_id: int) -> HttpResponse:
                 "form_html": "",
                 "target_form_html": "",
                 "department_code": context["selected_department"].code if context["selected_department"] else "",
-                "page_subtitle": f"{target_member.name}さんのダッシュボード",
+                "page_subtitle": f"{viewer_member.name}さんでログイン中" if viewer_member else "他メンバーデータ",
             }
         )
     return render(request, "dairymetrics/dashboard.html", context)

@@ -13,8 +13,8 @@
     <div>
       <strong>DairyMetrics</strong>
       <div id="dairymetrics-dashboard-subtitle" class="topbar-muted">
-        {% if readonly_dashboard and member %}
-        {{ member.name }}さんのダッシュボード
+        {% if readonly_dashboard and viewer_member %}
+        {{ viewer_member.name }}さんでログイン中
         {% elif member %}
         {{ member.name }}さんのダッシュボード
         {% else %}
