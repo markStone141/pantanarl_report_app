@@ -17,6 +17,7 @@ from apps.common.report_metrics import (
     format_metric_triples,
     period_status as calc_period_status,
 )
+from apps.dairymetrics.models import MemberDailyMetricEntry
 from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 
 from .forms import ReportSubmissionForm
@@ -456,6 +457,53 @@ def _build_initial_rows_from_report(report: DailyDepartmentReport):
     return rows
 
 
+def _build_initial_row_from_metric_entry(*, entry: MemberDailyMetricEntry, split_counts: bool, show_location: bool):
+    return {
+        "member_id": str(entry.member_id) if entry.member_id else "",
+        "amount": str(entry.support_amount),
+        "count": str(entry.result_count),
+        "cs_count": str(entry.cs_count),
+        "refugee_count": str(entry.refugee_count),
+        "location": entry.location_name if show_location else "",
+    }
+
+
+def _build_dairymetrics_sync_context(
+    *,
+    department: Department | None,
+    report_date,
+    allowed_member_ids,
+    split_counts: bool,
+    show_location: bool,
+):
+    if not department or not report_date or not allowed_member_ids:
+        return {"closed_entries": [], "active_entries": [], "initial_rows": []}
+
+    entries = list(
+        MemberDailyMetricEntry.objects.filter(
+            department=department,
+            entry_date=report_date,
+            member_id__in=allowed_member_ids,
+        )
+        .select_related("member")
+        .order_by("member__name", "id")
+    )
+    closed_entries = [entry for entry in entries if entry.activity_closed]
+    active_entries = [entry for entry in entries if not entry.activity_closed]
+    return {
+        "closed_entries": closed_entries,
+        "active_entries": active_entries,
+        "initial_rows": [
+            _build_initial_row_from_metric_entry(
+                entry=entry,
+                split_counts=split_counts,
+                show_location=show_location,
+            )
+            for entry in closed_entries
+        ],
+    }
+
+
 def _selected_report_date(request: HttpRequest):
     today = timezone.localdate()
     mode = request.GET.get("mode")
@@ -483,11 +531,11 @@ def _render_report_form(
     row_values = []
     row_errors = []
     is_edit = editing_report is not None
+    allowed_member_ids = set(members.values_list("id", flat=True))
 
     if request.method == "POST":
         form = ReportSubmissionForm(request.POST, members=members)
         row_values = _build_row_values(request=request)
-        allowed_member_ids = set(members.values_list("id", flat=True))
         if not show_location:
             for row in row_values:
                 row["location"] = ""
@@ -598,9 +646,30 @@ def _render_report_form(
             if default_reporter_id:
                 initial["reporter"] = default_reporter_id
             form = ReportSubmissionForm(initial=initial, members=members)
-            row_values = [
+            dairymetrics_sync_context = _build_dairymetrics_sync_context(
+                department=department,
+                report_date=selected_date,
+                allowed_member_ids=allowed_member_ids,
+                split_counts=split_counts,
+                show_location=show_location,
+            )
+            row_values = dairymetrics_sync_context["initial_rows"] or [
                 {"member_id": "", "amount": "0", "count": "0", "cs_count": "0", "refugee_count": "0", "location": ""},
             ]
+
+    report_date_for_context = selected_date
+    if form.is_bound:
+        report_date_for_context = parse_date((request.POST.get("report_date") or "").strip()) or selected_date
+    elif editing_report:
+        report_date_for_context = editing_report.report_date
+
+    dairymetrics_sync_context = _build_dairymetrics_sync_context(
+        department=department,
+        report_date=report_date_for_context,
+        allowed_member_ids=allowed_member_ids,
+        split_counts=split_counts,
+        show_location=show_location,
+    )
 
     recent_reports = list(
         DailyDepartmentReport.objects.filter(
@@ -658,6 +727,8 @@ def _render_report_form(
             "selected_mode": selected_mode,
             "recent_reports_date": selected_date.strftime("%Y/%m/%d"),
             "today_iso": timezone.localdate().isoformat(),
+            "dairymetrics_closed_entries": dairymetrics_sync_context["closed_entries"],
+            "dairymetrics_active_entries": dairymetrics_sync_context["active_entries"],
         },
     )
 

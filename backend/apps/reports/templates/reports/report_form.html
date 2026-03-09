@@ -42,6 +42,17 @@
     </div>
     {% endif %}
 
+    {% if dairymetrics_closed_entries or dairymetrics_active_entries %}
+    <div class="note" style="margin-top: 10px;">
+      {% if dairymetrics_closed_entries %}
+      <div><strong>活動終了</strong>: {% for entry in dairymetrics_closed_entries %}{{ entry.member.name }}{% if not forloop.last %} / {% endif %}{% endfor %}</div>
+      {% endif %}
+      {% if dairymetrics_active_entries %}
+      <div><strong>活動中</strong>: {% for entry in dairymetrics_active_entries %}{{ entry.member.name }}{% if not forloop.last %} / {% endif %}{% endfor %}</div>
+      {% endif %}
+    </div>
+    {% endif %}
+
     <form method="post" style="margin-top: 12px;" autocomplete="off">
       {% csrf_token %}
       {% if is_edit %}
