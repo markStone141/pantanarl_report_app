@@ -48,33 +48,61 @@
 .dairymetrics-card {
   display: grid;
   gap: 16px;
+  position: relative;
+  padding-top: 14px;
 }
 
-.dairymetrics-scope-toggle {
-  display: inline-flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.dairymetrics-scope-tabbar {
+  display: flex;
+  align-items: end;
+  gap: 0;
+  margin: -14px -20px 4px;
+  padding: 0 14px;
+  border-bottom: 1px solid #cfddeb;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
 }
 
-.dairymetrics-scope-btn {
-  width: auto;
-  min-height: 36px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid #c6d7ea;
-  background: #f6f9fd;
-  color: #1f568f;
+.dairymetrics-scope-tabbar::-webkit-scrollbar {
+  display: none;
+}
+
+.dairymetrics-scope-tab {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 10px 18px 9px;
+  border-radius: 16px 16px 0 0;
+  border: 1px solid #cfddeb;
+  border-bottom: none;
+  background: linear-gradient(180deg, #eef4fb 0%, #e0ebf7 100%);
+  color: #4a6784;
   font-weight: 700;
+  margin-right: -1px;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.45);
 }
 
-.dairymetrics-scope-btn.is-active {
-  background: linear-gradient(135deg, #0f4e91 0%, var(--brand) 100%);
-  border-color: var(--brand);
-  color: #fff;
+.dairymetrics-scope-tab.is-active {
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  border-color: #c7d8ea;
+  color: #163f6b;
+  z-index: 2;
+  box-shadow: 0 -6px 16px rgba(22, 63, 107, 0.08);
 }
 
-.dairymetrics-scope-btn:disabled {
-  opacity: 0.45;
+.dairymetrics-scope-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: #fff;
+}
+
+.dairymetrics-scope-tab:disabled {
+  opacity: 0.4;
 }
 
 .dairymetrics-scope-summary {
@@ -366,13 +394,15 @@
     grid-template-columns: 1fr;
   }
 
-  .dairymetrics-scope-toggle {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .dairymetrics-scope-tabbar {
+    margin-inline: -12px;
+    padding-inline: 10px;
   }
 
-  .dairymetrics-scope-btn {
-    padding-inline: 0;
+  .dairymetrics-scope-tab {
+    min-height: 40px;
+    padding: 9px 14px 8px;
+    font-size: 0.92rem;
   }
 
   .dairymetrics-chart-grid {

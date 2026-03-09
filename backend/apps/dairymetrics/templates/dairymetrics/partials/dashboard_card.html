@@ -1,11 +1,11 @@
 {% load humanize %}
 {% if selected_card %}
 <article class="card dairymetrics-card" data-department-code="{{ selected_card.department.code }}">
-  <div class="dairymetrics-scope-toggle" role="tablist" aria-label="表示期間切り替え">
+  <div class="dairymetrics-scope-tabbar" role="tablist" aria-label="表示期間切り替え">
     {% for option in scope_options %}
     <button
       type="button"
-      class="dairymetrics-scope-btn {% if option.is_active %}is-active{% endif %}"
+      class="dairymetrics-scope-tab {% if option.is_active %}is-active{% endif %}"
       data-scope-toggle
       data-scope-value="{{ option.value }}"
       {% if option.is_disabled %}disabled{% endif %}
