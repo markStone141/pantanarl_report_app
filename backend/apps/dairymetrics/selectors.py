@@ -439,6 +439,12 @@ def build_member_dashboard_card(
     changes = _summarize_changes(scope_totals, previous_totals)
     count_value = _count_value_for_department(department, scope_totals)
     target_totals = _target_totals(member, department, start_date, end_date)
+    goal_completed = (
+        target_totals["count"] > 0
+        and target_totals["amount"] > 0
+        and count_value >= target_totals["count"]
+        and int(scope_totals["support_amount"]) >= target_totals["amount"]
+    )
     rankings = _build_member_rankings(department, department_members, start_date, end_date)
     count_rank, member_count = _resolve_rank(member.id, rankings, "count_value")
     amount_rank, _ = _resolve_rank(member.id, rankings, "amount_value")
@@ -463,6 +469,7 @@ def build_member_dashboard_card(
         "count_text": _count_breakdown_text(department, scope_totals),
         "target_count": target_totals["count"],
         "target_amount": target_totals["amount"],
+        "goal_completed": goal_completed,
         "count_rate_text": _progress_label(count_value, target_totals["count"]),
         "amount_rate_text": _progress_label(int(scope_totals["support_amount"]), target_totals["amount"]),
         "count_remaining": max(target_totals["count"] - count_value, 0),

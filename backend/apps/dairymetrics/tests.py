@@ -86,7 +86,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "過去7日の推移")
         self.assertContains(response, "CS 3 / 難民 1")
         self.assertContains(response, "今日:")
-        self.assertContains(response, "今日の目標達成率")
+        self.assertContains(response, "目標達成率")
         self.assertContains(response, "80.0%")
         self.assertContains(response, "残り 1")
         self.assertContains(response, "4/5")
@@ -104,6 +104,24 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertNotContains(response, "今日のコミュニケーション")
         self.assertNotContains(response, "今日の支援金額")
         self.assertContains(response, "過去7日の推移")
+        self.assertNotContains(response, "fa-sparkles")
+
+    def test_goal_card_highlights_when_both_targets_are_completed(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            support_amount=9000,
+            daily_target_count=3,
+            daily_target_amount=8000,
+            cs_count=2,
+            refugee_count=1,
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "is-complete")
+        self.assertContains(response, "fa-sparkles")
 
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")
