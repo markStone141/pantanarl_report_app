@@ -652,6 +652,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertIn("Member Twoさんでログイン中", payload["page_subtitle"])
+        self.assertEqual(payload["viewed_member_name"], "Inactive Member")
         self.assertIn("3,500", payload["card_html"])
 
     def test_member_dashboard_is_readonly_and_allows_inactive_member(self):
@@ -671,6 +672,7 @@ class DairyMetricsDashboardTests(TestCase):
         response = self.client.get(reverse("dairymetrics_member_dashboard", args=[inactive_member.id]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Member Twoさんでログイン中")
+        self.assertContains(response, "表示中: Inactive Member")
         self.assertContains(response, "7")
         self.assertContains(response, "3,500")
         self.assertContains(response, "メンバー一覧へ戻る")

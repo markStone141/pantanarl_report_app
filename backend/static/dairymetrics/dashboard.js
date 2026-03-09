@@ -9,6 +9,7 @@
   const closeTargetButton = document.getElementById('dairymetrics-close-target');
   const memberSelect = document.getElementById('dairymetrics-member-select');
   const subtitle = document.getElementById('dairymetrics-dashboard-subtitle');
+  const viewedMemberName = document.getElementById('dairymetrics-viewed-member-name');
   if (!cardRoot) return;
 
   function openOverlay(target) {
@@ -37,6 +38,7 @@
     if (typeof data.form_html === 'string' && modalBody) modalBody.innerHTML = data.form_html;
     if (typeof data.target_form_html === 'string' && targetModalBody) targetModalBody.innerHTML = data.target_form_html;
     if (data.page_subtitle && subtitle) subtitle.textContent = data.page_subtitle;
+    if (data.viewed_member_name && viewedMemberName) viewedMemberName.textContent = `表示中: ${data.viewed_member_name}`;
     window.history.replaceState({}, '', url.toString());
   }
 
