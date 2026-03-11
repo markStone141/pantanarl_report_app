@@ -11,28 +11,6 @@
 <div class="container">
   {% include "dairymetrics/partials/admin_header.html" with admin_header_subtitle="本日の実績状況と提出状況を確認します。" %}
 
-  <section class="card">
-    <form method="get" class="dairymetrics-month-filter">
-      <div>
-        <label>対象日</label>
-        <div class="muted">{{ today|date:'Y/m/d' }}</div>
-      </div>
-      <div>
-        <label for="department">部署</label>
-        <select id="department" name="department">
-          {% for department in departments %}
-          <option value="{{ department.code }}" {% if selected_department and selected_department.code == department.code %}selected{% endif %}>
-            {{ department.name }} ({{ department.code }})
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-      <button type="submit">表示</button>
-      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">メンバー一覧を見る</a>
-      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_admin_monthly_overview' %}">月次集計へ</a>
-    </form>
-  </section>
-
   <section class="dairymetrics-admin-hero">
     <article class="card dairymetrics-admin-summary-card">
       <div class="dairymetrics-admin-summary-head">
@@ -40,6 +18,17 @@
           <strong>今日の活動状況</strong>
           <div class="muted">当日の現場状態をすぐ把握できます。</div>
         </div>
+        <form method="get" class="dairymetrics-admin-inline-filter">
+          <div class="muted dairymetrics-admin-inline-date">{{ today|date:'Y/m/d' }}</div>
+          <select id="department" name="department" aria-label="部署">
+            {% for department in departments %}
+            <option value="{{ department.code }}" {% if selected_department and selected_department.code == department.code %}selected{% endif %}>
+              {{ department.code }}
+            </option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn-inline dairymetrics-secondary-btn">更新</button>
+        </form>
       </div>
       <div class="dairymetrics-admin-stat-grid">
         <div class="dairymetrics-admin-stat">
@@ -122,7 +111,7 @@
     <div class="dairymetrics-card-actions">
       <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">メンバー一覧</a>
       <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_admin_monthly_overview' %}">月次集計</a>
-      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_adjustment_create' %}">後追い追加</a>
+      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_adjustment_create' %}">戻り登録</a>
     </div>
   </section>
 </div>
