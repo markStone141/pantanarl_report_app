@@ -704,6 +704,19 @@
   font-size: 0.88rem;
 }
 
+.dairymetrics-admin-monthly-page .dairymetrics-admin-table {
+  font-size: 0.92rem;
+}
+
+.dairymetrics-admin-monthly-page .dairymetrics-admin-sheet thead th {
+  font-size: 0.82rem;
+}
+
+.dairymetrics-admin-monthly-page .dairymetrics-admin-metric-label,
+.dairymetrics-admin-monthly-page .dairymetrics-admin-member-cell strong {
+  font-size: 0.94rem;
+}
+
 .dairymetrics-admin-hero,
 .dairymetrics-admin-lists {
   display: grid;
