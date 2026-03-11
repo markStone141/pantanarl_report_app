@@ -974,20 +974,48 @@ def build_member_ranking_detail(member, *, today=None, department_code=None, sco
     }
 
 
-def build_admin_month_overview(*, target_month):
-    departments = Department.objects.filter(is_active=True, code__in=["UN", "WV"]).order_by("code")
+def build_admin_month_overview(*, target_month, department_code="", today=None):
+    today_value = today or date.today()
+    departments = list(Department.objects.filter(is_active=True, code__in=["UN", "WV"]).order_by("code"))
     month_start = target_month.replace(day=1)
     month_end = target_month.replace(day=monthrange(target_month.year, target_month.month)[1])
+    selected_department = None
+    if department_code:
+        selected_department = next((department for department in departments if department.code == department_code), None)
+    if not selected_department and departments:
+        selected_department = departments[0]
+
     rows = []
+    monthly_department_totals = []
+    active_today_members = []
+    closed_today_members = []
+
     for department in departments:
+        if selected_department and department.id != selected_department.id:
+            continue
+
+        department_totals = _zero_totals()
         members = Member.objects.active().filter(department_links__department=department).distinct().order_by("name")
         for member in members:
             totals = _department_totals(member, department, month_start, month_end)
-            latest_entry = MemberDailyMetricEntry.objects.filter(
+            for field in department_totals:
+                department_totals[field] += int(totals.get(field) or 0)
+
+            today_entry = MemberDailyMetricEntry.objects.filter(
                 member=member,
                 department=department,
-                entry_date__range=(month_start, month_end),
-            ).order_by("-entry_date", "-updated_at").first()
+                entry_date=today_value,
+            ).order_by("-updated_at").first()
+            if today_entry:
+                if today_entry.activity_closed:
+                    closed_today_members.append(member)
+                    activity_status = "活動終了"
+                else:
+                    active_today_members.append(member)
+                    activity_status = "活動中"
+            else:
+                activity_status = "未入力"
+
             entry_days = MemberDailyMetricEntry.objects.filter(member=member, department=department, entry_date__range=(month_start, month_end)).count() or 1
             rows.append(
                 {
@@ -996,9 +1024,28 @@ def build_admin_month_overview(*, target_month):
                     "totals": totals,
                     "approach_average": round(totals["approach_count"] / entry_days, 1),
                     "communication_average": round(totals["communication_count"] / entry_days, 1),
-                    "activity_status": (
-                        "活動終了" if latest_entry and latest_entry.activity_closed else "活動中" if latest_entry else "未入力"
-                    ),
+                    "activity_status": activity_status,
                 }
             )
-    return rows
+
+        monthly_department_totals.append(
+            {
+                "department": department,
+                "count_label": _count_label_for_department(department),
+                "count_value": _count_value_for_department(department, department_totals, include_returns=True),
+                "amount_value": _display_amount_value(department_totals, include_returns=True),
+            }
+        )
+
+    return {
+        "departments": departments,
+        "selected_department": selected_department,
+        "rows": rows,
+        "monthly_department_totals": monthly_department_totals,
+        "activity_summary": {
+            "active_count": len(active_today_members),
+            "closed_count": len(closed_today_members),
+            "active_members": active_today_members,
+            "closed_members": closed_today_members,
+        },
+    }

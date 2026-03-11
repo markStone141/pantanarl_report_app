@@ -798,8 +798,11 @@ class DairyMetricsAdminTests(TestCase):
         user_model = get_user_model()
         self.admin = user_model.objects.create_user(username="admin_user", password="pass123", is_staff=True)
         self.member = Member.objects.create(name="Member Three")
+        self.member_wv = Member.objects.create(name="Member Four")
         self.department = Department.objects.create(code="UN", name="UN")
+        self.department_wv = Department.objects.create(code="WV", name="WV")
         MemberDepartment.objects.create(member=self.member, department=self.department)
+        MemberDepartment.objects.create(member=self.member_wv, department=self.department_wv)
 
     def test_admin_overview_requires_staff(self):
         response = self.client.get(reverse("dairymetrics_admin_overview"))
@@ -842,3 +845,60 @@ class DairyMetricsAdminTests(TestCase):
         response = self.client.get(reverse("dairymetrics_admin_overview"), {"month": "2026-03"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "活動終了")
+
+    def test_admin_overview_filters_by_department(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            result_count=1,
+            support_amount=1200,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member_wv,
+            department=self.department_wv,
+            entry_date=date(2026, 3, 9),
+            cs_count=2,
+            refugee_count=1,
+            support_amount=2500,
+        )
+        self.client.force_login(self.admin)
+        response = self.client.get(
+            reverse("dairymetrics_admin_overview"),
+            {"month": "2026-03", "department": "UN"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Member Three")
+        self.assertNotContains(response, "Member Four")
+
+    def test_admin_overview_shows_today_activity_lists_and_month_totals(self):
+        today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            result_count=2,
+            support_amount=4000,
+            activity_closed=False,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member_wv,
+            department=self.department_wv,
+            entry_date=today,
+            cs_count=1,
+            refugee_count=1,
+            support_amount=3000,
+            activity_closed=True,
+            activity_closed_at=timezone.now(),
+        )
+        self.client.force_login(self.admin)
+        response = self.client.get(
+            reverse("dairymetrics_admin_overview"),
+            {"month": today.strftime("%Y-%m"), "department": "WV"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "今日の活動状況")
+        self.assertContains(response, "活動終了")
+        self.assertContains(response, "Member Four")
+        self.assertContains(response, "月次合計")
+        self.assertContains(response, "CS/難民 2")

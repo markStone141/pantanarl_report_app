@@ -385,9 +385,19 @@ def admin_overview(request: HttpRequest) -> HttpResponse:
     target_month = parse_date(f"{(request.GET.get('month') or timezone.localdate().strftime('%Y-%m'))}-01")
     if not target_month:
         target_month = timezone.localdate().replace(day=1)
+    selected_department_code = (request.GET.get("department") or "").strip()
+    overview = build_admin_month_overview(
+        target_month=target_month,
+        department_code=selected_department_code,
+        today=timezone.localdate(),
+    )
     context = {
         "target_month": target_month,
-        "rows": build_admin_month_overview(target_month=target_month),
+        "departments": overview["departments"],
+        "selected_department": overview["selected_department"],
+        "rows": overview["rows"],
+        "monthly_department_totals": overview["monthly_department_totals"],
+        "activity_summary": overview["activity_summary"],
     }
     return render(request, "dairymetrics/admin_overview.html", context)
 

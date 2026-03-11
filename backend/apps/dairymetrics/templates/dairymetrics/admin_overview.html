@@ -33,18 +33,108 @@
         <label for="month">対象月</label>
         <input id="month" type="month" name="month" value="{{ target_month|date:'Y-m' }}">
       </div>
+      <div>
+        <label for="department">部署</label>
+        <select id="department" name="department">
+          {% for department in departments %}
+          <option value="{{ department.code }}" {% if selected_department and selected_department.code == department.code %}selected{% endif %}>
+            {{ department.name }} ({{ department.code }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
       <button type="submit">表示</button>
     </form>
   </section>
 
+  <section class="dairymetrics-admin-hero">
+    <article class="card dairymetrics-admin-summary-card">
+      <div class="dairymetrics-admin-summary-head">
+        <div>
+          <strong>今日の活動状況</strong>
+          <div class="muted">当日の現場状態をすぐ把握できます。</div>
+        </div>
+      </div>
+      <div class="dairymetrics-admin-stat-grid">
+        <div class="dairymetrics-admin-stat">
+          <span class="dairymetrics-admin-stat-label">活動中</span>
+          <strong class="dairymetrics-admin-stat-value">{{ activity_summary.active_count }}</strong>
+        </div>
+        <div class="dairymetrics-admin-stat is-closed">
+          <span class="dairymetrics-admin-stat-label">活動終了</span>
+          <strong class="dairymetrics-admin-stat-value">{{ activity_summary.closed_count }}</strong>
+        </div>
+      </div>
+    </article>
+
+    <article class="card dairymetrics-admin-summary-card">
+      <div class="dairymetrics-admin-summary-head">
+        <div>
+          <strong>月次合計</strong>
+          <div class="muted">補正込みの部門合計です。</div>
+        </div>
+      </div>
+      <div class="dairymetrics-admin-total-list">
+        {% for total in monthly_department_totals %}
+        <div class="dairymetrics-admin-total-item">
+          <div class="dairymetrics-admin-total-title">{{ total.department.name }} ({{ total.department.code }})</div>
+          <div class="dairymetrics-admin-total-meta">{{ total.count_label }} {{ total.count_value }} / 金額 {{ total.amount_value|intcomma }}</div>
+        </div>
+        {% empty %}
+        <p class="muted">対象部署の月次データはありません。</p>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+
+  <section class="dairymetrics-admin-lists">
+    <article class="card dairymetrics-admin-list-card">
+      <div class="dairymetrics-admin-summary-head">
+        <div>
+          <strong>今日の活動中一覧</strong>
+          <div class="muted">まだ現場が開いているメンバー</div>
+        </div>
+      </div>
+      <div class="dairymetrics-admin-chip-list">
+        {% for member in activity_summary.active_members %}
+        <span class="dairymetrics-admin-chip">{{ member.name }}</span>
+        {% empty %}
+        <span class="muted">活動中メンバーはいません。</span>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="card dairymetrics-admin-list-card">
+      <div class="dairymetrics-admin-summary-head">
+        <div>
+          <strong>今日の活動終了一覧</strong>
+          <div class="muted">本日分の入力を締めたメンバー</div>
+        </div>
+      </div>
+      <div class="dairymetrics-admin-chip-list">
+        {% for member in activity_summary.closed_members %}
+        <span class="dairymetrics-admin-chip is-closed">{{ member.name }}</span>
+        {% empty %}
+        <span class="muted">活動終了メンバーはいません。</span>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+
   <section class="card">
+    <div class="dairymetrics-admin-table-head">
+      <div>
+        <strong>月次メンバー一覧</strong>
+        <div class="muted">平均と累計を同時に見て、気になるメンバーを拾うための一覧です。</div>
+      </div>
+    </div>
     <div class="table-scroll">
       <table class="dairymetrics-admin-table">
         <thead>
           <tr>
             <th>部門</th>
             <th>メンバー</th>
-            <th>状態</th>
+            <th>今日の状態</th>
             <th>件数/金額</th>
             <th>アプローチ 平均/累計</th>
             <th>コミュニケーション 平均/累計</th>
@@ -53,9 +143,9 @@
         <tbody>
           {% for row in rows %}
           <tr>
-            <td>{{ row.department.code }}</td>
-            <td>{{ row.member.name }}</td>
-            <td>{{ row.activity_status }}</td>
+            <td><span class="dairymetrics-admin-dept">{{ row.department.code }}</span></td>
+            <td><strong>{{ row.member.name }}</strong></td>
+            <td><span class="dairymetrics-admin-status {% if row.activity_status == '活動終了' %}is-closed{% elif row.activity_status == '活動中' %}is-active{% endif %}">{{ row.activity_status }}</span></td>
             <td>{{ row.totals.result_count }} / {{ row.totals.support_amount|intcomma }}</td>
             <td>{{ row.approach_average }} / {{ row.totals.approach_count }}</td>
             <td>{{ row.communication_average }} / {{ row.totals.communication_count }}</td>
