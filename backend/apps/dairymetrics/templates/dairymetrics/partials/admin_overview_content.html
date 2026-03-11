@@ -22,6 +22,16 @@
         </select>
       </div>
     </div>
+    <div class="dairymetrics-admin-stat-grid">
+      <div class="dairymetrics-admin-stat">
+        <span class="dairymetrics-admin-stat-label">活動中</span>
+        <strong class="dairymetrics-admin-stat-value">{{ submission_summary.target_count }}</strong>
+      </div>
+      <div class="dairymetrics-admin-stat is-closed">
+        <span class="dairymetrics-admin-stat-label">活動終了</span>
+        <strong class="dairymetrics-admin-stat-value">{{ submission_summary.submitted_count }}</strong>
+      </div>
+    </div>
   </article>
 
   <article class="card dairymetrics-admin-summary-card">
