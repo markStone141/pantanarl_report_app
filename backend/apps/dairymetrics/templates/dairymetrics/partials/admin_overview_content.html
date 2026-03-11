@@ -75,22 +75,22 @@
         </span>
       </div>
       <table class="dairymetrics-admin-activity-table">
-        <tbody>
+        <thead>
           <tr>
             <th>AP</th>
-            <td>{{ row.approach_count }}</td>
             <th>CM</th>
-            <td>{{ row.communication_count }}</td>
-          </tr>
-          <tr>
             <th>{{ row.count_label }}</th>
-            <td>{{ row.count_value }}</td>
             <th>金額</th>
-            <td>{{ row.amount_value|intcomma }}</td>
-          </tr>
-          <tr>
             <th>現場</th>
-            <td colspan="3">{{ row.location_name|default:"-" }}</td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ row.approach_count }}</td>
+            <td>{{ row.communication_count }}</td>
+            <td>{{ row.count_value }}</td>
+            <td>{{ row.amount_value|intcomma }}</td>
+            <td>{{ row.location_name|default:"-" }}</td>
           </tr>
         </tbody>
       </table>
