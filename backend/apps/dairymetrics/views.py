@@ -13,6 +13,7 @@ from .forms import DairyMetricsLoginForm, MemberDailyMetricEntryForm, MemberScop
 from .models import MemberDailyMetricEntry, MetricAdjustment
 from .selectors import (
     build_admin_daily_overview,
+    build_admin_month_comparison,
     build_admin_month_overview,
     build_member_dashboard,
     build_member_ranking_detail,
@@ -443,6 +444,27 @@ def admin_monthly_overview(request: HttpRequest) -> HttpResponse:
         "activity_summary": overview["activity_summary"],
     }
     return render(request, "dairymetrics/admin_monthly.html", context)
+
+
+@require_dairymetrics_admin
+def admin_monthly_comparison(request: HttpRequest) -> HttpResponse:
+    target_month = parse_date(f"{(request.GET.get('month') or timezone.localdate().strftime('%Y-%m'))}-01")
+    if not target_month:
+        target_month = timezone.localdate().replace(day=1)
+    selected_department_code = (request.GET.get("department") or "").strip()
+    overview = build_admin_month_comparison(
+        target_month=target_month,
+        department_code=selected_department_code,
+    )
+    context = {
+        "target_month": overview["target_month"],
+        "previous_month": overview["previous_month"],
+        "departments": overview["departments"],
+        "selected_department": overview["selected_department"],
+        "rows": overview["rows"],
+        "monthly_department_totals": overview["monthly_department_totals"],
+    }
+    return render(request, "dairymetrics/admin_monthly_comparison.html", context)
 
 
 @require_dairymetrics_admin

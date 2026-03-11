@@ -776,6 +776,12 @@
   gap: 10px;
 }
 
+.dairymetrics-admin-comparison-summary {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
 .dairymetrics-admin-total-item {
   padding: 9px 12px;
   border-radius: 14px;
@@ -889,6 +895,14 @@
   text-align: left;
   vertical-align: top;
   line-height: 1.2;
+}
+
+.dairymetrics-admin-sheet-summary.is-positive {
+  color: #1f7a56;
+}
+
+.dairymetrics-admin-sheet-summary.is-negative {
+  color: #b54848;
 }
 
 .dairymetrics-admin-table thead th {

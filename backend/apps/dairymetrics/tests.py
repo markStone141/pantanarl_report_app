@@ -1101,3 +1101,70 @@ class DairyMetricsAdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Member Three")
         self.assertNotContains(response, "Member Four")
+
+    def test_admin_monthly_comparison_requires_staff(self):
+        response = self.client.get(reverse("dairymetrics_admin_monthly_comparison"))
+        self.assertRedirects(response, reverse("dairymetrics_login"))
+
+    def test_admin_monthly_comparison_shows_previous_month_diff_sheet(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 2, 10),
+            approach_count=4,
+            communication_count=2,
+            result_count=1,
+            support_amount=2000,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 10),
+            approach_count=6,
+            communication_count=3,
+            result_count=2,
+            support_amount=3500,
+        )
+        self.client.force_login(self.admin)
+        response = self.client.get(
+            reverse("dairymetrics_admin_monthly_comparison"),
+            {"month": "2026-03", "department": "UN"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "月比較シート")
+        self.assertContains(response, "2026/02")
+        self.assertContains(response, "2026/03")
+        self.assertContains(response, "差分")
+        self.assertContains(response, "増減率")
+        self.assertContains(response, "Member Three")
+        self.assertContains(response, "+2")
+        self.assertContains(response, "+75.0%")
+
+    def test_admin_monthly_comparison_splits_wv_cs_and_refugee_rows(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member_wv,
+            department=self.department_wv,
+            entry_date=date(2026, 2, 9),
+            cs_count=1,
+            refugee_count=3,
+            support_amount=2000,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member_wv,
+            department=self.department_wv,
+            entry_date=date(2026, 3, 9),
+            cs_count=3,
+            refugee_count=1,
+            support_amount=2600,
+        )
+        self.client.force_login(self.admin)
+        response = self.client.get(
+            reverse("dairymetrics_admin_monthly_comparison"),
+            {"month": "2026-03", "department": "WV"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Member Four")
+        self.assertContains(response, "CS")
+        self.assertContains(response, "難民")
+        self.assertContains(response, "+2")
+        self.assertContains(response, "-2")

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load humanize static %}
+
+{% block title %}月比較 | DairyMetrics{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=2" />
+{% endblock %}
+
+{% block content %}
+<div class="container dairymetrics-admin-monthly-page">
+  {% include "dairymetrics/partials/admin_header.html" with admin_header_subtitle="前月比で伸びと停滞を一覧確認します。" %}
+
+  <section class="card">
+    <div class="dairymetrics-admin-table-head">
+      <div>
+        <strong>月比較シート</strong>
+        <div class="muted">各項目の前月比を数字と増減率で横並びに確認できます。</div>
+      </div>
+      <div class="dairymetrics-admin-table-tools">
+        <form method="get" class="dairymetrics-month-filter dairymetrics-month-filter-inline">
+          <div>
+            <input id="month" type="month" name="month" value="{{ target_month|date:'Y-m' }}" aria-label="対象月">
+          </div>
+          <div>
+            <select id="department" name="department" aria-label="部署">
+              {% for department in departments %}
+              <option value="{{ department.code }}" {% if selected_department and selected_department.code == department.code %}selected{% endif %}>
+                {{ department.name }} ({{ department.code }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit">更新</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="dairymetrics-admin-comparison-summary">
+      {% for total in monthly_department_totals %}
+      <div class="dairymetrics-admin-total-item">
+        <div class="dairymetrics-admin-total-title">{{ total.department.name }} ({{ total.department.code }})</div>
+        <div class="dairymetrics-admin-total-meta">今月 {{ total.current_count_text }} / 金額 {{ total.current_amount_value|intcomma }}</div>
+        <div class="muted">前月 {{ total.previous_count_text }} / 金額 {{ total.previous_amount_value|intcomma }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="table-scroll">
+      <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-comparison-sheet">
+        <colgroup>
+          <col class="dairymetrics-col-member">
+          <col class="dairymetrics-col-metric">
+          <col class="dairymetrics-col-summary">
+          <col class="dairymetrics-col-summary">
+          <col class="dairymetrics-col-summary">
+          <col class="dairymetrics-col-summary">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>名前</th>
+            <th>項目</th>
+            <th>{{ previous_month|date:'Y/m' }}</th>
+            <th>{{ target_month|date:'Y/m' }}</th>
+            <th>差分</th>
+            <th>増減率</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          {% for metric_row in row.metric_rows %}
+          <tr class="dairymetrics-admin-member-row{% if forloop.first %} is-first{% endif %}">
+            {% if forloop.first %}
+            <td rowspan="{{ row.metric_rows|length }}" class="dairymetrics-admin-sticky-col dairymetrics-admin-member-cell">
+              <a href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
+                <strong>{{ row.member.name }}</strong>
+              </a>
+            </td>
+            {% endif %}
+            <td class="dairymetrics-admin-metric-label">{{ metric_row.label }}</td>
+            <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number">{{ metric_row.previous_value|intcomma }}</td>
+            <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number">{{ metric_row.current_value|intcomma }}</td>
+            <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number{% if metric_row.is_positive %} is-positive{% elif metric_row.is_negative %} is-negative{% endif %}">
+              {% if metric_row.diff_value > 0 %}+{% endif %}{{ metric_row.diff_value|intcomma }}
+            </td>
+            <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number{% if metric_row.is_positive %} is-positive{% elif metric_row.is_negative %} is-negative{% endif %}">
+              {{ metric_row.rate_text }}
+            </td>
+          </tr>
+          {% endfor %}
+          {% empty %}
+          <tr>
+            <td colspan="6">この月の比較対象データはまだありません。</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
+{% endblock %}

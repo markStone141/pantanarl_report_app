@@ -1243,6 +1243,124 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
     }
 
 
+def build_admin_month_comparison(*, target_month, department_code=""):
+    departments = list(Department.objects.filter(is_active=True, code__in=["UN", "WV"]).order_by("code"))
+    month_start = target_month.replace(day=1)
+    month_end = target_month.replace(day=monthrange(target_month.year, target_month.month)[1])
+    previous_month_end = month_start - timedelta(days=1)
+    previous_month_start = previous_month_end.replace(day=1)
+
+    selected_department = None
+    if department_code:
+        selected_department = next((department for department in departments if department.code == department_code), None)
+    if not selected_department and departments:
+        selected_department = departments[0]
+
+    rows = []
+    monthly_department_totals = []
+
+    metric_specs_by_department = {
+        "UN": [
+            {"label": "AP", "field": "approach_count"},
+            {"label": "CM", "field": "communication_count"},
+            {"label": "件数", "field": "count_value"},
+            {"label": "金額", "field": "support_amount"},
+        ],
+        "WV": [
+            {"label": "AP", "field": "approach_count"},
+            {"label": "CM", "field": "communication_count"},
+            {"label": "CS", "field": "cs_count"},
+            {"label": "難民", "field": "refugee_count"},
+            {"label": "金額", "field": "support_amount"},
+        ],
+    }
+
+    for department in departments:
+        if selected_department and department.id != selected_department.id:
+            continue
+
+        members = Member.objects.active().filter(department_links__department=department).distinct().order_by("name")
+        department_current_totals = _zero_totals()
+        department_previous_totals = _zero_totals()
+
+        for member in members:
+            current_totals = _department_totals(
+                member,
+                department,
+                month_start,
+                month_end,
+                include_adjustments=True,
+            )
+            previous_totals = _department_totals(
+                member,
+                department,
+                previous_month_start,
+                previous_month_end,
+                include_adjustments=True,
+            )
+            if not any(int(current_totals.get(field) or 0) for field in current_totals) and not any(
+                int(previous_totals.get(field) or 0) for field in previous_totals
+            ):
+                continue
+
+            for field in department_current_totals:
+                department_current_totals[field] += int(current_totals.get(field) or 0)
+                department_previous_totals[field] += int(previous_totals.get(field) or 0)
+
+            metric_rows = []
+            for spec in metric_specs_by_department.get(department.code, metric_specs_by_department["UN"]):
+                field = spec["field"]
+                if field == "count_value":
+                    current_value = _count_value_for_department(department, current_totals, include_returns=True)
+                    previous_value = _count_value_for_department(department, previous_totals, include_returns=True)
+                elif field == "support_amount":
+                    current_value = _display_amount_value(current_totals, include_returns=True)
+                    previous_value = _display_amount_value(previous_totals, include_returns=True)
+                else:
+                    current_value = int(current_totals.get(field) or 0)
+                    previous_value = int(previous_totals.get(field) or 0)
+                diff_value = current_value - previous_value
+                rate_text = _comparison_label(_change_rate(current_value, previous_value))
+                metric_rows.append(
+                    {
+                        "label": spec["label"],
+                        "previous_value": previous_value,
+                        "current_value": current_value,
+                        "diff_value": diff_value,
+                        "rate_text": rate_text,
+                        "is_positive": diff_value > 0,
+                        "is_negative": diff_value < 0,
+                    }
+                )
+
+            rows.append(
+                {
+                    "department": department,
+                    "member": member,
+                    "metric_rows": metric_rows,
+                }
+            )
+
+        monthly_department_totals.append(
+            {
+                "department": department,
+                "current_count_text": _count_breakdown_text(department, department_current_totals, include_returns=True),
+                "previous_count_text": _count_breakdown_text(department, department_previous_totals, include_returns=True),
+                "current_amount_value": _display_amount_value(department_current_totals, include_returns=True),
+                "previous_amount_value": _display_amount_value(department_previous_totals, include_returns=True),
+            }
+        )
+
+    return {
+        "departments": departments,
+        "selected_department": selected_department,
+        "target_month": month_start,
+        "previous_month": previous_month_start,
+        "rows": rows,
+        "monthly_department_totals": monthly_department_totals,
+    }
+
+
 def build_admin_daily_overview(*, department_code="", today=None):
     today_value = today or date.today()
     departments = list(Department.objects.filter(is_active=True, code__in=["UN", "WV"]).order_by("code"))

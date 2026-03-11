@@ -14,5 +14,6 @@ urlpatterns = [
     path("targets/scope/", views.scope_target_form, name="dairymetrics_scope_target"),
     path("admin/", views.admin_overview, name="dairymetrics_admin_overview"),
     path("admin/monthly/", views.admin_monthly_overview, name="dairymetrics_admin_monthly_overview"),
+    path("admin/monthly-comparison/", views.admin_monthly_comparison, name="dairymetrics_admin_monthly_comparison"),
     path("admin/adjustments/new/", views.adjustment_create, name="dairymetrics_adjustment_create"),
 ]
