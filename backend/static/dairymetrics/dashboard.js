@@ -12,7 +12,7 @@
   const viewedMemberName = document.getElementById('dairymetrics-viewed-member-name');
   const memberFilterButtons = Array.from(document.querySelectorAll('[data-member-filter-toggle]'));
   if (!cardRoot) return;
-  let activeMemberFilter = 'all';
+  let activeMemberFilter = memberFilterButtons[0] ? memberFilterButtons[0].getAttribute('data-member-filter-value') || '' : '';
 
   function syncMemberFilterButtons() {
     if (!memberSelect || memberFilterButtons.length === 0) return;
@@ -20,26 +20,33 @@
     const visibleCodes = new Set(((selectedOption && selectedOption.dataset.departmentCodes) || '').split(',').filter(Boolean));
 
     memberFilterButtons.forEach(function (button) {
-      const value = button.getAttribute('data-member-filter-value') || 'all';
-      const shouldShow = value === 'all' || visibleCodes.has(value);
+      const value = button.getAttribute('data-member-filter-value') || '';
+      const shouldShow = visibleCodes.has(value);
       button.hidden = !shouldShow;
       button.disabled = !shouldShow;
       if (!shouldShow && value === activeMemberFilter) {
-        activeMemberFilter = 'all';
+        activeMemberFilter = '';
       }
     });
+
+    if (!activeMemberFilter) {
+      const firstVisibleButton = memberFilterButtons.find(function (button) { return !button.hidden; });
+      if (firstVisibleButton) {
+        activeMemberFilter = firstVisibleButton.getAttribute('data-member-filter-value') || '';
+      }
+    }
   }
 
   function applyMemberFilter(filterValue) {
     if (!memberSelect) return;
     syncMemberFilterButtons();
-    activeMemberFilter = filterValue || 'all';
+    activeMemberFilter = filterValue || activeMemberFilter;
     const options = Array.from(memberSelect.options);
     let selectedVisible = false;
 
     options.forEach(function (option) {
       const codes = (option.dataset.departmentCodes || '').split(',').filter(Boolean);
-      const isVisible = activeMemberFilter === 'all' || codes.includes(activeMemberFilter);
+      const isVisible = activeMemberFilter ? codes.includes(activeMemberFilter) : true;
       option.hidden = !isVisible;
       option.disabled = !isVisible;
       if (isVisible && option.selected) {
@@ -167,7 +174,7 @@
 
   if (memberSelect) {
     syncMemberFilterButtons();
-    applyMemberFilter(activeMemberFilter);
+    applyMemberFilter(activeMemberFilter || (memberFilterButtons[0] && memberFilterButtons[0].getAttribute('data-member-filter-value')) || '');
   }
 
   if (overlay) {

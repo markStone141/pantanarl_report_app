@@ -752,7 +752,6 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "非アクティブ")
         self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[inactive_member.id]))
         self.assertContains(response, 'data-member-switch')
-        self.assertContains(response, 'data-member-filter-value="all"')
         self.assertContains(response, 'data-member-filter-value="WV"')
         self.assertNotContains(response, 'data-member-filter-value="UN"')
         self.assertContains(response, 'data-department-codes="WV"')
