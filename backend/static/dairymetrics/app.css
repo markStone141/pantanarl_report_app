@@ -956,6 +956,10 @@
   width: 136px;
 }
 
+.dairymetrics-col-member-compact {
+  width: 108px;
+}
+
 .dairymetrics-col-metric {
   width: 44px;
 }
@@ -966,6 +970,26 @@
 
 .dairymetrics-col-day {
   width: 58px;
+}
+
+.dairymetrics-admin-comparison-sheet {
+  min-width: 760px;
+}
+
+.dairymetrics-admin-comparison-sheet thead th {
+  font-size: 0.84rem;
+}
+
+.dairymetrics-admin-comparison-sheet tbody td {
+  font-size: 0.9rem;
+}
+
+.dairymetrics-admin-comparison-sheet .dairymetrics-admin-metric-label {
+  font-size: 0.88rem;
+}
+
+.dairymetrics-admin-comparison-sheet .dairymetrics-admin-member-cell strong {
+  font-size: 0.92rem;
 }
 
 .dairymetrics-admin-month-sheet thead th {

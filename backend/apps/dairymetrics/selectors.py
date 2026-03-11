@@ -1259,21 +1259,17 @@ def build_admin_month_comparison(*, target_month, department_code=""):
     rows = []
     monthly_department_totals = []
 
-    metric_specs_by_department = {
-        "UN": [
-            {"label": "AP", "field": "approach_count"},
-            {"label": "CM", "field": "communication_count"},
-            {"label": "件数", "field": "count_value"},
-            {"label": "金額", "field": "support_amount"},
-        ],
-        "WV": [
-            {"label": "AP", "field": "approach_count"},
-            {"label": "CM", "field": "communication_count"},
-            {"label": "CS", "field": "cs_count"},
-            {"label": "難民", "field": "refugee_count"},
-            {"label": "金額", "field": "support_amount"},
-        ],
-    }
+    metric_specs = [
+        {"label": "AP", "key": "approach_count", "format": "number"},
+        {"label": "CM", "key": "communication_count", "format": "number"},
+        {"label": "件数", "key": "count_value", "format": "number"},
+        {"label": "金額", "key": "support_amount", "format": "amount"},
+        {"label": "コミュ率", "key": "communication_rate", "format": "rate"},
+        {"label": "参加率", "key": "participation_rate", "format": "rate"},
+        {"label": "平均支援額", "key": "average_support_amount", "format": "amount"},
+        {"label": "郵送戻り", "key": "return_postal_count", "format": "number"},
+        {"label": "QR戻り", "key": "return_qr_count", "format": "number"},
+    ]
 
     for department in departments:
         if selected_department and department.id != selected_department.id:
@@ -1308,17 +1304,22 @@ def build_admin_month_comparison(*, target_month, department_code=""):
                 department_previous_totals[field] += int(previous_totals.get(field) or 0)
 
             metric_rows = []
-            for spec in metric_specs_by_department.get(department.code, metric_specs_by_department["UN"]):
-                field = spec["field"]
-                if field == "count_value":
-                    current_value = _count_value_for_department(department, current_totals, include_returns=True)
-                    previous_value = _count_value_for_department(department, previous_totals, include_returns=True)
-                elif field == "support_amount":
+            for spec in metric_specs:
+                key = spec["key"]
+                display_key = key
+                if spec["format"] == "amount":
+                    display_key = "support_amount"
+                elif spec["format"] == "rate":
+                    display_key = "communication_rate"
+                if key in {"return_postal_count", "return_qr_count"}:
+                    current_value = int(current_totals.get(key) or 0)
+                    previous_value = int(previous_totals.get(key) or 0)
+                elif key == "support_amount":
                     current_value = _display_amount_value(current_totals, include_returns=True)
                     previous_value = _display_amount_value(previous_totals, include_returns=True)
                 else:
-                    current_value = int(current_totals.get(field) or 0)
-                    previous_value = int(previous_totals.get(field) or 0)
+                    current_value = _metric_value_for_scope(key, department, current_totals, include_returns=False)
+                    previous_value = _metric_value_for_scope(key, department, previous_totals, include_returns=False)
                 diff_value = current_value - previous_value
                 rate_text = _comparison_label(_change_rate(current_value, previous_value))
                 metric_rows.append(
@@ -1327,9 +1328,13 @@ def build_admin_month_comparison(*, target_month, department_code=""):
                         "previous_value": previous_value,
                         "current_value": current_value,
                         "diff_value": diff_value,
+                        "previous_text": _format_metric_display(display_key, previous_value),
+                        "current_text": _format_metric_display(display_key, current_value),
+                        "diff_text": _format_metric_display(display_key, abs(diff_value)),
                         "rate_text": rate_text,
                         "is_positive": diff_value > 0,
                         "is_negative": diff_value < 0,
+                        "is_rate": spec["format"] == "rate",
                     }
                 )
 

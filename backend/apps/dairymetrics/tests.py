@@ -1125,6 +1125,22 @@ class DairyMetricsAdminTests(TestCase):
             result_count=2,
             support_amount=3500,
         )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 2, 10),
+            source_type="postal",
+            return_postal_count=1,
+            return_postal_amount=500,
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 10),
+            source_type="other",
+            return_qr_count=2,
+            return_qr_amount=1200,
+        )
         self.client.force_login(self.admin)
         response = self.client.get(
             reverse("dairymetrics_admin_monthly_comparison"),
@@ -1137,14 +1153,21 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "差分")
         self.assertContains(response, "増減率")
         self.assertContains(response, "Member Three")
+        self.assertContains(response, "コミュ率")
+        self.assertContains(response, "参加率")
+        self.assertContains(response, "平均支援額")
+        self.assertContains(response, "郵送戻り")
+        self.assertContains(response, "QR戻り")
         self.assertContains(response, "+2")
-        self.assertContains(response, "+75.0%")
+        self.assertContains(response, "+50.0%")
 
-    def test_admin_monthly_comparison_splits_wv_cs_and_refugee_rows(self):
+    def test_admin_monthly_comparison_uses_common_metric_rows_for_wv(self):
         MemberDailyMetricEntry.objects.create(
             member=self.member_wv,
             department=self.department_wv,
             entry_date=date(2026, 2, 9),
+            approach_count=4,
+            communication_count=2,
             cs_count=1,
             refugee_count=3,
             support_amount=2000,
@@ -1153,6 +1176,8 @@ class DairyMetricsAdminTests(TestCase):
             member=self.member_wv,
             department=self.department_wv,
             entry_date=date(2026, 3, 9),
+            approach_count=6,
+            communication_count=3,
             cs_count=3,
             refugee_count=1,
             support_amount=2600,
@@ -1164,7 +1189,8 @@ class DairyMetricsAdminTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Member Four")
-        self.assertContains(response, "CS")
-        self.assertContains(response, "難民")
+        self.assertContains(response, "件数")
+        self.assertContains(response, "コミュ率")
+        self.assertContains(response, "参加率")
         self.assertContains(response, "+2")
-        self.assertContains(response, "-2")
+        self.assertContains(response, "+50.0%")

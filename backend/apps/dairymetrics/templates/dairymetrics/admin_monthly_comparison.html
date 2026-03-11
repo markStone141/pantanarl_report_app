@@ -49,7 +49,7 @@
     <div class="table-scroll">
       <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-comparison-sheet">
         <colgroup>
-          <col class="dairymetrics-col-member">
+          <col class="dairymetrics-col-member-compact">
           <col class="dairymetrics-col-metric">
           <col class="dairymetrics-col-summary">
           <col class="dairymetrics-col-summary">
@@ -78,10 +78,10 @@
             </td>
             {% endif %}
             <td class="dairymetrics-admin-metric-label">{{ metric_row.label }}</td>
-            <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number">{{ metric_row.previous_value|intcomma }}</td>
-            <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number">{{ metric_row.current_value|intcomma }}</td>
+            <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number">{{ metric_row.previous_text }}</td>
+            <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number">{{ metric_row.current_text }}</td>
             <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number{% if metric_row.is_positive %} is-positive{% elif metric_row.is_negative %} is-negative{% endif %}">
-              {% if metric_row.diff_value > 0 %}+{% endif %}{{ metric_row.diff_value|intcomma }}
+              {% if metric_row.diff_value > 0 %}+{% elif metric_row.diff_value < 0 %}-{% endif %}{{ metric_row.diff_text }}
             </td>
             <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number{% if metric_row.is_positive %} is-positive{% elif metric_row.is_negative %} is-negative{% endif %}">
               {{ metric_row.rate_text }}
