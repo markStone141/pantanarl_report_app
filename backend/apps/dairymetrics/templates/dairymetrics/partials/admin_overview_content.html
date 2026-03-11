@@ -45,7 +45,13 @@
       {% for total in today_department_totals %}
       <div class="dairymetrics-admin-total-item">
         <div class="dairymetrics-admin-total-title">{{ total.department.name }} ({{ total.department.code }})</div>
-        <div class="dairymetrics-admin-total-meta">{{ total.count_label }} {{ total.count_value }} / 金額 {{ total.amount_value|intcomma }}</div>
+        <div class="dairymetrics-admin-total-meta">
+          {% if total.department.code == "WV" %}
+          CS {{ total.cs_count }} / 難民 {{ total.refugee_count }} / 金額 {{ total.amount_value|intcomma }}
+          {% else %}
+          {{ total.count_label }} {{ total.count_value }} / 金額 {{ total.amount_value|intcomma }}
+          {% endif %}
+        </div>
         <div class="muted">AP {{ total.approach_count }} / CM {{ total.communication_count }}</div>
       </div>
       {% empty %}
@@ -79,7 +85,12 @@
           <tr>
             <th>AP</th>
             <th>CM</th>
+            {% if row.department.code == "WV" %}
+            <th>CS</th>
+            <th>難民</th>
+            {% else %}
             <th>{{ row.count_label }}</th>
+            {% endif %}
             <th>金額</th>
             <th>現場</th>
           </tr>
@@ -88,7 +99,12 @@
           <tr>
             <td>{{ row.approach_count }}</td>
             <td>{{ row.communication_count }}</td>
+            {% if row.department.code == "WV" %}
+            <td>{{ row.cs_count }}</td>
+            <td>{{ row.refugee_count }}</td>
+            {% else %}
             <td>{{ row.count_value }}</td>
+            {% endif %}
             <td>{{ row.amount_value|intcomma }}</td>
             <td>{{ row.location_name|default:"-" }}</td>
           </tr>

@@ -1237,6 +1237,14 @@ def build_admin_daily_overview(*, department_code="", today=None):
                     "is_closed": today_entry.activity_closed,
                     "updated_at": timezone.localtime(today_entry.updated_at),
                     "count_label": _count_label_for_department(department),
+                    "count_text": _count_breakdown_text(
+                        department,
+                        {
+                            "result_count": int(today_entry.result_count or 0),
+                            "cs_count": int(today_entry.cs_count or 0),
+                            "refugee_count": int(today_entry.refugee_count or 0),
+                        },
+                    ),
                     "count_value": _count_value_for_department(
                         department,
                         {
@@ -1248,6 +1256,8 @@ def build_admin_daily_overview(*, department_code="", today=None):
                     "amount_value": int(today_entry.support_amount or 0),
                     "approach_count": int(today_entry.approach_count or 0),
                     "communication_count": int(today_entry.communication_count or 0),
+                    "cs_count": int(today_entry.cs_count or 0),
+                    "refugee_count": int(today_entry.refugee_count or 0),
                     "location_name": (today_entry.location_name or "").strip(),
                 }
                 if today_entry.activity_closed:
@@ -1263,9 +1273,12 @@ def build_admin_daily_overview(*, department_code="", today=None):
                 "department": department,
                 "count_label": _count_label_for_department(department),
                 "count_value": _count_value_for_department(department, department_today_totals),
+                "count_text": _count_breakdown_text(department, department_today_totals),
                 "amount_value": _display_amount_value(department_today_totals),
                 "approach_count": int(department_today_totals["approach_count"]),
                 "communication_count": int(department_today_totals["communication_count"]),
+                "cs_count": int(department_today_totals["cs_count"]),
+                "refugee_count": int(department_today_totals["refugee_count"]),
             }
         )
 

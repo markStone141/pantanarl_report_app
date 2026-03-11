@@ -956,6 +956,8 @@ class DairyMetricsAdminTests(TestCase):
         self.assertEqual(response.json()["department_code"], "WV")
         self.assertIn("overview_html", response.json())
         self.assertIn("Member Four", response.json()["overview_html"])
+        self.assertIn("CS", response.json()["overview_html"])
+        self.assertIn("難民", response.json()["overview_html"])
         self.assertNotIn("更新</button>", response.json()["overview_html"])
 
     def test_admin_monthly_overview_shows_month_totals_and_sheet(self):
