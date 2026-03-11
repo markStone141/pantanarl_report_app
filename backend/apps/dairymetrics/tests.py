@@ -21,6 +21,7 @@ class DairyMetricsLoginTests(TestCase):
     def setUp(self):
         user_model = get_user_model()
         self.user = user_model.objects.create_user(username="member1", password="pass123")
+        self.admin = user_model.objects.create_user(username="dm_admin", password="pass123", is_staff=True)
         self.member = Member.objects.create(name="Member One", user=self.user)
         self.department = Department.objects.create(code="UN", name="UN")
         MemberDepartment.objects.create(member=self.member, department=self.department)
@@ -40,6 +41,18 @@ class DairyMetricsLoginTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "DairyMetrics を利用できるメンバーではありません。")
+
+    def test_admin_redirects_to_admin_overview_after_login(self):
+        response = self.client.post(
+            reverse("dairymetrics_login"),
+            {"login_id": "dm_admin", "password": "pass123"},
+        )
+        self.assertRedirects(response, reverse("dairymetrics_admin_overview"))
+
+    def test_authenticated_admin_visiting_login_redirects_to_admin_overview(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("dairymetrics_login"))
+        self.assertRedirects(response, reverse("dairymetrics_admin_overview"))
 
 
 class DairyMetricsDashboardTests(TestCase):

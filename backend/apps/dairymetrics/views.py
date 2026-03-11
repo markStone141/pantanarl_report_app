@@ -44,6 +44,14 @@ def _build_entry_form(*, member, data=None, department_code="", entry_date=None)
         initial=initial,
     )
 
+
+def _login_redirect_url(user, *, fallback=""):
+    if fallback:
+        return fallback
+    if user.is_staff:
+        return reverse("dairymetrics_admin_overview")
+    return reverse("dairymetrics_dashboard")
+
 def _member_directory_queryset():
     return (
         Member.objects.filter(department_links__department__is_active=True)
@@ -130,12 +138,12 @@ def _build_member_dashboard_context(*, request, member, readonly=False, viewer_m
 
 def login_view(request: HttpRequest) -> HttpResponse:
     if request.user.is_authenticated:
-        return redirect("dairymetrics_dashboard")
+        return redirect(_login_redirect_url(request.user))
 
     form = DairyMetricsLoginForm(request=request, data=request.POST or None)
     if request.method == "POST" and form.is_valid():
         auth_login(request, form.user)
-        return redirect(request.POST.get("next") or reverse("dairymetrics_dashboard"))
+        return redirect(_login_redirect_url(form.user, fallback=request.POST.get("next", "")))
     return render(request, "dairymetrics/login.html", {"form": form, "next": request.GET.get("next", "")})
 
 
