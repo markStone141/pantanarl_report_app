@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -451,14 +453,21 @@ def admin_monthly_comparison(request: HttpRequest) -> HttpResponse:
     target_month = parse_date(f"{(request.GET.get('month') or timezone.localdate().strftime('%Y-%m'))}-01")
     if not target_month:
         target_month = timezone.localdate().replace(day=1)
+    compare_month = parse_date((request.GET.get("compare_month") or ""))
+    if compare_month:
+        compare_month = compare_month.replace(day=1)
+    else:
+        previous_month_end = target_month.replace(day=1) - timedelta(days=1)
+        compare_month = previous_month_end.replace(day=1)
     selected_department_code = (request.GET.get("department") or "").strip()
     overview = build_admin_month_comparison(
         target_month=target_month,
+        compare_month=compare_month,
         department_code=selected_department_code,
     )
     context = {
         "target_month": overview["target_month"],
-        "previous_month": overview["previous_month"],
+        "compare_month": overview["compare_month"],
         "departments": overview["departments"],
         "selected_department": overview["selected_department"],
         "rows": overview["rows"],

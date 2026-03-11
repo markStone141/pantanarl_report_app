@@ -1144,7 +1144,7 @@ class DairyMetricsAdminTests(TestCase):
         self.client.force_login(self.admin)
         response = self.client.get(
             reverse("dairymetrics_admin_monthly_comparison"),
-            {"month": "2026-03", "department": "UN"},
+            {"month": "2026-03", "compare_month": "2026-02", "department": "UN"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "月比較シート")
@@ -1185,7 +1185,7 @@ class DairyMetricsAdminTests(TestCase):
         self.client.force_login(self.admin)
         response = self.client.get(
             reverse("dairymetrics_admin_monthly_comparison"),
-            {"month": "2026-03", "department": "WV"},
+            {"month": "2026-03", "compare_month": "2026-02", "department": "WV"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Member Four")
@@ -1205,8 +1205,29 @@ class DairyMetricsAdminTests(TestCase):
         self.client.force_login(self.admin)
         response = self.client.get(
             reverse("dairymetrics_admin_monthly_comparison"),
-            {"month": "2026-03", "department": "UN"},
+            {"month": "2026-03", "compare_month": "2026-02", "department": "UN"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "コミュ率")
         self.assertContains(response, "参加率")
+
+    def test_admin_monthly_comparison_defaults_compare_month_to_previous_month(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 2, 10),
+            support_amount=1000,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 10),
+            support_amount=2000,
+        )
+        self.client.force_login(self.admin)
+        response = self.client.get(
+            reverse("dairymetrics_admin_monthly_comparison"),
+            {"month": "2026-03", "department": "UN"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="compare_month" value="2026-02"', html=False)

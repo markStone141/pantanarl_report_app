@@ -1243,12 +1243,12 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
     }
 
 
-def build_admin_month_comparison(*, target_month, department_code=""):
+def build_admin_month_comparison(*, target_month, compare_month, department_code=""):
     departments = list(Department.objects.filter(is_active=True, code__in=["UN", "WV"]).order_by("code"))
     month_start = target_month.replace(day=1)
     month_end = target_month.replace(day=monthrange(target_month.year, target_month.month)[1])
-    previous_month_end = month_start - timedelta(days=1)
-    previous_month_start = previous_month_end.replace(day=1)
+    compare_month_start = compare_month.replace(day=1)
+    compare_month_end = compare_month.replace(day=monthrange(compare_month.year, compare_month.month)[1])
 
     selected_department = None
     if department_code:
@@ -1290,8 +1290,8 @@ def build_admin_month_comparison(*, target_month, department_code=""):
             previous_totals = _department_totals(
                 member,
                 department,
-                previous_month_start,
-                previous_month_end,
+                compare_month_start,
+                compare_month_end,
                 include_adjustments=True,
             )
             if not any(int(current_totals.get(field) or 0) for field in current_totals) and not any(
@@ -1362,7 +1362,7 @@ def build_admin_month_comparison(*, target_month, department_code=""):
         "departments": departments,
         "selected_department": selected_department,
         "target_month": month_start,
-        "previous_month": previous_month_start,
+        "compare_month": compare_month_start,
         "rows": rows,
         "monthly_department_totals": monthly_department_totals,
     }

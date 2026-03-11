@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container dairymetrics-admin-monthly-page">
+<div class="container dairymetrics-admin-comparison-page">
   {% include "dairymetrics/partials/admin_header.html" with admin_header_subtitle="前月比で伸びと停滞を一覧確認します。" %}
 
   <section class="card">
@@ -20,7 +20,10 @@
       <div class="dairymetrics-admin-table-tools">
         <form method="get" class="dairymetrics-month-filter dairymetrics-month-filter-inline">
           <div>
-            <input id="month" type="month" name="month" value="{{ target_month|date:'Y-m' }}" aria-label="対象月">
+            <input id="compare_month" type="month" name="compare_month" value="{{ compare_month|date:'Y-m' }}" aria-label="比較元月">
+          </div>
+          <div>
+            <input id="month" type="month" name="month" value="{{ target_month|date:'Y-m' }}" aria-label="比較先月">
           </div>
           <div>
             <select id="department" name="department" aria-label="部署">
@@ -40,8 +43,8 @@
       {% for total in monthly_department_totals %}
       <div class="dairymetrics-admin-total-item">
         <div class="dairymetrics-admin-total-title">{{ total.department.name }} ({{ total.department.code }})</div>
-        <div class="dairymetrics-admin-total-meta">今月 {{ total.current_count_text }} / 金額 {{ total.current_amount_value|intcomma }}</div>
-        <div class="muted">前月 {{ total.previous_count_text }} / 金額 {{ total.previous_amount_value|intcomma }}</div>
+        <div class="dairymetrics-admin-total-meta">{{ target_month|date:'Y/m' }} {{ total.current_count_text }} / 金額 {{ total.current_amount_value|intcomma }}</div>
+        <div class="muted">{{ compare_month|date:'Y/m' }} {{ total.previous_count_text }} / 金額 {{ total.previous_amount_value|intcomma }}</div>
       </div>
       {% endfor %}
     </div>
@@ -60,7 +63,7 @@
           <tr>
             <th>名前</th>
             <th>項目</th>
-            <th>{{ previous_month|date:'Y/m' }}</th>
+            <th>{{ compare_month|date:'Y/m' }}</th>
             <th>{{ target_month|date:'Y/m' }}</th>
             <th>差分</th>
             <th>増減率</th>
