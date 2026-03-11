@@ -935,7 +935,7 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "月平均")
         self.assertContains(response, "AP")
         self.assertContains(response, "CM")
-        self.assertContains(response, "現場名")
+        self.assertContains(response, "現場")
         self.assertContains(response, "Shibuya")
         self.assertContains(response, str(today.day))
         self.assertNotContains(response, "今日の活動状況")

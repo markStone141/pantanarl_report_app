@@ -1146,7 +1146,7 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                     ],
                 },
                 {
-                    "label": "現場名",
+                    "label": "現場",
                     "monthly_total": " / ".join(location_names) if location_names else "-",
                     "monthly_average": f"{active_day_count}日" if active_day_count else "-",
                     "cells": [

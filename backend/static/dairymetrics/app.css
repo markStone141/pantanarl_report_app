@@ -819,15 +819,15 @@
 }
 
 .dairymetrics-col-metric {
-  width: 34px;
+  width: 44px;
 }
 
 .dairymetrics-col-summary {
-  width: 68px;
+  width: 78px;
 }
 
 .dairymetrics-col-day {
-  width: 48px;
+  width: 58px;
 }
 
 .dairymetrics-admin-month-sheet thead th {
@@ -894,9 +894,9 @@
 
 .dairymetrics-admin-month-sheet th:nth-child(2),
 .dairymetrics-admin-month-sheet td:nth-child(2) {
-  width: 34px;
-  min-width: 34px;
-  max-width: 34px;
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
 }
 
 .dairymetrics-admin-member-cell {
@@ -906,31 +906,34 @@
 }
 
 .dairymetrics-admin-metric-label {
-  width: 34px;
-  min-width: 34px;
-  max-width: 34px;
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
   font-weight: 700;
   background: #f7fbff;
   text-align: center;
   font-size: 0.68rem;
   padding-left: 1px;
   padding-right: 1px;
+  white-space: nowrap;
 }
 
 .dairymetrics-admin-sheet-summary {
-  width: 68px;
-  min-width: 68px;
-  max-width: 68px;
+  width: 78px;
+  min-width: 78px;
+  max-width: 78px;
   background: #fbfdff;
   font-size: 0.7rem;
+  white-space: nowrap;
 }
 
 .dairymetrics-admin-sheet-cell {
-  width: 48px;
-  min-width: 48px;
-  max-width: 48px;
+  width: 58px;
+  min-width: 58px;
+  max-width: 58px;
   padding: 5px 2px;
   font-size: 0.68rem;
+  white-space: nowrap;
 }
 
 .dairymetrics-admin-sheet-cell.is-empty {
@@ -939,19 +942,20 @@
 }
 
 .dairymetrics-admin-day-head {
-  width: 48px;
-  min-width: 48px;
-  max-width: 48px;
+  width: 58px;
+  min-width: 58px;
+  max-width: 58px;
   padding: 4px 1px 2px;
 }
 
 .dairymetrics-admin-weekday-head {
-  width: 48px;
-  min-width: 48px;
-  max-width: 48px;
+  width: 58px;
+  min-width: 58px;
+  max-width: 58px;
   padding: 2px 1px 4px;
   font-size: 0.62rem;
   color: #6a7d8c;
+  white-space: nowrap;
 }
 
 .dairymetrics-admin-number {
