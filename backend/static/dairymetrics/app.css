@@ -783,6 +783,7 @@
 }
 
 .dairymetrics-admin-month-sheet {
+  width: max-content;
   min-width: 2400px;
 }
 
@@ -808,9 +809,31 @@
 }
 
 .table-scroll {
+  display: block;
   overflow-x: auto;
+  overflow-y: visible;
   padding-bottom: 12px;
   scrollbar-gutter: stable both-edges;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll::-webkit-scrollbar {
+  height: 14px;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+  background: #e7eef5;
+  border-radius: 999px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+  background: #9cb0c3;
+  border-radius: 999px;
+  border: 2px solid #e7eef5;
+}
+
+.table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #7f97ad;
 }
 
 .dairymetrics-admin-month-sheet thead th:nth-child(1) {
