@@ -23,7 +23,8 @@
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
       {% if member %}<a href="{% url 'dairymetrics_member_index' %}">他メンバーデータ</a>{% endif %}
       <a href="{% url 'dairymetrics_compare' %}">スコア</a>
-      {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">月次俯瞰</a>{% endif %}
+      {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>{% endif %}
+      {% if is_admin %}<a href="{% url 'dairymetrics_admin_monthly_overview' %}">月次集計</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_adjustment_create' %}">後追い追加</a>{% endif %}
       <a href="{% url 'report_index' %}">Report App</a>
       <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>

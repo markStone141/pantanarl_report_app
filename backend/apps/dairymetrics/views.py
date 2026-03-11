@@ -11,7 +11,12 @@ from apps.accounts.models import Department, Member
 from .auth import get_member_profile, require_dairymetrics_admin, require_dairymetrics_member
 from .forms import DairyMetricsLoginForm, MemberDailyMetricEntryForm, MemberScopeTargetForm, MetricAdjustmentForm
 from .models import MemberDailyMetricEntry, MetricAdjustment
-from .selectors import build_admin_month_overview, build_member_dashboard, build_member_ranking_detail
+from .selectors import (
+    build_admin_daily_overview,
+    build_admin_month_overview,
+    build_member_dashboard,
+    build_member_ranking_detail,
+)
 
 
 def _build_entry_form(*, member, data=None, department_code="", entry_date=None):
@@ -382,6 +387,25 @@ def entry_form(request: HttpRequest) -> HttpResponse:
 
 @require_dairymetrics_admin
 def admin_overview(request: HttpRequest) -> HttpResponse:
+    selected_department_code = (request.GET.get("department") or "").strip()
+    overview = build_admin_daily_overview(
+        department_code=selected_department_code,
+        today=timezone.localdate(),
+    )
+    context = {
+        "today": overview["today"],
+        "departments": overview["departments"],
+        "selected_department": overview["selected_department"],
+        "submission_summary": overview["submission_summary"],
+        "today_department_totals": overview["today_department_totals"],
+        "submitted_members": overview["submitted_members"],
+        "pending_members": overview["pending_members"],
+    }
+    return render(request, "dairymetrics/admin_overview.html", context)
+
+
+@require_dairymetrics_admin
+def admin_monthly_overview(request: HttpRequest) -> HttpResponse:
     target_month = parse_date(f"{(request.GET.get('month') or timezone.localdate().strftime('%Y-%m'))}-01")
     if not target_month:
         target_month = timezone.localdate().replace(day=1)
@@ -399,7 +423,7 @@ def admin_overview(request: HttpRequest) -> HttpResponse:
         "monthly_department_totals": overview["monthly_department_totals"],
         "activity_summary": overview["activity_summary"],
     }
-    return render(request, "dairymetrics/admin_overview.html", context)
+    return render(request, "dairymetrics/admin_monthly.html", context)
 
 
 @require_dairymetrics_admin
@@ -409,7 +433,7 @@ def adjustment_create(request: HttpRequest) -> HttpResponse:
         adjustment = form.save(commit=False)
         adjustment.created_by = request.user
         adjustment.save()
-        return redirect(f"{reverse('dairymetrics_admin_overview')}?month={adjustment.target_date.strftime('%Y-%m')}")
+        return redirect(f"{reverse('dairymetrics_admin_monthly_overview')}?month={adjustment.target_date.strftime('%Y-%m')}")
 
     recent_adjustments = MetricAdjustment.objects.select_related("member", "department", "created_by")[:10]
     return render(

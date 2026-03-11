@@ -19,7 +19,8 @@
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
-      <a href="{% url 'dairymetrics_admin_overview' %}">月次俯瞰</a>
+      <a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>
+      <a href="{% url 'dairymetrics_admin_monthly_overview' %}">月次集計</a>
       <a href="{% url 'dairymetrics_adjustment_create' %}">後追い追加</a>
       <a href="{% url 'report_index' %}">Report App</a>
       <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>

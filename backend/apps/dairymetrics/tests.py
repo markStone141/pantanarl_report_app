@@ -826,54 +826,47 @@ class DairyMetricsAdminTests(TestCase):
                 "note": "late postal",
             },
         )
-        self.assertRedirects(response, reverse("dairymetrics_admin_overview") + "?month=2026-03")
+        self.assertRedirects(response, reverse("dairymetrics_admin_monthly_overview") + "?month=2026-03")
         adjustment = MetricAdjustment.objects.get()
         self.assertEqual(adjustment.created_by, self.admin)
         self.assertEqual(adjustment.source_type, "postal")
 
-    def test_admin_overview_shows_activity_status(self):
+    def test_admin_monthly_overview_requires_staff(self):
+        response = self.client.get(reverse("dairymetrics_admin_monthly_overview"))
+        self.assertRedirects(response, reverse("dairymetrics_login"))
+
+    def test_admin_overview_shows_submission_summary_and_member_links(self):
+        today = timezone.localdate()
         MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=self.department,
-            entry_date=date(2026, 3, 9),
+            entry_date=today,
             result_count=1,
             support_amount=1000,
             activity_closed=True,
             activity_closed_at=timezone.now(),
         )
         self.client.force_login(self.admin)
-        response = self.client.get(reverse("dairymetrics_admin_overview"), {"month": "2026-03"})
+        response = self.client.get(reverse("dairymetrics_admin_overview"), {"department": "UN"})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "活動終了")
+        self.assertContains(response, "提出済み")
+        self.assertContains(response, "未提出")
+        self.assertContains(response, "本日の実績")
+        self.assertContains(response, "Member Three / 活動終了")
         self.assertContains(response, reverse("dairymetrics_member_index"))
         self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[self.member.id]))
 
     def test_admin_overview_filters_by_department(self):
-        MemberDailyMetricEntry.objects.create(
-            member=self.member,
-            department=self.department,
-            entry_date=date(2026, 3, 9),
-            result_count=1,
-            support_amount=1200,
-        )
-        MemberDailyMetricEntry.objects.create(
-            member=self.member_wv,
-            department=self.department_wv,
-            entry_date=date(2026, 3, 9),
-            cs_count=2,
-            refugee_count=1,
-            support_amount=2500,
-        )
         self.client.force_login(self.admin)
         response = self.client.get(
             reverse("dairymetrics_admin_overview"),
-            {"month": "2026-03", "department": "UN"},
+            {"department": "UN"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Member Three")
         self.assertNotContains(response, "Member Four")
 
-    def test_admin_overview_shows_today_activity_lists_and_month_totals(self):
+    def test_admin_monthly_overview_shows_activity_status_and_month_totals(self):
         today = timezone.localdate()
         MemberDailyMetricEntry.objects.create(
             member=self.member,
@@ -895,7 +888,7 @@ class DairyMetricsAdminTests(TestCase):
         )
         self.client.force_login(self.admin)
         response = self.client.get(
-            reverse("dairymetrics_admin_overview"),
+            reverse("dairymetrics_admin_monthly_overview"),
             {"month": today.strftime("%Y-%m"), "department": "WV"},
         )
         self.assertEqual(response.status_code, 200)
@@ -904,3 +897,28 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "Member Four")
         self.assertContains(response, "月次合計")
         self.assertContains(response, "CS/難民 2")
+
+    def test_admin_monthly_overview_filters_by_department(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            result_count=1,
+            support_amount=1200,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member_wv,
+            department=self.department_wv,
+            entry_date=date(2026, 3, 9),
+            cs_count=2,
+            refugee_count=1,
+            support_amount=2500,
+        )
+        self.client.force_login(self.admin)
+        response = self.client.get(
+            reverse("dairymetrics_admin_monthly_overview"),
+            {"month": "2026-03", "department": "UN"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Member Three")
+        self.assertNotContains(response, "Member Four")

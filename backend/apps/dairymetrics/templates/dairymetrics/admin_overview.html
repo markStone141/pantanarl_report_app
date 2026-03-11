@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load humanize static %}
 
-{% block title %}月次俯瞰 | DairyMetrics{% endblock %}
+{% block title %}管理トップ | DairyMetrics{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=1" />
@@ -12,15 +12,16 @@
   <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
     <div>
       <strong>DairyMetrics 管理</strong>
-      <div class="topbar-muted">月次の全体成績を確認します。</div>
+      <div class="topbar-muted">本日の実績状況と提出状況を確認します。</div>
     </div>
     <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="Open menu">
       <i class="fa-solid fa-bars" aria-hidden="true"></i>
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
-      <a href="{% url 'dairymetrics_admin_overview' %}">月次俯瞰</a>
+      <a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>
       <a href="{% url 'dairymetrics_member_index' %}">メンバー一覧</a>
+      <a href="{% url 'dairymetrics_admin_monthly_overview' %}">月次集計</a>
       <a href="{% url 'dairymetrics_adjustment_create' %}">後追い追加</a>
       <a href="{% url 'report_index' %}">Report App</a>
       <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
@@ -31,8 +32,8 @@
   <section class="card">
     <form method="get" class="dairymetrics-month-filter">
       <div>
-        <label for="month">対象月</label>
-        <input id="month" type="month" name="month" value="{{ target_month|date:'Y-m' }}">
+        <label>対象日</label>
+        <div class="muted">{{ today|date:'Y/m/d' }}</div>
       </div>
       <div>
         <label for="department">部署</label>
@@ -46,6 +47,7 @@
       </div>
       <button type="submit">表示</button>
       <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">メンバー一覧を見る</a>
+      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_admin_monthly_overview' %}">月次集計へ</a>
     </form>
   </section>
 
@@ -59,12 +61,12 @@
       </div>
       <div class="dairymetrics-admin-stat-grid">
         <div class="dairymetrics-admin-stat">
-          <span class="dairymetrics-admin-stat-label">活動中</span>
-          <strong class="dairymetrics-admin-stat-value">{{ activity_summary.active_count }}</strong>
+          <span class="dairymetrics-admin-stat-label">提出済み</span>
+          <strong class="dairymetrics-admin-stat-value">{{ submission_summary.submitted_count }}</strong>
         </div>
         <div class="dairymetrics-admin-stat is-closed">
-          <span class="dairymetrics-admin-stat-label">活動終了</span>
-          <strong class="dairymetrics-admin-stat-value">{{ activity_summary.closed_count }}</strong>
+          <span class="dairymetrics-admin-stat-label">未提出</span>
+          <strong class="dairymetrics-admin-stat-value">{{ submission_summary.pending_count }}</strong>
         </div>
       </div>
     </article>
@@ -72,18 +74,19 @@
     <article class="card dairymetrics-admin-summary-card">
       <div class="dairymetrics-admin-summary-head">
         <div>
-          <strong>月次合計</strong>
-          <div class="muted">補正込みの部門合計です。</div>
+          <strong>本日の実績</strong>
+          <div class="muted">今日入力された件数と金額です。</div>
         </div>
       </div>
       <div class="dairymetrics-admin-total-list">
-        {% for total in monthly_department_totals %}
+        {% for total in today_department_totals %}
         <div class="dairymetrics-admin-total-item">
           <div class="dairymetrics-admin-total-title">{{ total.department.name }} ({{ total.department.code }})</div>
           <div class="dairymetrics-admin-total-meta">{{ total.count_label }} {{ total.count_value }} / 金額 {{ total.amount_value|intcomma }}</div>
+          <div class="muted">アプローチ {{ total.approach_count }} / コミュニケーション {{ total.communication_count }}</div>
         </div>
         {% empty %}
-        <p class="muted">対象部署の月次データはありません。</p>
+        <p class="muted">対象部署の本日データはありません。</p>
         {% endfor %}
       </div>
     </article>
@@ -93,15 +96,17 @@
     <article class="card dairymetrics-admin-list-card">
       <div class="dairymetrics-admin-summary-head">
         <div>
-          <strong>今日の活動中一覧</strong>
-          <div class="muted">まだ現場が開いているメンバー</div>
+          <strong>提出済み一覧</strong>
+          <div class="muted">今日の入力があるメンバー</div>
         </div>
       </div>
       <div class="dairymetrics-admin-chip-list">
-        {% for member in activity_summary.active_members %}
-        <span class="dairymetrics-admin-chip">{{ member.name }}</span>
+        {% for row in submitted_members %}
+        <a class="dairymetrics-admin-chip {% if row.status_label == '活動終了' %}is-closed{% endif %}" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
+          {{ row.member.name }} / {{ row.status_label }}
+        </a>
         {% empty %}
-        <span class="muted">活動中メンバーはいません。</span>
+        <span class="muted">提出済みメンバーはいません。</span>
         {% endfor %}
       </div>
     </article>
@@ -109,15 +114,17 @@
     <article class="card dairymetrics-admin-list-card">
       <div class="dairymetrics-admin-summary-head">
         <div>
-          <strong>今日の活動終了一覧</strong>
-          <div class="muted">本日分の入力を締めたメンバー</div>
+          <strong>未提出一覧</strong>
+          <div class="muted">まだ入力がないメンバー</div>
         </div>
       </div>
       <div class="dairymetrics-admin-chip-list">
-        {% for member in activity_summary.closed_members %}
-        <span class="dairymetrics-admin-chip is-closed">{{ member.name }}</span>
+        {% for row in pending_members %}
+        <a class="dairymetrics-admin-chip" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
+          {{ row.member.name }} / {{ row.department.code }}
+        </a>
         {% empty %}
-        <span class="muted">活動終了メンバーはいません。</span>
+        <span class="muted">未提出メンバーはいません。</span>
         {% endfor %}
       </div>
     </article>
@@ -126,44 +133,14 @@
   <section class="card">
     <div class="dairymetrics-admin-table-head">
       <div>
-        <strong>月次メンバー一覧</strong>
-        <div class="muted">平均と累計を同時に見て、気になるメンバーを拾うための一覧です。</div>
+        <strong>管理メニュー</strong>
+        <div class="muted">日次運用と分析を分けて、必要な画面へすぐ移動できます。</div>
       </div>
-      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">個人ページを開く</a>
     </div>
-    <div class="table-scroll">
-      <table class="dairymetrics-admin-table">
-        <thead>
-          <tr>
-            <th>部門</th>
-            <th>メンバー</th>
-            <th>今日の状態</th>
-            <th>件数/金額</th>
-            <th>アプローチ 平均/累計</th>
-            <th>コミュニケーション 平均/累計</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in rows %}
-          <tr>
-            <td><span class="dairymetrics-admin-dept">{{ row.department.code }}</span></td>
-            <td>
-              <a href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
-                <strong>{{ row.member.name }}</strong>
-              </a>
-            </td>
-            <td><span class="dairymetrics-admin-status {% if row.activity_status == '活動終了' %}is-closed{% elif row.activity_status == '活動中' %}is-active{% endif %}">{{ row.activity_status }}</span></td>
-            <td>{{ row.totals.result_count }} / {{ row.totals.support_amount|intcomma }}</td>
-            <td>{{ row.approach_average }} / {{ row.totals.approach_count }}</td>
-            <td>{{ row.communication_average }} / {{ row.totals.communication_count }}</td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="6">この月の対象データはまだありません。</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="dairymetrics-card-actions">
+      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">メンバー一覧</a>
+      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_admin_monthly_overview' %}">月次集計</a>
+      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_adjustment_create' %}">後追い追加</a>
     </div>
   </section>
 </div>

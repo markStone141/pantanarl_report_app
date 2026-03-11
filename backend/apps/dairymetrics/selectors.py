@@ -1049,3 +1049,88 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
             "closed_members": closed_today_members,
         },
     }
+
+
+def build_admin_daily_overview(*, department_code="", today=None):
+    today_value = today or date.today()
+    departments = list(Department.objects.filter(is_active=True, code__in=["UN", "WV"]).order_by("code"))
+    selected_department = None
+    if department_code:
+        selected_department = next((department for department in departments if department.code == department_code), None)
+    if not selected_department and departments:
+        selected_department = departments[0]
+
+    submitted_members = []
+    pending_members = []
+    today_department_totals = []
+    submitted_count = 0
+    pending_count = 0
+    active_count = 0
+    closed_count = 0
+
+    for department in departments:
+        if selected_department and department.id != selected_department.id:
+            continue
+
+        department_today_totals = _zero_totals()
+        members = Member.objects.active().filter(department_links__department=department).distinct().order_by("name")
+        for member in members:
+            today_entry = (
+                MemberDailyMetricEntry.objects.filter(
+                    member=member,
+                    department=department,
+                    entry_date=today_value,
+                )
+                .order_by("-updated_at")
+                .first()
+            )
+            if today_entry:
+                submitted_count += 1
+                status_label = "活動終了" if today_entry.activity_closed else "活動中"
+                if today_entry.activity_closed:
+                    closed_count += 1
+                else:
+                    active_count += 1
+                submitted_members.append(
+                    {
+                        "member": member,
+                        "department": department,
+                        "status_label": status_label,
+                    }
+                )
+                for field in ENTRY_METRIC_FIELDS:
+                    department_today_totals[field] += int(getattr(today_entry, field, 0) or 0)
+            else:
+                pending_count += 1
+                pending_members.append(
+                    {
+                        "member": member,
+                        "department": department,
+                    }
+                )
+
+        today_department_totals.append(
+            {
+                "department": department,
+                "count_label": _count_label_for_department(department),
+                "count_value": _count_value_for_department(department, department_today_totals),
+                "amount_value": _display_amount_value(department_today_totals),
+                "approach_count": int(department_today_totals["approach_count"]),
+                "communication_count": int(department_today_totals["communication_count"]),
+            }
+        )
+
+    return {
+        "today": today_value,
+        "departments": departments,
+        "selected_department": selected_department,
+        "submission_summary": {
+            "submitted_count": submitted_count,
+            "pending_count": pending_count,
+            "active_count": active_count,
+            "closed_count": closed_count,
+        },
+        "today_department_totals": today_department_totals,
+        "submitted_members": submitted_members,
+        "pending_members": pending_members,
+    }
