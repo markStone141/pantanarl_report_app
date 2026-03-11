@@ -61,38 +61,6 @@
   </article>
 </section>
 
-{% if ranking_metrics %}
-<section class="card dairymetrics-admin-ranking-section">
-  <div class="dairymetrics-admin-summary-head">
-    <div>
-      <strong>今日のランキング</strong>
-      <div class="muted">本日分の入力だけで順位を表示します。</div>
-    </div>
-  </div>
-  <div class="dairymetrics-compare-grid">
-    {% for metric in ranking_metrics %}
-    <article class="comparison-card dairymetrics-rank-card">
-      <div class="dairymetrics-rank-card-head">
-        <div class="dairymetrics-rank-card-title">
-          <span class="dairymetrics-rank-metric-icon"><i class="fa-solid {{ metric.icon }}" aria-hidden="true"></i></span>
-          <strong>{{ metric.label }}</strong>
-        </div>
-      </div>
-      <div class="dairymetrics-rank-stack">
-        {% for leader in metric.leaders %}
-        <div class="dairymetrics-rank-row">
-          <span class="dairymetrics-rank-badge">{{ leader.rank }}</span>
-          <span class="dairymetrics-rank-name">{{ leader.member_name }}</span>
-          <strong class="dairymetrics-rank-value">{{ leader.value_text }}</strong>
-        </div>
-        {% endfor %}
-      </div>
-    </article>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
-
 <section class="card dairymetrics-admin-activity-section">
   <div class="dairymetrics-admin-summary-head">
     <div>
@@ -148,3 +116,35 @@
     {% endfor %}
   </div>
 </section>
+
+{% if ranking_metrics %}
+<section class="card dairymetrics-admin-ranking-section">
+  <div class="dairymetrics-admin-summary-head">
+    <div>
+      <strong>今日のランキング</strong>
+      <div class="muted">本日分の入力だけで全員の順位を表示します。</div>
+    </div>
+  </div>
+  <div class="dairymetrics-compare-grid">
+    {% for metric in ranking_metrics %}
+    <article class="comparison-card dairymetrics-rank-card">
+      <div class="dairymetrics-rank-card-head">
+        <div class="dairymetrics-rank-card-title">
+          <span class="dairymetrics-rank-metric-icon"><i class="fa-solid {{ metric.icon }}" aria-hidden="true"></i></span>
+          <strong>{{ metric.label }}</strong>
+        </div>
+      </div>
+      <div class="dairymetrics-rank-stack">
+        {% for row in metric.rows %}
+        <div class="dairymetrics-rank-row">
+          <span class="dairymetrics-rank-badge">{{ row.rank }}</span>
+          <span class="dairymetrics-rank-name">{{ row.member_name }}</span>
+          <strong class="dairymetrics-rank-value">{{ row.value_text }}</strong>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

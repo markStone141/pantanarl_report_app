@@ -869,7 +869,11 @@ class DairyMetricsAdminTests(TestCase):
     def test_admin_overview_shows_activity_cards_without_submission_summary(self):
         today = timezone.localdate()
         active_member = Member.objects.create(name="Member Active")
+        late_member = Member.objects.create(name="Member Late")
+        low_member = Member.objects.create(name="Member Low")
         MemberDepartment.objects.create(member=active_member, department=self.department)
+        MemberDepartment.objects.create(member=late_member, department=self.department)
+        MemberDepartment.objects.create(member=low_member, department=self.department)
         active_entry = MemberDailyMetricEntry.objects.create(
             member=active_member,
             department=self.department,
@@ -893,6 +897,28 @@ class DairyMetricsAdminTests(TestCase):
             activity_closed=True,
             activity_closed_at=timezone.now(),
         )
+        MemberDailyMetricEntry.objects.create(
+            member=late_member,
+            department=self.department,
+            entry_date=today,
+            approach_count=4,
+            communication_count=2,
+            result_count=2,
+            support_amount=2400,
+            location_name="Ueno",
+            activity_closed=False,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=low_member,
+            department=self.department,
+            entry_date=today,
+            approach_count=1,
+            communication_count=1,
+            result_count=0,
+            support_amount=500,
+            location_name="Akabane",
+            activity_closed=False,
+        )
         now = timezone.now()
         MemberDailyMetricEntry.objects.filter(pk=active_entry.pk).update(updated_at=now)
         MemberDailyMetricEntry.objects.filter(pk=closed_entry.pk).update(updated_at=now - timedelta(minutes=10))
@@ -908,14 +934,18 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "金額")
         self.assertContains(response, "アプローチ数")
         self.assertContains(response, "Member Active")
+        self.assertContains(response, "Member Late")
+        self.assertContains(response, "Member Low")
         self.assertContains(response, "Member Three")
         self.assertContains(response, "Shibuya")
         self.assertContains(response, "Ikebukuro")
+        self.assertContains(response, '<span class="dairymetrics-rank-badge">4</span>', html=False)
         self.assertNotContains(response, "提出対象")
         self.assertNotContains(response, "提出済み")
         self.assertNotContains(response, "管理メニュー")
         self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[self.member.id]))
         self.assertLess(response.content.decode().find("Member Active"), response.content.decode().find("Member Three"))
+        self.assertLess(response.content.decode().find("メンバー実績状況"), response.content.decode().find("今日のランキング"))
 
     def test_admin_overview_filters_by_department(self):
         today = timezone.localdate()

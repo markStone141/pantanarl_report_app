@@ -553,12 +553,12 @@ def _build_admin_daily_ranking_metrics(department, today):
                 "key": spec["key"],
                 "label": spec["label"],
                 "icon": spec["icon"],
-                "leaders": [
+                "rows": [
                     {
                         **row,
                         "rank": index,
                     }
-                    for index, row in enumerate(ranked_rows[:3], start=1)
+                    for index, row in enumerate(ranked_rows, start=1)
                 ],
             }
         )
