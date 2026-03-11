@@ -59,6 +59,15 @@
     </div>
     <div class="table-scroll">
       <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-month-sheet">
+        <colgroup>
+          <col class="dairymetrics-col-member">
+          <col class="dairymetrics-col-metric">
+          <col class="dairymetrics-col-summary">
+          <col class="dairymetrics-col-summary">
+          {% for month_day in month_days %}
+          <col class="dairymetrics-col-day">
+          {% endfor %}
+        </colgroup>
         <thead>
           <tr>
             <th rowspan="2">名前</th>
