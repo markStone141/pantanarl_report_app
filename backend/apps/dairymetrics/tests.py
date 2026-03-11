@@ -934,11 +934,50 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "Member Four")
         self.assertContains(response, "月次合計")
         self.assertContains(response, "CS/難民 2")
-        self.assertContains(response, "名前")
+        self.assertContains(response, "月次実績シート")
+        self.assertContains(response, "月合計")
+        self.assertContains(response, "月平均")
         self.assertContains(response, "アプローチ")
         self.assertContains(response, "コミュニケーション")
         self.assertContains(response, "現場名")
         self.assertContains(response, "Shibuya")
+        self.assertContains(response, str(today.day))
+
+    def test_admin_monthly_overview_renders_excel_like_daily_cells(self):
+        target_month = date(2026, 3, 1)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            approach_count=5,
+            communication_count=3,
+            result_count=2,
+            support_amount=4000,
+            location_name="Shibuya",
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 10),
+            source_type="postal",
+            result_count=1,
+            support_amount=1200,
+            created_by=self.admin,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_admin_monthly_overview"),
+            {"month": target_month.strftime("%Y-%m"), "department": "UN"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Member Three")
+        self.assertContains(response, "稼働 2日")
+        self.assertContains(response, "3")
+        self.assertContains(response, "5,200")
+        self.assertContains(response, "Shibuya")
+        self.assertContains(response, "dairymetrics-admin-month-sheet")
 
     def test_admin_monthly_overview_filters_by_department(self):
         MemberDailyMetricEntry.objects.create(

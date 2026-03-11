@@ -92,44 +92,78 @@
   <section class="card">
     <div class="dairymetrics-admin-table-head">
       <div>
-        <strong>月次実績一覧</strong>
-        <div class="muted">Excel の集計表に近い感覚で、メンバー別の月間実績をセル表示します。</div>
+        <strong>月次実績シート</strong>
+        <div class="muted">Excel の集計表に近い見た目で、月内の実績を日付ごとに横並びで確認できます。</div>
       </div>
       <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">個人ページを開く</a>
     </div>
     <div class="table-scroll">
-      <table class="dairymetrics-admin-table dairymetrics-admin-sheet">
+      <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-month-sheet">
         <thead>
           <tr>
-            <th>部門</th>
-            <th>名前</th>
-            <th>アプローチ</th>
-            <th>コミュニケーション</th>
-            <th>件数</th>
-            <th>金額</th>
-            <th>現場名</th>
-            <th>今日の状態</th>
+            <th rowspan="2">部門</th>
+            <th rowspan="2">名前</th>
+            <th rowspan="2">状態</th>
+            <th rowspan="2">項目</th>
+            <th rowspan="2">月合計</th>
+            <th rowspan="2">月平均</th>
+            {% for month_day in month_days %}
+            <th class="dairymetrics-admin-day-head">{{ month_day.day }}</th>
+            {% endfor %}
+          </tr>
+          <tr>
+            {% for month_day in month_days %}
+            <th class="dairymetrics-admin-weekday-head">{{ month_day.weekday_label }}</th>
+            {% endfor %}
           </tr>
         </thead>
         <tbody>
           {% for row in rows %}
-          <tr>
-            <td><span class="dairymetrics-admin-dept">{{ row.department.code }}</span></td>
-            <td>
+          {% for metric_row in row.metric_rows %}
+          <tr class="dairymetrics-admin-member-row{% if forloop.first %} is-first{% endif %}">
+            {% if forloop.first %}
+            <td rowspan="{{ row.metric_rows|length }}" class="dairymetrics-admin-sticky-col">
+              <span class="dairymetrics-admin-dept">{{ row.department.code }}</span>
+            </td>
+            <td rowspan="{{ row.metric_rows|length }}" class="dairymetrics-admin-sticky-col dairymetrics-admin-member-cell">
               <a href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
                 <strong>{{ row.member.name }}</strong>
               </a>
+              <div class="muted">稼働 {{ row.active_day_count }}日</div>
             </td>
-            <td class="dairymetrics-admin-number">{{ row.totals.approach_count }}</td>
-            <td class="dairymetrics-admin-number">{{ row.totals.communication_count }}</td>
-            <td class="dairymetrics-admin-number">{{ row.count_value }}</td>
-            <td class="dairymetrics-admin-number">{{ row.amount_value|intcomma }}</td>
-            <td class="dairymetrics-admin-location">{{ row.location_summary }}</td>
-            <td><span class="dairymetrics-admin-status {% if row.activity_status == '活動終了' %}is-closed{% elif row.activity_status == '活動中' %}is-active{% endif %}">{{ row.activity_status }}</span></td>
+            <td rowspan="{{ row.metric_rows|length }}" class="dairymetrics-admin-sticky-col">
+              <span class="dairymetrics-admin-status {% if row.activity_status == '活動終了' %}is-closed{% elif row.activity_status == '活動中' %}is-active{% endif %}">{{ row.activity_status }}</span>
+            </td>
+            {% endif %}
+            <td class="dairymetrics-admin-metric-label">{{ metric_row.label }}</td>
+            <td class="dairymetrics-admin-sheet-summary{% if metric_row.label != '現場名' %} dairymetrics-admin-number{% endif %}">
+              {% if metric_row.label == '現場名' %}
+              <span class="dairymetrics-admin-location">{{ metric_row.monthly_total }}</span>
+              {% else %}
+              {{ metric_row.monthly_total|intcomma }}
+              {% endif %}
+            </td>
+            <td class="dairymetrics-admin-sheet-summary{% if metric_row.label != '現場名' %} dairymetrics-admin-number{% endif %}">
+              {% if metric_row.label == '現場名' %}
+              <span class="muted">{{ metric_row.monthly_average }}</span>
+              {% else %}
+              {{ metric_row.monthly_average }}
+              {% endif %}
+            </td>
+            {% for cell in metric_row.cells %}
+            <td class="dairymetrics-admin-sheet-cell{% if metric_row.label != '現場名' %} dairymetrics-admin-number{% endif %}{% if cell.is_empty %} is-empty{% endif %}">
+              {% if metric_row.label == '現場名' %}
+              <span class="dairymetrics-admin-location">{{ cell.value }}</span>
+              {% else %}
+              {{ cell.value|intcomma }}
+              {% endif %}
+            </td>
+            {% endfor %}
           </tr>
+          {% endfor %}
           {% empty %}
           <tr>
-            <td colspan="8">この月の対象データはまだありません。</td>
+            <td colspan="40">この月の対象データはまだありません。</td>
           </tr>
           {% endfor %}
         </tbody>

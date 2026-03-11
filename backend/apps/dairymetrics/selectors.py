@@ -979,6 +979,14 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
     departments = list(Department.objects.filter(is_active=True, code__in=["UN", "WV"]).order_by("code"))
     month_start = target_month.replace(day=1)
     month_end = target_month.replace(day=monthrange(target_month.year, target_month.month)[1])
+    month_days = [
+        {
+            "date": month_start + timedelta(days=offset),
+            "day": month_start.day + offset,
+            "weekday_label": "月火水木金土日"[(month_start + timedelta(days=offset)).weekday()],
+        }
+        for offset in range((month_end - month_start).days + 1)
+    ]
     selected_department = None
     if department_code:
         selected_department = next((department for department in departments if department.code == department_code), None)
@@ -996,21 +1004,56 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
 
         department_totals = _zero_totals()
         members = Member.objects.active().filter(department_links__department=department).distinct().order_by("name")
-        for member in members:
-            totals = _department_totals(member, department, month_start, month_end)
-            for field in department_totals:
-                department_totals[field] += int(totals.get(field) or 0)
-            month_entries = MemberDailyMetricEntry.objects.filter(
-                member=member,
+        member_ids = list(members.values_list("id", flat=True))
+        month_entries = list(
+            MemberDailyMetricEntry.objects.filter(
+                member_id__in=member_ids,
                 department=department,
                 entry_date__range=(month_start, month_end),
-            ).order_by("entry_date", "id")
-
-            today_entry = MemberDailyMetricEntry.objects.filter(
-                member=member,
+            ).select_related("member")
+        )
+        month_adjustments = list(
+            MetricAdjustment.objects.filter(
+                member_id__in=member_ids,
                 department=department,
-                entry_date=today_value,
-            ).order_by("-updated_at").first()
+                target_date__range=(month_start, month_end),
+            ).select_related("member")
+        )
+        daily_totals_by_member = {}
+        location_names_by_member = {}
+        monthly_totals_by_member = {member_id: _zero_totals() for member_id in member_ids}
+        today_entries_by_member = {}
+
+        for entry in month_entries:
+            key = (entry.member_id, entry.entry_date)
+            day_totals = daily_totals_by_member.setdefault(key, _zero_totals())
+            for field in ENTRY_METRIC_FIELDS:
+                value = int(getattr(entry, field, 0) or 0)
+                day_totals[field] += value
+                monthly_totals_by_member[entry.member_id][field] += value
+            if entry.entry_date == today_value:
+                current = today_entries_by_member.get(entry.member_id)
+                if current is None or entry.updated_at > current.updated_at:
+                    today_entries_by_member[entry.member_id] = entry
+            normalized_name = (entry.location_name or "").strip()
+            if normalized_name:
+                location_names_by_member.setdefault(entry.member_id, {}).setdefault(entry.entry_date, [])
+                if normalized_name not in location_names_by_member[entry.member_id][entry.entry_date]:
+                    location_names_by_member[entry.member_id][entry.entry_date].append(normalized_name)
+
+        for adjustment in month_adjustments:
+            key = (adjustment.member_id, adjustment.target_date)
+            day_totals = daily_totals_by_member.setdefault(key, _zero_totals())
+            for field in ADJUSTMENT_METRIC_FIELDS:
+                value = int(getattr(adjustment, field, 0) or 0)
+                day_totals[field] += value
+                monthly_totals_by_member[adjustment.member_id][field] += value
+
+        for member in members:
+            totals = monthly_totals_by_member.get(member.id, _zero_totals())
+            for field in department_totals:
+                department_totals[field] += int(totals.get(field) or 0)
+            today_entry = today_entries_by_member.get(member.id)
             if today_entry:
                 if today_entry.activity_closed:
                     closed_today_members.append(member)
@@ -1023,12 +1066,98 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
 
             location_names = []
             seen_locations = set()
-            for location_name in month_entries.values_list("location_name", flat=True):
-                normalized_name = (location_name or "").strip()
-                if not normalized_name or normalized_name in seen_locations:
-                    continue
-                seen_locations.add(normalized_name)
-                location_names.append(normalized_name)
+            member_locations = location_names_by_member.get(member.id, {})
+            for month_day in month_days:
+                for location_name in member_locations.get(month_day["date"], []):
+                    if location_name in seen_locations:
+                        continue
+                    seen_locations.add(location_name)
+                    location_names.append(location_name)
+
+            active_day_count = sum(
+                1
+                for month_day in month_days
+                if any(
+                    int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) > 0
+                    for field in ENTRY_METRIC_FIELDS + ["return_postal_count", "return_postal_amount", "return_qr_count", "return_qr_amount"]
+                )
+            )
+            metric_rows = [
+                {
+                    "label": "アプローチ",
+                    "monthly_total": int(totals["approach_count"]),
+                    "monthly_average": round(int(totals["approach_count"]) / active_day_count, 1) if active_day_count else "-",
+                    "cells": [
+                        {
+                            "value": int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get("approach_count") or 0),
+                            "is_empty": int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get("approach_count") or 0) == 0,
+                        }
+                        for month_day in month_days
+                    ],
+                },
+                {
+                    "label": "コミュニケーション",
+                    "monthly_total": int(totals["communication_count"]),
+                    "monthly_average": round(int(totals["communication_count"]) / active_day_count, 1) if active_day_count else "-",
+                    "cells": [
+                        {
+                            "value": int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get("communication_count") or 0),
+                            "is_empty": int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get("communication_count") or 0) == 0,
+                        }
+                        for month_day in month_days
+                    ],
+                },
+                {
+                    "label": _count_label_for_department(department),
+                    "monthly_total": _count_value_for_department(department, totals, include_returns=True),
+                    "monthly_average": round(_count_value_for_department(department, totals, include_returns=True) / active_day_count, 1) if active_day_count else "-",
+                    "cells": [
+                        {
+                            "value": _count_value_for_department(
+                                department,
+                                daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
+                                include_returns=True,
+                            ),
+                            "is_empty": _count_value_for_department(
+                                department,
+                                daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
+                                include_returns=True,
+                            ) == 0,
+                        }
+                        for month_day in month_days
+                    ],
+                },
+                {
+                    "label": "金額",
+                    "monthly_total": _display_amount_value(totals, include_returns=True),
+                    "monthly_average": round(_display_amount_value(totals, include_returns=True) / active_day_count, 1) if active_day_count else "-",
+                    "cells": [
+                        {
+                            "value": _display_amount_value(
+                                daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
+                                include_returns=True,
+                            ),
+                            "is_empty": _display_amount_value(
+                                daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
+                                include_returns=True,
+                            ) == 0,
+                        }
+                        for month_day in month_days
+                    ],
+                },
+                {
+                    "label": "現場名",
+                    "monthly_total": " / ".join(location_names) if location_names else "-",
+                    "monthly_average": f"{active_day_count}日" if active_day_count else "-",
+                    "cells": [
+                        {
+                            "value": " / ".join(member_locations.get(month_day["date"], [])) or "-",
+                            "is_empty": not member_locations.get(month_day["date"]),
+                        }
+                        for month_day in month_days
+                    ],
+                },
+            ]
             rows.append(
                 {
                     "department": department,
@@ -1039,6 +1168,8 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                     "location_names": location_names,
                     "location_summary": " / ".join(location_names) if location_names else "-",
                     "activity_status": activity_status,
+                    "active_day_count": active_day_count,
+                    "metric_rows": metric_rows,
                 }
             )
 
@@ -1054,6 +1185,7 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
     return {
         "departments": departments,
         "selected_department": selected_department,
+        "month_days": month_days,
         "rows": rows,
         "monthly_department_totals": monthly_department_totals,
         "activity_summary": {

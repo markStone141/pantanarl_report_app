@@ -427,6 +427,7 @@ def admin_monthly_overview(request: HttpRequest) -> HttpResponse:
         "target_month": target_month,
         "departments": overview["departments"],
         "selected_department": overview["selected_department"],
+        "month_days": overview["month_days"],
         "rows": overview["rows"],
         "monthly_department_totals": overview["monthly_department_totals"],
         "activity_summary": overview["activity_summary"],

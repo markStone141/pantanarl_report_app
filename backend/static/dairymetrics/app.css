@@ -782,6 +782,111 @@
   background: #fff;
 }
 
+.dairymetrics-admin-month-sheet {
+  min-width: 1800px;
+}
+
+.dairymetrics-admin-month-sheet thead th {
+  white-space: nowrap;
+  text-align: center;
+}
+
+.dairymetrics-admin-member-row.is-first td {
+  border-top-width: 2px;
+  border-top-color: #aebfce;
+}
+
+.dairymetrics-admin-sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fdfefe;
+}
+
+.dairymetrics-admin-month-sheet tbody td.dairymetrics-admin-sticky-col {
+  background: #fcfeff;
+}
+
+.dairymetrics-admin-month-sheet tbody td:nth-child(2).dairymetrics-admin-sticky-col {
+  left: 76px;
+}
+
+.dairymetrics-admin-month-sheet tbody td:nth-child(3).dairymetrics-admin-sticky-col {
+  left: 248px;
+}
+
+.dairymetrics-admin-month-sheet thead th:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+}
+
+.dairymetrics-admin-month-sheet thead th:nth-child(2) {
+  position: sticky;
+  left: 76px;
+  z-index: 4;
+}
+
+.dairymetrics-admin-month-sheet thead th:nth-child(3) {
+  position: sticky;
+  left: 248px;
+  z-index: 4;
+}
+
+.dairymetrics-admin-month-sheet th:nth-child(1),
+.dairymetrics-admin-month-sheet td:nth-child(1) {
+  min-width: 76px;
+}
+
+.dairymetrics-admin-month-sheet th:nth-child(2),
+.dairymetrics-admin-month-sheet td:nth-child(2) {
+  min-width: 172px;
+}
+
+.dairymetrics-admin-month-sheet th:nth-child(3),
+.dairymetrics-admin-month-sheet td:nth-child(3) {
+  min-width: 108px;
+}
+
+.dairymetrics-admin-member-cell {
+  min-width: 172px;
+}
+
+.dairymetrics-admin-metric-label {
+  min-width: 104px;
+  font-weight: 700;
+  background: #f7fbff;
+}
+
+.dairymetrics-admin-sheet-summary {
+  min-width: 92px;
+  background: #fbfdff;
+}
+
+.dairymetrics-admin-sheet-cell {
+  min-width: 84px;
+  max-width: 84px;
+  padding: 8px 6px;
+  font-size: 0.83rem;
+}
+
+.dairymetrics-admin-sheet-cell.is-empty {
+  color: #a2afbb;
+  background: #fbfcfe;
+}
+
+.dairymetrics-admin-day-head {
+  min-width: 84px;
+  padding-bottom: 4px;
+}
+
+.dairymetrics-admin-weekday-head {
+  min-width: 84px;
+  padding-top: 4px;
+  font-size: 0.76rem;
+  color: #6a7d8c;
+}
+
 .dairymetrics-admin-number {
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -790,6 +895,7 @@
 .dairymetrics-admin-location {
   white-space: normal;
   color: #34485a;
+  word-break: break-word;
 }
 
 .dairymetrics-admin-dept {
@@ -1009,6 +1115,10 @@
   .dairymetrics-admin-table {
     min-width: 100%;
     table-layout: fixed;
+  }
+
+  .dairymetrics-admin-month-sheet {
+    min-width: 1400px;
   }
 
   .dairymetrics-admin-table th,
