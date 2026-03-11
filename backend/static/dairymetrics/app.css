@@ -809,8 +809,9 @@
 }
 
 .dairymetrics-admin-month-sheet {
-  width: max-content;
-  min-width: 0;
+  width: 1954px !important;
+  min-width: 1954px !important;
+  table-layout: fixed !important;
 }
 
 .dairymetrics-col-member {
@@ -818,15 +819,15 @@
 }
 
 .dairymetrics-col-metric {
-  width: 38px;
+  width: 34px;
 }
 
 .dairymetrics-col-summary {
-  width: 74px;
+  width: 68px;
 }
 
 .dairymetrics-col-day {
-  width: 52px;
+  width: 48px;
 }
 
 .dairymetrics-admin-month-sheet thead th {
@@ -893,9 +894,9 @@
 
 .dairymetrics-admin-month-sheet th:nth-child(2),
 .dairymetrics-admin-month-sheet td:nth-child(2) {
-  width: 38px;
-  min-width: 38px;
-  max-width: 38px;
+  width: 34px;
+  min-width: 34px;
+  max-width: 34px;
 }
 
 .dairymetrics-admin-member-cell {
@@ -905,31 +906,31 @@
 }
 
 .dairymetrics-admin-metric-label {
-  width: 38px;
-  min-width: 38px;
-  max-width: 38px;
+  width: 34px;
+  min-width: 34px;
+  max-width: 34px;
   font-weight: 700;
   background: #f7fbff;
   text-align: center;
-  font-size: 0.72rem;
-  padding-left: 2px;
-  padding-right: 2px;
+  font-size: 0.68rem;
+  padding-left: 1px;
+  padding-right: 1px;
 }
 
 .dairymetrics-admin-sheet-summary {
-  width: 74px;
-  min-width: 74px;
-  max-width: 74px;
+  width: 68px;
+  min-width: 68px;
+  max-width: 68px;
   background: #fbfdff;
-  font-size: 0.74rem;
+  font-size: 0.7rem;
 }
 
 .dairymetrics-admin-sheet-cell {
-  width: 52px;
-  min-width: 52px;
-  max-width: 52px;
-  padding: 5px 3px;
-  font-size: 0.72rem;
+  width: 48px;
+  min-width: 48px;
+  max-width: 48px;
+  padding: 5px 2px;
+  font-size: 0.68rem;
 }
 
 .dairymetrics-admin-sheet-cell.is-empty {
@@ -938,18 +939,18 @@
 }
 
 .dairymetrics-admin-day-head {
-  width: 52px;
-  min-width: 52px;
-  max-width: 52px;
-  padding: 4px 2px 2px;
+  width: 48px;
+  min-width: 48px;
+  max-width: 48px;
+  padding: 4px 1px 2px;
 }
 
 .dairymetrics-admin-weekday-head {
-  width: 52px;
-  min-width: 52px;
-  max-width: 52px;
-  padding: 2px 2px 4px;
-  font-size: 0.66rem;
+  width: 48px;
+  min-width: 48px;
+  max-width: 48px;
+  padding: 2px 1px 4px;
+  font-size: 0.62rem;
   color: #6a7d8c;
 }
 
