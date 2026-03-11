@@ -398,8 +398,8 @@ def admin_overview(request: HttpRequest) -> HttpResponse:
         "selected_department": overview["selected_department"],
         "submission_summary": overview["submission_summary"],
         "today_department_totals": overview["today_department_totals"],
-        "submitted_members": overview["submitted_members"],
-        "pending_members": overview["pending_members"],
+        "active_members": overview["active_members"],
+        "closed_members": overview["closed_members"],
     }
     return render(request, "dairymetrics/admin_overview.html", context)
 

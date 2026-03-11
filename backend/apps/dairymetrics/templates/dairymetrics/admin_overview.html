@@ -60,12 +60,12 @@
       </div>
       <div class="dairymetrics-admin-stat-grid">
         <div class="dairymetrics-admin-stat">
-          <span class="dairymetrics-admin-stat-label">提出済み</span>
-          <strong class="dairymetrics-admin-stat-value">{{ submission_summary.submitted_count }}</strong>
+          <span class="dairymetrics-admin-stat-label">提出対象</span>
+          <strong class="dairymetrics-admin-stat-value">{{ submission_summary.target_count }}</strong>
         </div>
         <div class="dairymetrics-admin-stat is-closed">
-          <span class="dairymetrics-admin-stat-label">未提出</span>
-          <strong class="dairymetrics-admin-stat-value">{{ submission_summary.pending_count }}</strong>
+          <span class="dairymetrics-admin-stat-label">提出済み</span>
+          <strong class="dairymetrics-admin-stat-value">{{ submission_summary.submitted_count }}</strong>
         </div>
       </div>
     </article>
@@ -95,17 +95,17 @@
     <article class="card dairymetrics-admin-list-card">
       <div class="dairymetrics-admin-summary-head">
         <div>
-          <strong>提出済み一覧</strong>
-          <div class="muted">今日の入力があるメンバー</div>
+          <strong>提出対象一覧</strong>
+          <div class="muted">活動中で、まだ本日分を締めていないメンバー</div>
         </div>
       </div>
       <div class="dairymetrics-admin-chip-list">
-        {% for row in submitted_members %}
-        <a class="dairymetrics-admin-chip {% if row.status_label == '活動終了' %}is-closed{% endif %}" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
+        {% for row in active_members %}
+        <a class="dairymetrics-admin-chip" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
           {{ row.member.name }} / {{ row.status_label }}
         </a>
         {% empty %}
-        <span class="muted">提出済みメンバーはいません。</span>
+        <span class="muted">提出対象メンバーはいません。</span>
         {% endfor %}
       </div>
     </article>
@@ -113,17 +113,17 @@
     <article class="card dairymetrics-admin-list-card">
       <div class="dairymetrics-admin-summary-head">
         <div>
-          <strong>未提出一覧</strong>
-          <div class="muted">まだ入力がないメンバー</div>
+          <strong>提出済み一覧</strong>
+          <div class="muted">活動終了まで完了したメンバー</div>
         </div>
       </div>
       <div class="dairymetrics-admin-chip-list">
-        {% for row in pending_members %}
-        <a class="dairymetrics-admin-chip" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
-          {{ row.member.name }} / {{ row.department.code }}
+        {% for row in closed_members %}
+        <a class="dairymetrics-admin-chip is-closed" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
+          {{ row.member.name }} / {{ row.status_label }}
         </a>
         {% empty %}
-        <span class="muted">未提出メンバーはいません。</span>
+        <span class="muted">提出済みメンバーはいません。</span>
         {% endfor %}
       </div>
     </article>

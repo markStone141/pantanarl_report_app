@@ -835,8 +835,18 @@ class DairyMetricsAdminTests(TestCase):
         response = self.client.get(reverse("dairymetrics_admin_monthly_overview"))
         self.assertRedirects(response, reverse("dairymetrics_login"))
 
-    def test_admin_overview_shows_submission_summary_and_member_links(self):
+    def test_admin_overview_uses_activity_status_for_submission_summary(self):
         today = timezone.localdate()
+        active_member = Member.objects.create(name="Member Active")
+        MemberDepartment.objects.create(member=active_member, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=active_member,
+            department=self.department,
+            entry_date=today,
+            result_count=1,
+            support_amount=1500,
+            activity_closed=False,
+        )
         MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=self.department,
@@ -849,21 +859,31 @@ class DairyMetricsAdminTests(TestCase):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("dairymetrics_admin_overview"), {"department": "UN"})
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "提出対象")
         self.assertContains(response, "提出済み")
-        self.assertContains(response, "未提出")
         self.assertContains(response, "本日の実績")
+        self.assertContains(response, "Member Active / 活動中")
         self.assertContains(response, "Member Three / 活動終了")
         self.assertContains(response, reverse("dairymetrics_member_index"))
         self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[self.member.id]))
 
     def test_admin_overview_filters_by_department(self):
+        today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            result_count=1,
+            support_amount=1200,
+            activity_closed=False,
+        )
         self.client.force_login(self.admin)
         response = self.client.get(
             reverse("dairymetrics_admin_overview"),
             {"department": "UN"},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Member Three")
+        self.assertContains(response, "Member Three / 活動中")
         self.assertNotContains(response, "Member Four")
 
     def test_admin_monthly_overview_shows_activity_status_and_month_totals(self):
