@@ -801,6 +801,10 @@
   margin-top: 14px;
 }
 
+.dairymetrics-admin-ranking-section {
+  margin-top: 14px;
+}
+
 .dairymetrics-admin-activity-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

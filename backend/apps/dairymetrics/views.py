@@ -406,6 +406,7 @@ def admin_overview(request: HttpRequest) -> HttpResponse:
         "submission_summary": overview["submission_summary"],
         "today_department_totals": overview["today_department_totals"],
         "activity_cards": overview["activity_cards"],
+        "ranking_metrics": overview["ranking_metrics"],
     }
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse(

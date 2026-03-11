@@ -519,6 +519,52 @@ def _build_scope_ranking_metrics(member, department, start_date, end_date, *, to
     return metrics
 
 
+def _build_admin_daily_ranking_metrics(department, today):
+    members = _members_with_scope_activity(department, today, today, today_only=True)
+    if not members:
+        return []
+    member_totals = {
+        current_member.id: _department_totals(
+            current_member,
+            department,
+            today,
+            today,
+            include_adjustments=False,
+        )
+        for current_member in members
+    }
+    metric_specs = [spec for spec in RANKING_METRIC_SPECS if spec["key"] in {"count_value", "support_amount", "approach_count"}]
+    metrics = []
+    for spec in metric_specs:
+        ranked_rows = []
+        for current_member in members:
+            totals = member_totals[current_member.id]
+            ranked_rows.append(
+                {
+                    "member_id": current_member.id,
+                    "member_name": current_member.name,
+                    "value": _metric_value_for_scope(spec["key"], department, totals, include_returns=False),
+                    "value_text": _metric_display_text(spec["key"], department, totals, include_returns=False),
+                }
+            )
+        ranked_rows.sort(key=lambda row: (-(row["value"] if row["value"] is not None else -1), row["member_name"]))
+        metrics.append(
+            {
+                "key": spec["key"],
+                "label": spec["label"],
+                "icon": spec["icon"],
+                "leaders": [
+                    {
+                        **row,
+                        "rank": index,
+                    }
+                    for index, row in enumerate(ranked_rows[:3], start=1)
+                ],
+            }
+        )
+    return metrics
+
+
 def _build_scope_average_metrics(member, department, start_date, end_date, *, today_only=False, previous_totals=None, previous_label=None):
     members = _members_with_scope_activity(department, start_date, end_date, today_only=today_only)
     if not members:
@@ -1294,4 +1340,5 @@ def build_admin_daily_overview(*, department_code="", today=None):
         },
         "today_department_totals": today_department_totals,
         "activity_cards": activity_cards,
+        "ranking_metrics": _build_admin_daily_ranking_metrics(selected_department, today_value) if selected_department else [],
     }
