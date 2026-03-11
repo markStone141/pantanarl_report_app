@@ -845,6 +845,8 @@ class DairyMetricsAdminTests(TestCase):
         response = self.client.get(reverse("dairymetrics_admin_overview"), {"month": "2026-03"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "活動終了")
+        self.assertContains(response, reverse("dairymetrics_member_index"))
+        self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[self.member.id]))
 
     def test_admin_overview_filters_by_department(self):
         MemberDailyMetricEntry.objects.create(

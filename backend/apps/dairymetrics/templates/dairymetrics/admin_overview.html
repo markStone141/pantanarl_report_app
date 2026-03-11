@@ -20,6 +20,7 @@
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
       <a href="{% url 'dairymetrics_admin_overview' %}">月次俯瞰</a>
+      <a href="{% url 'dairymetrics_member_index' %}">メンバー一覧</a>
       <a href="{% url 'dairymetrics_adjustment_create' %}">後追い追加</a>
       <a href="{% url 'report_index' %}">Report App</a>
       <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
@@ -44,6 +45,7 @@
         </select>
       </div>
       <button type="submit">表示</button>
+      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">メンバー一覧を見る</a>
     </form>
   </section>
 
@@ -127,6 +129,7 @@
         <strong>月次メンバー一覧</strong>
         <div class="muted">平均と累計を同時に見て、気になるメンバーを拾うための一覧です。</div>
       </div>
+      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">個人ページを開く</a>
     </div>
     <div class="table-scroll">
       <table class="dairymetrics-admin-table">
@@ -144,7 +147,11 @@
           {% for row in rows %}
           <tr>
             <td><span class="dairymetrics-admin-dept">{{ row.department.code }}</span></td>
-            <td><strong>{{ row.member.name }}</strong></td>
+            <td>
+              <a href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
+                <strong>{{ row.member.name }}</strong>
+              </a>
+            </td>
             <td><span class="dairymetrics-admin-status {% if row.activity_status == '活動終了' %}is-closed{% elif row.activity_status == '活動中' %}is-active{% endif %}">{{ row.activity_status }}</span></td>
             <td>{{ row.totals.result_count }} / {{ row.totals.support_amount|intcomma }}</td>
             <td>{{ row.approach_average }} / {{ row.totals.approach_count }}</td>
