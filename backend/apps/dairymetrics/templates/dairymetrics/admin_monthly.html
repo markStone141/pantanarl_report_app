@@ -92,21 +92,23 @@
   <section class="card">
     <div class="dairymetrics-admin-table-head">
       <div>
-        <strong>月次メンバー一覧</strong>
-        <div class="muted">平均と累計を同時に見て、気になるメンバーを拾うための一覧です。</div>
+        <strong>月次実績一覧</strong>
+        <div class="muted">Excel の集計表に近い感覚で、メンバー別の月間実績をセル表示します。</div>
       </div>
       <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">個人ページを開く</a>
     </div>
     <div class="table-scroll">
-      <table class="dairymetrics-admin-table">
+      <table class="dairymetrics-admin-table dairymetrics-admin-sheet">
         <thead>
           <tr>
             <th>部門</th>
-            <th>メンバー</th>
+            <th>名前</th>
+            <th>アプローチ</th>
+            <th>コミュニケーション</th>
+            <th>件数</th>
+            <th>金額</th>
+            <th>現場名</th>
             <th>今日の状態</th>
-            <th>件数/金額</th>
-            <th>アプローチ 平均/累計</th>
-            <th>コミュニケーション 平均/累計</th>
           </tr>
         </thead>
         <tbody>
@@ -118,14 +120,16 @@
                 <strong>{{ row.member.name }}</strong>
               </a>
             </td>
+            <td class="dairymetrics-admin-number">{{ row.totals.approach_count }}</td>
+            <td class="dairymetrics-admin-number">{{ row.totals.communication_count }}</td>
+            <td class="dairymetrics-admin-number">{{ row.count_value }}</td>
+            <td class="dairymetrics-admin-number">{{ row.amount_value|intcomma }}</td>
+            <td class="dairymetrics-admin-location">{{ row.location_summary }}</td>
             <td><span class="dairymetrics-admin-status {% if row.activity_status == '活動終了' %}is-closed{% elif row.activity_status == '活動中' %}is-active{% endif %}">{{ row.activity_status }}</span></td>
-            <td>{{ row.totals.result_count }} / {{ row.totals.support_amount|intcomma }}</td>
-            <td>{{ row.approach_average }} / {{ row.totals.approach_count }}</td>
-            <td>{{ row.communication_average }} / {{ row.totals.communication_count }}</td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="6">この月の対象データはまだありません。</td>
+            <td colspan="8">この月の対象データはまだありません。</td>
           </tr>
           {% endfor %}
         </tbody>

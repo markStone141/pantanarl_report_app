@@ -1000,6 +1000,11 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
             totals = _department_totals(member, department, month_start, month_end)
             for field in department_totals:
                 department_totals[field] += int(totals.get(field) or 0)
+            month_entries = MemberDailyMetricEntry.objects.filter(
+                member=member,
+                department=department,
+                entry_date__range=(month_start, month_end),
+            ).order_by("entry_date", "id")
 
             today_entry = MemberDailyMetricEntry.objects.filter(
                 member=member,
@@ -1016,14 +1021,23 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
             else:
                 activity_status = "未入力"
 
-            entry_days = MemberDailyMetricEntry.objects.filter(member=member, department=department, entry_date__range=(month_start, month_end)).count() or 1
+            location_names = []
+            seen_locations = set()
+            for location_name in month_entries.values_list("location_name", flat=True):
+                normalized_name = (location_name or "").strip()
+                if not normalized_name or normalized_name in seen_locations:
+                    continue
+                seen_locations.add(normalized_name)
+                location_names.append(normalized_name)
             rows.append(
                 {
                     "department": department,
                     "member": member,
                     "totals": totals,
-                    "approach_average": round(totals["approach_count"] / entry_days, 1),
-                    "communication_average": round(totals["communication_count"] / entry_days, 1),
+                    "count_value": _count_value_for_department(department, totals, include_returns=True),
+                    "amount_value": _display_amount_value(totals, include_returns=True),
+                    "location_names": location_names,
+                    "location_summary": " / ".join(location_names) if location_names else "-",
                     "activity_status": activity_status,
                 }
             )

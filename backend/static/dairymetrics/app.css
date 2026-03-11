@@ -759,6 +759,39 @@
   background: #fbfdff;
 }
 
+.dairymetrics-admin-sheet {
+  min-width: 980px;
+  table-layout: fixed;
+  border: 1px solid #c9d7e3;
+}
+
+.dairymetrics-admin-sheet th,
+.dairymetrics-admin-sheet td {
+  border: 1px solid #d6e1ea;
+}
+
+.dairymetrics-admin-sheet thead th {
+  background: #eef4f9;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.dairymetrics-admin-sheet tbody td {
+  background: #fff;
+}
+
+.dairymetrics-admin-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dairymetrics-admin-location {
+  white-space: normal;
+  color: #34485a;
+}
+
 .dairymetrics-admin-dept {
   display: inline-flex;
   align-items: center;

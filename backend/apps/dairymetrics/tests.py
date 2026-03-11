@@ -905,14 +905,18 @@ class DairyMetricsAdminTests(TestCase):
             member=self.member,
             department=self.department,
             entry_date=today,
+            approach_count=5,
+            communication_count=3,
             result_count=2,
             support_amount=4000,
+            location_name="Shibuya",
             activity_closed=False,
         )
         MemberDailyMetricEntry.objects.create(
             member=self.member_wv,
             department=self.department_wv,
             entry_date=today,
+            location_name="Shibuya",
             cs_count=1,
             refugee_count=1,
             support_amount=3000,
@@ -930,6 +934,11 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "Member Four")
         self.assertContains(response, "月次合計")
         self.assertContains(response, "CS/難民 2")
+        self.assertContains(response, "名前")
+        self.assertContains(response, "アプローチ")
+        self.assertContains(response, "コミュニケーション")
+        self.assertContains(response, "現場名")
+        self.assertContains(response, "Shibuya")
 
     def test_admin_monthly_overview_filters_by_department(self):
         MemberDailyMetricEntry.objects.create(
