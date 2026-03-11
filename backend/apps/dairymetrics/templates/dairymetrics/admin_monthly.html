@@ -44,30 +44,9 @@
           {% endfor %}
         </select>
       </div>
-      <button type="submit">表示</button>
-      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_admin_overview' %}">管理トップへ</a>
+      <button type="submit">更新</button>
+      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_admin_overview' %}">トップ</a>
     </form>
-  </section>
-
-  <section class="dairymetrics-admin-hero">
-    <article class="card dairymetrics-admin-summary-card">
-      <div class="dairymetrics-admin-summary-head">
-        <div>
-          <strong>月次合計</strong>
-          <div class="muted">補正込みの部門合計です。</div>
-        </div>
-      </div>
-      <div class="dairymetrics-admin-total-list">
-        {% for total in monthly_department_totals %}
-        <div class="dairymetrics-admin-total-item">
-          <div class="dairymetrics-admin-total-title">{{ total.department.name }} ({{ total.department.code }})</div>
-          <div class="dairymetrics-admin-total-meta">{{ total.count_label }} {{ total.count_value }} / 金額 {{ total.amount_value|intcomma }}</div>
-        </div>
-        {% empty %}
-        <p class="muted">対象部署の月次データはありません。</p>
-        {% endfor %}
-      </div>
-    </article>
   </section>
 
   <section class="card">
@@ -76,7 +55,7 @@
         <strong>月次実績シート</strong>
         <div class="muted">Excel の集計表に近い見た目で、月内の実績を日付ごとに横並びで確認できます。</div>
       </div>
-      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">個人ページを開く</a>
+      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">個人</a>
     </div>
     <div class="table-scroll">
       <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-month-sheet">

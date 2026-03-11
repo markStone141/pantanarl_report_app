@@ -930,8 +930,6 @@ class DairyMetricsAdminTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Member Four")
-        self.assertContains(response, "月次合計")
-        self.assertContains(response, "CS/難民 2")
         self.assertContains(response, "月次実績シート")
         self.assertContains(response, "月合計")
         self.assertContains(response, "月平均")
@@ -942,6 +940,7 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, str(today.day))
         self.assertNotContains(response, "今日の活動状況")
         self.assertNotContains(response, "未入力")
+        self.assertNotContains(response, "月次合計")
 
     def test_admin_monthly_overview_renders_excel_like_daily_cells(self):
         target_month = date(2026, 3, 1)
