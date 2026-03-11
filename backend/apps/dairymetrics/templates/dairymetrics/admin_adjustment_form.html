@@ -9,23 +9,7 @@
 
 {% block content %}
 <div class="container">
-  <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
-    <div>
-      <strong>後追い実績の追加</strong>
-      <div class="topbar-muted">郵送や増額など、後から確定した実績を記録します。</div>
-    </div>
-    <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="Open menu">
-      <i class="fa-solid fa-bars" aria-hidden="true"></i>
-    </button>
-    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
-      <a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>
-      <a href="{% url 'dairymetrics_admin_monthly_overview' %}">月次集計</a>
-      <a href="{% url 'dairymetrics_adjustment_create' %}">後追い追加</a>
-      <a href="{% url 'report_index' %}">Report App</a>
-      <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
-    </nav>
-    <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
-  </header>
+  {% include "dairymetrics/partials/admin_header.html" with admin_header_subtitle="郵送や増額など、後から確定した実績を記録します。" %}
 
   <div class="grid grid-2">
     <section class="card dairymetrics-form-card">
