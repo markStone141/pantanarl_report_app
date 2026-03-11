@@ -849,6 +849,23 @@ class DairyMetricsAdminTests(TestCase):
         response = self.client.get(reverse("dairymetrics_admin_monthly_overview"))
         self.assertRedirects(response, reverse("dairymetrics_login"))
 
+    def test_admin_member_dashboard_keeps_admin_viewer_context(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            result_count=1,
+            support_amount=1200,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("dairymetrics_member_dashboard", args=[self.member.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "管理者としてメンバーデータを閲覧中")
+        self.assertContains(response, "表示中: Member Three")
+        self.assertNotContains(response, "Member Threeさんのダッシュボード")
+
     def test_admin_overview_uses_activity_status_for_submission_summary(self):
         today = timezone.localdate()
         active_member = Member.objects.create(name="Member Active")

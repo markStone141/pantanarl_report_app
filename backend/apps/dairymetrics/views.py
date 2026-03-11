@@ -129,7 +129,7 @@ def _build_member_dashboard_context(*, request, member, readonly=False, viewer_m
         "scope_target_form_action": scope_target_form_action,
         "is_admin": request.user.is_staff,
         "readonly_dashboard": readonly,
-        "viewer_member": viewer_member or member,
+        "viewer_member": viewer_member if readonly else (viewer_member or member),
         "member_rows": member_rows,
         "member_filter_departments": _member_row_departments(member_rows, member) if readonly else [],
     }
@@ -245,7 +245,7 @@ def member_dashboard(request: HttpRequest, member_id: int) -> HttpResponse:
                 "form_html": "",
                 "target_form_html": "",
                 "department_code": context["selected_department"].code if context["selected_department"] else "",
-                "page_subtitle": f"{viewer_member.name}さんでログイン中" if viewer_member else "他メンバーデータ",
+                "page_subtitle": f"{viewer_member.name}さんでログイン中" if viewer_member else "管理者としてメンバーデータを閲覧中",
                 "viewed_member_name": target_member.name,
             }
         )
