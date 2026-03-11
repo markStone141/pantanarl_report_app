@@ -14,8 +14,25 @@
   if (!cardRoot) return;
   let activeMemberFilter = 'all';
 
+  function syncMemberFilterButtons() {
+    if (!memberSelect || memberFilterButtons.length === 0) return;
+    const selectedOption = memberSelect.options[memberSelect.selectedIndex];
+    const visibleCodes = new Set(((selectedOption && selectedOption.dataset.departmentCodes) || '').split(',').filter(Boolean));
+
+    memberFilterButtons.forEach(function (button) {
+      const value = button.getAttribute('data-member-filter-value') || 'all';
+      const shouldShow = value === 'all' || visibleCodes.has(value);
+      button.hidden = !shouldShow;
+      button.disabled = !shouldShow;
+      if (!shouldShow && value === activeMemberFilter) {
+        activeMemberFilter = 'all';
+      }
+    });
+  }
+
   function applyMemberFilter(filterValue) {
     if (!memberSelect) return;
+    syncMemberFilterButtons();
     activeMemberFilter = filterValue || 'all';
     const options = Array.from(memberSelect.options);
     let selectedVisible = false;
@@ -136,6 +153,7 @@
     const changedMemberSelect = event.target.closest('[data-member-switch]');
     if (changedMemberSelect) {
       if (!changedMemberSelect.value) return;
+      syncMemberFilterButtons();
       const currentUrl = new URL(window.location.href);
       const nextUrl = new URL(changedMemberSelect.value, window.location.origin);
       ['scope', 'department', 'start_date', 'end_date'].forEach(function (key) {
@@ -148,6 +166,7 @@
   });
 
   if (memberSelect) {
+    syncMemberFilterButtons();
     applyMemberFilter(activeMemberFilter);
   }
 

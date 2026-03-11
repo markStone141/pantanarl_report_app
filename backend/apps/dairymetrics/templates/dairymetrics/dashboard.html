@@ -27,7 +27,7 @@
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
-      {% if viewer_member %}<a href="{% url 'dairymetrics_member_index' %}">他メンバーデータ</a>{% endif %}
+      {% if viewer_member %}<a href="{% url 'dairymetrics_member_index' %}">メンバーデータ</a>{% endif %}
       {% if member and not readonly_dashboard %}<a href="{% url 'dairymetrics_compare' %}">スコア</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_admin_monthly_overview' %}">月次集計</a>{% endif %}
@@ -43,7 +43,7 @@
     <article class="card">
       <div class="dairymetrics-member-switcher">
         <div>
-          <h2>他メンバーデータ</h2>
+          <h2>メンバーデータ</h2>
         </div>
         <div class="dairymetrics-member-select-wrap">
           <select id="dairymetrics-member-select" data-member-switch>

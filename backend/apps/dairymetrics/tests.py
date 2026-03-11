@@ -747,12 +747,14 @@ class DairyMetricsDashboardTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("dairymetrics_member_index"))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "メンバーデータ")
         self.assertContains(response, "Inactive Member")
         self.assertContains(response, "非アクティブ")
         self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[inactive_member.id]))
         self.assertContains(response, 'data-member-switch')
         self.assertContains(response, 'data-member-filter-value="all"')
         self.assertContains(response, 'data-member-filter-value="WV"')
+        self.assertNotContains(response, 'data-member-filter-value="UN"')
         self.assertContains(response, 'data-department-codes="WV"')
 
     def test_member_dashboard_ajax_switches_selected_member(self):
