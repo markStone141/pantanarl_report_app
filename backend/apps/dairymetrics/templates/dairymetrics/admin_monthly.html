@@ -37,12 +37,10 @@
       <div class="dairymetrics-admin-table-tools">
         <form method="get" class="dairymetrics-month-filter dairymetrics-month-filter-inline">
           <div>
-            <label for="month">月</label>
-            <input id="month" type="month" name="month" value="{{ target_month|date:'Y-m' }}">
+            <input id="month" type="month" name="month" value="{{ target_month|date:'Y-m' }}" aria-label="対象月">
           </div>
           <div>
-            <label for="department">部署</label>
-            <select id="department" name="department">
+            <select id="department" name="department" aria-label="部署">
               {% for department in departments %}
               <option value="{{ department.code }}" {% if selected_department and selected_department.code == department.code %}selected{% endif %}>
                 {{ department.name }} ({{ department.code }})
