@@ -866,7 +866,7 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "表示中: Member Three")
         self.assertNotContains(response, "Member Threeさんのダッシュボード")
 
-    def test_admin_overview_uses_activity_status_for_submission_summary(self):
+    def test_admin_overview_shows_activity_cards_without_submission_summary(self):
         today = timezone.localdate()
         active_member = Member.objects.create(name="Member Active")
         MemberDepartment.objects.create(member=active_member, department=self.department)
@@ -899,8 +899,6 @@ class DairyMetricsAdminTests(TestCase):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("dairymetrics_admin_overview"), {"department": "UN"})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "提出対象")
-        self.assertContains(response, "提出済み")
         self.assertContains(response, "本日の実績")
         self.assertContains(response, "メンバー実績状況")
         self.assertContains(response, "Member Active")
@@ -909,6 +907,8 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "Ikebukuro")
         self.assertContains(response, "活動中")
         self.assertContains(response, "活動終了")
+        self.assertNotContains(response, "提出対象")
+        self.assertNotContains(response, "提出済み")
         self.assertNotContains(response, "管理メニュー")
         self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[self.member.id]))
         self.assertLess(response.content.decode().find("Member Active"), response.content.decode().find("Member Three"))
