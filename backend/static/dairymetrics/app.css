@@ -807,10 +807,6 @@
   background: #fcfeff;
 }
 
-.dairymetrics-admin-month-sheet tbody td:nth-child(2).dairymetrics-admin-sticky-col {
-  left: 220px;
-}
-
 .table-scroll {
   overflow-x: auto;
   padding-bottom: 12px;
@@ -823,12 +819,6 @@
   z-index: 4;
 }
 
-.dairymetrics-admin-month-sheet thead th:nth-child(2) {
-  position: sticky;
-  left: 220px;
-  z-index: 4;
-}
-
 .dairymetrics-admin-month-sheet th:nth-child(1),
 .dairymetrics-admin-month-sheet td:nth-child(1) {
   min-width: 220px;
@@ -836,7 +826,7 @@
 
 .dairymetrics-admin-month-sheet th:nth-child(2),
 .dairymetrics-admin-month-sheet td:nth-child(2) {
-  min-width: 108px;
+  min-width: 76px;
 }
 
 .dairymetrics-admin-member-cell {

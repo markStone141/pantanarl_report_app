@@ -53,25 +53,6 @@
     <article class="card dairymetrics-admin-summary-card">
       <div class="dairymetrics-admin-summary-head">
         <div>
-          <strong>今日の活動状況</strong>
-          <div class="muted">当日の現場状態をすぐ把握できます。</div>
-        </div>
-      </div>
-      <div class="dairymetrics-admin-stat-grid">
-        <div class="dairymetrics-admin-stat">
-          <span class="dairymetrics-admin-stat-label">活動中</span>
-          <strong class="dairymetrics-admin-stat-value">{{ activity_summary.active_count }}</strong>
-        </div>
-        <div class="dairymetrics-admin-stat is-closed">
-          <span class="dairymetrics-admin-stat-label">活動終了</span>
-          <strong class="dairymetrics-admin-stat-value">{{ activity_summary.closed_count }}</strong>
-        </div>
-      </div>
-    </article>
-
-    <article class="card dairymetrics-admin-summary-card">
-      <div class="dairymetrics-admin-summary-head">
-        <div>
           <strong>月次合計</strong>
           <div class="muted">補正込みの部門合計です。</div>
         </div>
@@ -102,7 +83,6 @@
         <thead>
           <tr>
             <th rowspan="2">名前</th>
-            <th rowspan="2">状態</th>
             <th rowspan="2">項目</th>
             <th rowspan="2">月合計</th>
             <th rowspan="2">月平均</th>
@@ -126,9 +106,6 @@
                 <strong>{{ row.member.name }}</strong>
               </a>
               <div class="muted">稼働 {{ row.active_day_count }}日</div>
-            </td>
-            <td rowspan="{{ row.metric_rows|length }}" class="dairymetrics-admin-sticky-col">
-              <span class="dairymetrics-admin-status {% if row.activity_status == '活動終了' %}is-closed{% elif row.activity_status == '活動中' %}is-active{% endif %}">{{ row.activity_status }}</span>
             </td>
             {% endif %}
             <td class="dairymetrics-admin-metric-label">{{ metric_row.label }}</td>
@@ -159,7 +136,7 @@
           {% endfor %}
           {% empty %}
           <tr>
-            <td colspan="39">この月の対象データはまだありません。</td>
+            <td colspan="38">この月の対象データはまだありません。</td>
           </tr>
           {% endfor %}
         </tbody>

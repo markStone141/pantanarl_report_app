@@ -899,7 +899,7 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "Member Three / 活動中")
         self.assertNotContains(response, "Member Four")
 
-    def test_admin_monthly_overview_shows_activity_status_and_month_totals(self):
+    def test_admin_monthly_overview_shows_month_totals_and_sheet(self):
         today = timezone.localdate()
         MemberDailyMetricEntry.objects.create(
             member=self.member,
@@ -929,8 +929,6 @@ class DairyMetricsAdminTests(TestCase):
             {"month": today.strftime("%Y-%m"), "department": "WV"},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "今日の活動状況")
-        self.assertContains(response, "活動終了")
         self.assertContains(response, "Member Four")
         self.assertContains(response, "月次合計")
         self.assertContains(response, "CS/難民 2")
@@ -942,6 +940,8 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "現場名")
         self.assertContains(response, "Shibuya")
         self.assertContains(response, str(today.day))
+        self.assertNotContains(response, "今日の活動状況")
+        self.assertNotContains(response, "未入力")
 
     def test_admin_monthly_overview_renders_excel_like_daily_cells(self):
         target_month = date(2026, 3, 1)
