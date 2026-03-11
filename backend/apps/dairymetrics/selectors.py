@@ -533,9 +533,8 @@ def _build_admin_daily_ranking_metrics(department, today):
         )
         for current_member in members
     }
-    metric_specs = [spec for spec in RANKING_METRIC_SPECS if spec["key"] in {"count_value", "support_amount", "approach_count"}]
     metrics = []
-    for spec in metric_specs:
+    for spec in RANKING_METRIC_SPECS:
         ranked_rows = []
         for current_member in members:
             totals = member_totals[current_member.id]
