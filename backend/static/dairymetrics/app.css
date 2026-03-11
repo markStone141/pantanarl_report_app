@@ -811,6 +811,12 @@
   margin-top: 14px;
 }
 
+.dairymetrics-admin-ranking-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .dairymetrics-admin-activity-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1312,7 +1318,8 @@
   .dairymetrics-admin-hero,
   .dairymetrics-admin-lists,
   .dairymetrics-admin-stat-grid,
-  .dairymetrics-admin-activity-grid {
+  .dairymetrics-admin-activity-grid,
+  .dairymetrics-admin-ranking-grid {
     grid-template-columns: 1fr;
   }
 
