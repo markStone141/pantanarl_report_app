@@ -1194,3 +1194,19 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "参加率")
         self.assertContains(response, "+2")
         self.assertContains(response, "+50.0%")
+
+    def test_admin_monthly_comparison_handles_empty_rate_values(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 10),
+            support_amount=1000,
+        )
+        self.client.force_login(self.admin)
+        response = self.client.get(
+            reverse("dairymetrics_admin_monthly_comparison"),
+            {"month": "2026-03", "department": "UN"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "コミュ率")
+        self.assertContains(response, "参加率")

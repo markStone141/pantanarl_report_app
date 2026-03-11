@@ -1320,8 +1320,10 @@ def build_admin_month_comparison(*, target_month, department_code=""):
                 else:
                     current_value = _metric_value_for_scope(key, department, current_totals, include_returns=False)
                     previous_value = _metric_value_for_scope(key, department, previous_totals, include_returns=False)
-                diff_value = current_value - previous_value
-                rate_text = _comparison_label(_change_rate(current_value, previous_value))
+                current_numeric = 0 if current_value is None else current_value
+                previous_numeric = 0 if previous_value is None else previous_value
+                diff_value = current_numeric - previous_numeric
+                rate_text = _comparison_label(_change_rate(current_numeric, previous_numeric))
                 metric_rows.append(
                     {
                         "label": spec["label"],
