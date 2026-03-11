@@ -1034,6 +1034,8 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "月平均")
         self.assertContains(response, "AP")
         self.assertContains(response, "CM")
+        self.assertContains(response, "CS")
+        self.assertContains(response, "難民")
         self.assertContains(response, "現場")
         self.assertContains(response, "Shibuya")
         self.assertContains(response, str(today.day))
@@ -1162,7 +1164,7 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "+16.70%")
         self.assertContains(response, "+50.00%")
 
-    def test_admin_monthly_comparison_uses_common_metric_rows_for_wv(self):
+    def test_admin_monthly_comparison_splits_wv_cs_and_refugee_rows(self):
         MemberDailyMetricEntry.objects.create(
             member=self.member_wv,
             department=self.department_wv,
@@ -1190,7 +1192,9 @@ class DairyMetricsAdminTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Member Four")
-        self.assertContains(response, "件数")
+        self.assertContains(response, "CS")
+        self.assertContains(response, "難民")
+        self.assertNotContains(response, "件数")
         self.assertContains(response, "コミュ率")
         self.assertContains(response, "参加率")
         self.assertContains(response, "+2")

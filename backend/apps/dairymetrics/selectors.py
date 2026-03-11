@@ -1147,36 +1147,28 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                     for field in ENTRY_METRIC_FIELDS + ["return_postal_count", "return_postal_amount", "return_qr_count", "return_qr_amount"]
                 )
             )
-            metric_rows = [
-                {
-                    "label": "AP",
-                    "monthly_total": int(totals["approach_count"]),
-                    "monthly_average": round(int(totals["approach_count"]) / active_day_count, 1) if active_day_count else "-",
-                    "cells": [
-                        {
-                            "value": int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get("approach_count") or 0),
-                            "is_empty": int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get("approach_count") or 0) == 0,
-                        }
-                        for month_day in month_days
-                    ],
-                },
-                {
-                    "label": "CM",
-                    "monthly_total": int(totals["communication_count"]),
-                    "monthly_average": round(int(totals["communication_count"]) / active_day_count, 1) if active_day_count else "-",
-                    "cells": [
-                        {
-                            "value": int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get("communication_count") or 0),
-                            "is_empty": int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get("communication_count") or 0) == 0,
-                        }
-                        for month_day in month_days
-                    ],
-                },
-                {
-                    "label": _count_label_for_department(department),
-                    "monthly_total": _count_value_for_department(department, totals, include_returns=True),
-                    "monthly_average": round(_count_value_for_department(department, totals, include_returns=True) / active_day_count, 1) if active_day_count else "-",
-                    "cells": [
+            metric_specs = [
+                {"label": "AP", "field": "approach_count"},
+                {"label": "CM", "field": "communication_count"},
+            ]
+            if department.code == "WV":
+                metric_specs.extend(
+                    [
+                        {"label": "CS", "field": "cs_count"},
+                        {"label": "難民", "field": "refugee_count"},
+                    ]
+                )
+            else:
+                metric_specs.append({"label": _count_label_for_department(department), "field": "count_value"})
+            metric_specs.append({"label": "金額", "field": "support_amount"})
+
+            metric_rows = []
+            for spec in metric_specs:
+                field = spec["field"]
+                if field == "count_value":
+                    monthly_total = _count_value_for_department(department, totals, include_returns=True)
+                    monthly_average = round(monthly_total / active_day_count, 1) if active_day_count else "-"
+                    cells = [
                         {
                             "value": _count_value_for_department(
                                 department,
@@ -1190,13 +1182,11 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                             ) == 0,
                         }
                         for month_day in month_days
-                    ],
-                },
-                {
-                    "label": "金額",
-                    "monthly_total": _display_amount_value(totals, include_returns=True),
-                    "monthly_average": round(_display_amount_value(totals, include_returns=True) / active_day_count, 1) if active_day_count else "-",
-                    "cells": [
+                    ]
+                elif field == "support_amount":
+                    monthly_total = _display_amount_value(totals, include_returns=True)
+                    monthly_average = round(monthly_total / active_day_count, 1) if active_day_count else "-"
+                    cells = [
                         {
                             "value": _display_amount_value(
                                 daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
@@ -1208,8 +1198,26 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                             ) == 0,
                         }
                         for month_day in month_days
-                    ],
-                },
+                    ]
+                else:
+                    monthly_total = int(totals[field])
+                    monthly_average = round(int(totals[field]) / active_day_count, 1) if active_day_count else "-"
+                    cells = [
+                        {
+                            "value": int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0),
+                            "is_empty": int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) == 0,
+                        }
+                        for month_day in month_days
+                    ]
+                metric_rows.append(
+                    {
+                        "label": spec["label"],
+                        "monthly_total": monthly_total,
+                        "monthly_average": monthly_average,
+                        "cells": cells,
+                    }
+                )
+            metric_rows.append(
                 {
                     "label": "現場",
                     "monthly_total": "",
@@ -1221,8 +1229,8 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                         }
                         for month_day in month_days
                     ],
-                },
-            ]
+                }
+            )
             rows.append(
                 {
                     "department": department,
@@ -1278,18 +1286,6 @@ def build_admin_month_comparison(*, target_month, compare_month, department_code
     rows = []
     monthly_department_totals = []
 
-    metric_specs = [
-        {"label": "AP", "key": "approach_count", "format": "number"},
-        {"label": "CM", "key": "communication_count", "format": "number"},
-        {"label": "件数", "key": "count_value", "format": "number"},
-        {"label": "金額", "key": "support_amount", "format": "amount"},
-        {"label": "コミュ率", "key": "communication_rate", "format": "rate"},
-        {"label": "参加率", "key": "participation_rate", "format": "rate"},
-        {"label": "平均支援額", "key": "average_support_amount", "format": "amount"},
-        {"label": "郵送戻り", "key": "return_postal_count", "format": "number"},
-        {"label": "QR戻り", "key": "return_qr_count", "format": "number"},
-    ]
-
     for department in departments:
         if selected_department and department.id != selected_department.id:
             continue
@@ -1321,6 +1317,30 @@ def build_admin_month_comparison(*, target_month, compare_month, department_code
             for field in department_current_totals:
                 department_current_totals[field] += int(current_totals.get(field) or 0)
                 department_previous_totals[field] += int(previous_totals.get(field) or 0)
+
+            metric_specs = [
+                {"label": "AP", "key": "approach_count", "format": "number"},
+                {"label": "CM", "key": "communication_count", "format": "number"},
+            ]
+            if department.code == "WV":
+                metric_specs.extend(
+                    [
+                        {"label": "CS", "key": "cs_count", "format": "number"},
+                        {"label": "難民", "key": "refugee_count", "format": "number"},
+                    ]
+                )
+            else:
+                metric_specs.append({"label": "件数", "key": "count_value", "format": "number"})
+            metric_specs.extend(
+                [
+                    {"label": "金額", "key": "support_amount", "format": "amount"},
+                    {"label": "コミュ率", "key": "communication_rate", "format": "rate"},
+                    {"label": "参加率", "key": "participation_rate", "format": "rate"},
+                    {"label": "平均支援額", "key": "average_support_amount", "format": "amount"},
+                    {"label": "郵送戻り", "key": "return_postal_count", "format": "number"},
+                    {"label": "QR戻り", "key": "return_qr_count", "format": "number"},
+                ]
+            )
 
             metric_rows = []
             for spec in metric_specs:
