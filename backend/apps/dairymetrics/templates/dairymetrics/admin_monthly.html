@@ -75,23 +75,23 @@
             </td>
             {% endif %}
             <td class="dairymetrics-admin-metric-label">{{ metric_row.label }}</td>
-            <td class="dairymetrics-admin-sheet-summary{% if metric_row.label != '現場名' %} dairymetrics-admin-number{% endif %}">
-              {% if metric_row.label == '現場名' %}
+            <td class="dairymetrics-admin-sheet-summary{% if metric_row.label != '現場' %} dairymetrics-admin-number{% endif %}">
+              {% if metric_row.label == '現場' %}
               <span class="dairymetrics-admin-location">{{ metric_row.monthly_total }}</span>
               {% else %}
               {{ metric_row.monthly_total|intcomma }}
               {% endif %}
             </td>
-            <td class="dairymetrics-admin-sheet-summary{% if metric_row.label != '現場名' %} dairymetrics-admin-number{% endif %}">
-              {% if metric_row.label == '現場名' %}
+            <td class="dairymetrics-admin-sheet-summary{% if metric_row.label != '現場' %} dairymetrics-admin-number{% endif %}">
+              {% if metric_row.label == '現場' %}
               <span class="muted">{{ metric_row.monthly_average }}</span>
               {% else %}
               {{ metric_row.monthly_average }}
               {% endif %}
             </td>
             {% for cell in metric_row.cells %}
-            <td class="dairymetrics-admin-sheet-cell{% if metric_row.label != '現場名' %} dairymetrics-admin-number{% endif %}{% if cell.is_empty %} is-empty{% endif %}">
-              {% if metric_row.label == '現場名' %}
+            <td class="dairymetrics-admin-sheet-cell{% if metric_row.label != '現場' %} dairymetrics-admin-number{% endif %}{% if cell.is_empty %} is-empty{% endif %}">
+              {% if metric_row.label == '現場' %}
               <span class="dairymetrics-admin-location">{{ cell.value }}</span>
               {% else %}
               {{ cell.value|intcomma }}
