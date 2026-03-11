@@ -1084,7 +1084,7 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
             )
             metric_rows = [
                 {
-                    "label": "アプローチ",
+                    "label": "AP",
                     "monthly_total": int(totals["approach_count"]),
                     "monthly_average": round(int(totals["approach_count"]) / active_day_count, 1) if active_day_count else "-",
                     "cells": [
@@ -1096,7 +1096,7 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                     ],
                 },
                 {
-                    "label": "コミュニケーション",
+                    "label": "CM",
                     "monthly_total": int(totals["communication_count"]),
                     "monthly_average": round(int(totals["communication_count"]) / active_day_count, 1) if active_day_count else "-",
                     "cells": [

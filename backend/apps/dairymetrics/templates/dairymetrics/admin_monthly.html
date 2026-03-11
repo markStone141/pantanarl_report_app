@@ -101,7 +101,6 @@
       <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-month-sheet">
         <thead>
           <tr>
-            <th rowspan="2">部門</th>
             <th rowspan="2">名前</th>
             <th rowspan="2">状態</th>
             <th rowspan="2">項目</th>
@@ -122,9 +121,6 @@
           {% for metric_row in row.metric_rows %}
           <tr class="dairymetrics-admin-member-row{% if forloop.first %} is-first{% endif %}">
             {% if forloop.first %}
-            <td rowspan="{{ row.metric_rows|length }}" class="dairymetrics-admin-sticky-col">
-              <span class="dairymetrics-admin-dept">{{ row.department.code }}</span>
-            </td>
             <td rowspan="{{ row.metric_rows|length }}" class="dairymetrics-admin-sticky-col dairymetrics-admin-member-cell">
               <a href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
                 <strong>{{ row.member.name }}</strong>
@@ -163,7 +159,7 @@
           {% endfor %}
           {% empty %}
           <tr>
-            <td colspan="40">この月の対象データはまだありません。</td>
+            <td colspan="39">この月の対象データはまだありません。</td>
           </tr>
           {% endfor %}
         </tbody>
