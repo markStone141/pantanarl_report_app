@@ -667,6 +667,11 @@
   margin: 18px auto;
 }
 
+.dairymetrics-admin-overview-page {
+  width: min(98vw, 1720px);
+  margin: 18px auto;
+}
+
 .dairymetrics-admin-monthly-page .topbar {
   padding: 12px 16px;
 }
