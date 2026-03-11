@@ -815,7 +815,7 @@
 }
 
 .dairymetrics-col-member {
-  width: 156px;
+  width: 136px;
 }
 
 .dairymetrics-col-metric {
@@ -887,9 +887,9 @@
 
 .dairymetrics-admin-month-sheet th:nth-child(1),
 .dairymetrics-admin-month-sheet td:nth-child(1) {
-  width: 156px;
-  min-width: 156px;
-  max-width: 156px;
+  width: 136px;
+  min-width: 136px;
+  max-width: 136px;
 }
 
 .dairymetrics-admin-month-sheet th:nth-child(2),
@@ -900,9 +900,9 @@
 }
 
 .dairymetrics-admin-member-cell {
-  width: 156px;
-  min-width: 156px;
-  max-width: 156px;
+  width: 136px;
+  min-width: 136px;
+  max-width: 136px;
 }
 
 .dairymetrics-admin-metric-label {
