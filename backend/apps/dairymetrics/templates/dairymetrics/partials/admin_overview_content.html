@@ -74,15 +74,26 @@
           {{ row.status_label }}
         </span>
       </div>
-      <div class="dairymetrics-admin-activity-metrics">
-        <span>AP {{ row.approach_count }}</span>
-        <span>CM {{ row.communication_count }}</span>
-        <span>{{ row.count_label }} {{ row.count_value }}</span>
-        <span>金額 {{ row.amount_value|intcomma }}</span>
-      </div>
-      <div class="dairymetrics-admin-activity-location">
-        現場 {{ row.location_name|default:"-" }}
-      </div>
+      <table class="dairymetrics-admin-activity-table">
+        <tbody>
+          <tr>
+            <th>AP</th>
+            <td>{{ row.approach_count }}</td>
+            <th>CM</th>
+            <td>{{ row.communication_count }}</td>
+          </tr>
+          <tr>
+            <th>{{ row.count_label }}</th>
+            <td>{{ row.count_value }}</td>
+            <th>金額</th>
+            <td>{{ row.amount_value|intcomma }}</td>
+          </tr>
+          <tr>
+            <th>現場</th>
+            <td colspan="3">{{ row.location_name|default:"-" }}</td>
+          </tr>
+        </tbody>
+      </table>
     </a>
     {% empty %}
     <p class="muted">本日更新されたメンバーはいません。</p>

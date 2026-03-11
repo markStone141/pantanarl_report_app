@@ -824,19 +824,35 @@
   font-weight: 700;
 }
 
-.dairymetrics-admin-activity-metrics {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  font-size: 0.88rem;
+.dairymetrics-admin-activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.87rem;
   color: #3f5666;
 }
 
-.dairymetrics-admin-activity-location {
-  padding-top: 8px;
+.dairymetrics-admin-activity-table th,
+.dairymetrics-admin-activity-table td {
+  padding: 7px 8px;
   border-top: 1px solid #dce8f0;
-  font-size: 0.84rem;
-  color: #516776;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.dairymetrics-admin-activity-table th {
+  width: 44px;
+  color: #587080;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dairymetrics-admin-activity-table td {
+  font-weight: 600;
+}
+
+.dairymetrics-admin-activity-table tr:first-child th,
+.dairymetrics-admin-activity-table tr:first-child td {
+  border-top: 0;
 }
 
 .dairymetrics-admin-table-tools {
