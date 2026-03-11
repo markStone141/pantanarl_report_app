@@ -405,9 +405,19 @@ def admin_overview(request: HttpRequest) -> HttpResponse:
         "selected_department": overview["selected_department"],
         "submission_summary": overview["submission_summary"],
         "today_department_totals": overview["today_department_totals"],
-        "active_members": overview["active_members"],
-        "closed_members": overview["closed_members"],
+        "activity_cards": overview["activity_cards"],
     }
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "overview_html": render_to_string(
+                    "dairymetrics/partials/admin_overview_content.html",
+                    context,
+                    request=request,
+                ),
+                "department_code": context["selected_department"].code if context["selected_department"] else "",
+            }
+        )
     return render(request, "dairymetrics/admin_overview.html", context)
 
 

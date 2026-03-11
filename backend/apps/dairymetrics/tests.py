@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -870,33 +870,48 @@ class DairyMetricsAdminTests(TestCase):
         today = timezone.localdate()
         active_member = Member.objects.create(name="Member Active")
         MemberDepartment.objects.create(member=active_member, department=self.department)
-        MemberDailyMetricEntry.objects.create(
+        active_entry = MemberDailyMetricEntry.objects.create(
             member=active_member,
             department=self.department,
             entry_date=today,
+            approach_count=2,
+            communication_count=1,
             result_count=1,
             support_amount=1500,
+            location_name="Shibuya",
             activity_closed=False,
         )
-        MemberDailyMetricEntry.objects.create(
+        closed_entry = MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=self.department,
             entry_date=today,
+            approach_count=1,
+            communication_count=1,
             result_count=1,
             support_amount=1000,
+            location_name="Ikebukuro",
             activity_closed=True,
             activity_closed_at=timezone.now(),
         )
+        now = timezone.now()
+        MemberDailyMetricEntry.objects.filter(pk=active_entry.pk).update(updated_at=now)
+        MemberDailyMetricEntry.objects.filter(pk=closed_entry.pk).update(updated_at=now - timedelta(minutes=10))
         self.client.force_login(self.admin)
         response = self.client.get(reverse("dairymetrics_admin_overview"), {"department": "UN"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "提出対象")
         self.assertContains(response, "提出済み")
         self.assertContains(response, "本日の実績")
-        self.assertContains(response, "Member Active / 活動中")
-        self.assertContains(response, "Member Three / 活動終了")
-        self.assertContains(response, reverse("dairymetrics_member_index"))
+        self.assertContains(response, "メンバー実績状況")
+        self.assertContains(response, "Member Active")
+        self.assertContains(response, "Member Three")
+        self.assertContains(response, "Shibuya")
+        self.assertContains(response, "Ikebukuro")
+        self.assertContains(response, "活動中")
+        self.assertContains(response, "活動終了")
+        self.assertNotContains(response, "管理メニュー")
         self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[self.member.id]))
+        self.assertLess(response.content.decode().find("Member Active"), response.content.decode().find("Member Three"))
 
     def test_admin_overview_filters_by_department(self):
         today = timezone.localdate()
@@ -914,8 +929,34 @@ class DairyMetricsAdminTests(TestCase):
             {"department": "UN"},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Member Three / 活動中")
+        self.assertContains(response, "Member Three")
+        self.assertContains(response, "活動中")
         self.assertNotContains(response, "Member Four")
+
+    def test_admin_overview_returns_ajax_partial_when_department_changes(self):
+        today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member_wv,
+            department=self.department_wv,
+            entry_date=today,
+            cs_count=1,
+            refugee_count=1,
+            support_amount=3000,
+            activity_closed=False,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_admin_overview"),
+            {"department": "WV"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["department_code"], "WV")
+        self.assertIn("overview_html", response.json())
+        self.assertIn("Member Four", response.json()["overview_html"])
+        self.assertNotIn("更新</button>", response.json()["overview_html"])
 
     def test_admin_monthly_overview_shows_month_totals_and_sheet(self):
         today = timezone.localdate()

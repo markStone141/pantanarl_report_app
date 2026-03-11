@@ -2,6 +2,7 @@ from calendar import monthrange
 from datetime import date, timedelta
 
 from django.db.models import Sum
+from django.utils import timezone
 
 from apps.accounts.models import Department, Member
 from apps.targets.models import Period
@@ -1206,8 +1207,7 @@ def build_admin_daily_overview(*, department_code="", today=None):
     if not selected_department and departments:
         selected_department = departments[0]
 
-    active_members = []
-    closed_members = []
+    activity_cards = []
     today_department_totals = []
     active_count = 0
     closed_count = 0
@@ -1230,24 +1230,31 @@ def build_admin_daily_overview(*, department_code="", today=None):
             )
             if today_entry:
                 status_label = "活動終了" if today_entry.activity_closed else "活動中"
+                card = {
+                    "member": member,
+                    "department": department,
+                    "status_label": status_label,
+                    "is_closed": today_entry.activity_closed,
+                    "updated_at": timezone.localtime(today_entry.updated_at),
+                    "count_label": _count_label_for_department(department),
+                    "count_value": _count_value_for_department(
+                        department,
+                        {
+                            "result_count": int(today_entry.result_count or 0),
+                            "cs_count": int(today_entry.cs_count or 0),
+                            "refugee_count": int(today_entry.refugee_count or 0),
+                        },
+                    ),
+                    "amount_value": int(today_entry.support_amount or 0),
+                    "approach_count": int(today_entry.approach_count or 0),
+                    "communication_count": int(today_entry.communication_count or 0),
+                    "location_name": (today_entry.location_name or "").strip(),
+                }
                 if today_entry.activity_closed:
                     closed_count += 1
-                    closed_members.append(
-                        {
-                            "member": member,
-                            "department": department,
-                            "status_label": status_label,
-                        }
-                    )
                 else:
                     active_count += 1
-                    active_members.append(
-                        {
-                            "member": member,
-                            "department": department,
-                            "status_label": status_label,
-                        }
-                    )
+                activity_cards.append(card)
                 for field in ENTRY_METRIC_FIELDS:
                     department_today_totals[field] += int(getattr(today_entry, field, 0) or 0)
 
@@ -1262,6 +1269,8 @@ def build_admin_daily_overview(*, department_code="", today=None):
             }
         )
 
+    activity_cards.sort(key=lambda row: row["updated_at"], reverse=True)
+
     return {
         "today": today_value,
         "departments": departments,
@@ -1271,6 +1280,5 @@ def build_admin_daily_overview(*, department_code="", today=None):
             "submitted_count": closed_count,
         },
         "today_department_totals": today_department_totals,
-        "active_members": active_members,
-        "closed_members": closed_members,
+        "activity_cards": activity_cards,
     }

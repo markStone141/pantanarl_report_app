@@ -4,116 +4,16 @@
 {% block title %}管理トップ | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=1" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=2" />
 {% endblock %}
 
 {% block content %}
 <div class="container">
   {% include "dairymetrics/partials/admin_header.html" with admin_header_subtitle="本日の実績状況と提出状況を確認します。" %}
-
-  <section class="dairymetrics-admin-hero">
-    <article class="card dairymetrics-admin-summary-card">
-      <div class="dairymetrics-admin-summary-head">
-        <div>
-          <strong>今日の活動状況</strong>
-          <div class="muted">当日の現場状態をすぐ把握できます。</div>
-        </div>
-        <form method="get" class="dairymetrics-admin-inline-filter">
-          <div class="muted dairymetrics-admin-inline-date">{{ today|date:'Y/m/d' }}</div>
-          <select id="department" name="department" aria-label="部署">
-            {% for department in departments %}
-            <option value="{{ department.code }}" {% if selected_department and selected_department.code == department.code %}selected{% endif %}>
-              {{ department.code }}
-            </option>
-            {% endfor %}
-          </select>
-          <button type="submit" class="btn-inline dairymetrics-secondary-btn">更新</button>
-        </form>
-      </div>
-      <div class="dairymetrics-admin-stat-grid">
-        <div class="dairymetrics-admin-stat">
-          <span class="dairymetrics-admin-stat-label">提出対象</span>
-          <strong class="dairymetrics-admin-stat-value">{{ submission_summary.target_count }}</strong>
-        </div>
-        <div class="dairymetrics-admin-stat is-closed">
-          <span class="dairymetrics-admin-stat-label">提出済み</span>
-          <strong class="dairymetrics-admin-stat-value">{{ submission_summary.submitted_count }}</strong>
-        </div>
-      </div>
-    </article>
-
-    <article class="card dairymetrics-admin-summary-card">
-      <div class="dairymetrics-admin-summary-head">
-        <div>
-          <strong>本日の実績</strong>
-          <div class="muted">今日入力された件数と金額です。</div>
-        </div>
-      </div>
-      <div class="dairymetrics-admin-total-list">
-        {% for total in today_department_totals %}
-        <div class="dairymetrics-admin-total-item">
-          <div class="dairymetrics-admin-total-title">{{ total.department.name }} ({{ total.department.code }})</div>
-          <div class="dairymetrics-admin-total-meta">{{ total.count_label }} {{ total.count_value }} / 金額 {{ total.amount_value|intcomma }}</div>
-          <div class="muted">アプローチ {{ total.approach_count }} / コミュニケーション {{ total.communication_count }}</div>
-        </div>
-        {% empty %}
-        <p class="muted">対象部署の本日データはありません。</p>
-        {% endfor %}
-      </div>
-    </article>
-  </section>
-
-  <section class="dairymetrics-admin-lists">
-    <article class="card dairymetrics-admin-list-card">
-      <div class="dairymetrics-admin-summary-head">
-        <div>
-          <strong>提出対象一覧</strong>
-          <div class="muted">活動中で、まだ本日分を締めていないメンバー</div>
-        </div>
-      </div>
-      <div class="dairymetrics-admin-chip-list">
-        {% for row in active_members %}
-        <a class="dairymetrics-admin-chip" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
-          {{ row.member.name }} / {{ row.status_label }}
-        </a>
-        {% empty %}
-        <span class="muted">提出対象メンバーはいません。</span>
-        {% endfor %}
-      </div>
-    </article>
-
-    <article class="card dairymetrics-admin-list-card">
-      <div class="dairymetrics-admin-summary-head">
-        <div>
-          <strong>提出済み一覧</strong>
-          <div class="muted">活動終了まで完了したメンバー</div>
-        </div>
-      </div>
-      <div class="dairymetrics-admin-chip-list">
-        {% for row in closed_members %}
-        <a class="dairymetrics-admin-chip is-closed" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
-          {{ row.member.name }} / {{ row.status_label }}
-        </a>
-        {% empty %}
-        <span class="muted">提出済みメンバーはいません。</span>
-        {% endfor %}
-      </div>
-    </article>
-  </section>
-
-  <section class="card">
-    <div class="dairymetrics-admin-table-head">
-      <div>
-        <strong>管理メニュー</strong>
-        <div class="muted">日次運用と分析を分けて、必要な画面へすぐ移動できます。</div>
-      </div>
-    </div>
-    <div class="dairymetrics-card-actions">
-      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">メンバー一覧</a>
-      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_admin_monthly_overview' %}">月次集計</a>
-      <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_adjustment_create' %}">戻り登録</a>
-    </div>
-  </section>
+  <div id="dairymetrics-admin-overview-content">
+    {% include "dairymetrics/partials/admin_overview_content.html" %}
+  </div>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
+<script src="{% static 'dairymetrics/admin_overview.js' %}?v=1"></script>
 {% endblock %}
