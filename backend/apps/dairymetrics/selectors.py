@@ -82,6 +82,18 @@ def _comparison_label_precise(rate, *, digits=2):
     return f"{sign}{rate:.{digits}f}%"
 
 
+def _format_diff_display(metric_key, value, *, digits=2):
+    if value is None:
+        return "-"
+    if metric_key in {"communication_rate", "participation_rate"}:
+        return f"{value:.{digits}f}%"
+    if metric_key in {"support_amount", "average_support_amount"}:
+        return f"{value:,.0f}"
+    if isinstance(value, float):
+        return f"{value:.{digits}f}"
+    return str(value)
+
+
 def _rate_value(numerator, denominator):
     if denominator <= 0:
         return None
@@ -1339,7 +1351,7 @@ def build_admin_month_comparison(*, target_month, compare_month, department_code
                         "diff_value": diff_value,
                         "previous_text": _format_metric_display(display_key, previous_value),
                         "current_text": _format_metric_display(display_key, current_value),
-                        "diff_text": _format_metric_display(display_key, abs(diff_value)),
+                        "diff_text": _format_diff_display(display_key, abs(diff_value), digits=2),
                         "rate_text": rate_text,
                         "is_positive": diff_value > 0,
                         "is_negative": diff_value < 0,
