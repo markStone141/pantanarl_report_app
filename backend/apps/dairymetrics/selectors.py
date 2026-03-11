@@ -75,6 +75,13 @@ def _comparison_label(rate):
     return f"{sign}{rate}%"
 
 
+def _comparison_label_precise(rate, *, digits=2):
+    if rate is None:
+        return "-"
+    sign = "+" if rate > 0 else ""
+    return f"{sign}{rate:.{digits}f}%"
+
+
 def _rate_value(numerator, denominator):
     if denominator <= 0:
         return None
@@ -1323,7 +1330,7 @@ def build_admin_month_comparison(*, target_month, compare_month, department_code
                 current_numeric = 0 if current_value is None else current_value
                 previous_numeric = 0 if previous_value is None else previous_value
                 diff_value = current_numeric - previous_numeric
-                rate_text = _comparison_label(_change_rate(current_numeric, previous_numeric))
+                rate_text = _comparison_label_precise(_change_rate(current_numeric, previous_numeric), digits=2)
                 metric_rows.append(
                     {
                         "label": spec["label"],

@@ -1159,7 +1159,7 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "郵送戻り")
         self.assertContains(response, "QR戻り")
         self.assertContains(response, "+2")
-        self.assertContains(response, "+50.0%")
+        self.assertContains(response, "+50.00%")
 
     def test_admin_monthly_comparison_uses_common_metric_rows_for_wv(self):
         MemberDailyMetricEntry.objects.create(
@@ -1193,7 +1193,7 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "コミュ率")
         self.assertContains(response, "参加率")
         self.assertContains(response, "+2")
-        self.assertContains(response, "+50.0%")
+        self.assertContains(response, "+50.00%")
 
     def test_admin_monthly_comparison_handles_empty_rate_values(self):
         MemberDailyMetricEntry.objects.create(
