@@ -629,16 +629,31 @@
 
 .dairymetrics-month-filter-inline {
   gap: 8px;
+  flex-wrap: nowrap;
 }
 
 .dairymetrics-month-filter-inline label {
   font-size: 0.72rem;
 }
 
+.dairymetrics-month-filter-inline > div {
+  display: grid;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
 .dairymetrics-month-filter-inline input,
 .dairymetrics-month-filter-inline select,
 .dairymetrics-month-filter-inline button {
   min-height: 34px;
+}
+
+.dairymetrics-month-filter-inline input[type="month"] {
+  width: 132px;
+}
+
+.dairymetrics-month-filter-inline select {
+  width: 108px;
 }
 
 .dairymetrics-admin-monthly-page {
