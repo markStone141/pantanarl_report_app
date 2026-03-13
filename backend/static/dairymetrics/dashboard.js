@@ -14,32 +14,8 @@
   if (!cardRoot) return;
   let activeMemberFilter = memberFilterButtons[0] ? memberFilterButtons[0].getAttribute('data-member-filter-value') || '' : '';
 
-  function syncMemberFilterButtons() {
-    if (!memberSelect || memberFilterButtons.length === 0) return;
-    const selectedOption = memberSelect.options[memberSelect.selectedIndex];
-    const visibleCodes = new Set(((selectedOption && selectedOption.dataset.departmentCodes) || '').split(',').filter(Boolean));
-
-    memberFilterButtons.forEach(function (button) {
-      const value = button.getAttribute('data-member-filter-value') || '';
-      const shouldShow = visibleCodes.has(value);
-      button.hidden = !shouldShow;
-      button.disabled = !shouldShow;
-      if (!shouldShow && value === activeMemberFilter) {
-        activeMemberFilter = '';
-      }
-    });
-
-    if (!activeMemberFilter) {
-      const firstVisibleButton = memberFilterButtons.find(function (button) { return !button.hidden; });
-      if (firstVisibleButton) {
-        activeMemberFilter = firstVisibleButton.getAttribute('data-member-filter-value') || '';
-      }
-    }
-  }
-
   function applyMemberFilter(filterValue) {
     if (!memberSelect) return;
-    syncMemberFilterButtons();
     activeMemberFilter = filterValue || activeMemberFilter;
     const options = Array.from(memberSelect.options);
     let selectedVisible = false;
@@ -160,7 +136,6 @@
     const changedMemberSelect = event.target.closest('[data-member-switch]');
     if (changedMemberSelect) {
       if (!changedMemberSelect.value) return;
-      syncMemberFilterButtons();
       const currentUrl = new URL(window.location.href);
       const nextUrl = new URL(changedMemberSelect.value, window.location.origin);
       ['scope', 'department', 'start_date', 'end_date'].forEach(function (key) {
@@ -173,7 +148,6 @@
   });
 
   if (memberSelect) {
-    syncMemberFilterButtons();
     applyMemberFilter(activeMemberFilter || (memberFilterButtons[0] && memberFilterButtons[0].getAttribute('data-member-filter-value')) || '');
   }
 

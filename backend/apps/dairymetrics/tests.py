@@ -800,11 +800,12 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "表示中: Inactive Member")
         self.assertContains(response, "7")
         self.assertContains(response, "3,500")
-        self.assertContains(response, "メンバー一覧へ戻る")
+        self.assertContains(response, 'data-member-filter-value="WV"', html=False)
         self.assertNotContains(response, "入力する")
         self.assertNotContains(response, "スコアを見る")
         self.assertNotContains(response, "目標を設定")
         self.assertNotContains(response, "dairymetrics-open-entry")
+        self.assertNotContains(response, "メンバー一覧へ戻る")
 
 
 class DairyMetricsAdminTests(TestCase):

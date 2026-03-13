@@ -75,11 +75,12 @@ def _build_member_directory():
     ]
 
 
-def _member_row_departments(member_rows, member):
-    if not member:
-        return []
-    row = next((row for row in member_rows if row["member"].id == member.id), None)
-    return row["departments"] if row else []
+def _member_filter_departments(member_rows):
+    departments_by_code = {}
+    for row in member_rows:
+        for department in row["departments"]:
+            departments_by_code[department.code] = department
+    return [departments_by_code[code] for code in sorted(departments_by_code)]
 
 
 def _build_member_dashboard_context(*, request, member, readonly=False, viewer_member=None):
@@ -134,7 +135,7 @@ def _build_member_dashboard_context(*, request, member, readonly=False, viewer_m
         "readonly_dashboard": readonly,
         "viewer_member": viewer_member if readonly else (viewer_member or member),
         "member_rows": member_rows,
-        "member_filter_departments": _member_row_departments(member_rows, member) if readonly else [],
+        "member_filter_departments": _member_filter_departments(member_rows) if readonly else [],
     }
 
 

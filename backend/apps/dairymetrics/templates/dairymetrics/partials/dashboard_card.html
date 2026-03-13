@@ -110,9 +110,7 @@
     {% endif %}
   </div>
   <div class="dairymetrics-card-actions">
-    {% if readonly_dashboard %}
-    <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_index' %}">メンバー一覧へ戻る</a>
-    {% else %}
+    {% if not readonly_dashboard %}
     <a class="btn-inline dairymetrics-desktop-entry-btn" href="{% url 'dairymetrics_entry' %}?department={{ selected_card.department.code }}">入力する</a>
     <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_compare' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">スコアを見る</a>
     {% endif %}
