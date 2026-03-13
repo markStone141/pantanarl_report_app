@@ -5,6 +5,7 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member
+from apps.common.report_metrics import collect_actual_totals
 from apps.targets.models import Period
 
 from .models import (
@@ -201,6 +202,29 @@ def _department_totals(member, department, start_date, end_date, *, include_adju
     if include_adjustments:
         adjustments = MetricAdjustment.objects.filter(member=member, department=department, target_date__range=(start_date, end_date))
     return _aggregate_totals(entries, adjustments)
+
+
+def _reported_department_totals(department, start_date, end_date, *, include_adjustments=True):
+    totals = collect_actual_totals(
+        start_date=start_date,
+        end_date=end_date,
+        target_codes=[department.code],
+        include_adjustments=include_adjustments,
+    ).get(department.code, {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0})
+    if include_adjustments:
+        adjustment_return_totals = MetricAdjustment.objects.filter(
+            department=department,
+            target_date__range=(start_date, end_date),
+        ).aggregate(
+            return_postal_count=Sum("return_postal_count"),
+            return_qr_count=Sum("return_qr_count"),
+        )
+        totals["return_postal_count"] = int(adjustment_return_totals.get("return_postal_count") or 0)
+        totals["return_qr_count"] = int(adjustment_return_totals.get("return_qr_count") or 0)
+    else:
+        totals["return_postal_count"] = 0
+        totals["return_qr_count"] = 0
+    return totals
 
 
 def _target_totals(member, department, start_date, end_date):
@@ -890,11 +914,21 @@ def build_member_dashboard_card(
     count_value = _count_value_for_department(department, scope_totals, include_returns=include_returns)
     amount_value = _display_amount_value(scope_totals, include_returns=include_returns)
     target_totals = _scope_target_totals(member, department, scope_data)
+    goal_totals = scope_totals
+    if scope_data["scope"] in {"period", "month"}:
+        goal_totals = _reported_department_totals(
+            department,
+            start_date,
+            end_date,
+            include_adjustments=True,
+        )
+    goal_count_value = _count_value_for_department(department, goal_totals, include_returns=True)
+    goal_amount_value = int(goal_totals["amount"])
     goal_completed = (
         target_totals["count"] > 0
         and target_totals["amount"] > 0
-        and count_value >= target_totals["count"]
-        and amount_value >= target_totals["amount"]
+        and goal_count_value >= target_totals["count"]
+        and goal_amount_value >= target_totals["amount"]
     )
     rankings = _build_member_rankings(
         department,
@@ -938,12 +972,14 @@ def build_member_dashboard_card(
         "amount_value": amount_value,
         "target_count": target_totals["count"],
         "target_amount": target_totals["amount"],
+        "goal_count_value": goal_count_value,
+        "goal_amount_value": goal_amount_value,
         "goal_completed": goal_completed,
         "can_edit_scope_target": scope_data["scope"] in {"period", "month"},
-        "count_rate_text": _progress_label(count_value, target_totals["count"]),
-        "amount_rate_text": _progress_label(amount_value, target_totals["amount"]),
-        "count_remaining": max(target_totals["count"] - count_value, 0),
-        "amount_remaining": max(target_totals["amount"] - amount_value, 0),
+        "count_rate_text": _progress_label(goal_count_value, target_totals["count"]),
+        "amount_rate_text": _progress_label(goal_amount_value, target_totals["amount"]),
+        "count_remaining": max(target_totals["count"] - goal_count_value, 0),
+        "amount_remaining": max(target_totals["amount"] - goal_amount_value, 0),
         "has_target": target_totals["count"] > 0 or target_totals["amount"] > 0,
         "approach_average": round(scope_totals["approach_count"] / active_days, 1),
         "communication_average": round(scope_totals["communication_count"] / active_days, 1),

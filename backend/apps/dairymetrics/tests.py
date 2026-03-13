@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
 from apps.targets.models import Period
 
 from .forms import MemberDailyMetricEntryForm
@@ -762,12 +763,72 @@ class DairyMetricsDashboardTests(TestCase):
             support_amount=6000,
             cs_count=4,
         )
+        report = DailyDepartmentReport.objects.create(
+            department=self.department,
+            report_date=date(2026, 3, 5),
+            reporter=self.member,
+            total_count=1,
+            followup_count=6000,
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=self.member,
+            amount=6000,
+            cs_count=4,
+        )
         self.client.force_login(self.user)
         response = self.client.get(reverse("dairymetrics_dashboard"), {"scope": "month"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "4/10")
         self.assertContains(response, "6,000/20,000")
         self.assertContains(response, "目標を編集")
+
+    def test_dashboard_month_goal_card_uses_report_app_actuals_with_adjustments(self):
+        MemberMonthMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            target_month=date(2026, 3, 1),
+            target_count=10,
+            target_amount=20000,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 5),
+            support_amount=9000,
+            cs_count=5,
+            refugee_count=1,
+        )
+        report = DailyDepartmentReport.objects.create(
+            department=self.department,
+            report_date=date(2026, 3, 5),
+            reporter=self.member,
+            total_count=1,
+            followup_count=5000,
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=self.member,
+            amount=5000,
+            cs_count=1,
+            refugee_count=1,
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 6),
+            return_postal_amount=1000,
+            return_postal_count=1,
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_dashboard"), {"scope": "month"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "3/10")
+        self.assertContains(response, "6,000/20,000")
+        self.assertContains(response, "残り 7")
+        self.assertContains(response, "残り 14,000")
 
     def test_member_index_lists_inactive_members(self):
         inactive_member = Member.objects.create(name="Inactive Member", is_active=False)

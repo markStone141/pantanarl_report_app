@@ -39,9 +39,9 @@
         <span class="muted">{{ selected_card.count_label }}</span>
         <strong class="kpi">
           {% if selected_card.target_count %}
-          {{ selected_card.count_value }}/{{ selected_card.target_count }}
+          {{ selected_card.goal_count_value }}/{{ selected_card.target_count }}
           {% else %}
-          {{ selected_card.count_value }}/-
+          {{ selected_card.goal_count_value }}/-
           {% endif %}
         </strong>
         <span class="muted dairymetrics-subtext">達成率 {{ selected_card.count_rate_text }}</span>
@@ -55,9 +55,9 @@
         <span class="muted">金額</span>
         <strong class="kpi">
           {% if selected_card.target_amount %}
-          {{ selected_card.amount_value|intcomma }}/{{ selected_card.target_amount|intcomma }}
+          {{ selected_card.goal_amount_value|intcomma }}/{{ selected_card.target_amount|intcomma }}
           {% else %}
-          {{ selected_card.amount_value|intcomma }}/-
+          {{ selected_card.goal_amount_value|intcomma }}/-
           {% endif %}
         </strong>
         <span class="muted dairymetrics-subtext">達成率 {{ selected_card.amount_rate_text }}</span>
