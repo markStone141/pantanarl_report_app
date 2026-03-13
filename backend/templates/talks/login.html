@@ -25,22 +25,6 @@
   .talks-login-form {
     gap: 10px;
   }
-  .talks-login-shortcuts {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-    justify-content: center;
-  }
-  .talks-login-shortcuts a {
-    display: inline-block;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--brand);
-    color: var(--brand);
-    font-weight: 700;
-    background: #fff;
-  }
   @media (max-width: 768px) {
     .talks-login-brand {
       min-height: 104px;
@@ -78,9 +62,21 @@
       {% endif %}
       <button type="submit">ログイン</button>
     </form>
-    <div class="talks-login-shortcuts">
-      <a href="{% url 'home' %}">Report App</a>
-      <a href="{% url 'testimony_login' %}?next={% url 'testimony_article_list' %}">Testimony</a>
+    <div class="reportapp-login-shortcuts">
+      <a href="{% url 'home' %}">
+        <span class="reportapp-login-shortcuts-icon"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span>
+        <span>
+          <strong>Report App</strong>
+          <small>報告入力へ</small>
+        </span>
+      </a>
+      <a href="{% url 'testimony_login' %}?next={% url 'testimony_article_list' %}">
+        <span class="reportapp-login-shortcuts-icon"><i class="fa-solid fa-quote-left" aria-hidden="true"></i></span>
+        <span>
+          <strong>Testimony</strong>
+          <small>証の確認へ</small>
+        </span>
+      </a>
     </div>
   </section>
 </div>

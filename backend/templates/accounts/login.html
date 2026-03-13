@@ -17,22 +17,6 @@
     display: block;
     filter: drop-shadow(0 10px 22px rgba(27, 103, 184, 0.22));
   }
-  .reportapp-login-shortcuts {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-    justify-content: center;
-  }
-  .reportapp-login-shortcuts a {
-    display: inline-block;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--brand);
-    color: var(--brand);
-    font-weight: 700;
-    background: #fff;
-  }
   .reportapp-submit-btn {
     margin-top: 14px;
   }
@@ -66,10 +50,18 @@
 
     <div class="reportapp-login-shortcuts">
       <a href="{% url 'dairymetrics_login' %}">
-        DairyMetrics
+        <span class="reportapp-login-shortcuts-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>
+        <span>
+          <strong>DairyMetrics</strong>
+          <small>日次入力へ</small>
+        </span>
       </a>
       <a href="{% url 'testimony_login' %}?next={% url 'testimony_article_list' %}">
-        Testimony
+        <span class="reportapp-login-shortcuts-icon"><i class="fa-solid fa-quote-left" aria-hidden="true"></i></span>
+        <span>
+          <strong>Testimony</strong>
+          <small>証の確認へ</small>
+        </span>
       </a>
     </div>
   </section>
