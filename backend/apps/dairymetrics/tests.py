@@ -911,7 +911,7 @@ class DairyMetricsDashboardTests(TestCase):
         response = self.client.get(reverse("dairymetrics_member_overview"), {"department": "WV"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "実績確認")
+        self.assertContains(response, "活動状況")
         self.assertContains(response, "今日の活動状況")
         self.assertContains(response, "本日の実績")
         self.assertContains(response, "メンバー実績状況")
