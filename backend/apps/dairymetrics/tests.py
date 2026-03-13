@@ -859,6 +859,21 @@ class DairyMetricsAdminTests(TestCase):
         self.assertEqual(adjustment.created_by, self.admin)
         self.assertEqual(adjustment.source_type, "postal")
 
+    def test_adjustment_form_uses_japanese_labels(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("dairymetrics_adjustment_create"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "メンバー")
+        self.assertContains(response, "部署")
+        self.assertContains(response, "対象日")
+        self.assertContains(response, "種別")
+        self.assertContains(response, "郵送件数")
+        self.assertContains(response, "郵送金額")
+        self.assertContains(response, "QR件数")
+        self.assertContains(response, "QR金額")
+
     def test_admin_monthly_overview_requires_staff(self):
         response = self.client.get(reverse("dairymetrics_admin_monthly_overview"))
         self.assertRedirects(response, reverse("dairymetrics_login"))

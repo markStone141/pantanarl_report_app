@@ -153,6 +153,24 @@ class MemberDailyMetricEntryForm(forms.ModelForm):
 
 
 class MetricAdjustmentForm(forms.ModelForm):
+    LABELS = {
+        "member": "メンバー",
+        "department": "部署",
+        "target_date": "対象日",
+        "source_type": "種別",
+        "approach_count": "アプローチ",
+        "communication_count": "コミュニケーション",
+        "result_count": "件数",
+        "support_amount": "金額",
+        "return_postal_count": "郵送件数",
+        "return_postal_amount": "郵送金額",
+        "return_qr_count": "QR件数",
+        "return_qr_amount": "QR金額",
+        "cs_count": "CS",
+        "refugee_count": "難民",
+        "note": "メモ",
+    }
+
     class Meta:
         model = MetricAdjustment
         fields = [
@@ -181,6 +199,9 @@ class MetricAdjustmentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["member"].queryset = Member.objects.active().filter(department_links__department__is_active=True).distinct()
         self.fields["department"].queryset = Department.objects.filter(is_active=True).order_by("code")
+        for name, label in self.LABELS.items():
+            if name in self.fields:
+                self.fields[name].label = label
         for name in [
             "approach_count",
             "communication_count",
