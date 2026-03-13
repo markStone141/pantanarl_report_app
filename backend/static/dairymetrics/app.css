@@ -1017,7 +1017,7 @@
 }
 
 .dairymetrics-col-metric {
-  width: 44px;
+  width: 56px;
 }
 
 .dairymetrics-col-summary {
@@ -1116,9 +1116,9 @@
 
 .dairymetrics-admin-month-sheet th:nth-child(2),
 .dairymetrics-admin-month-sheet td:nth-child(2) {
-  width: 44px;
-  min-width: 44px;
-  max-width: 44px;
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
 }
 
 .dairymetrics-admin-member-cell {
@@ -1128,13 +1128,13 @@
 }
 
 .dairymetrics-admin-metric-label {
-  width: 44px;
-  min-width: 44px;
-  max-width: 44px;
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
   font-weight: 700;
   background: #f7fbff;
   text-align: center;
-  font-size: 0.68rem;
+  font-size: 0.74rem;
   padding-left: 1px;
   padding-right: 1px;
   white-space: nowrap;
