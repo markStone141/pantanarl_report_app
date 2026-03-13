@@ -400,8 +400,10 @@ def member_dashboard(request: HttpRequest, member_id: int) -> HttpResponse:
 
 @require_dairymetrics_member
 def comparison_view(request: HttpRequest) -> HttpResponse:
+    if request.user.is_staff:
+        return redirect("dairymetrics_admin_overview")
     viewer_member, member = _resolve_compare_member(request)
-    readonly_compare = request.user.is_staff and member is not None and (viewer_member is None or viewer_member.pk != member.pk)
+    readonly_compare = False
     context = _build_member_dashboard_context(
         request=request,
         member=member,
@@ -482,6 +484,8 @@ def member_monthly_overview(request: HttpRequest) -> HttpResponse:
 
 @require_dairymetrics_member
 def comparison_ranking_detail(request: HttpRequest) -> HttpResponse:
+    if request.user.is_staff:
+        return JsonResponse({"error": "admin_not_supported"}, status=404)
     _, member = _resolve_compare_member(request)
     if not member:
         return JsonResponse({"error": "member_not_found"}, status=404)
