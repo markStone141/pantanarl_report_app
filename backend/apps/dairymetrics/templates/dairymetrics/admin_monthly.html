@@ -52,7 +52,7 @@
         href="?month={{ target_month|date:'Y-m' }}{% if selected_department %}&department={{ selected_department.code }}{% endif %}&tab=adjustment"
       >戻り実績</a>
     </div>
-    <div class="table-scroll" data-monthly-edit-root data-monthly-editable="{% if active_tab == 'field' %}true{% else %}false{% endif %}" data-update-url="{% url 'dairymetrics_admin_monthly_update_cell' %}">
+    <div class="table-scroll" data-monthly-edit-root data-monthly-editable="true" data-update-url="{% url 'dairymetrics_admin_monthly_update_cell' %}">
       <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-month-sheet">
         <colgroup>
           <col class="dairymetrics-col-member">
@@ -107,8 +107,8 @@
             </td>
             {% for cell in metric_row.cells %}
             <td
-              class="dairymetrics-admin-sheet-cell{% if metric_row.label != '現場' %} dairymetrics-admin-number{% endif %}{% if cell.is_empty %} is-empty{% endif %}{% if active_tab == 'field' and metric_row.editable %} is-editable{% endif %}"
-              {% if active_tab == 'field' and metric_row.editable %}
+              class="dairymetrics-admin-sheet-cell{% if metric_row.label != '現場' %} dairymetrics-admin-number{% endif %}{% if cell.is_empty %} is-empty{% endif %}{% if metric_row.editable %} is-editable{% endif %}"
+              {% if metric_row.editable %}
               data-editable-cell
               data-member-id="{{ row.member.id }}"
               data-department-code="{{ row.department.code }}"
@@ -138,5 +138,5 @@
   </section>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
-<script src="{% static 'dairymetrics/admin_monthly.js' %}?v=1"></script>
+<script src="{% static 'dairymetrics/admin_monthly.js' %}?v=2"></script>
 {% endblock %}

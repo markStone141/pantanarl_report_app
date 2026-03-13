@@ -1274,17 +1274,19 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                 monthly_total = int(adjustment_totals[field])
                 monthly_average = round(int(adjustment_totals[field]) / adjustment_active_day_count, 1) if adjustment_active_day_count else "-"
                 cells = [
-                    {
-                        "value": int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0),
-                        "is_empty": int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) == 0,
-                    }
+                    _field_cell(
+                        field=field,
+                        value=int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0),
+                        entry_date=month_day["date"],
+                        is_empty=int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) == 0,
+                    )
                     for month_day in month_days
                 ]
                 adjustment_metric_rows.append(
                     {
                         "label": spec["label"],
                         "field": field,
-                        "editable": False,
+                        "editable": True,
                         "monthly_total": monthly_total,
                         "monthly_average": monthly_average,
                         "cells": cells,

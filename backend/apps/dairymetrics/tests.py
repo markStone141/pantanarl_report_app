@@ -1207,6 +1207,65 @@ class DairyMetricsAdminTests(TestCase):
             "Ikebukuro",
         )
 
+    def test_admin_monthly_update_cell_creates_adjustment_for_return_field(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("dairymetrics_admin_monthly_update_cell"),
+            {
+                "member_id": self.member.id,
+                "department": self.department.code,
+                "entry_date": "2026-03-09",
+                "field": "return_postal_count",
+                "value": "2",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        adjustment = MetricAdjustment.objects.get(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 9),
+            source_type="other",
+            note="__inline_monthly_adjustment__",
+        )
+        self.assertEqual(adjustment.return_postal_count, 2)
+
+    def test_admin_monthly_update_cell_adjustment_field_preserves_existing_total(self):
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 9),
+            source_type="postal",
+            return_postal_count=1,
+            return_postal_amount=500,
+            created_by=self.admin,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("dairymetrics_admin_monthly_update_cell"),
+            {
+                "member_id": self.member.id,
+                "department": self.department.code,
+                "entry_date": "2026-03-09",
+                "field": "return_postal_count",
+                "value": "3",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        inline_adjustment = MetricAdjustment.objects.get(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 9),
+            source_type="other",
+            note="__inline_monthly_adjustment__",
+        )
+        self.assertEqual(inline_adjustment.return_postal_count, 2)
+
     def test_admin_monthly_overview_filters_by_department(self):
         MemberDailyMetricEntry.objects.create(
             member=self.member,

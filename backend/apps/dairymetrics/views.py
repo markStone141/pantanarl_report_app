@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -20,6 +21,9 @@ from .selectors import (
     build_member_dashboard,
     build_member_ranking_detail,
 )
+
+
+INLINE_ADJUSTMENT_NOTE = "__inline_monthly_adjustment__"
 
 
 def _build_entry_form(*, member, data=None, department_code="", entry_date=None):
@@ -482,31 +486,73 @@ def admin_monthly_update_cell(request: HttpRequest) -> HttpResponse:
         allowed_fields.update({"cs_count": "number", "refugee_count": "number"})
     else:
         allowed_fields["result_count"] = "number"
+    adjustment_fields = {
+        "return_postal_count",
+        "return_postal_amount",
+        "return_qr_count",
+        "return_qr_amount",
+    }
+    for field_name_key in adjustment_fields:
+        allowed_fields[field_name_key] = "number"
 
     if field_name not in allowed_fields:
         return JsonResponse({"error": "invalid_field"}, status=400)
 
-    entry, _ = MemberDailyMetricEntry.objects.get_or_create(
-        member=member,
-        department=department,
-        entry_date=entry_date,
-    )
-
-    if allowed_fields[field_name] == "text":
-        setattr(entry, field_name, raw_value)
-    else:
+    if field_name in adjustment_fields:
         if raw_value == "":
-            parsed_value = 0
+            desired_value = 0
         else:
             try:
-                parsed_value = int(raw_value)
+                desired_value = int(raw_value)
             except ValueError:
                 return JsonResponse({"error": "invalid_value"}, status=400)
-            if parsed_value < 0:
+            if desired_value < 0:
                 return JsonResponse({"error": "invalid_value"}, status=400)
-        setattr(entry, field_name, parsed_value)
 
-    entry.save()
+        inline_adjustment, _ = MetricAdjustment.objects.get_or_create(
+            member=member,
+            department=department,
+            target_date=entry_date,
+            source_type=MetricAdjustment.SOURCE_OTHER,
+            note=INLINE_ADJUSTMENT_NOTE,
+        )
+        other_total = (
+            MetricAdjustment.objects.filter(
+                member=member,
+                department=department,
+                target_date=entry_date,
+            )
+            .exclude(pk=inline_adjustment.pk)
+            .aggregate(total=Sum(field_name))
+            .get("total")
+            or 0
+        )
+        if desired_value < other_total:
+            return JsonResponse({"error": "value_below_existing_adjustments"}, status=400)
+        setattr(inline_adjustment, field_name, desired_value - int(other_total))
+        inline_adjustment.save()
+    else:
+        entry, _ = MemberDailyMetricEntry.objects.get_or_create(
+            member=member,
+            department=department,
+            entry_date=entry_date,
+        )
+
+        if allowed_fields[field_name] == "text":
+            setattr(entry, field_name, raw_value)
+        else:
+            if raw_value == "":
+                parsed_value = 0
+            else:
+                try:
+                    parsed_value = int(raw_value)
+                except ValueError:
+                    return JsonResponse({"error": "invalid_value"}, status=400)
+                if parsed_value < 0:
+                    return JsonResponse({"error": "invalid_value"}, status=400)
+            setattr(entry, field_name, parsed_value)
+
+        entry.save()
     return JsonResponse({"ok": True})
 
 
