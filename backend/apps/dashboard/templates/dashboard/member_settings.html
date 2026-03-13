@@ -61,6 +61,12 @@
         <div class="error-text">{{ form.departments.errors|striptags }}</div>
         {% endif %}
 
+        <label for="id_default_department">{{ form.default_department.label }}</label>
+        {{ form.default_department }}
+        {% if form.default_department.errors %}
+        <div class="error-text">{{ form.default_department.errors|striptags }}</div>
+        {% endif %}
+
         <label for="id_auth_login_id">{{ form.auth_login_id.label }}</label>
         {{ form.auth_login_id }}
         {% if form.auth_login_id.errors %}
@@ -94,7 +100,7 @@
       <div class="table-scroll">
       <table class="mobile-card-table">
         <thead>
-          <tr><th>名前</th><th>状態</th><th>ログインID</th><th>所属部署</th><th>操作</th></tr>
+          <tr><th>名前</th><th>状態</th><th>ログインID</th><th>所属部署</th><th>メイン部署</th><th>操作</th></tr>
         </thead>
         <tbody>
           {% for member in members %}
@@ -109,6 +115,7 @@
                 -
               {% endfor %}
             </td>
+            <td>{% if member.default_department %}{{ member.default_department.name }}{% else %}-{% endif %}</td>
             <td>
               <a class="btn-inline" href="{% url 'member_settings' %}?edit={{ member.id }}">編集</a>
               <form method="post" action="{% url 'member_delete' member.id %}" style="display:inline;" onsubmit="return confirm('{% if member.is_active %}このメンバーを無効化します。よろしいですか？{% else %}このメンバーを再有効化します。よろしいですか？{% endif %}');">

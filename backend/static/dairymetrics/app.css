@@ -613,6 +613,19 @@
   gap: 14px;
 }
 
+.dairymetrics-field {
+  min-width: 0;
+}
+
+.dairymetrics-field input,
+.dairymetrics-field select,
+.dairymetrics-field textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 .dairymetrics-form-actions {
   display: flex;
   gap: 10px;

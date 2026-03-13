@@ -71,6 +71,7 @@ class MemberSettingsViewTests(TestCase):
             {
                 "name": "Dept User",
                 "departments": [self.depts["UN"].id, self.depts["STYLE1"].id],
+                "default_department": self.depts["UN"].id,
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -79,6 +80,7 @@ class MemberSettingsViewTests(TestCase):
             set(member.department_links.values_list("department_id", flat=True)),
             {self.depts["UN"].id, self.depts["STYLE1"].id},
         )
+        self.assertEqual(member.default_department_id, self.depts["UN"].id)
 
     def test_edit_member_updates_departments(self):
         member = Member.objects.create(name="Move User", login_id="move_user", password="")
@@ -89,6 +91,7 @@ class MemberSettingsViewTests(TestCase):
                 "edit_member_id": str(member.id),
                 "name": "Move User",
                 "departments": [self.depts["WV"].id],
+                "default_department": self.depts["WV"].id,
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -97,6 +100,20 @@ class MemberSettingsViewTests(TestCase):
             set(member.department_links.values_list("department_id", flat=True)),
             {self.depts["WV"].id},
         )
+        self.assertEqual(member.default_department_id, self.depts["WV"].id)
+
+    def test_member_settings_rejects_default_department_outside_assigned_departments(self):
+        response = self.client.post(
+            reverse("member_settings"),
+            {
+                "name": "Default Dept User",
+                "departments": [self.depts["UN"].id],
+                "default_department": self.depts["WV"].id,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "メイン部署は所属部署から選択してください。")
+        self.assertFalse(Member.objects.filter(name="Default Dept User").exists())
 
     def test_member_list_shows_department_name(self):
         member = Member.objects.create(name="Show User", login_id="show_user", password="")
