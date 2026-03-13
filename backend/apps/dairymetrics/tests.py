@@ -895,6 +895,30 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(payload["viewed_member_name"], "Inactive Member")
         self.assertIn("3,500", payload["card_html"])
 
+    def test_member_dashboard_ajax_supports_month_scope(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            approach_count=7,
+            communication_count=5,
+            support_amount=3500,
+            cs_count=2,
+            refugee_count=1,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_member_dashboard", args=[self.member.id]),
+            {"scope": "month"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn("今月: 2026/03", payload["card_html"])
+        self.assertIn('?department=WV&scope=month', payload["card_html"])
+
     def test_member_dashboard_is_readonly_and_allows_inactive_member(self):
         inactive_member = Member.objects.create(name="Inactive Member", is_active=False)
         MemberDepartment.objects.create(member=inactive_member, department=self.department)

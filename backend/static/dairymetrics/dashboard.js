@@ -110,8 +110,7 @@
       if (scope) {
         const url = new URL(window.location.href);
         url.searchParams.set('scope', scope);
-        window.history.replaceState({}, '', url.toString());
-        switchDepartment(url.searchParams.get('department') || '');
+        refreshDashboard(url);
       }
       return;
     }
