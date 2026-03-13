@@ -1266,6 +1266,141 @@ class DairyMetricsAdminTests(TestCase):
         )
         self.assertEqual(inline_adjustment.return_postal_count, 2)
 
+    def test_admin_monthly_update_cell_updates_wv_counts(self):
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member_wv,
+            department=self.department_wv,
+            entry_date=date(2026, 3, 9),
+            cs_count=1,
+            refugee_count=2,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("dairymetrics_admin_monthly_update_cell"),
+            {
+                "member_id": self.member_wv.id,
+                "department": self.department_wv.code,
+                "entry_date": entry.entry_date.strftime("%Y-%m-%d"),
+                "field": "cs_count",
+                "value": "4",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        entry.refresh_from_db()
+        self.assertEqual(entry.cs_count, 4)
+        self.assertEqual(entry.refugee_count, 2)
+
+    def test_admin_monthly_update_cell_rejects_negative_values(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("dairymetrics_admin_monthly_update_cell"),
+            {
+                "member_id": self.member.id,
+                "department": self.department.code,
+                "entry_date": "2026-03-09",
+                "field": "result_count",
+                "value": "-1",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"], "invalid_value")
+
+    def test_admin_monthly_update_cell_rejects_adjustment_value_below_existing_total(self):
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 9),
+            source_type="postal",
+            return_postal_count=3,
+            created_by=self.admin,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("dairymetrics_admin_monthly_update_cell"),
+            {
+                "member_id": self.member.id,
+                "department": self.department.code,
+                "entry_date": "2026-03-09",
+                "field": "return_postal_count",
+                "value": "2",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"], "value_below_existing_adjustments")
+
+    def test_admin_monthly_overview_reflects_updated_entry_value(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            result_count=2,
+            support_amount=1000,
+        )
+        self.client.force_login(self.admin)
+
+        save_response = self.client.post(
+            reverse("dairymetrics_admin_monthly_update_cell"),
+            {
+                "member_id": self.member.id,
+                "department": self.department.code,
+                "entry_date": "2026-03-09",
+                "field": "result_count",
+                "value": "5",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(save_response.status_code, 200)
+
+        response = self.client.get(
+            reverse("dairymetrics_admin_monthly_overview"),
+            {"month": "2026-03", "department": "UN"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, ">5<", html=False)
+
+    def test_admin_monthly_adjustment_tab_reflects_updated_return_total(self):
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 9),
+            source_type="postal",
+            return_postal_count=1,
+            return_postal_amount=500,
+            created_by=self.admin,
+        )
+        self.client.force_login(self.admin)
+
+        save_response = self.client.post(
+            reverse("dairymetrics_admin_monthly_update_cell"),
+            {
+                "member_id": self.member.id,
+                "department": self.department.code,
+                "entry_date": "2026-03-09",
+                "field": "return_postal_count",
+                "value": "4",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(save_response.status_code, 200)
+
+        response = self.client.get(
+            reverse("dairymetrics_admin_monthly_overview"),
+            {"month": "2026-03", "department": "UN", "tab": "adjustment"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, ">4<", html=False)
+
     def test_admin_monthly_overview_filters_by_department(self):
         MemberDailyMetricEntry.objects.create(
             member=self.member,
