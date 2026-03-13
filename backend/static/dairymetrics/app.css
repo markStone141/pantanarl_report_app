@@ -1158,6 +1158,11 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.dairymetrics-admin-monthly-page .table-scroll {
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+
 .table-scroll::-webkit-scrollbar {
   height: 14px;
 }
