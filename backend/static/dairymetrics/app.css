@@ -774,6 +774,10 @@
   font-size: 0.84rem;
 }
 
+.dairymetrics-admin-overview-page .dairymetrics-admin-inline-filter select {
+  width: 132px;
+}
+
 .dairymetrics-admin-inline-date {
   white-space: nowrap;
   font-size: 0.8rem;
