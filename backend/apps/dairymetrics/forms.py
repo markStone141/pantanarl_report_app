@@ -70,7 +70,7 @@ class MemberDailyMetricEntryForm(forms.ModelForm):
             "memo",
         ]
         widgets = {
-            "entry_date": forms.DateInput(attrs={"type": "date", "class": "dairymetrics-native-date"}),
+            "entry_date": forms.DateInput(attrs={"type": "date", "class": "dairymetrics-native-date dairymetrics-date-input"}),
             "memo": forms.Textarea(attrs={"rows": 3}),
         }
 
@@ -191,7 +191,7 @@ class MetricAdjustmentForm(forms.ModelForm):
             "note",
         ]
         widgets = {
-            "target_date": forms.DateInput(attrs={"type": "date", "class": "dairymetrics-native-date"}),
+            "target_date": forms.DateInput(attrs={"type": "date", "class": "dairymetrics-native-date dairymetrics-date-input"}),
             "note": forms.Textarea(attrs={"rows": 3}),
         }
 

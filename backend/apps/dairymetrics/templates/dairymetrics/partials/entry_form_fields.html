@@ -6,7 +6,11 @@
 </div>
 <div class="dairymetrics-field">
   <label for="{{ entry_date_field.id_for_label }}">{{ entry_date_field.label }}</label>
-  {{ entry_date_field }}
+  <div class="dairymetrics-date-wrap">
+    <div class="dairymetrics-date-field">
+      {{ entry_date_field }}
+    </div>
+  </div>
   {% if entry_date_field.errors %}<div class="error-text">{{ entry_date_field.errors|join:', ' }}</div>{% endif %}
 </div>
 <div class="dairymetrics-field">

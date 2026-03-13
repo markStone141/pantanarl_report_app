@@ -37,11 +37,19 @@
     <input type="hidden" name="scope" value="custom">
     <div>
       <label for="dairymetrics-compare-start-date">開始日</label>
-      <input id="dairymetrics-compare-start-date" type="date" name="start_date" value="{{ selected_card.custom_start_date|date:'Y-m-d' }}">
+      <div class="dairymetrics-date-wrap">
+        <div class="dairymetrics-date-field">
+          <input id="dairymetrics-compare-start-date" class="dairymetrics-date-input" type="date" name="start_date" value="{{ selected_card.custom_start_date|date:'Y-m-d' }}">
+        </div>
+      </div>
     </div>
     <div>
       <label for="dairymetrics-compare-end-date">終了日</label>
-      <input id="dairymetrics-compare-end-date" type="date" name="end_date" value="{{ selected_card.custom_end_date|date:'Y-m-d' }}">
+      <div class="dairymetrics-date-wrap">
+        <div class="dairymetrics-date-field">
+          <input id="dairymetrics-compare-end-date" class="dairymetrics-date-input" type="date" name="end_date" value="{{ selected_card.custom_end_date|date:'Y-m-d' }}">
+        </div>
+      </div>
     </div>
     <button type="submit" class="btn-inline dairymetrics-secondary-btn">集計する</button>
   </form>

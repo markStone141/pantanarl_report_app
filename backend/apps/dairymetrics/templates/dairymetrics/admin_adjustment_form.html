@@ -4,7 +4,7 @@
 {% block title %}戻り登録 | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=9" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=10" />
 {% endblock %}
 
 {% block content %}
@@ -18,7 +18,15 @@
         {% for field in form %}
         <div class="dairymetrics-field {% if field.name == 'note' %}dairymetrics-field-full{% endif %}">
           <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {% if field.field.widget.input_type == "date" %}
+          <div class="dairymetrics-date-wrap">
+            <div class="dairymetrics-date-field">
+              {{ field }}
+            </div>
+          </div>
+          {% else %}
           {{ field }}
+          {% endif %}
           {% if field.errors %}<div class="error-text">{{ field.errors|join:", " }}</div>{% endif %}
         </div>
         {% endfor %}

@@ -627,18 +627,30 @@
   box-sizing: border-box;
 }
 
-.dairymetrics-field input[type="date"],
-.dairymetrics-field input[type="month"],
+.dairymetrics-date-input,
 .dairymetrics-native-date,
-.dairymetrics-range-form input[type="date"],
-.dairymetrics-range-form input[type="month"],
-.dairymetrics-month-filter input[type="month"] {
+.dairymetrics-range-form .dairymetrics-date-input,
+.dairymetrics-month-filter .dairymetrics-date-input {
   display: block;
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
-  padding-inline: 8px;
   height: auto;
+}
+
+.dairymetrics-date-wrap {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.dairymetrics-date-field {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .dairymetrics-form-actions {
@@ -1488,17 +1500,20 @@
     min-width: 0;
   }
 
-  .dairymetrics-field input[type="date"],
-  .dairymetrics-field input[type="month"],
+  .dairymetrics-date-input,
   .dairymetrics-native-date,
-  .dairymetrics-range-form input[type="date"],
-  .dairymetrics-range-form input[type="month"],
-  .dairymetrics-month-filter input[type="month"] {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    padding-inline: 8px;
-    height: auto;
+  .dairymetrics-range-form .dairymetrics-date-input,
+  .dairymetrics-month-filter .dairymetrics-date-input {
+    display: block;
+    flex: 1 1 auto;
+    box-sizing: border-box;
+    inline-size: 100% !important;
+    width: 1px !important;
+    max-inline-size: 100%;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   .dairymetrics-member-switcher {

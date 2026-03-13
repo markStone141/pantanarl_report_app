@@ -533,7 +533,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(form.fields["approach_count"].label, "アプローチ")
         self.assertEqual(form.fields["support_amount"].label, "支援金額")
         self.assertEqual(form.fields["daily_target_count"].label, "今日の目標 件数")
-        self.assertEqual(form.fields["entry_date"].widget.attrs.get("class"), "dairymetrics-native-date")
+        self.assertIn("dairymetrics-native-date", form.fields["entry_date"].widget.attrs.get("class", ""))
+        self.assertIn("dairymetrics-date-input", form.fields["entry_date"].widget.attrs.get("class", ""))
         self.assertEqual(
             list(form.fields.keys())[:6],
             ["department", "entry_date", "daily_target_count", "daily_target_amount", "approach_count", "communication_count"],

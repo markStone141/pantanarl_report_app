@@ -8,7 +8,15 @@
   {% for field in scope_target_form %}
   <div class="dairymetrics-field {% if field.name == 'note' %}dairymetrics-field-full{% endif %}">
     {{ field.label_tag }}
+    {% if field.field.widget.input_type == "date" %}
+    <div class="dairymetrics-date-wrap">
+      <div class="dairymetrics-date-field">
+        {{ field }}
+      </div>
+    </div>
+    {% else %}
     {{ field }}
+    {% endif %}
     {% if field.errors %}
     <div class="form-errors">{{ field.errors|join:", " }}</div>
     {% endif %}
