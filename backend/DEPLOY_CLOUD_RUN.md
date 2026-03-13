@@ -8,7 +8,6 @@
   - `run.googleapis.com`
   - `cloudbuild.googleapis.com`
   - `artifactregistry.googleapis.com`
-  - `sqladmin.googleapis.com` (if using Cloud SQL)
 
 ## 2. Required env vars
 
@@ -19,13 +18,13 @@ Set these on Cloud Run (or via deploy command):
 - `ALLOWED_HOSTS=<cloud-run-hostname-or-custom-domain>`
 - `CSRF_TRUSTED_ORIGINS=https://<cloud-run-hostname-or-custom-domain>`
 
-If using PostgreSQL (Cloud SQL):
+If using PostgreSQL (Supabase / external PostgreSQL):
 
 - `DB_ENGINE=django.db.backends.postgresql`
 - `DB_NAME=<database-name>`
 - `DB_USER=<database-user>`
 - `DB_PASSWORD=<database-password>`
-- `DB_HOST=/cloudsql/<PROJECT:REGION:INSTANCE>`
+- `DB_HOST=<database-host>`
 - `DB_PORT=5432`
 
 Optional startup flags:
@@ -68,7 +67,6 @@ Required GitHub secrets:
 
 Optional GitHub repository variables:
 
-- `CLOUD_RUN_DB_INSTANCE`
 - `CLOUD_RUN_MIGRATE_JOB_ENV_VARS`
 - `CLOUD_RUN_MIGRATE_JOB_SECRETS`
 
@@ -98,8 +96,7 @@ REGION=asia-northeast1 \
 REPOSITORY=report-app \
 SERVICE=report-app \
 IMAGE=asia-northeast1-docker.pkg.dev/<gcp-project-id>/report-app/report-app:<image-tag> \
-DB_INSTANCE=<project:region:instance> \
-ENV_VARS='DJANGO_SETTINGS_MODULE=config.settings.prod,ALLOWED_HOSTS=<host>,CSRF_TRUSTED_ORIGINS=https://<host>' \
+ENV_VARS='DJANGO_SETTINGS_MODULE=config.settings.prod,ALLOWED_HOSTS=<host>,CSRF_TRUSTED_ORIGINS=https://<host>,DB_ENGINE=django.db.backends.postgresql,DB_NAME=<db-name>,DB_USER=<db-user>,DB_HOST=<db-host>,DB_PORT=5432' \
 SECRETS='SECRET_KEY=SECRET_KEY:latest,DB_PASSWORD=DB_PASSWORD:latest' \
 ./scripts/cloud_run_migrate_job.sh upsert
 ```
@@ -117,6 +114,5 @@ SERVICE=report-app \
 Notes:
 
 - If `IMAGE` is omitted, the script falls back to `:latest`.
-- `DB_INSTANCE` is only needed when using Cloud SQL.
 - `SECRETS` accepts the same format as `gcloud run jobs create --set-secrets`.
 - Use the same image tag for both the web deploy and the migration job.
