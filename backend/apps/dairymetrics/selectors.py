@@ -1235,14 +1235,8 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                 {
                     "department": department,
                     "member": member,
-                    "totals": totals,
-                    "count_value": _count_value_for_department(department, totals, include_returns=True),
-                    "amount_value": _display_amount_value(totals, include_returns=True),
-                    "location_names": location_names,
-                    "location_summary": " / ".join(location_names) if location_names else "-",
-                    "activity_status": activity_status,
-                    "active_day_count": active_day_count,
                     "metric_rows": metric_rows,
+                    "active_day_count": active_day_count,
                 }
             )
 
