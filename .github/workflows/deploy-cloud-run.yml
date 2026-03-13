@@ -15,6 +15,12 @@ env:
   SERVICE: report-app
   REPOSITORY: report-app
   IMAGE: asia-northeast1-docker.pkg.dev/reportapp-488507/report-app/report-app:${{ github.sha }}
+  MIGRATE_JOB: report-app-migrate
+  MIGRATE_JOB_ENV_VARS: DJANGO_SETTINGS_MODULE=config.settings.prod
+
+concurrency:
+  group: deploy-cloud-run-main
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -52,3 +58,29 @@ jobs:
             --platform=managed \
             --allow-unauthenticated \
             --image="${IMAGE}"
+
+      - name: Upsert migration job
+        env:
+          DB_INSTANCE: ${{ vars.CLOUD_RUN_DB_INSTANCE }}
+          JOB_SECRETS: ${{ vars.CLOUD_RUN_MIGRATE_JOB_SECRETS }}
+          JOB_ENV_VARS: ${{ vars.CLOUD_RUN_MIGRATE_JOB_ENV_VARS }}
+        run: |
+          chmod +x backend/scripts/cloud_run_migrate_job.sh
+          PROJECT_ID="${PROJECT_ID}" \
+          REGION="${REGION}" \
+          REPOSITORY="${REPOSITORY}" \
+          SERVICE="${SERVICE}" \
+          JOB_NAME="${MIGRATE_JOB}" \
+          IMAGE="${IMAGE}" \
+          DB_INSTANCE="${DB_INSTANCE}" \
+          ENV_VARS="${JOB_ENV_VARS:-${MIGRATE_JOB_ENV_VARS}}" \
+          SECRETS="${JOB_SECRETS}" \
+          ./backend/scripts/cloud_run_migrate_job.sh upsert
+
+      - name: Run migration job
+        run: |
+          PROJECT_ID="${PROJECT_ID}" \
+          REGION="${REGION}" \
+          SERVICE="${SERVICE}" \
+          JOB_NAME="${MIGRATE_JOB}" \
+          ./backend/scripts/cloud_run_migrate_job.sh run

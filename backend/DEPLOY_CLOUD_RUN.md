@@ -50,6 +50,28 @@ gcloud builds submit --config cloudbuild.yaml \
   --substitutions _SERVICE=report-app,_REGION=asia-northeast1,_REPOSITORY=report-app
 ```
 
+## 4.1 Deploy with GitHub Actions
+
+This repository also has `.github/workflows/deploy-cloud-run.yml`.
+When `main` is updated, GitHub Actions will:
+
+1. build the backend image
+2. push it to Artifact Registry
+3. deploy `report-app`
+4. upsert the migration job
+5. execute the migration job
+
+Required GitHub secrets:
+
+- `GCP_WORKLOAD_IDENTITY_PROVIDER`
+- `GCP_SERVICE_ACCOUNT`
+
+Optional GitHub repository variables:
+
+- `CLOUD_RUN_DB_INSTANCE`
+- `CLOUD_RUN_MIGRATE_JOB_ENV_VARS`
+- `CLOUD_RUN_MIGRATE_JOB_SECRETS`
+
 ## 5. First deploy checklist
 
 1. Deploy once with `RUN_MIGRATIONS_ON_STARTUP=1`.
