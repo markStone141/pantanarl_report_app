@@ -5,7 +5,6 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member
-from apps.common.report_metrics import collect_actual_totals
 from apps.targets.models import Period
 
 from .models import (
@@ -202,37 +201,6 @@ def _department_totals(member, department, start_date, end_date, *, include_adju
     if include_adjustments:
         adjustments = MetricAdjustment.objects.filter(member=member, department=department, target_date__range=(start_date, end_date))
     return _aggregate_totals(entries, adjustments)
-
-
-def _reported_department_totals(department, start_date, end_date, *, include_adjustments=True):
-    raw_totals = collect_actual_totals(
-        start_date=start_date,
-        end_date=end_date,
-        target_codes=[department.code],
-        include_adjustments=include_adjustments,
-    ).get(department.code, {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0})
-    totals = _zero_totals()
-    totals["support_amount"] = int(raw_totals.get("amount") or 0)
-    totals["cs_count"] = int(raw_totals.get("cs_count") or 0)
-    totals["refugee_count"] = int(raw_totals.get("refugee_count") or 0)
-    if department.code == "WV":
-        totals["result_count"] = 0
-    else:
-        totals["result_count"] = int(raw_totals.get("count") or 0)
-    if include_adjustments:
-        adjustment_return_totals = MetricAdjustment.objects.filter(
-            department=department,
-            target_date__range=(start_date, end_date),
-        ).aggregate(
-            return_postal_count=Sum("return_postal_count"),
-            return_qr_count=Sum("return_qr_count"),
-        )
-        totals["return_postal_count"] = int(adjustment_return_totals.get("return_postal_count") or 0)
-        totals["return_qr_count"] = int(adjustment_return_totals.get("return_qr_count") or 0)
-    else:
-        totals["return_postal_count"] = 0
-        totals["return_qr_count"] = 0
-    return totals
 
 
 def _target_totals(member, department, start_date, end_date):
@@ -924,15 +892,6 @@ def build_member_dashboard_card(
     target_totals = _scope_target_totals(member, department, scope_data)
     goal_count_value = count_value
     goal_amount_value = amount_value
-    if scope_data["scope"] in {"period", "month"}:
-        goal_totals = _reported_department_totals(
-            department,
-            start_date,
-            end_date,
-            include_adjustments=True,
-        )
-        goal_count_value = _count_value_for_department(department, goal_totals, include_returns=True)
-        goal_amount_value = _display_amount_value(goal_totals, include_returns=True)
     goal_completed = (
         target_totals["count"] > 0
         and target_totals["amount"] > 0
