@@ -79,6 +79,9 @@
     if (typeof data.target_form_html === 'string' && targetModalBody) targetModalBody.innerHTML = data.target_form_html;
     if (data.page_subtitle && subtitle) subtitle.textContent = data.page_subtitle;
     if (data.viewed_member_name && viewedMemberName) viewedMemberName.textContent = `表示中: ${data.viewed_member_name}`;
+    if (data.department_code && memberSelect) {
+      applyMemberFilter(data.department_code);
+    }
     window.history.replaceState({}, '', url.toString());
   }
 
@@ -136,6 +139,9 @@
     const changedDepartmentSelect = event.target.closest('[data-department-select]');
     if (changedDepartmentSelect) {
       if (changedDepartmentSelect.value) {
+        if (memberSelect) {
+          applyMemberFilter(changedDepartmentSelect.value);
+        }
         switchDepartment(changedDepartmentSelect.value);
       }
       return;
@@ -150,6 +156,9 @@
           nextUrl.searchParams.set(key, currentUrl.searchParams.get(key));
         }
       });
+      if (memberSelect && activeMemberFilter) {
+        nextUrl.searchParams.set('department', activeMemberFilter);
+      }
       refreshDashboard(nextUrl);
       return;
     }
