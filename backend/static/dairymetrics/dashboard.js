@@ -56,12 +56,16 @@
     if (!target) return;
     target.classList.add('open');
     target.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('dairymetrics-modal-open');
   }
 
   function closeOverlay(target) {
     if (!target) return;
     target.classList.remove('open');
     target.setAttribute('aria-hidden', 'true');
+    if (!(overlay && overlay.classList.contains('open')) && !(targetOverlay && targetOverlay.classList.contains('open'))) {
+      document.body.classList.remove('dairymetrics-modal-open');
+    }
   }
 
   async function refreshDashboard(url) {

@@ -617,7 +617,7 @@
   min-width: 0;
 }
 
-.dairymetrics-field input,
+.dairymetrics-field input:not([type="date"]):not([type="month"]),
 .dairymetrics-field select,
 .dairymetrics-field textarea {
   display: block;
@@ -1346,11 +1346,11 @@
 
 .dairymetrics-sheet {
   width: min(760px, calc(100vw - 28px));
-  max-height: 86vh;
+  max-height: calc(100dvh - 28px);
   overflow: auto;
   background: #fff;
   border-radius: 14px;
-  padding: 14px;
+  padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px));
   box-shadow: 0 18px 46px rgba(0, 0, 0, 0.24);
 }
 
@@ -1422,6 +1422,7 @@
   }
 
   .dairymetrics-entry-grid,
+  .dairymetrics-entry-section-grid,
   .dairymetrics-goal-grid,
   .dairymetrics-insight-grid,
   .dairymetrics-compare-grid,
@@ -1456,7 +1457,7 @@
   }
 
   .dairymetrics-form-actions {
-    flex-direction: row;
+    flex-direction: column;
   }
 
   .dairymetrics-title-row {
@@ -1514,6 +1515,22 @@
     min-width: 0 !important;
     -webkit-appearance: none;
     appearance: none;
+  }
+
+  body.dairymetrics-modal-open .dairymetrics-fab-stack {
+    display: none;
+  }
+
+  .dairymetrics-sheet {
+    width: min(100vw - 16px, 760px);
+    border-radius: 16px;
+    margin: 8px;
+  }
+
+  .dairymetrics-sheet-close {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
   }
 
   .dairymetrics-member-switcher {
