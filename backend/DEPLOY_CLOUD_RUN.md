@@ -61,3 +61,40 @@ gcloud builds submit --config cloudbuild.yaml \
 - Use Secret Manager for `SECRET_KEY` and DB credentials.
 - Keep `RUN_MIGRATIONS_ON_STARTUP=0` for normal runtime.
 - Run schema migrations in release pipeline before traffic cutover.
+
+## 7. Cloud Run Job for migrations
+
+Running migrations in a dedicated Cloud Run Job is safer than doing it during web startup.
+
+Prepare or update the job:
+
+```bash
+cd backend
+chmod +x scripts/cloud_run_migrate_job.sh
+PROJECT_ID=<gcp-project-id> \
+REGION=asia-northeast1 \
+REPOSITORY=report-app \
+SERVICE=report-app \
+IMAGE=asia-northeast1-docker.pkg.dev/<gcp-project-id>/report-app/report-app:<image-tag> \
+DB_INSTANCE=<project:region:instance> \
+ENV_VARS='DJANGO_SETTINGS_MODULE=config.settings.prod,ALLOWED_HOSTS=<host>,CSRF_TRUSTED_ORIGINS=https://<host>' \
+SECRETS='SECRET_KEY=SECRET_KEY:latest,DB_PASSWORD=DB_PASSWORD:latest' \
+./scripts/cloud_run_migrate_job.sh upsert
+```
+
+Execute the job:
+
+```bash
+cd backend
+PROJECT_ID=<gcp-project-id> \
+REGION=asia-northeast1 \
+SERVICE=report-app \
+./scripts/cloud_run_migrate_job.sh run
+```
+
+Notes:
+
+- If `IMAGE` is omitted, the script falls back to `:latest`.
+- `DB_INSTANCE` is only needed when using Cloud SQL.
+- `SECRETS` accepts the same format as `gcloud run jobs create --set-secrets`.
+- Use the same image tag for both the web deploy and the migration job.
