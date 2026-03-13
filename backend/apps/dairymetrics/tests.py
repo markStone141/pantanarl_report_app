@@ -1820,6 +1820,64 @@ class DairyMetricsAdminTests(TestCase):
         self.assertEqual(created_entry.input_source, MemberDailyMetricEntry.SOURCE_ADMIN)
         self.assertEqual(response.json()["updated_count"], 2)
 
+    def test_admin_monthly_bulk_update_keeps_target_member_when_sorted(self):
+        other_member = Member.objects.create(name="Member Alpha")
+        MemberDepartment.objects.create(member=other_member, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            support_amount=1000,
+            result_count=1,
+        )
+        other_entry = MemberDailyMetricEntry.objects.create(
+            member=other_member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            support_amount=5000,
+            result_count=2,
+        )
+        self.client.force_login(self.admin)
+
+        page_response = self.client.get(
+            reverse("dairymetrics_admin_monthly_overview"),
+            {"month": "2026-03", "department": "UN", "sort": "amount"},
+        )
+        self.assertEqual(page_response.status_code, 200)
+        content = page_response.content.decode()
+        self.assertLess(content.find("Member Alpha"), content.find("Member Three"))
+
+        save_response = self.client.post(
+            reverse("dairymetrics_admin_monthly_bulk_update"),
+            data=json.dumps(
+                {
+                    "changes": [
+                        {
+                            "member_id": self.member.id,
+                            "department": self.department.code,
+                            "entry_date": "2026-03-09",
+                            "field": "result_count",
+                            "value": "7",
+                        }
+                    ]
+                }
+            ),
+            content_type="application/json",
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(save_response.status_code, 200)
+        self.assertEqual(
+            MemberDailyMetricEntry.objects.get(
+                member=self.member,
+                department=self.department,
+                entry_date=date(2026, 3, 9),
+            ).result_count,
+            7,
+        )
+        other_entry.refresh_from_db()
+        self.assertEqual(other_entry.result_count, 2)
+
     def test_admin_monthly_bulk_update_updates_adjustment_totals(self):
         MetricAdjustment.objects.create(
             member=self.member,
