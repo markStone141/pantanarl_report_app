@@ -48,7 +48,7 @@ a {
 
 .topbar {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--brand-deep) 84%, white) 0%, color-mix(in srgb, var(--brand-mid) 82%, white) 58%, color-mix(in srgb, var(--brand-light) 78%, white) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--brand-deep) 94%, black 6%) 0%, color-mix(in srgb, var(--brand-mid) 90%, black 10%) 100%);
   color: #f8fbff;
   padding: 16px 20px;
   border-radius: var(--radius-lg);
@@ -868,7 +868,7 @@ th {
     right: 0;
     width: min(84vw, 320px);
     height: 100vh;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--brand-deep) 90%, white) 0%, color-mix(in srgb, var(--brand-mid) 88%, white) 60%, color-mix(in srgb, var(--brand-light) 82%, white) 100%);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--brand-deep) 94%, black 6%) 0%, color-mix(in srgb, var(--brand-mid) 90%, black 10%) 100%);
     padding: 72px 14px 18px;
     z-index: 120;
     display: flex !important;
