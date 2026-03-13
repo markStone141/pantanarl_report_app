@@ -18,6 +18,7 @@ from .selectors import (
     build_admin_daily_overview,
     build_admin_month_comparison,
     build_admin_month_overview,
+    build_member_month_overview,
     build_member_dashboard,
     build_member_ranking_detail,
 )
@@ -273,6 +274,39 @@ def comparison_view(request: HttpRequest) -> HttpResponse:
         "is_admin": request.user.is_staff,
     }
     return render(request, "dairymetrics/comparison.html", context)
+
+
+@require_dairymetrics_member
+def member_monthly_overview(request: HttpRequest) -> HttpResponse:
+    member = get_member_profile(request.user)
+    if not member:
+        return redirect("dairymetrics_dashboard")
+
+    target_month = parse_date(f"{(request.GET.get('month') or timezone.localdate().strftime('%Y-%m'))}-01")
+    if not target_month:
+        target_month = timezone.localdate().replace(day=1)
+    selected_department_code = (request.GET.get("department") or "").strip()
+    active_tab = (request.GET.get("tab") or "field").strip()
+    if active_tab not in {"field", "adjustment"}:
+        active_tab = "field"
+
+    overview = build_member_month_overview(
+        member,
+        target_month=target_month,
+        department_code=selected_department_code,
+        today=timezone.localdate(),
+    )
+    context = {
+        "member": member,
+        "is_admin": request.user.is_staff,
+        "target_month": target_month,
+        "departments": overview["departments"],
+        "selected_department": overview["selected_department"],
+        "month_days": overview["month_days"],
+        "rows": overview["field_rows"] if active_tab == "field" else overview["adjustment_rows"],
+        "active_tab": active_tab,
+    }
+    return render(request, "dairymetrics/member_monthly.html", context)
 
 
 @require_dairymetrics_member

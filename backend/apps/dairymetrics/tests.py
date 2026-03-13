@@ -820,6 +820,60 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertNotContains(response, "dairymetrics-open-entry")
         self.assertNotContains(response, "メンバー一覧へ戻る")
 
+    def test_member_monthly_overview_shows_month_sheet(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            approach_count=7,
+            communication_count=5,
+            cs_count=2,
+            refugee_count=1,
+            support_amount=3500,
+            location_name="Shibuya",
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_member_monthly_overview"),
+            {"month": "2026-03", "department": "WV"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "月次確認シート")
+        self.assertContains(response, "現場実績")
+        self.assertContains(response, "戻り実績")
+        self.assertContains(response, "Member Two")
+        self.assertContains(response, "Shibuya")
+        self.assertContains(response, "CS")
+        self.assertContains(response, "難民")
+
+    def test_member_monthly_overview_adjustment_tab_shows_return_metrics(self):
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 9),
+            source_type="postal",
+            return_postal_count=2,
+            return_postal_amount=3000,
+            return_qr_count=1,
+            return_qr_amount=800,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_member_monthly_overview"),
+            {"month": "2026-03", "department": "WV", "tab": "adjustment"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "郵送件数")
+        self.assertContains(response, "郵送金額")
+        self.assertContains(response, "QR件数")
+        self.assertContains(response, "QR金額")
+        self.assertContains(response, "3,000")
+        self.assertContains(response, "800")
+
 
 class DairyMetricsAdminTests(TestCase):
     def setUp(self):
