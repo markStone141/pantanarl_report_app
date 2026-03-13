@@ -14,7 +14,12 @@
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'report_index' %}">報告一覧へ戻る</a>
+      {% if request.user.is_staff %}
       <a href="{% url 'dashboard_index' %}">管理者ページ</a>
+      <a href="{% url 'dairymetrics_admin_overview' %}">DairyMetrics</a>
+      {% else %}
+      <a href="{% url 'dairymetrics_dashboard' %}">DairyMetrics</a>
+      {% endif %}
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
