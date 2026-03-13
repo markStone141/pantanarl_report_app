@@ -18,6 +18,7 @@ from .forms import DairyMetricsLoginForm, MemberDailyMetricEntryForm, MemberScop
 from .models import MemberDailyMetricEntry, MetricAdjustment
 from .selectors import (
     build_admin_daily_overview,
+    build_admin_ranking_overview,
     build_admin_month_comparison,
     build_admin_month_overview,
     build_member_daily_overview,
@@ -206,22 +207,6 @@ def _default_member_filter_code(viewer_member, filter_departments):
         return "UN"
     return department_codes[0] if department_codes else ""
 
-
-def _resolve_compare_member(request: HttpRequest):
-    viewer_member = get_member_profile(request.user)
-    if viewer_member and not request.user.is_staff:
-        return viewer_member, viewer_member
-
-    selected_member_id = (request.GET.get("member") or "").strip()
-    member_queryset = _member_directory_queryset()
-    target_member = None
-    if selected_member_id:
-        target_member = member_queryset.filter(pk=selected_member_id).first()
-    if not target_member:
-        target_member = member_queryset.first()
-    return viewer_member, target_member
-
-
 def _build_member_dashboard_context(*, request, member, readonly=False, viewer_member=None):
     selected_department_code = (request.GET.get("department") or "").strip()
     selected_scope = (request.GET.get("scope") or "today").strip()
@@ -402,25 +387,16 @@ def member_dashboard(request: HttpRequest, member_id: int) -> HttpResponse:
 def comparison_view(request: HttpRequest) -> HttpResponse:
     if request.user.is_staff:
         return redirect("dairymetrics_admin_overview")
-    viewer_member, member = _resolve_compare_member(request)
-    readonly_compare = False
-    context = _build_member_dashboard_context(
-        request=request,
-        member=member,
-        readonly=readonly_compare,
-        viewer_member=viewer_member,
-    ) if member else {
+    member = get_member_profile(request.user)
+    context = _build_member_dashboard_context(request=request, member=member) if member else {
         "page_title": "DairyMetrics",
         "member": None,
-        "viewer_member": viewer_member,
         "departments": [],
         "selected_department": None,
         "selected_card": None,
         "entry_form": None,
         "is_admin": request.user.is_staff,
     }
-    context["readonly_compare"] = readonly_compare
-    context["compare_member_id"] = member.id if readonly_compare and member else ""
     return render(request, "dairymetrics/comparison.html", context)
 
 
@@ -486,7 +462,7 @@ def member_monthly_overview(request: HttpRequest) -> HttpResponse:
 def comparison_ranking_detail(request: HttpRequest) -> HttpResponse:
     if request.user.is_staff:
         return JsonResponse({"error": "admin_not_supported"}, status=404)
-    _, member = _resolve_compare_member(request)
+    member = get_member_profile(request.user)
     if not member:
         return JsonResponse({"error": "member_not_found"}, status=404)
 
@@ -516,6 +492,33 @@ def comparison_ranking_detail(request: HttpRequest) -> HttpResponse:
             ),
         }
     )
+
+
+@require_dairymetrics_admin
+def admin_ranking_overview(request: HttpRequest) -> HttpResponse:
+    selected_department_code = (request.GET.get("department") or "").strip()
+    selected_scope = (request.GET.get("scope") or "today").strip()
+    selected_start_date = parse_date((request.GET.get("start_date") or "").strip())
+    selected_end_date = parse_date((request.GET.get("end_date") or "").strip())
+    overview = build_admin_ranking_overview(
+        department_code=selected_department_code,
+        scope=selected_scope,
+        start_date=selected_start_date,
+        end_date=selected_end_date,
+        today=timezone.localdate(),
+    )
+    context = {
+        "today": overview["today"],
+        "departments": overview["departments"],
+        "selected_department": overview["selected_department"],
+        "ranking_metrics": overview["ranking_metrics"],
+        "scope_options": overview["scope_options"],
+        "selected_scope": overview["selected_scope"],
+        "scope_summary": overview["scope_summary"],
+        "custom_start_date": overview["custom_start_date"],
+        "custom_end_date": overview["custom_end_date"],
+    }
+    return render(request, "dairymetrics/admin_ranking.html", context)
 
 
 @require_dairymetrics_member

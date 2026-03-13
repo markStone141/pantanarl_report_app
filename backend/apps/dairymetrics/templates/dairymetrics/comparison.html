@@ -21,7 +21,7 @@
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
-      {% if member and not readonly_compare %}<a href="{% url 'dairymetrics_member_overview' %}">活動状況</a>{% endif %}
+      {% if member %}<a href="{% url 'dairymetrics_member_overview' %}">活動状況</a>{% endif %}
       {% if member %}<a href="{% url 'dairymetrics_member_index' %}">メンバーデータ</a>{% endif %}
       <a href="{% url 'dairymetrics_compare' %}">スコア</a>
       {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>{% endif %}
@@ -32,26 +32,6 @@
     </nav>
     <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
   </header>
-
-  {% if is_admin and member_rows %}
-  <section class="card dairymetrics-compare-member-switcher">
-    <form method="get" class="dairymetrics-compare-member-form">
-      <label for="dairymetrics-compare-member-select">対象メンバー</label>
-      <select id="dairymetrics-compare-member-select" name="member" onchange="this.form.submit()">
-        {% for row in member_rows %}
-        <option value="{{ row.member.id }}" {% if member and row.member.id == member.id %}selected{% endif %}>
-          {{ row.member.name }}{% if not row.member.is_active %}（非アクティブ）{% endif %}
-        </option>
-        {% endfor %}
-      </select>
-      {% if selected_department %}<input type="hidden" name="department" value="{{ selected_department.code }}">{% endif %}
-      {% if selected_scope %}<input type="hidden" name="scope" value="{{ selected_scope }}">{% endif %}
-      {% if selected_scope == "custom" and selected_card.custom_start_date %}<input type="hidden" name="start_date" value="{{ selected_card.custom_start_date|date:'Y-m-d' }}">{% endif %}
-      {% if selected_scope == "custom" and selected_card.custom_end_date %}<input type="hidden" name="end_date" value="{{ selected_card.custom_end_date|date:'Y-m-d' }}">{% endif %}
-    </form>
-  </section>
-  {% endif %}
-
   <section class="dairymetrics-grid">
     {% include "dairymetrics/partials/comparison_panel.html" %}
   </section>

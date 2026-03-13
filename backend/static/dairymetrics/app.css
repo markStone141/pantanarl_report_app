@@ -60,26 +60,6 @@
   flex-wrap: wrap;
 }
 
-.dairymetrics-compare-member-switcher {
-  margin-top: 18px;
-}
-
-.dairymetrics-compare-member-form {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.dairymetrics-compare-member-form label {
-  margin: 0;
-  font-weight: 700;
-}
-
-.dairymetrics-compare-member-form select {
-  min-width: 220px;
-}
-
 .dairymetrics-member-select-wrap {
   display: flex;
   align-items: flex-start;
@@ -1591,16 +1571,6 @@
   .dairymetrics-member-switcher {
     display: grid;
     grid-template-columns: 1fr;
-  }
-
-  .dairymetrics-compare-member-form {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .dairymetrics-compare-member-form select {
-    min-width: 0;
-    width: 100%;
   }
 
   .dairymetrics-member-select-wrap {

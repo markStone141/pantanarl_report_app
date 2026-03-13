@@ -576,16 +576,20 @@ def _build_scope_ranking_metrics(member, department, start_date, end_date, *, to
 
 
 def _build_admin_daily_ranking_metrics(department, today):
-    members = _members_with_scope_activity(department, today, today, today_only=True)
+    return _build_admin_scope_ranking_metrics(department, today, today, today_only=True)
+
+
+def _build_admin_scope_ranking_metrics(department, start_date, end_date, *, today_only=False):
+    members = _members_with_scope_activity(department, start_date, end_date, today_only=today_only)
     if not members:
         return []
     member_totals = {
         current_member.id: _department_totals(
             current_member,
             department,
-            today,
-            today,
-            include_adjustments=False,
+            start_date,
+            end_date,
+            include_adjustments=not today_only,
         )
         for current_member in members
     }
@@ -598,8 +602,8 @@ def _build_admin_daily_ranking_metrics(department, today):
                 {
                     "member_id": current_member.id,
                     "member_name": current_member.name,
-                    "value": _metric_value_for_scope(spec["key"], department, totals, include_returns=False),
-                    "value_text": _metric_display_text(spec["key"], department, totals, include_returns=False),
+                    "value": _metric_value_for_scope(spec["key"], department, totals, include_returns=not today_only),
+                    "value_text": _metric_display_text(spec["key"], department, totals, include_returns=not today_only),
                 }
             )
         ranked_rows.sort(key=lambda row: (-(row["value"] if row["value"] is not None else -1), row["member_name"]))
@@ -618,6 +622,60 @@ def _build_admin_daily_ranking_metrics(department, today):
             }
         )
     return metrics
+
+
+def build_admin_ranking_overview(*, department_code="", scope="today", start_date=None, end_date=None, today=None):
+    today_value = today or date.today()
+    departments = list(Department.objects.filter(is_active=True, member_links__member__is_active=True).distinct().order_by("code"))
+    selected_department = None
+    if department_code:
+        selected_department = next((department for department in departments if department.code == department_code), None)
+    if not selected_department and departments:
+        selected_department = departments[0]
+
+    if not selected_department:
+        return {
+            "today": today_value,
+            "departments": [],
+            "selected_department": None,
+            "ranking_metrics": [],
+            "scope_options": [],
+            "selected_scope": "today",
+            "scope_summary": "",
+            "custom_start_date": None,
+            "custom_end_date": None,
+        }
+
+    scope_data = _resolve_scope(
+        today_value,
+        scope,
+        department=selected_department,
+        requested_start_date=start_date,
+        requested_end_date=end_date,
+    )
+    scope_options = [
+        {"value": "today", "label": "今日", "is_active": scope_data["scope"] == "today"},
+        {"value": "period", "label": "今路程", "is_active": scope_data["scope"] == "period", "is_disabled": scope_data["period"] is None},
+        {"value": "month", "label": "今月", "is_active": scope_data["scope"] == "month"},
+        {"value": "custom", "label": "期間指定", "is_active": scope_data["scope"] == "custom"},
+    ]
+    ranking_metrics = _build_admin_scope_ranking_metrics(
+        selected_department,
+        scope_data["start_date"],
+        scope_data["end_date"],
+        today_only=scope_data["scope"] == "today",
+    )
+    return {
+        "today": today_value,
+        "departments": departments,
+        "selected_department": selected_department,
+        "ranking_metrics": ranking_metrics,
+        "scope_options": scope_options,
+        "selected_scope": scope_data["scope"],
+        "scope_summary": scope_data["summary"],
+        "custom_start_date": scope_data.get("custom_start_date"),
+        "custom_end_date": scope_data.get("custom_end_date"),
+    }
 
 
 def _build_scope_average_metrics(member, department, start_date, end_date, *, today_only=False, previous_totals=None, previous_label=None):

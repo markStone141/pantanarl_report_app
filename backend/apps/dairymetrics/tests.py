@@ -1238,6 +1238,72 @@ class DairyMetricsAdminTests(TestCase):
 
         self.assertRedirects(response, reverse("dairymetrics_admin_overview"))
 
+    def test_admin_ranking_overview_shows_today_rankings(self):
+        today = timezone.localdate()
+        teammate = Member.objects.create(name="Ranking Partner")
+        MemberDepartment.objects.create(member=teammate, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            approach_count=3,
+            communication_count=2,
+            result_count=1,
+            support_amount=900,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=teammate,
+            department=self.department,
+            entry_date=today,
+            approach_count=6,
+            communication_count=4,
+            result_count=2,
+            support_amount=2500,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("dairymetrics_admin_ranking_overview"), {"department": "UN"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "全体ランキング")
+        self.assertContains(response, "件数")
+        self.assertContains(response, "Ranking Partner")
+        self.assertContains(response, "Member Three")
+        self.assertContains(response, '?department=UN&scope=month', html=False)
+
+    def test_admin_ranking_overview_supports_month_scope(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            approach_count=3,
+            communication_count=2,
+            result_count=1,
+            support_amount=900,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 10),
+            source_type="postal",
+            return_postal_count=1,
+            return_postal_amount=500,
+            created_by=self.admin,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_admin_ranking_overview"),
+            {"department": "UN", "scope": "month"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "今月")
+        self.assertContains(response, "1,400")
+
     def test_admin_overview_shows_activity_cards_without_submission_summary(self):
         today = timezone.localdate()
         active_member = Member.objects.create(name="Member Active")

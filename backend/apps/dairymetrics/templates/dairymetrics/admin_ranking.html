@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}全体ランキング | DairyMetrics{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=12" />
+{% endblock %}
+
+{% block content %}
+<div class="container dairymetrics-admin-overview-page">
+  {% include "dairymetrics/partials/admin_header.html" with admin_header_subtitle="部署ごとの全体ランキングを期間別に確認します。" %}
+
+  <section class="card dairymetrics-card">
+    <div class="dairymetrics-scope-tabbar" role="tablist" aria-label="表示期間切り替え">
+      {% for option in scope_options %}
+      <a
+        class="dairymetrics-scope-tab {% if option.is_active %}is-active{% endif %}{% if option.is_disabled %} is-disabled{% endif %}"
+        href="{% if option.is_disabled %}#{% else %}{% url 'dairymetrics_admin_ranking_overview' %}?department={{ selected_department.code }}&scope={{ option.value }}{% endif %}"
+        {% if option.is_disabled %}aria-disabled="true"{% endif %}
+      >{{ option.label }}</a>
+      {% endfor %}
+    </div>
+
+    <div class="dairymetrics-card-head">
+      <div>
+        <div class="dairymetrics-title-row">
+          <h2>{% if selected_department %}{{ selected_department.name }} 全体ランキング{% else %}全体ランキング{% endif %}</h2>
+        </div>
+        <div class="muted dairymetrics-scope-summary">{{ scope_summary }}</div>
+      </div>
+      {% if departments|length > 1 %}
+      <div class="dairymetrics-department-toggle" role="tablist" aria-label="部署切り替え">
+        {% for department in departments %}
+        <a
+          class="dairymetrics-toggle-btn {% if selected_department and department.code == selected_department.code %}is-active{% endif %}"
+          href="{% url 'dairymetrics_admin_ranking_overview' %}?department={{ department.code }}&scope={{ selected_scope }}"
+        >{{ department.name }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    {% if selected_scope == "custom" %}
+    <form method="get" action="{% url 'dairymetrics_admin_ranking_overview' %}" class="dairymetrics-range-form">
+      <input type="hidden" name="department" value="{{ selected_department.code }}">
+      <input type="hidden" name="scope" value="custom">
+      <div>
+        <label for="dairymetrics-admin-ranking-start-date">開始日</label>
+        <div class="dairymetrics-date-wrap">
+          <div class="dairymetrics-date-field">
+            <input id="dairymetrics-admin-ranking-start-date" class="dairymetrics-date-input" type="date" name="start_date" value="{{ custom_start_date|date:'Y-m-d' }}">
+          </div>
+        </div>
+      </div>
+      <div>
+        <label for="dairymetrics-admin-ranking-end-date">終了日</label>
+        <div class="dairymetrics-date-wrap">
+          <div class="dairymetrics-date-field">
+            <input id="dairymetrics-admin-ranking-end-date" class="dairymetrics-date-input" type="date" name="end_date" value="{{ custom_end_date|date:'Y-m-d' }}">
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn-inline dairymetrics-secondary-btn">集計する</button>
+    </form>
+    {% endif %}
+
+    {% if ranking_metrics %}
+    <section class="dairymetrics-compare-board">
+      <div class="dairymetrics-compare-grid">
+        {% for metric in ranking_metrics %}
+        <article class="comparison-card dairymetrics-rank-card">
+          <div class="dairymetrics-rank-card-head">
+            <div class="dairymetrics-rank-card-title">
+              <span class="dairymetrics-rank-metric-icon"><i class="fa-solid {{ metric.icon }}" aria-hidden="true"></i></span>
+              <strong>{{ metric.label }}</strong>
+            </div>
+          </div>
+          <div class="dairymetrics-rank-stack">
+            {% for row in metric.rows %}
+            <div class="dairymetrics-rank-row">
+              <span class="dairymetrics-rank-badge">{{ row.rank }}</span>
+              <span class="dairymetrics-rank-name">{{ row.member_name }}</span>
+              <strong class="dairymetrics-rank-value">{{ row.value_text }}</strong>
+            </div>
+            {% endfor %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% else %}
+    <p class="muted">対象期間のランキングデータはまだありません。</p>
+    {% endif %}
+  </section>
+</div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
+{% endblock %}
