@@ -4,7 +4,7 @@
 {% block title %}DairyMetrics ログイン | Report App{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=11" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=12" />
 {% endblock %}
 
 {% block content %}
@@ -14,7 +14,6 @@
       <div>
         <p class="dairymetrics-eyebrow">Daily Input</p>
         <h1>DairyMetrics</h1>
-        <p class="muted">毎日の実績をすばやく入力して、積み上がりを見える化します。</p>
       </div>
     </div>
     <form method="post" class="grid dairymetrics-login-form">
@@ -34,8 +33,20 @@
       <button type="submit">ログイン</button>
     </form>
     <div class="reportapp-login-shortcuts">
-      <a href="{% url 'home' %}">Report App</a>
-      <a href="{% url 'testimony_login' %}?next={% url 'testimony_article_list' %}">Testimony</a>
+      <a href="{% url 'home' %}">
+        <span class="reportapp-login-shortcuts-icon"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span>
+        <span>
+          <strong>Report App</strong>
+          <small>報告入力へ</small>
+        </span>
+      </a>
+      <a href="{% url 'testimony_login' %}?next={% url 'testimony_article_list' %}">
+        <span class="reportapp-login-shortcuts-icon"><i class="fa-solid fa-quote-left" aria-hidden="true"></i></span>
+        <span>
+          <strong>Testimony</strong>
+          <small>証の確認へ</small>
+        </span>
+      </a>
     </div>
   </section>
 </main>
