@@ -923,6 +923,29 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertNotContains(response, "メンバー一覧へ戻る")
         self.assertContains(response, reverse("dairymetrics_member_overview"))
 
+    def test_member_dashboard_allows_scope_switch_links(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            approach_count=7,
+            communication_count=5,
+            support_amount=3500,
+            cs_count=2,
+            refugee_count=1,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_member_dashboard", args=[self.member.id]),
+            {"scope": "month"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '?department=WV&scope=month', html=False)
+        self.assertContains(response, 'dairymetrics-scope-tab is-active', html=False)
+        self.assertContains(response, "今月")
+
     def test_member_monthly_overview_shows_month_sheet(self):
         MemberDailyMetricEntry.objects.create(
             member=self.member,

@@ -101,8 +101,11 @@
 
   document.addEventListener('click', function (event) {
     const scopeToggle = event.target.closest('[data-scope-toggle]');
-    if (scopeToggle && !scopeToggle.disabled) {
+    if (scopeToggle) {
       event.preventDefault();
+      if (scopeToggle.getAttribute('aria-disabled') === 'true') {
+        return;
+      }
       const scope = scopeToggle.getAttribute('data-scope-value');
       if (scope) {
         const url = new URL(window.location.href);
