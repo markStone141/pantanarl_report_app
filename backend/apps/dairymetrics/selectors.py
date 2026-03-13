@@ -140,6 +140,16 @@ def _field_cell(*, field, value, entry_date, editable=True, is_empty=None):
     }
 
 
+def _monthly_sort_value(sort_key, department, entry_totals, field_active_day_count):
+    if sort_key == "amount":
+        return _display_amount_value(entry_totals, include_returns=False)
+    if sort_key == "approach":
+        return int(entry_totals["approach_count"])
+    if sort_key == "count":
+        return _count_value_for_department(department, entry_totals, include_returns=False)
+    return int(field_active_day_count)
+
+
 def _display_amount_value(totals, *, include_returns=False):
     amount_value = int(totals["support_amount"])
     if include_returns:
@@ -1375,7 +1385,7 @@ def build_member_month_overview(member, *, target_month, department_code="", tod
     }
 
 
-def build_admin_month_overview(*, target_month, department_code="", today=None):
+def build_admin_month_overview(*, target_month, department_code="", sort_key="activity_days", today=None):
     today_value = today or date.today()
     departments = list(Department.objects.filter(is_active=True, code__in=["UN", "WV"]).order_by("code"))
     month_start = target_month.replace(day=1)
@@ -1566,6 +1576,7 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                     "metric_rows": field_metric_rows,
                     "active_day_count": field_active_day_count,
                     "day_count_label": "稼働",
+                    "sort_value": _monthly_sort_value(sort_key, department, entry_totals, field_active_day_count),
                 }
             )
 
@@ -1606,8 +1617,12 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                     "metric_rows": adjustment_metric_rows,
                     "active_day_count": adjustment_active_day_count,
                     "day_count_label": "戻り",
+                    "sort_value": _monthly_sort_value(sort_key, department, entry_totals, field_active_day_count),
                 }
             )
+
+    field_rows.sort(key=lambda row: (-row["sort_value"], row["member"].name))
+    adjustment_rows.sort(key=lambda row: (-row["sort_value"], row["member"].name))
 
     return {
         "departments": departments,
@@ -1615,6 +1630,13 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
         "month_days": month_days,
         "field_rows": field_rows,
         "adjustment_rows": adjustment_rows,
+        "selected_sort": sort_key,
+        "sort_options": [
+            {"value": "activity_days", "label": "活動日数"},
+            {"value": "amount", "label": "金額"},
+            {"value": "approach", "label": "AP"},
+            {"value": "count", "label": "件数"},
+        ],
         "activity_summary": {
             "active_count": len(active_today_members),
             "closed_count": len(closed_today_members),

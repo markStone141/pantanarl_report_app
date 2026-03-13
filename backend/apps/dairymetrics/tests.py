@@ -1601,6 +1601,64 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, 'data-field="result_count"', html=False)
         self.assertNotContains(response, 'data-field="count_value"', html=False)
 
+    def test_admin_monthly_overview_defaults_to_activity_day_sort(self):
+        other_member = Member.objects.create(name="Member Alpha")
+        MemberDepartment.objects.create(member=other_member, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            result_count=1,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 10),
+            result_count=1,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=other_member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            result_count=5,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_admin_monthly_overview"),
+            {"month": "2026-03", "department": "UN"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertLess(content.find("Member Three"), content.find("Member Alpha"))
+
+    def test_admin_monthly_overview_can_sort_by_amount(self):
+        other_member = Member.objects.create(name="Member Alpha")
+        MemberDepartment.objects.create(member=other_member, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            support_amount=1000,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=other_member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            support_amount=5000,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_admin_monthly_overview"),
+            {"month": "2026-03", "department": "UN", "sort": "amount"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertLess(content.find("Member Alpha"), content.find("Member Three"))
+
     def test_admin_monthly_update_cell_updates_location_name(self):
         MemberDailyMetricEntry.objects.create(
             member=self.member,

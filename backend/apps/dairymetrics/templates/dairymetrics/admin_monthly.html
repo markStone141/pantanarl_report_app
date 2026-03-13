@@ -38,6 +38,13 @@
               {% endfor %}
             </select>
           </div>
+          <div>
+            <select id="sort" name="sort" aria-label="並び順">
+              {% for option in sort_options %}
+              <option value="{{ option.value }}" {% if selected_sort == option.value %}selected{% endif %}>{{ option.label }}順</option>
+              {% endfor %}
+            </select>
+          </div>
           <button type="submit">更新</button>
         </form>
       </div>
@@ -45,11 +52,11 @@
     <div class="dairymetrics-admin-tabbar" role="tablist" aria-label="月次シート切り替え">
       <a
         class="dairymetrics-admin-tab{% if active_tab == 'field' %} is-active{% endif %}"
-        href="?month={{ target_month|date:'Y-m' }}{% if selected_department %}&department={{ selected_department.code }}{% endif %}&tab=field"
+        href="?month={{ target_month|date:'Y-m' }}{% if selected_department %}&department={{ selected_department.code }}{% endif %}&sort={{ selected_sort }}&tab=field"
       >現場実績</a>
       <a
         class="dairymetrics-admin-tab{% if active_tab == 'adjustment' %} is-active{% endif %}"
-        href="?month={{ target_month|date:'Y-m' }}{% if selected_department %}&department={{ selected_department.code }}{% endif %}&tab=adjustment"
+        href="?month={{ target_month|date:'Y-m' }}{% if selected_department %}&department={{ selected_department.code }}{% endif %}&sort={{ selected_sort }}&tab=adjustment"
       >戻り実績</a>
     </div>
     <div class="dairymetrics-admin-bulk-tools">
