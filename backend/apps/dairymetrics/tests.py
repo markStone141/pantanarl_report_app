@@ -1248,6 +1248,7 @@ class DairyMetricsAdminTests(TestCase):
             support_amount=1500,
             location_name="Shibuya",
             activity_closed=False,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
         )
         closed_entry = MemberDailyMetricEntry.objects.create(
             member=self.member,
@@ -1260,6 +1261,7 @@ class DairyMetricsAdminTests(TestCase):
             location_name="Ikebukuro",
             activity_closed=True,
             activity_closed_at=timezone.now(),
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
         )
         MemberDailyMetricEntry.objects.create(
             member=late_member,
@@ -1271,6 +1273,7 @@ class DairyMetricsAdminTests(TestCase):
             support_amount=2400,
             location_name="Ueno",
             activity_closed=False,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
         )
         MemberDailyMetricEntry.objects.create(
             member=low_member,
@@ -1282,6 +1285,7 @@ class DairyMetricsAdminTests(TestCase):
             support_amount=500,
             location_name="Akabane",
             activity_closed=False,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
         )
         now = timezone.now()
         MemberDailyMetricEntry.objects.filter(pk=active_entry.pk).update(updated_at=now)
@@ -1324,6 +1328,7 @@ class DairyMetricsAdminTests(TestCase):
             result_count=1,
             support_amount=1200,
             activity_closed=False,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
         )
         self.client.force_login(self.admin)
         response = self.client.get(
@@ -1345,6 +1350,7 @@ class DairyMetricsAdminTests(TestCase):
             refugee_count=1,
             support_amount=3000,
             activity_closed=False,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
         )
         self.client.force_login(self.admin)
 

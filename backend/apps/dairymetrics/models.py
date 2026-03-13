@@ -30,7 +30,7 @@ class MemberDailyMetricEntry(models.Model):
     activity_closed = models.BooleanField(default=False)
     activity_closed_at = models.DateTimeField(null=True, blank=True)
     synced_to_report = models.BooleanField(default=False)
-    input_source = models.CharField(max_length=16, choices=SOURCE_CHOICES, default=SOURCE_MEMBER)
+    input_source = models.CharField(max_length=16, choices=SOURCE_CHOICES, default=SOURCE_ADMIN)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
