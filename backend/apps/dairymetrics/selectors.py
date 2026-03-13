@@ -914,7 +914,8 @@ def build_member_dashboard_card(
     count_value = _count_value_for_department(department, scope_totals, include_returns=include_returns)
     amount_value = _display_amount_value(scope_totals, include_returns=include_returns)
     target_totals = _scope_target_totals(member, department, scope_data)
-    goal_totals = scope_totals
+    goal_count_value = count_value
+    goal_amount_value = amount_value
     if scope_data["scope"] in {"period", "month"}:
         goal_totals = _reported_department_totals(
             department,
@@ -922,8 +923,8 @@ def build_member_dashboard_card(
             end_date,
             include_adjustments=True,
         )
-    goal_count_value = _count_value_for_department(department, goal_totals, include_returns=True)
-    goal_amount_value = int(goal_totals["amount"])
+        goal_count_value = _count_value_for_department(department, goal_totals, include_returns=True)
+        goal_amount_value = int(goal_totals["amount"])
     goal_completed = (
         target_totals["count"] > 0
         and target_totals["amount"] > 0
