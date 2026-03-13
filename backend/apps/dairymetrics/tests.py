@@ -1229,6 +1229,7 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "表示中: Member Three")
         self.assertNotContains(response, "Member Threeさんのダッシュボード")
         self.assertNotContains(response, '>ダッシュボード<', html=False)
+        self.assertNotContains(response, ">活動状況<", html=False)
         self.assertNotContains(response, ">スコア<", html=False)
 
     def test_admin_compare_redirects_to_admin_overview(self):
