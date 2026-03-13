@@ -18,6 +18,7 @@ from .selectors import (
     build_admin_daily_overview,
     build_admin_month_comparison,
     build_admin_month_overview,
+    build_member_daily_overview,
     build_member_month_overview,
     build_member_dashboard,
     build_member_ranking_detail,
@@ -274,6 +275,31 @@ def comparison_view(request: HttpRequest) -> HttpResponse:
         "is_admin": request.user.is_staff,
     }
     return render(request, "dairymetrics/comparison.html", context)
+
+
+@require_dairymetrics_member
+def member_overview(request: HttpRequest) -> HttpResponse:
+    member = get_member_profile(request.user)
+    if not member:
+        return redirect("dairymetrics_dashboard")
+
+    selected_department_code = (request.GET.get("department") or "").strip()
+    overview = build_member_daily_overview(
+        member,
+        department_code=selected_department_code,
+        today=timezone.localdate(),
+    )
+    context = {
+        "member": member,
+        "is_admin": request.user.is_staff,
+        "today": overview["today"],
+        "departments": overview["departments"],
+        "selected_department": overview["selected_department"],
+        "submission_summary": overview["submission_summary"],
+        "today_department_totals": overview["today_department_totals"],
+        "activity_cards": overview["activity_cards"],
+    }
+    return render(request, "dairymetrics/member_overview.html", context)
 
 
 @require_dairymetrics_member

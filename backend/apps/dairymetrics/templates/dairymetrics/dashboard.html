@@ -31,7 +31,7 @@
       {% if not readonly_dashboard or viewer_member %}
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
       {% endif %}
-      {% if member and not readonly_dashboard %}<a href="{% url 'dairymetrics_member_monthly_overview' %}">月次確認</a>{% endif %}
+      {% if member and not readonly_dashboard %}<a href="{% url 'dairymetrics_member_overview' %}">実績確認</a>{% endif %}
       {% if viewer_member %}<a href="{% url 'dairymetrics_member_index' %}">メンバーデータ</a>{% endif %}
       {% if member and not readonly_dashboard %}<a href="{% url 'dairymetrics_compare' %}">スコア</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>{% endif %}

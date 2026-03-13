@@ -1050,6 +1050,120 @@ def build_member_ranking_detail(member, *, today=None, department_code=None, sco
     }
 
 
+def build_member_daily_overview(member, *, department_code="", today=None):
+    today_value = today or date.today()
+    departments = list(
+        Department.objects.filter(is_active=True, member_links__member=member).distinct().order_by("code")
+    )
+    selected_department = None
+    if department_code:
+        selected_department = next((department for department in departments if department.code == department_code), None)
+    if not selected_department and departments:
+        selected_department = departments[0]
+
+    if not selected_department:
+        return {
+            "today": today_value,
+            "departments": [],
+            "selected_department": None,
+            "submission_summary": {"target_count": 0, "submitted_count": 0},
+            "today_department_totals": [],
+            "activity_cards": [],
+        }
+
+    today_entry = (
+        MemberDailyMetricEntry.objects.filter(
+            member=member,
+            department=selected_department,
+            entry_date=today_value,
+        )
+        .order_by("-updated_at")
+        .first()
+    )
+
+    if today_entry:
+        totals = {
+            "result_count": int(today_entry.result_count or 0),
+            "cs_count": int(today_entry.cs_count or 0),
+            "refugee_count": int(today_entry.refugee_count or 0),
+            "approach_count": int(today_entry.approach_count or 0),
+            "communication_count": int(today_entry.communication_count or 0),
+            "support_amount": int(today_entry.support_amount or 0),
+        }
+        activity_cards = [
+            {
+                "member": member,
+                "department": selected_department,
+                "status_label": "活動終了" if today_entry.activity_closed else "活動中",
+                "is_closed": today_entry.activity_closed,
+                "updated_at": timezone.localtime(today_entry.updated_at),
+                "count_label": _count_label_for_department(selected_department),
+                "count_text": _count_breakdown_text(selected_department, totals),
+                "count_value": _count_value_for_department(selected_department, totals),
+                "amount_value": int(today_entry.support_amount or 0),
+                "approach_count": int(today_entry.approach_count or 0),
+                "communication_count": int(today_entry.communication_count or 0),
+                "cs_count": int(today_entry.cs_count or 0),
+                "refugee_count": int(today_entry.refugee_count or 0),
+                "location_name": (today_entry.location_name or "").strip(),
+            }
+        ]
+        summary = {"target_count": 0 if today_entry.activity_closed else 1, "submitted_count": 1 if today_entry.activity_closed else 0}
+        department_totals = [
+            {
+                "department": selected_department,
+                "count_label": _count_label_for_department(selected_department),
+                "count_value": _count_value_for_department(selected_department, totals),
+                "amount_value": int(today_entry.support_amount or 0),
+                "approach_count": int(today_entry.approach_count or 0),
+                "communication_count": int(today_entry.communication_count or 0),
+                "cs_count": int(today_entry.cs_count or 0),
+                "refugee_count": int(today_entry.refugee_count or 0),
+            }
+        ]
+    else:
+        activity_cards = [
+            {
+                "member": member,
+                "department": selected_department,
+                "status_label": "未入力",
+                "is_closed": False,
+                "updated_at": None,
+                "count_label": _count_label_for_department(selected_department),
+                "count_text": "-",
+                "count_value": 0,
+                "amount_value": 0,
+                "approach_count": 0,
+                "communication_count": 0,
+                "cs_count": 0,
+                "refugee_count": 0,
+                "location_name": "",
+            }
+        ]
+        summary = {"target_count": 0, "submitted_count": 0}
+        department_totals = [
+            {
+                "department": selected_department,
+                "count_label": _count_label_for_department(selected_department),
+                "count_value": 0,
+                "amount_value": 0,
+                "approach_count": 0,
+                "communication_count": 0,
+                "cs_count": 0,
+                "refugee_count": 0,
+            }
+        ]
+
+    return {
+        "today": today_value,
+        "departments": departments,
+        "selected_department": selected_department,
+        "submission_summary": summary,
+        "today_department_totals": department_totals,
+        "activity_cards": activity_cards,
+    }
+
+
 def build_member_month_overview(member, *, target_month, department_code="", today=None):
     today_value = today or date.today()
     departments = list(

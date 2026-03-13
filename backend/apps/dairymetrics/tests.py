@@ -848,6 +848,41 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "CS")
         self.assertContains(response, "難民")
 
+    def test_member_overview_shows_admin_like_cards(self):
+        today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            approach_count=7,
+            communication_count=5,
+            cs_count=2,
+            refugee_count=1,
+            support_amount=3500,
+            location_name="Shibuya",
+            activity_closed=False,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_member_overview"), {"department": "WV"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "実績確認")
+        self.assertContains(response, "今日の活動状況")
+        self.assertContains(response, "本日の実績")
+        self.assertContains(response, "実績状況")
+        self.assertContains(response, "月次シート")
+        self.assertContains(response, "Shibuya")
+        self.assertContains(response, "活動中")
+
+    def test_dashboard_nav_links_to_member_overview(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("dairymetrics_member_overview"))
+
     def test_member_monthly_overview_adjustment_tab_shows_return_metrics(self):
         MetricAdjustment.objects.create(
             member=self.member,
