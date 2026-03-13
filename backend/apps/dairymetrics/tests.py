@@ -1047,6 +1047,8 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "月次実績シート")
         self.assertContains(response, "月合計")
         self.assertContains(response, "月平均")
+        self.assertContains(response, "現場実績")
+        self.assertContains(response, "戻り・補正")
         self.assertContains(response, "AP")
         self.assertContains(response, "CM")
         self.assertContains(response, "CS")
@@ -1088,11 +1090,54 @@ class DairyMetricsAdminTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Member Three")
-        self.assertContains(response, "稼働 2日")
-        self.assertContains(response, "3")
-        self.assertContains(response, "5,200")
+        self.assertContains(response, "稼働 1日")
+        self.assertContains(response, "2")
+        self.assertContains(response, "4,000")
         self.assertContains(response, "Shibuya")
         self.assertContains(response, "dairymetrics-admin-month-sheet")
+        self.assertNotContains(response, "1,200")
+        self.assertNotContains(response, "戻り・補正 1日")
+
+    def test_admin_monthly_overview_adjustment_tab_shows_returns_and_adjustments(self):
+        target_month = date(2026, 3, 1)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            result_count=2,
+            support_amount=4000,
+            location_name="Shibuya",
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 10),
+            source_type="postal",
+            result_count=1,
+            support_amount=1200,
+            return_postal_count=2,
+            return_postal_amount=5000,
+            return_qr_count=1,
+            return_qr_amount=800,
+            created_by=self.admin,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_admin_monthly_overview"),
+            {"month": target_month.strftime("%Y-%m"), "department": "UN", "tab": "adjustment"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "補正 1日")
+        self.assertContains(response, "郵送件")
+        self.assertContains(response, "郵送金")
+        self.assertContains(response, "QR件")
+        self.assertContains(response, "QR金")
+        self.assertContains(response, "1,200")
+        self.assertContains(response, "5,000")
+        self.assertContains(response, "800")
+        self.assertNotContains(response, "Shibuya")
 
     def test_admin_monthly_overview_filters_by_department(self):
         MemberDailyMetricEntry.objects.create(

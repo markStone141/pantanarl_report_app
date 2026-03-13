@@ -832,6 +832,33 @@
   margin-bottom: 14px;
 }
 
+.dairymetrics-admin-tabbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.dairymetrics-admin-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #c7d6e4;
+  background: #f8fbfe;
+  color: #365168;
+  font-weight: 700;
+}
+
+.dairymetrics-admin-tab.is-active {
+  background: #0f6d8c;
+  border-color: #0f6d8c;
+  color: #fff;
+}
+
 .dairymetrics-admin-activity-section {
   margin-top: 14px;
 }

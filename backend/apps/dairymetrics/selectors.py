@@ -1058,8 +1058,8 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
     if not selected_department and departments:
         selected_department = departments[0]
 
-    rows = []
-    monthly_department_totals = []
+    field_rows = []
+    adjustment_rows = []
     active_today_members = []
     closed_today_members = []
 
@@ -1067,7 +1067,6 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
         if selected_department and department.id != selected_department.id:
             continue
 
-        department_totals = _zero_totals()
         members = Member.objects.active().filter(department_links__department=department).distinct().order_by("name")
         member_ids = list(members.values_list("id", flat=True))
         month_entries = list(
@@ -1084,18 +1083,20 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                 target_date__range=(month_start, month_end),
             ).select_related("member")
         )
-        daily_totals_by_member = {}
+        entry_daily_totals_by_member = {}
+        adjustment_daily_totals_by_member = {}
         location_names_by_member = {}
-        monthly_totals_by_member = {member_id: _zero_totals() for member_id in member_ids}
+        entry_monthly_totals_by_member = {member_id: _zero_totals() for member_id in member_ids}
+        adjustment_monthly_totals_by_member = {member_id: _zero_totals() for member_id in member_ids}
         today_entries_by_member = {}
 
         for entry in month_entries:
             key = (entry.member_id, entry.entry_date)
-            day_totals = daily_totals_by_member.setdefault(key, _zero_totals())
+            day_totals = entry_daily_totals_by_member.setdefault(key, _zero_totals())
             for field in ENTRY_METRIC_FIELDS:
                 value = int(getattr(entry, field, 0) or 0)
                 day_totals[field] += value
-                monthly_totals_by_member[entry.member_id][field] += value
+                entry_monthly_totals_by_member[entry.member_id][field] += value
             if entry.entry_date == today_value:
                 current = today_entries_by_member.get(entry.member_id)
                 if current is None or entry.updated_at > current.updated_at:
@@ -1108,16 +1109,13 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
 
         for adjustment in month_adjustments:
             key = (adjustment.member_id, adjustment.target_date)
-            day_totals = daily_totals_by_member.setdefault(key, _zero_totals())
+            day_totals = adjustment_daily_totals_by_member.setdefault(key, _zero_totals())
             for field in ADJUSTMENT_METRIC_FIELDS:
                 value = int(getattr(adjustment, field, 0) or 0)
                 day_totals[field] += value
-                monthly_totals_by_member[adjustment.member_id][field] += value
+                adjustment_monthly_totals_by_member[adjustment.member_id][field] += value
 
         for member in members:
-            totals = monthly_totals_by_member.get(member.id, _zero_totals())
-            for field in department_totals:
-                department_totals[field] += int(totals.get(field) or 0)
             today_entry = today_entries_by_member.get(member.id)
             if today_entry:
                 if today_entry.activity_closed:
@@ -1129,87 +1127,88 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
             else:
                 activity_status = "未入力"
 
-            location_names = []
-            seen_locations = set()
             member_locations = location_names_by_member.get(member.id, {})
-            for month_day in month_days:
-                for location_name in member_locations.get(month_day["date"], []):
-                    if location_name in seen_locations:
-                        continue
-                    seen_locations.add(location_name)
-                    location_names.append(location_name)
+            entry_totals = entry_monthly_totals_by_member.get(member.id, _zero_totals())
+            adjustment_totals = adjustment_monthly_totals_by_member.get(member.id, _zero_totals())
 
-            active_day_count = sum(
+            field_active_day_count = sum(
+                1
+                for month_day in month_days
+                if any(int(entry_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) > 0 for field in ENTRY_METRIC_FIELDS)
+                or bool(member_locations.get(month_day["date"]))
+            )
+            adjustment_active_day_count = sum(
                 1
                 for month_day in month_days
                 if any(
-                    int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) > 0
-                    for field in ENTRY_METRIC_FIELDS + ["return_postal_count", "return_postal_amount", "return_qr_count", "return_qr_amount"]
+                    int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) > 0
+                    for field in ADJUSTMENT_METRIC_FIELDS
                 )
             )
-            metric_specs = [
+
+            field_metric_specs = [
                 {"label": "AP", "field": "approach_count"},
                 {"label": "CM", "field": "communication_count"},
             ]
             if department.code == "WV":
-                metric_specs.extend(
+                field_metric_specs.extend(
                     [
                         {"label": "CS", "field": "cs_count"},
                         {"label": "難民", "field": "refugee_count"},
                     ]
                 )
             else:
-                metric_specs.append({"label": _count_label_for_department(department), "field": "count_value"})
-            metric_specs.append({"label": "金額", "field": "support_amount"})
+                field_metric_specs.append({"label": _count_label_for_department(department), "field": "count_value"})
+            field_metric_specs.append({"label": "金額", "field": "support_amount"})
 
-            metric_rows = []
-            for spec in metric_specs:
+            field_metric_rows = []
+            for spec in field_metric_specs:
                 field = spec["field"]
                 if field == "count_value":
-                    monthly_total = _count_value_for_department(department, totals, include_returns=True)
-                    monthly_average = round(monthly_total / active_day_count, 1) if active_day_count else "-"
+                    monthly_total = _count_value_for_department(department, entry_totals, include_returns=False)
+                    monthly_average = round(monthly_total / field_active_day_count, 1) if field_active_day_count else "-"
                     cells = [
                         {
                             "value": _count_value_for_department(
                                 department,
-                                daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
-                                include_returns=True,
+                                entry_daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
+                                include_returns=False,
                             ),
                             "is_empty": _count_value_for_department(
                                 department,
-                                daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
-                                include_returns=True,
+                                entry_daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
+                                include_returns=False,
                             ) == 0,
                         }
                         for month_day in month_days
                     ]
                 elif field == "support_amount":
-                    monthly_total = _display_amount_value(totals, include_returns=True)
-                    monthly_average = round(monthly_total / active_day_count, 1) if active_day_count else "-"
+                    monthly_total = _display_amount_value(entry_totals, include_returns=False)
+                    monthly_average = round(monthly_total / field_active_day_count, 1) if field_active_day_count else "-"
                     cells = [
                         {
                             "value": _display_amount_value(
-                                daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
-                                include_returns=True,
+                                entry_daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
+                                include_returns=False,
                             ),
                             "is_empty": _display_amount_value(
-                                daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
-                                include_returns=True,
+                                entry_daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
+                                include_returns=False,
                             ) == 0,
                         }
                         for month_day in month_days
                     ]
                 else:
-                    monthly_total = int(totals[field])
-                    monthly_average = round(int(totals[field]) / active_day_count, 1) if active_day_count else "-"
+                    monthly_total = int(entry_totals[field])
+                    monthly_average = round(int(entry_totals[field]) / field_active_day_count, 1) if field_active_day_count else "-"
                     cells = [
                         {
-                            "value": int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0),
-                            "is_empty": int(daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) == 0,
+                            "value": int(entry_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0),
+                            "is_empty": int(entry_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) == 0,
                         }
                         for month_day in month_days
                     ]
-                metric_rows.append(
+                field_metric_rows.append(
                     {
                         "label": spec["label"],
                         "monthly_total": monthly_total,
@@ -1217,11 +1216,11 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                         "cells": cells,
                     }
                 )
-            metric_rows.append(
+            field_metric_rows.append(
                 {
                     "label": "現場",
                     "monthly_total": "",
-                    "monthly_average": f"{active_day_count}日" if active_day_count else "-",
+                    "monthly_average": f"{field_active_day_count}日" if field_active_day_count else "-",
                     "cells": [
                         {
                             "value": " / ".join(member_locations.get(month_day["date"], [])) or "-",
@@ -1231,30 +1230,103 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                     ],
                 }
             )
-            rows.append(
+            field_rows.append(
                 {
                     "department": department,
                     "member": member,
-                    "metric_rows": metric_rows,
-                    "active_day_count": active_day_count,
+                    "metric_rows": field_metric_rows,
+                    "active_day_count": field_active_day_count,
+                    "day_count_label": "稼働",
                 }
             )
 
-        monthly_department_totals.append(
-            {
-                "department": department,
-                "count_label": _count_label_for_department(department),
-                "count_value": _count_value_for_department(department, department_totals, include_returns=True),
-                "amount_value": _display_amount_value(department_totals, include_returns=True),
-            }
-        )
+            adjustment_metric_specs = [
+                {"label": "AP", "field": "approach_count"},
+                {"label": "CM", "field": "communication_count"},
+            ]
+            if department.code == "WV":
+                adjustment_metric_specs.extend(
+                    [
+                        {"label": "CS", "field": "cs_count"},
+                        {"label": "難民", "field": "refugee_count"},
+                    ]
+                )
+            else:
+                adjustment_metric_specs.append({"label": _count_label_for_department(department), "field": "count_value"})
+            adjustment_metric_specs.extend(
+                [
+                    {"label": "金額", "field": "support_amount"},
+                    {"label": "郵送件", "field": "return_postal_count"},
+                    {"label": "郵送金", "field": "return_postal_amount"},
+                    {"label": "QR件", "field": "return_qr_count"},
+                    {"label": "QR金", "field": "return_qr_amount"},
+                ]
+            )
+            adjustment_metric_rows = []
+            for spec in adjustment_metric_specs:
+                field = spec["field"]
+                if field == "count_value":
+                    monthly_total = _count_value_for_department(department, adjustment_totals, include_returns=False)
+                    monthly_average = round(monthly_total / adjustment_active_day_count, 1) if adjustment_active_day_count else "-"
+                    cells = [
+                        {
+                            "value": _count_value_for_department(
+                                department,
+                                adjustment_daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
+                                include_returns=False,
+                            ),
+                            "is_empty": _count_value_for_department(
+                                department,
+                                adjustment_daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
+                                include_returns=False,
+                            ) == 0,
+                        }
+                        for month_day in month_days
+                    ]
+                elif field in {"support_amount", "return_postal_amount", "return_qr_amount"}:
+                    monthly_total = int(adjustment_totals[field])
+                    monthly_average = round(int(adjustment_totals[field]) / adjustment_active_day_count, 1) if adjustment_active_day_count else "-"
+                    cells = [
+                        {
+                            "value": int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0),
+                            "is_empty": int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) == 0,
+                        }
+                        for month_day in month_days
+                    ]
+                else:
+                    monthly_total = int(adjustment_totals[field])
+                    monthly_average = round(int(adjustment_totals[field]) / adjustment_active_day_count, 1) if adjustment_active_day_count else "-"
+                    cells = [
+                        {
+                            "value": int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0),
+                            "is_empty": int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) == 0,
+                        }
+                        for month_day in month_days
+                    ]
+                adjustment_metric_rows.append(
+                    {
+                        "label": spec["label"],
+                        "monthly_total": monthly_total,
+                        "monthly_average": monthly_average,
+                        "cells": cells,
+                    }
+                )
+            adjustment_rows.append(
+                {
+                    "department": department,
+                    "member": member,
+                    "metric_rows": adjustment_metric_rows,
+                    "active_day_count": adjustment_active_day_count,
+                    "day_count_label": "補正",
+                }
+            )
 
     return {
         "departments": departments,
         "selected_department": selected_department,
         "month_days": month_days,
-        "rows": rows,
-        "monthly_department_totals": monthly_department_totals,
+        "field_rows": field_rows,
+        "adjustment_rows": adjustment_rows,
         "activity_summary": {
             "active_count": len(active_today_members),
             "closed_count": len(closed_today_members),

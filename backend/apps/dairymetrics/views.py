@@ -432,6 +432,9 @@ def admin_monthly_overview(request: HttpRequest) -> HttpResponse:
     if not target_month:
         target_month = timezone.localdate().replace(day=1)
     selected_department_code = (request.GET.get("department") or "").strip()
+    active_tab = (request.GET.get("tab") or "field").strip()
+    if active_tab not in {"field", "adjustment"}:
+        active_tab = "field"
     overview = build_admin_month_overview(
         target_month=target_month,
         department_code=selected_department_code,
@@ -442,8 +445,8 @@ def admin_monthly_overview(request: HttpRequest) -> HttpResponse:
         "departments": overview["departments"],
         "selected_department": overview["selected_department"],
         "month_days": overview["month_days"],
-        "rows": overview["rows"],
-        "monthly_department_totals": overview["monthly_department_totals"],
+        "rows": overview["field_rows"] if active_tab == "field" else overview["adjustment_rows"],
+        "active_tab": active_tab,
         "activity_summary": overview["activity_summary"],
     }
     return render(request, "dairymetrics/admin_monthly.html", context)

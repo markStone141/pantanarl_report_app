@@ -4,7 +4,7 @@
 {% block title %}月次集計 | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=2" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=3" />
 {% endblock %}
 
 {% block content %}
@@ -15,10 +15,17 @@
     <div class="dairymetrics-admin-table-head">
       <div>
         <strong>月次実績シート</strong>
-        <div class="muted">Excel の集計表に近い見た目で、月内の実績を日付ごとに横並びで確認できます。</div>
+        <div class="muted">
+          {% if active_tab == "field" %}
+          現場実績だけを、Excel の集計表に近い見た目で日付ごとに横並び表示します。
+          {% else %}
+          戻りと補正を、現場実績と分けて日付ごとに横並び表示します。
+          {% endif %}
+        </div>
       </div>
       <div class="dairymetrics-admin-table-tools">
         <form method="get" class="dairymetrics-month-filter dairymetrics-month-filter-inline">
+          <input type="hidden" name="tab" value="{{ active_tab }}">
           <div>
             <input id="month" type="month" name="month" value="{{ target_month|date:'Y-m' }}" aria-label="対象月">
           </div>
@@ -34,6 +41,16 @@
           <button type="submit">更新</button>
         </form>
       </div>
+    </div>
+    <div class="dairymetrics-admin-tabbar" role="tablist" aria-label="月次シート切り替え">
+      <a
+        class="dairymetrics-admin-tab{% if active_tab == 'field' %} is-active{% endif %}"
+        href="?month={{ target_month|date:'Y-m' }}{% if selected_department %}&department={{ selected_department.code }}{% endif %}&tab=field"
+      >現場実績</a>
+      <a
+        class="dairymetrics-admin-tab{% if active_tab == 'adjustment' %} is-active{% endif %}"
+        href="?month={{ target_month|date:'Y-m' }}{% if selected_department %}&department={{ selected_department.code }}{% endif %}&tab=adjustment"
+      >戻り・補正</a>
     </div>
     <div class="table-scroll">
       <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-month-sheet">
@@ -71,7 +88,7 @@
               <a href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
                 <strong>{{ row.member.name }}</strong>
               </a>
-              <div class="muted">稼働 {{ row.active_day_count }}日</div>
+              <div class="muted">{{ row.day_count_label }} {{ row.active_day_count }}日</div>
             </td>
             {% endif %}
             <td class="dairymetrics-admin-metric-label">{{ metric_row.label }}</td>
