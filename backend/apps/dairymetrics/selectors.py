@@ -205,12 +205,20 @@ def _department_totals(member, department, start_date, end_date, *, include_adju
 
 
 def _reported_department_totals(department, start_date, end_date, *, include_adjustments=True):
-    totals = collect_actual_totals(
+    raw_totals = collect_actual_totals(
         start_date=start_date,
         end_date=end_date,
         target_codes=[department.code],
         include_adjustments=include_adjustments,
     ).get(department.code, {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0})
+    totals = _zero_totals()
+    totals["support_amount"] = int(raw_totals.get("amount") or 0)
+    totals["cs_count"] = int(raw_totals.get("cs_count") or 0)
+    totals["refugee_count"] = int(raw_totals.get("refugee_count") or 0)
+    if department.code == "WV":
+        totals["result_count"] = 0
+    else:
+        totals["result_count"] = int(raw_totals.get("count") or 0)
     if include_adjustments:
         adjustment_return_totals = MetricAdjustment.objects.filter(
             department=department,
@@ -924,7 +932,7 @@ def build_member_dashboard_card(
             include_adjustments=True,
         )
         goal_count_value = _count_value_for_department(department, goal_totals, include_returns=True)
-        goal_amount_value = int(goal_totals["amount"])
+        goal_amount_value = _display_amount_value(goal_totals, include_returns=True)
     goal_completed = (
         target_totals["count"] > 0
         and target_totals["amount"] > 0
