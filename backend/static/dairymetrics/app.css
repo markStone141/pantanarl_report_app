@@ -633,6 +633,7 @@
 .dairymetrics-range-form input[type="date"],
 .dairymetrics-range-form input[type="month"],
 .dairymetrics-month-filter input[type="month"] {
+  display: block;
   min-inline-size: 0;
   -webkit-min-logical-width: 0;
   inline-size: 100%;
@@ -1484,6 +1485,22 @@
   .dairymetrics-range-form > div,
   .dairymetrics-month-filter > div {
     min-width: 0;
+  }
+
+  .dairymetrics-field input[type="date"],
+  .dairymetrics-field input[type="month"],
+  .dairymetrics-native-date,
+  .dairymetrics-range-form input[type="date"],
+  .dairymetrics-range-form input[type="month"],
+  .dairymetrics-month-filter input[type="month"] {
+    box-sizing: border-box;
+    inline-size: 100% !important;
+    width: 1px !important;
+    max-inline-size: 100%;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   .dairymetrics-member-switcher {
