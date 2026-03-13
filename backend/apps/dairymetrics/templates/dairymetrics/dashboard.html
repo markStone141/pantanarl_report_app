@@ -28,7 +28,9 @@
       <i class="fa-solid fa-bars" aria-hidden="true"></i>
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
+      {% if not readonly_dashboard or viewer_member %}
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
+      {% endif %}
       {% if viewer_member %}<a href="{% url 'dairymetrics_member_index' %}">メンバーデータ</a>{% endif %}
       {% if member and not readonly_dashboard %}<a href="{% url 'dairymetrics_compare' %}">スコア</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>{% endif %}

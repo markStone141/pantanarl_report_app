@@ -879,6 +879,7 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "管理者としてメンバーデータを閲覧中")
         self.assertContains(response, "表示中: Member Three")
         self.assertNotContains(response, "Member Threeさんのダッシュボード")
+        self.assertNotContains(response, '>ダッシュボード<', html=False)
 
     def test_admin_overview_shows_activity_cards_without_submission_summary(self):
         today = timezone.localdate()
