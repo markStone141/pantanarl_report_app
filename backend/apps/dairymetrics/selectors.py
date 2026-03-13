@@ -1484,31 +1484,13 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                     ]
                 )
             else:
-                field_metric_specs.append({"label": _count_label_for_department(department), "field": "count_value"})
+                field_metric_specs.append({"label": _count_label_for_department(department), "field": "result_count"})
             field_metric_specs.append({"label": "金額", "field": "support_amount"})
 
             field_metric_rows = []
             for spec in field_metric_specs:
                 field = spec["field"]
-                if field == "count_value":
-                    monthly_total = _count_value_for_department(department, entry_totals, include_returns=False)
-                    monthly_average = round(monthly_total / field_active_day_count, 1) if field_active_day_count else "-"
-                    cells = []
-                    for month_day in month_days:
-                        count_value = _count_value_for_department(
-                            department,
-                            entry_daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
-                            include_returns=False,
-                        )
-                        cells.append(
-                            _field_cell(
-                                field=field,
-                                value=count_value,
-                                entry_date=month_day["date"],
-                                is_empty=count_value == 0,
-                            )
-                        )
-                elif field == "support_amount":
+                if field == "support_amount":
                     monthly_total = _display_amount_value(entry_totals, include_returns=False)
                     monthly_average = round(monthly_total / field_active_day_count, 1) if field_active_day_count else "-"
                     cells = []

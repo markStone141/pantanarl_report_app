@@ -1380,6 +1380,24 @@ class DairyMetricsAdminTests(TestCase):
         entry.refresh_from_db()
         self.assertEqual(entry.result_count, 5)
 
+    def test_admin_monthly_overview_uses_result_count_field_for_un_count_cells(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            result_count=2,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_admin_monthly_overview"),
+            {"month": "2026-03", "department": self.department.code},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-field="result_count"', html=False)
+        self.assertNotContains(response, 'data-field="count_value"', html=False)
+
     def test_admin_monthly_update_cell_updates_location_name(self):
         MemberDailyMetricEntry.objects.create(
             member=self.member,
