@@ -872,7 +872,12 @@ def build_member_dashboard_card(
     department_members = list(
         Member.objects.active().filter(department_links__department=department).distinct().order_by("name")
     )
-    today_entry = MemberDailyMetricEntry.objects.filter(member=member, department=department, entry_date=today).first()
+    today_entry = MemberDailyMetricEntry.objects.filter(
+        member=member,
+        department=department,
+        entry_date=today,
+        input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+    ).first()
     scope_totals = _department_totals(member, department, start_date, end_date, include_adjustments=include_adjustments)
     previous_totals = _department_totals(
         member,
@@ -1113,6 +1118,7 @@ def build_member_daily_overview(member, *, department_code="", today=None):
                 member=department_member,
                 department=selected_department,
                 entry_date=today_value,
+                input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
             )
             .order_by("-updated_at")
             .first()
@@ -1781,6 +1787,7 @@ def build_admin_daily_overview(*, department_code="", today=None):
                     member=member,
                     department=department,
                     entry_date=today_value,
+                    input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
                 )
                 .order_by("-updated_at")
                 .first()

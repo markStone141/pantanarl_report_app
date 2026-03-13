@@ -7,6 +7,13 @@ from apps.targets.models import Period
 
 
 class MemberDailyMetricEntry(models.Model):
+    SOURCE_MEMBER = "member"
+    SOURCE_ADMIN = "admin"
+    SOURCE_CHOICES = [
+        (SOURCE_MEMBER, "本人入力"),
+        (SOURCE_ADMIN, "管理者編集"),
+    ]
+
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="metric_entries")
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="metric_entries")
     entry_date = models.DateField(default=timezone.localdate)
@@ -23,6 +30,7 @@ class MemberDailyMetricEntry(models.Model):
     activity_closed = models.BooleanField(default=False)
     activity_closed_at = models.DateTimeField(null=True, blank=True)
     synced_to_report = models.BooleanField(default=False)
+    input_source = models.CharField(max_length=16, choices=SOURCE_CHOICES, default=SOURCE_MEMBER)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

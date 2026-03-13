@@ -387,6 +387,33 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(entry.approach_count, 9)
         self.assertEqual(MemberDailyMetricEntry.objects.count(), 1)
         self.assertFalse(entry.activity_closed)
+        self.assertEqual(entry.input_source, MemberDailyMetricEntry.SOURCE_MEMBER)
+
+    def test_entry_form_promotes_admin_created_entry_to_member_source(self):
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            approach_count=5,
+            input_source=MemberDailyMetricEntry.SOURCE_ADMIN,
+        )
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("dairymetrics_entry"),
+            {
+                "department": self.department.id,
+                "entry_date": "2026-03-09",
+                "approach_count": 6,
+                "communication_count": 2,
+                "support_amount": 2000,
+                "cs_count": 1,
+                "refugee_count": 0,
+                "submit_action": "save",
+            },
+        )
+        self.assertRedirects(response, reverse("dairymetrics_dashboard") + "?saved=1")
+        entry.refresh_from_db()
+        self.assertEqual(entry.input_source, MemberDailyMetricEntry.SOURCE_MEMBER)
 
     def test_entry_form_shows_close_activity_button(self):
         self.client.force_login(self.user)
@@ -1335,6 +1362,27 @@ class DairyMetricsAdminTests(TestCase):
         self.assertIn("難民", response.json()["overview_html"])
         self.assertNotIn("更新</button>", response.json()["overview_html"])
 
+    def test_admin_overview_ignores_admin_created_today_entries_for_activity(self):
+        today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            result_count=1,
+            support_amount=1200,
+            activity_closed=False,
+            input_source=MemberDailyMetricEntry.SOURCE_ADMIN,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("dairymetrics_admin_overview"), {"department": "UN"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<span class="dairymetrics-admin-stat-label">活動中</span>', html=False)
+        self.assertContains(response, '<strong class="dairymetrics-admin-stat-value">0</strong>', html=False)
+        self.assertContains(response, '<span class="dairymetrics-admin-stat-label">活動終了</span>', html=False)
+        self.assertContains(response, "本日更新されたメンバーはいません")
+
     def test_admin_monthly_overview_shows_month_totals_and_sheet(self):
         today = timezone.localdate()
         MemberDailyMetricEntry.objects.create(
@@ -1486,6 +1534,54 @@ class DairyMetricsAdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
         entry.refresh_from_db()
         self.assertEqual(entry.result_count, 5)
+        self.assertEqual(entry.input_source, MemberDailyMetricEntry.SOURCE_MEMBER)
+
+    def test_admin_monthly_update_cell_creates_admin_sourced_entry(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("dairymetrics_admin_monthly_update_cell"),
+            {
+                "member_id": self.member.id,
+                "department": self.department.code,
+                "entry_date": "2026-03-09",
+                "field": "result_count",
+                "value": "5",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        entry = MemberDailyMetricEntry.objects.get(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+        )
+        self.assertEqual(entry.input_source, MemberDailyMetricEntry.SOURCE_ADMIN)
+
+    def test_admin_monthly_update_cell_skips_empty_zero_create(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("dairymetrics_admin_monthly_update_cell"),
+            {
+                "member_id": self.member.id,
+                "department": self.department.code,
+                "entry_date": "2026-03-09",
+                "field": "result_count",
+                "value": "0",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            MemberDailyMetricEntry.objects.filter(
+                member=self.member,
+                department=self.department,
+                entry_date=date(2026, 3, 9),
+            ).exists()
+        )
 
     def test_admin_monthly_overview_uses_result_count_field_for_un_count_cells(self):
         MemberDailyMetricEntry.objects.create(
@@ -1656,12 +1752,14 @@ class DairyMetricsAdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
         existing_entry.refresh_from_db()
         self.assertEqual(existing_entry.result_count, 5)
+        self.assertEqual(existing_entry.input_source, MemberDailyMetricEntry.SOURCE_MEMBER)
         created_entry = MemberDailyMetricEntry.objects.get(
             member=self.member,
             department=self.department,
             entry_date=date(2026, 3, 10),
         )
         self.assertEqual(created_entry.approach_count, 9)
+        self.assertEqual(created_entry.input_source, MemberDailyMetricEntry.SOURCE_ADMIN)
         self.assertEqual(response.json()["updated_count"], 2)
 
     def test_admin_monthly_bulk_update_updates_adjustment_totals(self):
@@ -1729,6 +1827,37 @@ class DairyMetricsAdminTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"], "invalid_value")
         self.assertEqual(response.json()["index"], 0)
+
+    def test_admin_monthly_bulk_update_skips_zero_only_changes_without_creating_entries(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("dairymetrics_admin_monthly_bulk_update"),
+            data=json.dumps(
+                {
+                    "changes": [
+                        {
+                            "member_id": self.member.id,
+                            "department": self.department.code,
+                            "entry_date": "2026-03-09",
+                            "field": "result_count",
+                            "value": "0",
+                        }
+                    ]
+                }
+            ),
+            content_type="application/json",
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            MemberDailyMetricEntry.objects.filter(
+                member=self.member,
+                department=self.department,
+                entry_date=date(2026, 3, 9),
+            ).exists()
+        )
 
     def test_admin_monthly_update_cell_rejects_negative_values(self):
         self.client.force_login(self.admin)

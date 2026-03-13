@@ -126,26 +126,43 @@ def _apply_admin_monthly_update(*, member, department, entry_date, field_name, r
         inline_adjustment.save()
         return {"ok": True}, 200
 
-    entry, _ = MemberDailyMetricEntry.objects.get_or_create(
+    if allowed_fields[field_name] == "text":
+        normalized_value = raw_value
+    else:
+        if raw_value == "":
+            normalized_value = 0
+        else:
+            try:
+                normalized_value = int(raw_value)
+            except ValueError:
+                return {"error": "invalid_value"}, 400
+            if normalized_value < 0:
+                return {"error": "invalid_value"}, 400
+
+    entry = MemberDailyMetricEntry.objects.filter(
         member=member,
         department=department,
         entry_date=entry_date,
-    )
+    ).first()
 
-    if allowed_fields[field_name] == "text":
-        setattr(entry, field_name, raw_value)
-    else:
-        if raw_value == "":
-            parsed_value = 0
-        else:
-            try:
-                parsed_value = int(raw_value)
-            except ValueError:
-                return {"error": "invalid_value"}, 400
-            if parsed_value < 0:
-                return {"error": "invalid_value"}, 400
-        setattr(entry, field_name, parsed_value)
+    if entry is None:
+        if allowed_fields[field_name] == "text" and normalized_value == "":
+            return {"ok": True, "skipped": True}, 200
+        if allowed_fields[field_name] == "number" and normalized_value == 0:
+            return {"ok": True, "skipped": True}, 200
+        entry = MemberDailyMetricEntry(
+            member=member,
+            department=department,
+            entry_date=entry_date,
+            input_source=MemberDailyMetricEntry.SOURCE_ADMIN,
+        )
 
+    if getattr(entry, field_name) == normalized_value:
+        return {"ok": True, "skipped": True}, 200
+
+    setattr(entry, field_name, normalized_value)
+    if not entry.pk:
+        entry.input_source = MemberDailyMetricEntry.SOURCE_ADMIN
     entry.save()
     return {"ok": True}, 200
 
@@ -547,6 +564,7 @@ def entry_form(request: HttpRequest) -> HttpResponse:
             saved.pk = existing.pk
             saved.created_at = existing.created_at
         saved.member = member
+        saved.input_source = MemberDailyMetricEntry.SOURCE_MEMBER
         submit_action = (request.POST.get("submit_action") or "save").strip()
         is_closing = submit_action == "close_activity"
         saved.activity_closed = is_closing
