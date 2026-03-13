@@ -36,6 +36,13 @@ class Department(models.Model):
 class Member(models.Model):
     name = models.CharField(max_length=64)
     is_active = models.BooleanField(default=True)
+    default_department = models.ForeignKey(
+        Department,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="default_members",
+    )
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

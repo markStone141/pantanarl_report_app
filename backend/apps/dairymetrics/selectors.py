@@ -47,6 +47,22 @@ RANKING_METRIC_SPECS = [
 ]
 
 
+def _default_department_code_for_member(member, departments):
+    department_map = {department.code: department for department in departments}
+    if getattr(member, "default_department_id", None) and member.default_department:
+        if member.default_department.code in department_map:
+            return member.default_department.code
+    member_department_code = (
+        Department.objects.filter(is_active=True, member_links__member=member)
+        .order_by("code")
+        .values_list("code", flat=True)
+        .first()
+    )
+    if member_department_code and member_department_code in department_map:
+        return member_department_code
+    return departments[0].code if departments else ""
+
+
 def _zero_totals():
     return {field: 0 for field in {*ENTRY_METRIC_FIELDS, *ADJUSTMENT_METRIC_FIELDS}}
 
@@ -994,7 +1010,11 @@ def build_member_dashboard(member, *, today=None, department_code=None, scope="t
             "scope_options": [],
             "selected_scope": "today",
         }
-    selected_department = next((department for department in departments if department.code == department_code), departments[0])
+    default_department_code = _default_department_code_for_member(member, departments)
+    selected_department = next(
+        (department for department in departments if department.code == (department_code or default_department_code)),
+        departments[0],
+    )
     scope_data = _resolve_scope(
         today,
         scope,
@@ -1055,15 +1075,13 @@ def build_member_daily_overview(member, *, department_code="", today=None):
     departments = list(
         Department.objects.filter(is_active=True, member_links__member__is_active=True).distinct().order_by("code")
     )
-    member_departments = list(
-        Department.objects.filter(is_active=True, member_links__member=member).distinct().order_by("code")
-    )
     selected_department = None
     if department_code:
         selected_department = next((department for department in departments if department.code == department_code), None)
-    if not selected_department and member_departments:
+    if not selected_department and departments:
+        default_department_code = _default_department_code_for_member(member, departments)
         selected_department = next(
-            (department for department in departments if department.code == member_departments[0].code),
+            (department for department in departments if department.code == default_department_code),
             None,
         )
     if not selected_department and departments:
@@ -1175,7 +1193,11 @@ def build_member_month_overview(member, *, target_month, department_code="", tod
             "adjustment_rows": [],
         }
 
-    selected_department = next((department for department in departments if department.code == department_code), departments[0])
+    default_department_code = _default_department_code_for_member(member, departments)
+    selected_department = next(
+        (department for department in departments if department.code == (department_code or default_department_code)),
+        departments[0],
+    )
     month_entries = list(
         MemberDailyMetricEntry.objects.filter(
             member=member,

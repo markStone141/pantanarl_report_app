@@ -475,6 +475,31 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertIn('value="7"', payload["form_html"])
         self.assertIn("今日", payload["card_html"])
 
+    def test_dashboard_defaults_to_member_default_department(self):
+        un_department = Department.objects.create(code="UN", name="UN")
+        MemberDepartment.objects.create(member=self.member, department=un_department)
+        self.member.default_department = un_department
+        self.member.save(update_fields=["default_department"])
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '>UN<', html=False)
+        self.assertContains(response, 'value="UN" selected', html=False)
+
+    def test_member_monthly_overview_defaults_to_member_default_department(self):
+        un_department = Department.objects.create(code="UN", name="UN")
+        MemberDepartment.objects.create(member=self.member, department=un_department)
+        self.member.default_department = un_department
+        self.member.save(update_fields=["default_department"])
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_member_monthly_overview"), {"month": "2026-03"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'value="UN" selected', html=False)
+
     def test_dashboard_initial_modal_prefills_existing_entry(self):
         MemberDailyMetricEntry.objects.create(
             member=self.member,
@@ -933,6 +958,31 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(other_response, "Other Department")
         self.assertContains(other_response, "Ueno")
         self.assertNotContains(other_response, "Member Teammate")
+
+    def test_member_overview_defaults_to_member_default_department(self):
+        un_department = Department.objects.create(code="UN", name="UN")
+        other_user = get_user_model().objects.create_user(username="member2default", password="pass123")
+        other_member = Member.objects.create(name="Other Department", user=other_user)
+        MemberDepartment.objects.create(member=other_member, department=un_department)
+        MemberDepartment.objects.create(member=self.member, department=un_department)
+        self.member.default_department = un_department
+        self.member.save(update_fields=["default_department"])
+
+        MemberDailyMetricEntry.objects.create(
+            member=other_member,
+            department=un_department,
+            entry_date=timezone.localdate(),
+            result_count=1,
+            support_amount=1000,
+            location_name="Ueno",
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_member_overview"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'value="UN" selected', html=False)
+        self.assertContains(response, "Other Department")
 
     def test_dashboard_nav_links_to_member_overview(self):
         self.client.force_login(self.user)

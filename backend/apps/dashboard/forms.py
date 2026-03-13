@@ -15,6 +15,12 @@ class MemberRegistrationForm(forms.Form):
         queryset=Department.objects.none(),
         widget=forms.CheckboxSelectMultiple,
     )
+    default_department = forms.ModelChoiceField(
+        label="メイン部署",
+        required=False,
+        queryset=Department.objects.none(),
+        empty_label="未設定",
+    )
     auth_login_id = forms.CharField(
         label="ログインID",
         required=False,

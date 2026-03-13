@@ -92,11 +92,9 @@ def _member_filter_departments(member_rows):
 def _default_member_filter_code(viewer_member, filter_departments):
     department_codes = [department.code for department in filter_departments]
     if viewer_member:
-        viewer_department = (
-            Department.objects.filter(is_active=True, member_links__member=viewer_member)
-            .order_by("code")
-            .first()
-        )
+        if viewer_member.default_department and viewer_member.default_department.code in department_codes:
+            return viewer_member.default_department.code
+        viewer_department = Department.objects.filter(is_active=True, member_links__member=viewer_member).order_by("code").first()
         if viewer_department and viewer_department.code in department_codes:
             return viewer_department.code
     if "UN" in department_codes:

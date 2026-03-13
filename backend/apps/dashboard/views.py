@@ -539,7 +539,9 @@ def dashboard_index(request: HttpRequest) -> HttpResponse:
 
 def _member_form(*, data=None, initial=None) -> MemberRegistrationForm:
     form = MemberRegistrationForm(data=data, initial=initial)
-    form.fields["departments"].queryset = Department.objects.filter(is_active=True)
+    active_departments = Department.objects.filter(is_active=True)
+    form.fields["departments"].queryset = active_departments
+    form.fields["default_department"].queryset = active_departments
     return form
 
 
@@ -798,14 +800,19 @@ def member_settings(request: HttpRequest) -> HttpResponse:
         form = _member_form(data=request.POST)
         if form.is_valid():
             departments = form.cleaned_data["departments"]
+            default_department = form.cleaned_data["default_department"]
             member_name = form.cleaned_data["name"].strip()
             auth_login_id = (form.cleaned_data.get("auth_login_id") or "").strip()
             auth_password = (form.cleaned_data.get("auth_password") or "").strip()
             linked_user = None
 
-            if edit_member_id and edit_member_id.isdigit():
+            if default_department and default_department not in departments:
+                form.add_error("default_department", "メイン部署は所属部署から選択してください。")
+
+            if not form.errors and edit_member_id and edit_member_id.isdigit():
                 member = get_object_or_404(Member, id=int(edit_member_id))
                 member.name = member_name
+                member.default_department = default_department
                 linked_user = member.user
                 if auth_password and not auth_login_id and not linked_user:
                     form.add_error("auth_login_id", "パスワードを設定する場合はログインIDを入力してください。")
@@ -833,9 +840,9 @@ def member_settings(request: HttpRequest) -> HttpResponse:
                         linked_user.set_password(auth_password)
                         linked_user.save(update_fields=["password"])
                     member.user = linked_user
-                    member.save(update_fields=["name", "user"])
+                    member.save(update_fields=["name", "user", "default_department"])
                     status_message = f"{member.name} を更新しました。"
-            else:
+            elif not form.errors:
                 if auth_login_id and not auth_password:
                     form.add_error("auth_password", "新規作成時、ログインIDを設定する場合はパスワードが必要です。")
                 elif auth_password and not auth_login_id:
@@ -853,6 +860,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
                         member = Member.objects.create(
                             name=member_name,
                             user=linked_user,
+                            default_department=default_department,
                         )
                         status_message = f"{member.name} を登録しました。"
 
@@ -873,6 +881,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
                 initial={
                     "name": edit_member.name,
                     "departments": list(edit_member.department_links.values_list("department_id", flat=True)),
+                    "default_department": edit_member.default_department_id,
                     "auth_login_id": edit_member.user.username if edit_member.user else "",
                 }
             )
@@ -881,6 +890,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
 
     members = (
         Member.objects.prefetch_related("department_links")
+        .select_related("default_department")
         .select_related("user")
         .order_by("-is_active", "name")
     )
