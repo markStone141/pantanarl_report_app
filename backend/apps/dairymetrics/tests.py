@@ -1048,7 +1048,7 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "月合計")
         self.assertContains(response, "月平均")
         self.assertContains(response, "現場実績")
-        self.assertContains(response, "戻り・補正")
+        self.assertContains(response, "戻り実績")
         self.assertContains(response, "AP")
         self.assertContains(response, "CM")
         self.assertContains(response, "CS")
@@ -1096,9 +1096,9 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "Shibuya")
         self.assertContains(response, "dairymetrics-admin-month-sheet")
         self.assertNotContains(response, "1,200")
-        self.assertNotContains(response, "戻り・補正 1日")
+        self.assertNotContains(response, "戻り 1日")
 
-    def test_admin_monthly_overview_adjustment_tab_shows_returns_and_adjustments(self):
+    def test_admin_monthly_overview_adjustment_tab_shows_only_return_metrics(self):
         target_month = date(2026, 3, 1)
         MemberDailyMetricEntry.objects.create(
             member=self.member,
@@ -1129,14 +1129,17 @@ class DairyMetricsAdminTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "補正 1日")
+        self.assertContains(response, "戻り 1日")
         self.assertContains(response, "郵送件")
         self.assertContains(response, "郵送金")
         self.assertContains(response, "QR件")
         self.assertContains(response, "QR金")
-        self.assertContains(response, "1,200")
         self.assertContains(response, "5,000")
         self.assertContains(response, "800")
+        self.assertNotContains(response, ">AP<", html=False)
+        self.assertNotContains(response, ">CM<", html=False)
+        self.assertNotContains(response, ">件数<", html=False)
+        self.assertNotContains(response, ">金額<", html=False)
         self.assertNotContains(response, "Shibuya")
 
     def test_admin_monthly_overview_filters_by_department(self):

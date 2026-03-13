@@ -19,7 +19,7 @@
           {% if active_tab == "field" %}
           現場実績だけを、Excel の集計表に近い見た目で日付ごとに横並び表示します。
           {% else %}
-          戻りと補正を、現場実績と分けて日付ごとに横並び表示します。
+          郵送と QR の戻り実績だけを、現場実績と分けて日付ごとに横並び表示します。
           {% endif %}
         </div>
       </div>
@@ -50,7 +50,7 @@
       <a
         class="dairymetrics-admin-tab{% if active_tab == 'adjustment' %} is-active{% endif %}"
         href="?month={{ target_month|date:'Y-m' }}{% if selected_department %}&department={{ selected_department.code }}{% endif %}&tab=adjustment"
-      >戻り・補正</a>
+      >戻り実績</a>
     </div>
     <div class="table-scroll">
       <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-month-sheet">

@@ -1241,68 +1241,23 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
             )
 
             adjustment_metric_specs = [
-                {"label": "AP", "field": "approach_count"},
-                {"label": "CM", "field": "communication_count"},
+                {"label": "郵送件", "field": "return_postal_count"},
+                {"label": "郵送金", "field": "return_postal_amount"},
+                {"label": "QR件", "field": "return_qr_count"},
+                {"label": "QR金", "field": "return_qr_amount"},
             ]
-            if department.code == "WV":
-                adjustment_metric_specs.extend(
-                    [
-                        {"label": "CS", "field": "cs_count"},
-                        {"label": "難民", "field": "refugee_count"},
-                    ]
-                )
-            else:
-                adjustment_metric_specs.append({"label": _count_label_for_department(department), "field": "count_value"})
-            adjustment_metric_specs.extend(
-                [
-                    {"label": "金額", "field": "support_amount"},
-                    {"label": "郵送件", "field": "return_postal_count"},
-                    {"label": "郵送金", "field": "return_postal_amount"},
-                    {"label": "QR件", "field": "return_qr_count"},
-                    {"label": "QR金", "field": "return_qr_amount"},
-                ]
-            )
             adjustment_metric_rows = []
             for spec in adjustment_metric_specs:
                 field = spec["field"]
-                if field == "count_value":
-                    monthly_total = _count_value_for_department(department, adjustment_totals, include_returns=False)
-                    monthly_average = round(monthly_total / adjustment_active_day_count, 1) if adjustment_active_day_count else "-"
-                    cells = [
-                        {
-                            "value": _count_value_for_department(
-                                department,
-                                adjustment_daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
-                                include_returns=False,
-                            ),
-                            "is_empty": _count_value_for_department(
-                                department,
-                                adjustment_daily_totals_by_member.get((member.id, month_day["date"]), _zero_totals()),
-                                include_returns=False,
-                            ) == 0,
-                        }
-                        for month_day in month_days
-                    ]
-                elif field in {"support_amount", "return_postal_amount", "return_qr_amount"}:
-                    monthly_total = int(adjustment_totals[field])
-                    monthly_average = round(int(adjustment_totals[field]) / adjustment_active_day_count, 1) if adjustment_active_day_count else "-"
-                    cells = [
-                        {
-                            "value": int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0),
-                            "is_empty": int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) == 0,
-                        }
-                        for month_day in month_days
-                    ]
-                else:
-                    monthly_total = int(adjustment_totals[field])
-                    monthly_average = round(int(adjustment_totals[field]) / adjustment_active_day_count, 1) if adjustment_active_day_count else "-"
-                    cells = [
-                        {
-                            "value": int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0),
-                            "is_empty": int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) == 0,
-                        }
-                        for month_day in month_days
-                    ]
+                monthly_total = int(adjustment_totals[field])
+                monthly_average = round(int(adjustment_totals[field]) / adjustment_active_day_count, 1) if adjustment_active_day_count else "-"
+                cells = [
+                    {
+                        "value": int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0),
+                        "is_empty": int(adjustment_daily_totals_by_member.get((member.id, month_day["date"]), {}).get(field) or 0) == 0,
+                    }
+                    for month_day in month_days
+                ]
                 adjustment_metric_rows.append(
                     {
                         "label": spec["label"],
@@ -1317,7 +1272,7 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
                     "member": member,
                     "metric_rows": adjustment_metric_rows,
                     "active_day_count": adjustment_active_day_count,
-                    "day_count_label": "補正",
+                    "day_count_label": "戻り",
                 }
             )
 
