@@ -1,0 +1,150 @@
+{% load humanize %}
+<section class="dairymetrics-admin-hero">
+  <article class="card dairymetrics-admin-summary-card">
+    <div class="dairymetrics-admin-summary-head">
+      <div>
+        <strong>今日の活動状況</strong>
+        <div class="muted">活動カードで進捗と終了状態を確認できます。</div>
+      </div>
+      <div class="dairymetrics-admin-inline-filter">
+        <div class="muted dairymetrics-admin-inline-date">{{ today|date:'Y/m/d' }}</div>
+        <select
+          id="department"
+          name="department"
+          aria-label="部署"
+          data-admin-overview-department
+        >
+          {% for department in departments %}
+          <option value="{{ department.code }}" {% if selected_department and selected_department.code == department.code %}selected{% endif %}>
+            {{ department.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="dairymetrics-admin-stat-grid">
+      <div class="dairymetrics-admin-stat">
+        <span class="dairymetrics-admin-stat-label">活動中</span>
+        <strong class="dairymetrics-admin-stat-value">{{ submission_summary.target_count }}</strong>
+      </div>
+      <div class="dairymetrics-admin-stat is-closed">
+        <span class="dairymetrics-admin-stat-label">活動終了</span>
+        <strong class="dairymetrics-admin-stat-value">{{ submission_summary.submitted_count }}</strong>
+      </div>
+    </div>
+  </article>
+
+  <article class="card dairymetrics-admin-summary-card">
+    <div class="dairymetrics-admin-summary-head">
+      <div>
+        <strong>本日の実績</strong>
+        <div class="muted">今日入力された件数と金額です。</div>
+      </div>
+    </div>
+    <div class="dairymetrics-admin-total-list">
+      {% for total in today_department_totals %}
+      <div class="dairymetrics-admin-total-item">
+        <div class="dairymetrics-admin-total-title">{{ total.department.name }} ({{ total.department.code }})</div>
+        <div class="dairymetrics-admin-total-meta">
+          {% if total.department.code == "WV" %}
+          CS {{ total.cs_count }} / 難民 {{ total.refugee_count }} / 金額 {{ total.amount_value|intcomma }}
+          {% else %}
+          {{ total.count_label }} {{ total.count_value }} / 金額 {{ total.amount_value|intcomma }}
+          {% endif %}
+        </div>
+        <div class="muted">AP {{ total.approach_count }} / CM {{ total.communication_count }}</div>
+      </div>
+      {% empty %}
+      <p class="muted">対象部署の本日データはありません。</p>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+<section class="card dairymetrics-admin-activity-section">
+  <div class="dairymetrics-admin-summary-head">
+    <div>
+      <strong>メンバー実績状況</strong>
+      <div class="muted">本日更新された順に表示します。</div>
+    </div>
+  </div>
+  <div class="dairymetrics-admin-activity-grid">
+    {% for row in activity_cards %}
+    <a class="dairymetrics-admin-activity-card" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
+      <div class="dairymetrics-admin-activity-head">
+        <div>
+          <div class="dairymetrics-admin-activity-name">{{ row.member.name }}</div>
+          <div class="muted">{{ row.department.code }} / {{ row.updated_at|date:'H:i' }} 更新</div>
+        </div>
+        <span class="dairymetrics-admin-status {% if row.is_closed %}is-closed{% else %}is-active{% endif %}">
+          {{ row.status_label }}
+        </span>
+      </div>
+      <table class="dairymetrics-admin-activity-table">
+        <thead>
+          <tr>
+            <th>AP</th>
+            <th>CM</th>
+            {% if row.department.code == "WV" %}
+            <th>CS</th>
+            <th>難民</th>
+            {% else %}
+            <th>{{ row.count_label }}</th>
+            {% endif %}
+            <th>金額</th>
+            <th>現場</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ row.approach_count }}</td>
+            <td>{{ row.communication_count }}</td>
+            {% if row.department.code == "WV" %}
+            <td>{{ row.cs_count }}</td>
+            <td>{{ row.refugee_count }}</td>
+            {% else %}
+            <td>{{ row.count_value }}</td>
+            {% endif %}
+            <td>{{ row.amount_value|intcomma }}</td>
+            <td>{{ row.location_name|default:"-" }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </a>
+    {% empty %}
+    <p class="muted">本日更新されたメンバーはいません。</p>
+    {% endfor %}
+  </div>
+</section>
+
+{% if ranking_metrics %}
+<section class="card dairymetrics-admin-ranking-section">
+  <div class="dairymetrics-admin-summary-head">
+    <div>
+      <strong>今日のランキング</strong>
+      <div class="muted">本日分の入力だけで全員の順位を表示します。</div>
+    </div>
+  </div>
+  <div class="dairymetrics-admin-ranking-grid">
+    {% for metric in ranking_metrics %}
+    <article class="comparison-card dairymetrics-rank-card">
+      <div class="dairymetrics-rank-card-head">
+        <div class="dairymetrics-rank-card-title">
+          <span class="dairymetrics-rank-metric-icon"><i class="fa-solid {{ metric.icon }}" aria-hidden="true"></i></span>
+          <strong>{{ metric.label }}</strong>
+        </div>
+      </div>
+      <div class="dairymetrics-rank-stack">
+        {% for row in metric.rows %}
+        <div class="dairymetrics-rank-row">
+          <span class="dairymetrics-rank-badge">{{ row.rank }}</span>
+          <span class="dairymetrics-rank-name">{{ row.member_name }}</span>
+          <strong class="dairymetrics-rank-value">{{ row.value_text }}</strong>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

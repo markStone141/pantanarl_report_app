@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.dairymetrics.models import MemberDailyMetricEntry
 from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
 from apps.targets.models import MonthTargetMetricValue, TargetMetric
 
@@ -239,6 +240,71 @@ class ReportSubmitFlowTests(TestCase):
         self.assertEqual(line.member_id, member_1.id)
         self.assertEqual(line.amount, 5000)
         self.assertEqual(line.count, 5)
+
+    def test_report_form_prefills_closed_dairymetrics_entries(self):
+        today = timezone.localdate()
+        department = Department.objects.create(name="UN", code="UN")
+        reporter = Member.objects.create(name="Leader", login_id="prefill_leader", password="x")
+        closed_member = Member.objects.create(name="Closed", login_id="prefill_closed", password="x")
+        active_member = Member.objects.create(name="Active", login_id="prefill_active", password="x")
+        for member in (reporter, closed_member, active_member):
+            MemberDepartment.objects.create(member=member, department=department)
+
+        MemberDailyMetricEntry.objects.create(
+            member=closed_member,
+            department=department,
+            entry_date=today,
+            result_count=2,
+            support_amount=4300,
+            activity_closed=True,
+            activity_closed_at=timezone.now(),
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=active_member,
+            department=department,
+            entry_date=today,
+            result_count=1,
+            support_amount=1200,
+            activity_closed=False,
+        )
+
+        response = self.client.get(reverse("report_un"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["row_values"][0]["member_id"], str(closed_member.id))
+        self.assertEqual(response.context["row_values"][0]["count"], "2")
+        self.assertEqual(response.context["row_values"][0]["amount"], "4300")
+        self.assertContains(response, "活動終了")
+        self.assertContains(response, "Closed")
+        self.assertContains(response, "活動中")
+        self.assertContains(response, "Active")
+
+    def test_wv_report_form_prefills_closed_dairymetrics_split_counts(self):
+        today = timezone.localdate()
+        department = Department.objects.create(name="WV", code="WV")
+        reporter = Member.objects.create(name="Leader", login_id="wv_prefill_leader", password="x")
+        closed_member = Member.objects.create(name="Closed WV", login_id="wv_prefill_closed", password="x")
+        for member in (reporter, closed_member):
+            MemberDepartment.objects.create(member=member, department=department)
+
+        MemberDailyMetricEntry.objects.create(
+            member=closed_member,
+            department=department,
+            entry_date=today,
+            cs_count=2,
+            refugee_count=1,
+            support_amount=5100,
+            activity_closed=True,
+            activity_closed_at=timezone.now(),
+        )
+
+        response = self.client.get(reverse("report_wv"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["row_values"][0]["member_id"], str(closed_member.id))
+        self.assertEqual(response.context["row_values"][0]["cs_count"], "2")
+        self.assertEqual(response.context["row_values"][0]["refugee_count"], "1")
+        self.assertEqual(response.context["row_values"][0]["amount"], "5100")
 
     def test_report_edit_updates_existing_report_and_lines(self):
         today_str = timezone.localdate().isoformat()

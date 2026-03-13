@@ -1,0 +1,20 @@
+<section class="dairymetrics-ranking-detail">
+  <div class="dairymetrics-ranking-detail-head">
+    <div class="dairymetrics-rank-card-title">
+      <span class="dairymetrics-rank-metric-icon"><i class="fa-solid {{ metric.icon }}" aria-hidden="true"></i></span>
+      <div>
+        <h3>{{ metric.label }}</h3>
+        <div class="muted">{{ selected_card.department.name }} / {{ selected_card.scope_label }} / {{ selected_card.scope_summary }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="dairymetrics-ranking-detail-stack">
+    {% for row in metric.rows %}
+    <div class="dairymetrics-rank-row{% if row.is_self %} is-self{% endif %}">
+      <span class="dairymetrics-rank-badge">{{ row.rank }}</span>
+      <span class="dairymetrics-rank-name">{{ row.member_name }}</span>
+      <strong class="dairymetrics-rank-value">{{ row.value_text }}</strong>
+    </div>
+    {% endfor %}
+  </div>
+</section>

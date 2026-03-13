@@ -1,0 +1,270 @@
+{% load humanize %}
+{% if selected_card %}
+<article class="card dairymetrics-card" data-department-code="{{ selected_card.department.code }}">
+  <div class="dairymetrics-scope-tabbar" role="tablist" aria-label="表示期間切り替え">
+    {% for option in scope_options %}
+    <button
+      type="button"
+      class="dairymetrics-scope-tab {% if option.is_active %}is-active{% endif %}"
+      data-scope-toggle
+      data-scope-value="{{ option.value }}"
+      {% if option.is_disabled %}disabled{% endif %}
+      aria-pressed="{% if option.is_active %}true{% else %}false{% endif %}"
+    >{{ option.label }}</button>
+    {% endfor %}
+  </div>
+  {% if selected_card.scope != "custom" %}
+  <section class="dairymetrics-goal-hero {% if selected_card.goal_completed %}is-complete{% endif %}">
+    <div class="dairymetrics-goal-hero-head">
+      <div>
+        <h3>
+          目標達成率
+          {% if selected_card.goal_completed %}
+          <span class="dairymetrics-goal-complete-icon" title="目標達成" aria-label="目標達成">
+            <i class="fa-solid fa-crown" aria-hidden="true"></i>
+          </span>
+          {% endif %}
+        </h3>
+      </div>
+      {% if not readonly_dashboard and selected_card.scope == "today" and not selected_card.has_target %}
+      <button type="button" class="btn-inline dairymetrics-goal-cta" data-open-dairymetrics-entry>目標を入力</button>
+      {% elif not readonly_dashboard and selected_card.can_edit_scope_target %}
+      <button type="button" class="btn-inline dairymetrics-goal-cta" data-open-dairymetrics-target>
+        {% if selected_card.has_target %}目標を編集{% else %}目標を設定{% endif %}
+      </button>
+      {% endif %}
+    </div>
+    <div class="dairymetrics-goal-grid">
+      <div class="metric-card">
+        <span class="muted">{{ selected_card.count_label }}</span>
+        <strong class="kpi">
+          {% if selected_card.target_count %}
+          {{ selected_card.count_value }}/{{ selected_card.target_count }}
+          {% else %}
+          {{ selected_card.count_value }}/-
+          {% endif %}
+        </strong>
+        <span class="muted dairymetrics-subtext">達成率 {{ selected_card.count_rate_text }}</span>
+        {% if selected_card.target_count %}
+        <span class="muted dairymetrics-subtext">残り {{ selected_card.count_remaining }}</span>
+        {% else %}
+        <span class="muted dairymetrics-subtext">残り -</span>
+        {% endif %}
+      </div>
+      <div class="metric-card">
+        <span class="muted">金額</span>
+        <strong class="kpi">
+          {% if selected_card.target_amount %}
+          {{ selected_card.amount_value|intcomma }}/{{ selected_card.target_amount|intcomma }}
+          {% else %}
+          {{ selected_card.amount_value|intcomma }}/-
+          {% endif %}
+        </strong>
+        <span class="muted dairymetrics-subtext">達成率 {{ selected_card.amount_rate_text }}</span>
+        {% if selected_card.target_amount %}
+        <span class="muted dairymetrics-subtext">残り {{ selected_card.amount_remaining|intcomma }}</span>
+        {% else %}
+        <span class="muted dairymetrics-subtext">残り -</span>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+  {% if readonly_dashboard %}
+  <div id="dairymetrics-viewed-member-name" class="muted">表示中: {{ member.name }}</div>
+  {% endif %}
+  {% if selected_card.scope == "custom" %}
+  <form method="get" action="{% url 'dairymetrics_dashboard' %}" class="dairymetrics-range-form">
+    <input type="hidden" name="department" value="{{ selected_card.department.code }}">
+    <input type="hidden" name="scope" value="custom">
+    <div>
+      <label for="dairymetrics-start-date">開始日</label>
+      <input id="dairymetrics-start-date" type="date" name="start_date" value="{{ selected_card.custom_start_date|date:'Y-m-d' }}">
+    </div>
+    <div>
+      <label for="dairymetrics-end-date">終了日</label>
+      <input id="dairymetrics-end-date" type="date" name="end_date" value="{{ selected_card.custom_end_date|date:'Y-m-d' }}">
+    </div>
+    <button type="submit" class="btn-inline dairymetrics-secondary-btn">集計する</button>
+  </form>
+  {% endif %}
+  <div class="dairymetrics-card-head">
+    <div>
+      <div class="dairymetrics-title-row">
+        <h2>{{ selected_card.department.name }}</h2>
+        {% if selected_card.scope == "today" %}
+        <div class="badge dairymetrics-status-badge {% if selected_card.activity_status == '未入力' %}is-empty{% elif selected_card.activity_status == '活動中' %}is-active{% elif selected_card.activity_status == '活動終了' %}is-closed{% endif %}">{{ selected_card.activity_status }}</div>
+        {% endif %}
+      </div>
+      <div class="muted dairymetrics-scope-summary">{{ selected_card.scope_label }}: {{ selected_card.scope_summary }}</div>
+    </div>
+    {% if departments|length > 1 %}
+    <div class="dairymetrics-department-select-wrap">
+      <label for="dairymetrics-department-select" class="muted">部署</label>
+      <select id="dairymetrics-department-select" data-department-select>
+        {% for department in departments %}
+        <option value="{{ department.code }}" {% if selected_department and department.code == selected_department.code %}selected{% endif %}>{{ department.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+  </div>
+  <div class="dairymetrics-card-actions">
+    {% if not readonly_dashboard %}
+    <a class="btn-inline dairymetrics-desktop-entry-btn" href="{% url 'dairymetrics_entry' %}?department={{ selected_card.department.code }}">入力する</a>
+    <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_compare' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">スコアを見る</a>
+    {% endif %}
+  </div>
+  <div class="grid grid-2 dairymetrics-stat-grid">
+    {% if selected_card.scope == "custom" %}
+    <div class="metric-card">
+      <span class="muted">合計{{ selected_card.count_label }}</span>
+      <strong class="kpi">{{ selected_card.count_value }}</strong>
+      <span class="muted dairymetrics-subtext">{{ selected_card.count_text }}</span>
+    </div>
+    <div class="metric-card">
+      <span class="muted">一日平均{{ selected_card.count_label }}</span>
+      <strong class="kpi">{{ selected_card.count_average }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="muted">合計金額</span>
+      <strong class="kpi">{{ selected_card.amount_value|intcomma }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="muted">一日平均金額</span>
+      <strong class="kpi">{{ selected_card.amount_average|intcomma }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="muted">コミュ率</span>
+      <strong class="kpi">{{ selected_card.communication_rate_text }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="muted">参加率</span>
+      <strong class="kpi">{{ selected_card.participation_rate_text }}</strong>
+    </div>
+    <div class="metric-card dairymetrics-metric-wide">
+      <span class="muted">平均支援額</span>
+      <strong class="kpi">{{ selected_card.average_support_amount_text }}</strong>
+    </div>
+    {% else %}
+    <div class="metric-card">
+      <span class="muted">アプローチ</span>
+      {% if selected_card.show_average_metrics %}
+      <strong>{{ selected_card.approach_average }} / {{ selected_card.scope_totals.approach_count }}</strong>
+      {% else %}
+      <strong>{{ selected_card.scope_totals.approach_count }}</strong>
+      {% endif %}
+    </div>
+    <div class="metric-card">
+      <span class="muted">コミュ率</span>
+      <strong class="kpi">{{ selected_card.communication_rate_text }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="muted">コミュニケーション</span>
+      {% if selected_card.show_average_metrics %}
+      <strong>{{ selected_card.communication_average }} / {{ selected_card.scope_totals.communication_count }}</strong>
+      {% else %}
+      <strong>{{ selected_card.scope_totals.communication_count }}</strong>
+      {% endif %}
+    </div>
+    <div class="metric-card">
+      <span class="muted">参加率</span>
+      <strong class="kpi">{{ selected_card.participation_rate_text }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="muted">{{ selected_card.count_label }}</span>
+      <strong class="kpi">{{ selected_card.count_value }}</strong>
+      <span class="muted dairymetrics-subtext">{{ selected_card.count_text }}</span>
+    </div>
+    <div class="metric-card">
+      <span class="muted">支援金額</span>
+      <strong class="kpi">{{ selected_card.amount_value|intcomma }}</strong>
+    </div>
+    <div class="metric-card dairymetrics-metric-wide">
+      <span class="muted">平均支援額</span>
+      <strong class="kpi">{{ selected_card.average_support_amount_text }}</strong>
+    </div>
+    {% endif %}
+  </div>
+  {% if selected_card.show_best_day %}
+  <div class="dairymetrics-insight-grid">
+    <div class="comparison-card">
+      <span class="muted">{{ selected_card.count_label }} ベスト</span>
+      {% if selected_card.best_records.count %}
+      <strong>{{ selected_card.best_records.count.date|date:"n/j" }}</strong>
+      <span class="muted dairymetrics-subtext">{{ selected_card.best_records.count.count_text }}</span>
+      {% else %}
+      <strong>-</strong>
+      <span class="muted dairymetrics-subtext">まだ記録がありません</span>
+      {% endif %}
+    </div>
+    <div class="comparison-card">
+      <span class="muted">金額 ベスト</span>
+      {% if selected_card.best_records.amount %}
+      <strong>{{ selected_card.best_records.amount.date|date:"n/j" }}</strong>
+      <span class="muted dairymetrics-subtext">{{ selected_card.best_records.amount.amount_value|intcomma }}</span>
+      {% else %}
+      <strong>-</strong>
+      <span class="muted dairymetrics-subtext">まだ記録がありません</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+  {% if selected_card.scope == "period" or selected_card.scope == "month" %}
+  <div class="dairymetrics-trend-strip">
+    <div>
+      <span class="muted dairymetrics-trend-label" title="伸びた項目" aria-label="伸びた項目">
+        <i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
+      </span>
+      <strong>
+        {% if selected_card.changes.improved %}
+        {{ selected_card.changes.improved.label }}
+        {{ selected_card.changes.improved.rate_text }}
+        {% else %}-{% endif %}
+      </strong>
+    </div>
+    <div>
+      <span class="muted dairymetrics-trend-label" title="落ちた項目" aria-label="落ちた項目">
+        <i class="fa-solid fa-arrow-trend-down" aria-hidden="true"></i>
+      </span>
+      <strong>
+        {% if selected_card.changes.declined %}
+        {{ selected_card.changes.declined.label }}
+        {{ selected_card.changes.declined.rate_text }}
+        {% else %}-{% endif %}
+      </strong>
+    </div>
+  </div>
+  {% endif %}
+  {% if selected_card.trend_section %}
+  <section class="dairymetrics-mini-chart">
+    <div class="row">
+      <div>
+        <h3>{{ selected_card.trend_section.title }}</h3>
+        <div class="muted">{{ selected_card.trend_section.description }}</div>
+      </div>
+    </div>
+    <div class="dairymetrics-chart-grid">
+      {% for item in selected_card.trend_section.items %}
+      <div class="dairymetrics-chart-col">
+        <div class="dairymetrics-chart-bars">
+          <span class="dairymetrics-chart-bar is-count" style="height: {{ item.count_height }}%;" title="{{ selected_card.count_label }} {{ item.count_value }}"></span>
+          <span class="dairymetrics-chart-bar is-amount" style="height: {{ item.amount_height }}%;" title="金額 {{ item.amount_value }}"></span>
+        </div>
+        <div class="dairymetrics-chart-values">
+          <strong>{{ item.count_value }}</strong>
+          <span>{{ item.amount_value|intcomma }}</span>
+        </div>
+        <div class="muted dairymetrics-chart-label">{{ item.label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</article>
+{% else %}
+<article class="card">
+  <h2>所属部署がありません</h2>
+  <p class="muted">メンバーに部署が紐づくと、ここに入力と集計が表示されます。</p>
+</article>
+{% endif %}

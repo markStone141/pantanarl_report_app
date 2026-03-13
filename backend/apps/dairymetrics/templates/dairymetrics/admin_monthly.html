@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load humanize static %}
+
+{% block title %}月次集計 | DairyMetrics{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=4" />
+{% endblock %}
+
+{% block content %}
+<div class="container dairymetrics-admin-monthly-page">
+  {% include "dairymetrics/partials/admin_header.html" with admin_header_subtitle="月単位の実績と補正込み集計を確認します。" %}
+
+  <section class="card">
+    <div class="dairymetrics-admin-table-head">
+      <div>
+        <strong>月次実績シート</strong>
+        <div class="muted">
+          {% if active_tab == "field" %}
+          現場実績だけを、Excel の集計表に近い見た目で日付ごとに横並び表示します。
+          {% else %}
+          郵送と QR の戻り実績だけを、現場実績と分けて日付ごとに横並び表示します。
+          {% endif %}
+        </div>
+      </div>
+      <div class="dairymetrics-admin-table-tools">
+        <form method="get" class="dairymetrics-month-filter dairymetrics-month-filter-inline">
+          <input type="hidden" name="tab" value="{{ active_tab }}">
+          <div>
+            <input id="month" type="month" name="month" value="{{ target_month|date:'Y-m' }}" aria-label="対象月">
+          </div>
+          <div>
+            <select id="department" name="department" aria-label="部署">
+              {% for department in departments %}
+              <option value="{{ department.code }}" {% if selected_department and selected_department.code == department.code %}selected{% endif %}>
+                {{ department.name }} ({{ department.code }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit">更新</button>
+        </form>
+      </div>
+    </div>
+    <div class="dairymetrics-admin-tabbar" role="tablist" aria-label="月次シート切り替え">
+      <a
+        class="dairymetrics-admin-tab{% if active_tab == 'field' %} is-active{% endif %}"
+        href="?month={{ target_month|date:'Y-m' }}{% if selected_department %}&department={{ selected_department.code }}{% endif %}&tab=field"
+      >現場実績</a>
+      <a
+        class="dairymetrics-admin-tab{% if active_tab == 'adjustment' %} is-active{% endif %}"
+        href="?month={{ target_month|date:'Y-m' }}{% if selected_department %}&department={{ selected_department.code }}{% endif %}&tab=adjustment"
+      >戻り実績</a>
+    </div>
+    <div class="table-scroll" data-monthly-edit-root data-monthly-editable="true" data-update-url="{% url 'dairymetrics_admin_monthly_update_cell' %}">
+      <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-month-sheet">
+        <colgroup>
+          <col class="dairymetrics-col-member">
+          <col class="dairymetrics-col-metric">
+          <col class="dairymetrics-col-summary">
+          <col class="dairymetrics-col-summary">
+          {% for month_day in month_days %}
+          <col class="dairymetrics-col-day">
+          {% endfor %}
+        </colgroup>
+        <thead>
+          <tr>
+            <th rowspan="2">名前</th>
+            <th rowspan="2">項目</th>
+            <th rowspan="2">月合計</th>
+            <th rowspan="2">月平均</th>
+            {% for month_day in month_days %}
+            <th class="dairymetrics-admin-day-head">{{ month_day.day }}</th>
+            {% endfor %}
+          </tr>
+          <tr>
+            {% for month_day in month_days %}
+            <th class="dairymetrics-admin-weekday-head">{{ month_day.weekday_label }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          {% for metric_row in row.metric_rows %}
+          <tr class="dairymetrics-admin-member-row{% if forloop.first %} is-first{% endif %}">
+            {% if forloop.first %}
+            <td rowspan="{{ row.metric_rows|length }}" class="dairymetrics-admin-sticky-col dairymetrics-admin-member-cell">
+              <a href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
+                <strong>{{ row.member.name }}</strong>
+              </a>
+            </td>
+            {% endif %}
+            <td class="dairymetrics-admin-metric-label">{{ metric_row.label }}</td>
+            <td class="dairymetrics-admin-sheet-summary{% if metric_row.label != '現場' %} dairymetrics-admin-number{% endif %}">
+              {% if metric_row.label == '現場' %}
+              <span class="dairymetrics-admin-location">{{ metric_row.monthly_total }}</span>
+              {% else %}
+              {{ metric_row.monthly_total|intcomma }}
+              {% endif %}
+            </td>
+            <td class="dairymetrics-admin-sheet-summary{% if metric_row.label != '現場' %} dairymetrics-admin-number{% endif %}">
+              {% if metric_row.label == '現場' %}
+              <span class="muted">{{ metric_row.monthly_average }}</span>
+              {% else %}
+              {{ metric_row.monthly_average }}
+              {% endif %}
+            </td>
+            {% for cell in metric_row.cells %}
+            <td
+              class="dairymetrics-admin-sheet-cell{% if metric_row.label != '現場' %} dairymetrics-admin-number{% endif %}{% if cell.is_empty %} is-empty{% endif %}{% if metric_row.editable %} is-editable{% endif %}"
+              {% if metric_row.editable %}
+              data-editable-cell
+              data-member-id="{{ row.member.id }}"
+              data-department-code="{{ row.department.code }}"
+              data-entry-date="{{ cell.entry_date|date:'Y-m-d' }}"
+              data-field="{{ metric_row.field }}"
+              data-value="{{ cell.raw_value }}"
+              data-cell-type="{% if metric_row.field == 'location_name' %}text{% else %}number{% endif %}"
+              {% endif %}
+            >
+              {% if metric_row.label == '現場' %}
+              <span class="dairymetrics-admin-location">{{ cell.value }}</span>
+              {% else %}
+              {{ cell.value|intcomma }}
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+          {% empty %}
+          <tr>
+            <td colspan="38">この月の対象データはまだありません。</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
+<script src="{% static 'dairymetrics/admin_monthly.js' %}?v=2"></script>
+{% endblock %}

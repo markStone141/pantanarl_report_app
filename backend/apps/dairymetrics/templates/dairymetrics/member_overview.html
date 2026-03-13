@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% load humanize static %}
+
+{% block title %}活動状況 | DairyMetrics{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=4" />
+{% endblock %}
+
+{% block content %}
+<div class="container dairymetrics-admin-overview-page">
+  <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
+    <div>
+      <strong>DairyMetrics</strong>
+      <div class="topbar-muted">{% if member %}{{ member.name }}さんの活動状況{% endif %}</div>
+    </div>
+    <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="Open menu">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
+      <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
+      <a href="{% url 'dairymetrics_member_overview' %}">活動状況</a>
+      <a href="{% url 'dairymetrics_compare' %}">スコア</a>
+      {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>{% endif %}
+      <a href="{% url 'report_index' %}">Report App</a>
+      <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
+    </nav>
+    <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+  </header>
+
+  <section class="dairymetrics-admin-hero">
+    <article class="card dairymetrics-admin-summary-card">
+      <div class="dairymetrics-admin-summary-head">
+        <div>
+          <strong>今日の活動状況</strong>
+        </div>
+        <div class="dairymetrics-admin-inline-filter">
+          <div class="muted dairymetrics-admin-inline-date">{{ today|date:'Y/m/d' }}</div>
+          {% if departments|length > 1 %}
+          <form method="get" class="dairymetrics-month-filter-inline">
+            <select id="department" name="department" aria-label="部署" onchange="this.form.submit()">
+              {% for department in departments %}
+              <option value="{{ department.code }}" {% if selected_department and selected_department.code == department.code %}selected{% endif %}>
+                {{ department.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      <div class="dairymetrics-admin-stat-grid">
+        <div class="dairymetrics-admin-stat">
+          <span class="dairymetrics-admin-stat-label">活動中</span>
+          <strong class="dairymetrics-admin-stat-value">{{ submission_summary.target_count }}</strong>
+        </div>
+        <div class="dairymetrics-admin-stat is-closed">
+          <span class="dairymetrics-admin-stat-label">活動終了</span>
+          <strong class="dairymetrics-admin-stat-value">{{ submission_summary.submitted_count }}</strong>
+        </div>
+      </div>
+    </article>
+
+    <article class="card dairymetrics-admin-summary-card">
+      <div class="dairymetrics-admin-summary-head">
+        <div>
+          <strong>本日の実績</strong>
+        </div>
+      </div>
+      <div class="dairymetrics-admin-total-list">
+        {% for total in today_department_totals %}
+        <div class="dairymetrics-admin-total-item">
+          <div class="dairymetrics-admin-total-title">{{ total.department.name }} ({{ total.department.code }})</div>
+          <div class="dairymetrics-admin-total-meta">
+            {% if total.department.code == "WV" %}
+            CS {{ total.cs_count }} / 難民 {{ total.refugee_count }} / 金額 {{ total.amount_value|intcomma }}
+            {% else %}
+            {{ total.count_label }} {{ total.count_value }} / 金額 {{ total.amount_value|intcomma }}
+            {% endif %}
+          </div>
+          <div class="muted">AP {{ total.approach_count }} / CM {{ total.communication_count }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+
+  <section class="card dairymetrics-admin-activity-section">
+    <div class="dairymetrics-admin-summary-head">
+      <div>
+        <strong>メンバー実績状況</strong>
+        <div class="muted">本日更新された順に表示します。</div>
+      </div>
+    </div>
+    <div class="dairymetrics-admin-activity-grid">
+      {% for row in activity_cards %}
+      <a class="dairymetrics-admin-activity-card" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
+        <div class="dairymetrics-admin-activity-head">
+          <div>
+            <div class="dairymetrics-admin-activity-name">{{ row.member.name }}</div>
+            <div class="muted">
+              {{ row.department.name }}
+              {% if row.updated_at %}/ {{ row.updated_at|date:'H:i' }} 更新{% endif %}
+            </div>
+          </div>
+          <span class="dairymetrics-admin-status {% if row.status_label == '活動終了' %}is-closed{% elif row.status_label == '活動中' %}is-active{% endif %}">
+            {{ row.status_label }}
+          </span>
+        </div>
+        <table class="dairymetrics-admin-activity-table">
+          <thead>
+            <tr>
+              <th>AP</th>
+              <th>CM</th>
+              {% if row.department.code == "WV" %}
+              <th>CS</th>
+              <th>難民</th>
+              {% else %}
+              <th>{{ row.count_label }}</th>
+              {% endif %}
+              <th>金額</th>
+              <th>現場</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ row.approach_count }}</td>
+              <td>{{ row.communication_count }}</td>
+              {% if row.department.code == "WV" %}
+              <td>{{ row.cs_count }}</td>
+              <td>{{ row.refugee_count }}</td>
+              {% else %}
+              <td>{{ row.count_value }}</td>
+              {% endif %}
+              <td>{{ row.amount_value|intcomma }}</td>
+              <td>{{ row.location_name|default:"-" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </a>
+      {% empty %}
+      <p class="muted">本日更新されたメンバーはいません。</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
+{% endblock %}

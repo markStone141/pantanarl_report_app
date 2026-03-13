@@ -1,0 +1,145 @@
+{% load humanize %}
+{% if selected_card %}
+<article class="card dairymetrics-card">
+  <div class="dairymetrics-scope-tabbar" role="tablist" aria-label="表示期間切り替え">
+    {% for option in scope_options %}
+    <a
+      class="dairymetrics-scope-tab {% if option.is_active %}is-active{% endif %}{% if option.is_disabled %} is-disabled{% endif %}"
+      href="{% if option.is_disabled %}#{% else %}{% url 'dairymetrics_compare' %}?department={{ selected_card.department.code }}&scope={{ option.value }}{% endif %}"
+      {% if option.is_disabled %}aria-disabled="true"{% endif %}
+    >{{ option.label }}</a>
+    {% endfor %}
+  </div>
+  <div class="dairymetrics-card-head">
+    <div>
+      <div class="dairymetrics-title-row">
+        <h2>{{ selected_card.department.name }} スコア</h2>
+        {% if selected_card.scope == "today" %}
+        <div class="badge dairymetrics-status-badge {% if selected_card.activity_status == '未入力' %}is-empty{% elif selected_card.activity_status == '活動中' %}is-active{% elif selected_card.activity_status == '活動終了' %}is-closed{% endif %}">{{ selected_card.activity_status }}</div>
+        {% endif %}
+      </div>
+      <div class="muted dairymetrics-scope-summary">{{ selected_card.scope_label }}: {{ selected_card.scope_summary }}</div>
+    </div>
+    {% if departments|length > 1 %}
+    <div class="dairymetrics-department-toggle" role="tablist" aria-label="部署切り替え">
+      {% for department in departments %}
+      <a
+        class="dairymetrics-toggle-btn {% if selected_department and department.code == selected_department.code %}is-active{% endif %}"
+        href="{% url 'dairymetrics_compare' %}?department={{ department.code }}&scope={{ selected_scope }}"
+      >{{ department.name }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% if selected_card.scope == "custom" %}
+  <form method="get" action="{% url 'dairymetrics_compare' %}" class="dairymetrics-range-form">
+    <input type="hidden" name="department" value="{{ selected_card.department.code }}">
+    <input type="hidden" name="scope" value="custom">
+    <div>
+      <label for="dairymetrics-compare-start-date">開始日</label>
+      <input id="dairymetrics-compare-start-date" type="date" name="start_date" value="{{ selected_card.custom_start_date|date:'Y-m-d' }}">
+    </div>
+    <div>
+      <label for="dairymetrics-compare-end-date">終了日</label>
+      <input id="dairymetrics-compare-end-date" type="date" name="end_date" value="{{ selected_card.custom_end_date|date:'Y-m-d' }}">
+    </div>
+    <button type="submit" class="btn-inline dairymetrics-secondary-btn">集計する</button>
+  </form>
+  {% endif %}
+  <div class="dairymetrics-card-actions">
+    <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_dashboard' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">ダッシュボードへ戻る</a>
+  </div>
+  {% if selected_card.ranking_metrics %}
+  <section class="dairymetrics-compare-board">
+    <div class="row">
+      <div>
+        <h3><i class="fa-solid fa-crown" aria-hidden="true"></i> ランキング</h3>
+      </div>
+    </div>
+    <div class="dairymetrics-compare-grid">
+      {% for metric in selected_card.ranking_metrics %}
+      <article class="comparison-card dairymetrics-rank-card">
+        <div class="dairymetrics-rank-card-head">
+          <div class="dairymetrics-rank-card-title">
+            <span class="dairymetrics-rank-metric-icon"><i class="fa-solid {{ metric.icon }}" aria-hidden="true"></i></span>
+            <strong>{{ metric.label }}</strong>
+          </div>
+          <button
+            type="button"
+            class="btn-inline dairymetrics-secondary-btn dairymetrics-rank-detail-btn"
+            data-open-ranking-detail
+            data-metric-key="{{ metric.key }}"
+            data-department-code="{{ selected_card.department.code }}"
+            data-scope="{{ selected_scope }}"
+            data-start-date="{% if selected_card.custom_start_date %}{{ selected_card.custom_start_date|date:'Y-m-d' }}{% endif %}"
+            data-end-date="{% if selected_card.custom_end_date %}{{ selected_card.custom_end_date|date:'Y-m-d' }}{% endif %}"
+          >詳細</button>
+        </div>
+        <div class="dairymetrics-rank-stack">
+          {% for leader in metric.leaders %}
+          <div class="dairymetrics-rank-row{% if leader.member_id == member.id %} is-self{% endif %}">
+            <span class="dairymetrics-rank-badge">{{ leader.rank }}</span>
+            <span class="dairymetrics-rank-name">{{ leader.member_name }}</span>
+            <strong class="dairymetrics-rank-value">{{ leader.value_text }}</strong>
+          </div>
+          {% endfor %}
+          {% if metric.self_row %}
+          <div class="dairymetrics-rank-divider"></div>
+          <div class="dairymetrics-rank-row is-self">
+            <span class="dairymetrics-rank-badge">{{ metric.self_row.rank }}</span>
+            <span class="dairymetrics-rank-name">{{ metric.self_row.member_name }}</span>
+            <strong class="dairymetrics-rank-value">{{ metric.self_row.value_text }}</strong>
+          </div>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  {% if selected_card.scope_average_metrics %}
+  <section class="dairymetrics-compare-board">
+    <div class="row">
+      <div>
+        <h3>みんなの平均</h3>
+      </div>
+    </div>
+    <div class="dairymetrics-compare-grid">
+      {% for metric in selected_card.scope_average_metrics %}
+      <article class="comparison-card dairymetrics-average-card">
+        <div class="dairymetrics-rank-card-head">
+          <span class="dairymetrics-rank-metric-icon"><i class="fa-solid {{ metric.icon }}" aria-hidden="true"></i></span>
+          <strong>{{ metric.label }}</strong>
+        </div>
+        <div class="dairymetrics-average-stack">
+          <div class="dairymetrics-average-row">
+            <span class="muted">全体平均</span>
+            <strong>{{ metric.average_text }}</strong>
+          </div>
+          <div class="dairymetrics-average-row">
+            <span class="muted">自分</span>
+            <strong>{{ metric.self_text }}</strong>
+          </div>
+          <div class="dairymetrics-average-row">
+            <span class="muted">平均との差</span>
+            <strong>{{ metric.diff_text }}</strong>
+          </div>
+          {% if metric.previous_text %}
+          <div class="dairymetrics-average-row">
+            <span class="muted">{{ metric.previous_label }}</span>
+            <strong>{{ metric.previous_text }}</strong>
+          </div>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</article>
+{% else %}
+<article class="card">
+  <h2>所属部署がありません</h2>
+  <p class="muted">メンバーに部署が紐づくと、ここに比較情報が表示されます。</p>
+</article>
+{% endif %}

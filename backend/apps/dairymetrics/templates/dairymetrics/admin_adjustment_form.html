@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load humanize static %}
+
+{% block title %}戻り登録 | DairyMetrics{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=1" />
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  {% include "dairymetrics/partials/admin_header.html" with admin_header_subtitle="郵送や増額など、後から確定した実績を記録します。" %}
+
+  <div class="grid grid-2">
+    <section class="card dairymetrics-form-card">
+      <form method="post" class="grid dairymetrics-entry-grid">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="dairymetrics-field {% if field.name == 'note' %}dairymetrics-field-full{% endif %}">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="error-text">{{ field.errors|join:", " }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        <div class="dairymetrics-field-full dairymetrics-form-actions">
+          <button type="submit">追加する</button>
+        </div>
+      </form>
+    </section>
+    <section class="card">
+      <h2>最近の追加</h2>
+      <div class="dairymetrics-adjustment-list">
+        {% for adjustment in recent_adjustments %}
+        <article class="dairymetrics-adjustment-item">
+          <strong>{{ adjustment.member.name }} / {{ adjustment.department.code }}</strong>
+          <div class="muted">{{ adjustment.target_date|date:'Y/m/d' }} ・ {{ adjustment.get_source_type_display }}</div>
+          <div>{{ adjustment.result_count }}件 / {{ adjustment.support_amount|intcomma }}円</div>
+        </article>
+        {% empty %}
+        <p class="muted">追加履歴はまだありません。</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
+{% endblock %}

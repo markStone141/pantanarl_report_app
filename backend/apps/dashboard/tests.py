@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.dairymetrics.models import MetricAdjustment
 from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
 from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 
@@ -392,6 +393,82 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         prev_section = next(s for s in payload_map["prev"]["sections"] if s["code"] == "UN")
         self.assertEqual(today_section["daily_count"], 2)
         self.assertEqual(prev_section["daily_count"], 1)
+
+    def test_dashboard_mail_today_stays_report_based_while_month_totals_include_adjustments(self):
+        today = timezone.localdate()
+        month = today.replace(day=1)
+        period = Period.objects.create(
+            month=month,
+            name=f"{today.year}年度{today.month}月 第1次路程",
+            status="active",
+            start_date=today - timedelta(days=1),
+            end_date=today + timedelta(days=1),
+        )
+        count_metric = TargetMetric.objects.create(
+            department=self.depts["UN"],
+            code="count",
+            label="件数",
+            unit="件",
+            display_order=1,
+            is_active=True,
+        )
+        amount_metric = TargetMetric.objects.create(
+            department=self.depts["UN"],
+            code="amount",
+            label="金額",
+            unit="円",
+            display_order=2,
+            is_active=True,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.depts["UN"],
+            target_month=month,
+            metric=count_metric,
+            status="active",
+            value=5,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.depts["UN"],
+            target_month=month,
+            metric=amount_metric,
+            status="active",
+            value=2000,
+        )
+        PeriodTargetMetricValue.objects.create(period=period, department=self.depts["UN"], metric=count_metric, value=5)
+        PeriodTargetMetricValue.objects.create(period=period, department=self.depts["UN"], metric=amount_metric, value=2000)
+        report = DailyDepartmentReport.objects.create(
+            department=self.depts["UN"],
+            report_date=today,
+            reporter=self.reporter,
+            total_count=1,
+            followup_count=1000,
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=self.reporter,
+            amount=1000,
+            count=1,
+        )
+        MetricAdjustment.objects.create(
+            member=self.reporter,
+            department=self.depts["UN"],
+            target_date=today,
+            source_type="postal",
+            return_postal_count=2,
+            return_postal_amount=300,
+        )
+
+        response = self.client.get(reverse("dashboard_index"))
+
+        self.assertEqual(response.status_code, 200)
+        row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
+        self.assertIn("3", row["month_actual"])
+        self.assertIn("1,300", row["month_actual"])
+        payload_map = response.context["mail_template_payload_map"]
+        today_section = next(s for s in payload_map["today"]["sections"] if s["code"] == "UN")
+        self.assertEqual(today_section["daily_count"], 1)
+        self.assertEqual(today_section["daily_amount_text"], "1,000円")
+        self.assertEqual(today_section["month_remaining_text"], "2件/700円")
 
     def test_dashboard_reflects_wv_and_style_reports_into_kpi_and_targets(self):
         today = timezone.localdate()

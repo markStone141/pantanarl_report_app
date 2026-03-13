@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load humanize static %}
+
+{% block title %}DairyMetrics スコア{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=1" />
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
+    <div>
+      <strong>DairyMetrics</strong>
+      <div class="topbar-muted">
+        {% if member %}{{ member.name }}さんのスコアページ{% else %}スコアページ{% endif %}
+      </div>
+    </div>
+    <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="Open menu">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
+      <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
+      {% if member %}<a href="{% url 'dairymetrics_member_overview' %}">活動状況</a>{% endif %}
+      {% if member %}<a href="{% url 'dairymetrics_member_index' %}">メンバーデータ</a>{% endif %}
+      <a href="{% url 'dairymetrics_compare' %}">スコア</a>
+      {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>{% endif %}
+      {% if is_admin %}<a href="{% url 'dairymetrics_admin_monthly_overview' %}">月次集計</a>{% endif %}
+      {% if is_admin %}<a href="{% url 'dairymetrics_adjustment_create' %}">戻り登録</a>{% endif %}
+      <a href="{% url 'report_index' %}">Report App</a>
+      <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
+    </nav>
+    <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+  </header>
+
+  <section class="dairymetrics-grid">
+    {% include "dairymetrics/partials/comparison_panel.html" %}
+  </section>
+</div>
+<div
+  id="dairymetrics-ranking-overlay"
+  class="dairymetrics-overlay"
+  aria-hidden="true"
+  data-ranking-detail-url="{% url 'dairymetrics_compare_ranking_detail' %}"
+>
+  <div class="dairymetrics-sheet dairymetrics-ranking-sheet">
+    <div class="dairymetrics-sheet-head">
+      <div>
+        <strong>ランキング詳細</strong>
+      </div>
+      <button type="button" class="dairymetrics-sheet-close" id="dairymetrics-close-ranking" aria-label="閉じる">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div id="dairymetrics-ranking-modal-body"></div>
+  </div>
+</div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
+<script src="{% static 'dairymetrics/comparison.js' %}?v=1"></script>
+{% endblock %}

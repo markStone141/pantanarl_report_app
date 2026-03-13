@@ -1,4 +1,5 @@
 from apps.reports.models import DailyDepartmentReportLine
+from apps.dairymetrics.models import MetricAdjustment
 
 SPLIT_COUNT_CODES = {"WV"}
 STATUS_SUBMITTED = "提出済み"
@@ -52,7 +53,7 @@ def format_metric_value(*, metric_code, value: int) -> str:
     return str(value)
 
 
-def collect_actual_totals(*, start_date, end_date, target_codes):
+def collect_actual_totals(*, start_date, end_date, target_codes, include_adjustments=False):
     lines = (
         DailyDepartmentReportLine.objects.filter(
             report__report_date__gte=start_date,
@@ -72,6 +73,41 @@ def collect_actual_totals(*, start_date, end_date, target_codes):
         totals[code]["amount"] += line["amount"]
         totals[code]["cs_count"] += line["cs_count"]
         totals[code]["refugee_count"] += line["refugee_count"]
+
+    if include_adjustments:
+        adjustments = (
+            MetricAdjustment.objects.filter(
+                target_date__gte=start_date,
+                target_date__lte=end_date,
+                department__code__in=target_codes,
+            )
+            .select_related("department")
+            .values(
+                "department__code",
+                "result_count",
+                "support_amount",
+                "return_postal_count",
+                "return_postal_amount",
+                "return_qr_count",
+                "return_qr_amount",
+                "cs_count",
+                "refugee_count",
+            )
+        )
+        for adjustment in adjustments:
+            code = adjustment["department__code"]
+            totals[code]["count"] += (
+                int(adjustment["result_count"] or 0)
+                + int(adjustment["return_postal_count"] or 0)
+                + int(adjustment["return_qr_count"] or 0)
+            )
+            totals[code]["amount"] += (
+                int(adjustment["support_amount"] or 0)
+                + int(adjustment["return_postal_amount"] or 0)
+                + int(adjustment["return_qr_amount"] or 0)
+            )
+            totals[code]["cs_count"] += int(adjustment["cs_count"] or 0)
+            totals[code]["refugee_count"] += int(adjustment["refugee_count"] or 0)
     return totals
 
 

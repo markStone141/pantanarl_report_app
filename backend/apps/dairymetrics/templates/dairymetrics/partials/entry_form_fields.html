@@ -1,0 +1,75 @@
+{% with department_field=form.department entry_date_field=form.entry_date daily_target_count_field=form.daily_target_count daily_target_amount_field=form.daily_target_amount approach_field=form.approach_count communication_field=form.communication_count result_field=form.result_count cs_field=form.cs_count refugee_field=form.refugee_count support_field=form.support_amount location_field=form.location_name memo_field=form.memo %}
+<div class="dairymetrics-field">
+  <label for="{{ department_field.id_for_label }}">{{ department_field.label }}</label>
+  {{ department_field }}
+  {% if department_field.errors %}<div class="error-text">{{ department_field.errors|join:', ' }}</div>{% endif %}
+</div>
+<div class="dairymetrics-field">
+  <label for="{{ entry_date_field.id_for_label }}">{{ entry_date_field.label }}</label>
+  {{ entry_date_field }}
+  {% if entry_date_field.errors %}<div class="error-text">{{ entry_date_field.errors|join:', ' }}</div>{% endif %}
+</div>
+<div class="dairymetrics-field">
+  <label for="{{ daily_target_count_field.id_for_label }}">{{ daily_target_count_field.label }}</label>
+  {{ daily_target_count_field }}
+  {% if daily_target_count_field.errors %}<div class="error-text">{{ daily_target_count_field.errors|join:', ' }}</div>{% endif %}
+</div>
+<div class="dairymetrics-field">
+  <label for="{{ daily_target_amount_field.id_for_label }}">{{ daily_target_amount_field.label }}</label>
+  {{ daily_target_amount_field }}
+  {% if daily_target_amount_field.errors %}<div class="error-text">{{ daily_target_amount_field.errors|join:', ' }}</div>{% endif %}
+</div>
+
+<div class="dairymetrics-field-full dairymetrics-entry-section">
+  <div class="dairymetrics-entry-section-head">現場</div>
+  <div class="dairymetrics-entry-section-grid">
+    <div class="dairymetrics-field">
+      <label for="{{ approach_field.id_for_label }}">{{ approach_field.label }}</label>
+      {{ approach_field }}
+      {% if approach_field.errors %}<div class="error-text">{{ approach_field.errors|join:', ' }}</div>{% endif %}
+    </div>
+    <div class="dairymetrics-field">
+      <label for="{{ communication_field.id_for_label }}">{{ communication_field.label }}</label>
+      {{ communication_field }}
+      {% if communication_field.errors %}<div class="error-text">{{ communication_field.errors|join:', ' }}</div>{% endif %}
+    </div>
+    {% if result_field %}
+    <div class="dairymetrics-field">
+      <label for="{{ result_field.id_for_label }}">{{ result_field.label }}</label>
+      {{ result_field }}
+      {% if result_field.errors %}<div class="error-text">{{ result_field.errors|join:', ' }}</div>{% endif %}
+    </div>
+    {% endif %}
+    {% if cs_field %}
+    <div class="dairymetrics-field">
+      <label for="{{ cs_field.id_for_label }}">{{ cs_field.label }}</label>
+      {{ cs_field }}
+      {% if cs_field.errors %}<div class="error-text">{{ cs_field.errors|join:', ' }}</div>{% endif %}
+    </div>
+    {% endif %}
+    {% if refugee_field %}
+    <div class="dairymetrics-field">
+      <label for="{{ refugee_field.id_for_label }}">{{ refugee_field.label }}</label>
+      {{ refugee_field }}
+      {% if refugee_field.errors %}<div class="error-text">{{ refugee_field.errors|join:', ' }}</div>{% endif %}
+    </div>
+    {% endif %}
+    <div class="dairymetrics-field">
+      <label for="{{ support_field.id_for_label }}">{{ support_field.label }}</label>
+      {{ support_field }}
+      {% if support_field.errors %}<div class="error-text">{{ support_field.errors|join:', ' }}</div>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="dairymetrics-field">
+  <label for="{{ location_field.id_for_label }}">{{ location_field.label }}</label>
+  {{ location_field }}
+  {% if location_field.errors %}<div class="error-text">{{ location_field.errors|join:', ' }}</div>{% endif %}
+</div>
+<div class="dairymetrics-field dairymetrics-field-full">
+  <label for="{{ memo_field.id_for_label }}">{{ memo_field.label }}</label>
+  {{ memo_field }}
+  {% if memo_field.errors %}<div class="error-text">{{ memo_field.errors|join:', ' }}</div>{% endif %}
+</div>
+{% endwith %}
