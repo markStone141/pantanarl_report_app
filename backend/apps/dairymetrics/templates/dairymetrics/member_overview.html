@@ -34,7 +34,7 @@
       <div class="dairymetrics-admin-summary-head">
         <div>
           <strong>今日の活動状況</strong>
-          <div class="muted">自分の進捗と終了状態を確認できます。</div>
+          <div class="muted">同じ部署の活動状況を確認できます。</div>
         </div>
         <div class="dairymetrics-admin-inline-filter">
           <div class="muted dairymetrics-admin-inline-date">{{ today|date:'Y/m/d' }}</div>
@@ -67,7 +67,7 @@
       <div class="dairymetrics-admin-summary-head">
         <div>
           <strong>本日の実績</strong>
-          <div class="muted">今日入力した件数と金額です。</div>
+          <div class="muted">同じ部署の今日の入力合計です。</div>
         </div>
         <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_monthly_overview' %}{% if selected_department %}?department={{ selected_department.code }}{% endif %}">月次シート</a>
       </div>
@@ -92,13 +92,13 @@
   <section class="card dairymetrics-admin-activity-section">
     <div class="dairymetrics-admin-summary-head">
       <div>
-        <strong>実績状況</strong>
-        <div class="muted">自分の最新入力を確認できます。</div>
+        <strong>メンバー実績状況</strong>
+        <div class="muted">本日更新された順に表示します。</div>
       </div>
     </div>
     <div class="dairymetrics-admin-activity-grid">
       {% for row in activity_cards %}
-      <article class="dairymetrics-admin-activity-card">
+      <a class="dairymetrics-admin-activity-card" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
         <div class="dairymetrics-admin-activity-head">
           <div>
             <div class="dairymetrics-admin-activity-name">{{ row.member.name }}</div>
@@ -141,7 +141,9 @@
             </tr>
           </tbody>
         </table>
-      </article>
+      </a>
+      {% empty %}
+      <p class="muted">本日更新されたメンバーはいません。</p>
       {% endfor %}
     </div>
   </section>

@@ -850,6 +850,9 @@ class DairyMetricsDashboardTests(TestCase):
 
     def test_member_overview_shows_admin_like_cards(self):
         today = timezone.localdate()
+        teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")
+        teammate = Member.objects.create(name="Member Teammate", user=teammate_user)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
         MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=self.department,
@@ -862,6 +865,18 @@ class DairyMetricsDashboardTests(TestCase):
             location_name="Shibuya",
             activity_closed=False,
         )
+        MemberDailyMetricEntry.objects.create(
+            member=teammate,
+            department=self.department,
+            entry_date=today,
+            approach_count=4,
+            communication_count=3,
+            cs_count=1,
+            refugee_count=0,
+            support_amount=1200,
+            location_name="Yokohama",
+            activity_closed=True,
+        )
         self.client.force_login(self.user)
 
         response = self.client.get(reverse("dairymetrics_member_overview"), {"department": "WV"})
@@ -870,10 +885,15 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "実績確認")
         self.assertContains(response, "今日の活動状況")
         self.assertContains(response, "本日の実績")
-        self.assertContains(response, "実績状況")
+        self.assertContains(response, "メンバー実績状況")
         self.assertContains(response, "月次シート")
         self.assertContains(response, "Shibuya")
+        self.assertContains(response, "Yokohama")
+        self.assertContains(response, "Member Two")
+        self.assertContains(response, "Member Teammate")
         self.assertContains(response, "活動中")
+        self.assertContains(response, "活動終了")
+        self.assertContains(response, "4,700")
 
     def test_dashboard_nav_links_to_member_overview(self):
         self.client.force_login(self.user)

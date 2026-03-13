@@ -1071,35 +1071,39 @@ def build_member_daily_overview(member, *, department_code="", today=None):
             "activity_cards": [],
         }
 
-    today_entry = (
-        MemberDailyMetricEntry.objects.filter(
-            member=member,
-            department=selected_department,
-            entry_date=today_value,
-        )
-        .order_by("-updated_at")
-        .first()
-    )
+    activity_cards = []
+    department_today_totals = _zero_totals()
+    active_count = 0
+    closed_count = 0
 
-    if today_entry:
-        totals = {
+    members = Member.objects.active().filter(department_links__department=selected_department).distinct().order_by("name")
+    for department_member in members:
+        today_entry = (
+            MemberDailyMetricEntry.objects.filter(
+                member=department_member,
+                department=selected_department,
+                entry_date=today_value,
+            )
+            .order_by("-updated_at")
+            .first()
+        )
+        if not today_entry:
+            continue
+        card_totals = {
             "result_count": int(today_entry.result_count or 0),
             "cs_count": int(today_entry.cs_count or 0),
             "refugee_count": int(today_entry.refugee_count or 0),
-            "approach_count": int(today_entry.approach_count or 0),
-            "communication_count": int(today_entry.communication_count or 0),
-            "support_amount": int(today_entry.support_amount or 0),
         }
-        activity_cards = [
+        activity_cards.append(
             {
-                "member": member,
+                "member": department_member,
                 "department": selected_department,
                 "status_label": "活動終了" if today_entry.activity_closed else "活動中",
                 "is_closed": today_entry.activity_closed,
                 "updated_at": timezone.localtime(today_entry.updated_at),
                 "count_label": _count_label_for_department(selected_department),
-                "count_text": _count_breakdown_text(selected_department, totals),
-                "count_value": _count_value_for_department(selected_department, totals),
+                "count_text": _count_breakdown_text(selected_department, card_totals),
+                "count_value": _count_value_for_department(selected_department, card_totals),
                 "amount_value": int(today_entry.support_amount or 0),
                 "approach_count": int(today_entry.approach_count or 0),
                 "communication_count": int(today_entry.communication_count or 0),
@@ -1107,58 +1111,33 @@ def build_member_daily_overview(member, *, department_code="", today=None):
                 "refugee_count": int(today_entry.refugee_count or 0),
                 "location_name": (today_entry.location_name or "").strip(),
             }
-        ]
-        summary = {"target_count": 0 if today_entry.activity_closed else 1, "submitted_count": 1 if today_entry.activity_closed else 0}
-        department_totals = [
-            {
-                "department": selected_department,
-                "count_label": _count_label_for_department(selected_department),
-                "count_value": _count_value_for_department(selected_department, totals),
-                "amount_value": int(today_entry.support_amount or 0),
-                "approach_count": int(today_entry.approach_count or 0),
-                "communication_count": int(today_entry.communication_count or 0),
-                "cs_count": int(today_entry.cs_count or 0),
-                "refugee_count": int(today_entry.refugee_count or 0),
-            }
-        ]
-    else:
-        activity_cards = [
-            {
-                "member": member,
-                "department": selected_department,
-                "status_label": "未入力",
-                "is_closed": False,
-                "updated_at": None,
-                "count_label": _count_label_for_department(selected_department),
-                "count_text": "-",
-                "count_value": 0,
-                "amount_value": 0,
-                "approach_count": 0,
-                "communication_count": 0,
-                "cs_count": 0,
-                "refugee_count": 0,
-                "location_name": "",
-            }
-        ]
-        summary = {"target_count": 0, "submitted_count": 0}
-        department_totals = [
-            {
-                "department": selected_department,
-                "count_label": _count_label_for_department(selected_department),
-                "count_value": 0,
-                "amount_value": 0,
-                "approach_count": 0,
-                "communication_count": 0,
-                "cs_count": 0,
-                "refugee_count": 0,
-            }
-        ]
+        )
+        if today_entry.activity_closed:
+            closed_count += 1
+        else:
+            active_count += 1
+        for field in ENTRY_METRIC_FIELDS:
+            department_today_totals[field] += int(getattr(today_entry, field, 0) or 0)
+
+    activity_cards.sort(key=lambda row: row["updated_at"], reverse=True)
+    department_totals = [
+        {
+            "department": selected_department,
+            "count_label": _count_label_for_department(selected_department),
+            "count_value": _count_value_for_department(selected_department, department_today_totals),
+            "amount_value": _display_amount_value(department_today_totals),
+            "approach_count": int(department_today_totals["approach_count"]),
+            "communication_count": int(department_today_totals["communication_count"]),
+            "cs_count": int(department_today_totals["cs_count"]),
+            "refugee_count": int(department_today_totals["refugee_count"]),
+        }
+    ]
 
     return {
         "today": today_value,
         "departments": departments,
         "selected_department": selected_department,
-        "submission_summary": summary,
+        "submission_summary": {"target_count": active_count, "submitted_count": closed_count},
         "today_department_totals": department_totals,
         "activity_cards": activity_cards,
     }
