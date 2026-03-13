@@ -61,7 +61,6 @@ jobs:
 
       - name: Upsert migration job
         env:
-          DB_INSTANCE: ${{ vars.CLOUD_RUN_DB_INSTANCE }}
           JOB_SECRETS: ${{ vars.CLOUD_RUN_MIGRATE_JOB_SECRETS }}
           JOB_ENV_VARS: ${{ vars.CLOUD_RUN_MIGRATE_JOB_ENV_VARS }}
         run: |
@@ -72,7 +71,6 @@ jobs:
           SERVICE="${SERVICE}" \
           JOB_NAME="${MIGRATE_JOB}" \
           IMAGE="${IMAGE}" \
-          DB_INSTANCE="${DB_INSTANCE}" \
           ENV_VARS="${JOB_ENV_VARS:-${MIGRATE_JOB_ENV_VARS}}" \
           SECRETS="${JOB_SECRETS}" \
           ./backend/scripts/cloud_run_migrate_job.sh upsert
