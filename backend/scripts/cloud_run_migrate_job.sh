@@ -18,6 +18,10 @@ DB_INSTANCE="${DB_INSTANCE:-}"
 ENV_VARS="${ENV_VARS:-DJANGO_SETTINGS_MODULE=config.settings.prod}"
 SECRETS="${SECRETS:-}"
 
+normalize_csv_args() {
+  printf '%s' "$1" | tr '\r\n' ',' | sed 's/[[:space:]]*,[[:space:]]*/,/g; s/^,*//; s/,*$//'
+}
+
 if [ -z "$PROJECT_ID" ]; then
   echo "PROJECT_ID is required. Set PROJECT_ID or configure gcloud default project." >&2
   exit 1
@@ -26,6 +30,9 @@ fi
 if [ -z "$IMAGE" ]; then
   IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${SERVICE}:latest"
 fi
+
+ENV_VARS="$(normalize_csv_args "$ENV_VARS")"
+SECRETS="$(normalize_csv_args "$SECRETS")"
 
 BASE_ARGS="
   --project=${PROJECT_ID}
