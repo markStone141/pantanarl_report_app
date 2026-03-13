@@ -207,6 +207,21 @@ def _default_member_filter_code(viewer_member, filter_departments):
     return department_codes[0] if department_codes else ""
 
 
+def _resolve_compare_member(request: HttpRequest):
+    viewer_member = get_member_profile(request.user)
+    if viewer_member and not request.user.is_staff:
+        return viewer_member, viewer_member
+
+    selected_member_id = (request.GET.get("member") or "").strip()
+    member_queryset = _member_directory_queryset()
+    target_member = None
+    if selected_member_id:
+        target_member = member_queryset.filter(pk=selected_member_id).first()
+    if not target_member:
+        target_member = member_queryset.first()
+    return viewer_member, target_member
+
+
 def _build_member_dashboard_context(*, request, member, readonly=False, viewer_member=None):
     selected_department_code = (request.GET.get("department") or "").strip()
     selected_scope = (request.GET.get("scope") or "today").strip()
@@ -385,16 +400,25 @@ def member_dashboard(request: HttpRequest, member_id: int) -> HttpResponse:
 
 @require_dairymetrics_member
 def comparison_view(request: HttpRequest) -> HttpResponse:
-    member = get_member_profile(request.user)
-    context = _build_member_dashboard_context(request=request, member=member) if member else {
+    viewer_member, member = _resolve_compare_member(request)
+    readonly_compare = request.user.is_staff and member is not None and (viewer_member is None or viewer_member.pk != member.pk)
+    context = _build_member_dashboard_context(
+        request=request,
+        member=member,
+        readonly=readonly_compare,
+        viewer_member=viewer_member,
+    ) if member else {
         "page_title": "DairyMetrics",
         "member": None,
+        "viewer_member": viewer_member,
         "departments": [],
         "selected_department": None,
         "selected_card": None,
         "entry_form": None,
         "is_admin": request.user.is_staff,
     }
+    context["readonly_compare"] = readonly_compare
+    context["compare_member_id"] = member.id if readonly_compare and member else ""
     return render(request, "dairymetrics/comparison.html", context)
 
 
@@ -458,7 +482,7 @@ def member_monthly_overview(request: HttpRequest) -> HttpResponse:
 
 @require_dairymetrics_member
 def comparison_ranking_detail(request: HttpRequest) -> HttpResponse:
-    member = get_member_profile(request.user)
+    _, member = _resolve_compare_member(request)
     if not member:
         return JsonResponse({"error": "member_not_found"}, status=404)
 

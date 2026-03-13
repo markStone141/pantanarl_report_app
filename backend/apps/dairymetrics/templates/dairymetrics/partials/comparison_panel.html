@@ -5,7 +5,7 @@
     {% for option in scope_options %}
     <a
       class="dairymetrics-scope-tab {% if option.is_active %}is-active{% endif %}{% if option.is_disabled %} is-disabled{% endif %}"
-      href="{% if option.is_disabled %}#{% else %}{% url 'dairymetrics_compare' %}?department={{ selected_card.department.code }}&scope={{ option.value }}{% endif %}"
+      href="{% if option.is_disabled %}#{% else %}{% url 'dairymetrics_compare' %}?department={{ selected_card.department.code }}&scope={{ option.value }}{% if compare_member_id %}&member={{ compare_member_id }}{% endif %}{% endif %}"
       {% if option.is_disabled %}aria-disabled="true"{% endif %}
     >{{ option.label }}</a>
     {% endfor %}
@@ -25,7 +25,7 @@
       {% for department in departments %}
       <a
         class="dairymetrics-toggle-btn {% if selected_department and department.code == selected_department.code %}is-active{% endif %}"
-        href="{% url 'dairymetrics_compare' %}?department={{ department.code }}&scope={{ selected_scope }}"
+        href="{% url 'dairymetrics_compare' %}?department={{ department.code }}&scope={{ selected_scope }}{% if compare_member_id %}&member={{ compare_member_id }}{% endif %}"
       >{{ department.name }}</a>
       {% endfor %}
     </div>
@@ -35,6 +35,7 @@
   <form method="get" action="{% url 'dairymetrics_compare' %}" class="dairymetrics-range-form">
     <input type="hidden" name="department" value="{{ selected_card.department.code }}">
     <input type="hidden" name="scope" value="custom">
+    {% if compare_member_id %}<input type="hidden" name="member" value="{{ compare_member_id }}">{% endif %}
     <div>
       <label for="dairymetrics-compare-start-date">開始日</label>
       <div class="dairymetrics-date-wrap">
@@ -55,7 +56,7 @@
   </form>
   {% endif %}
   <div class="dairymetrics-card-actions">
-    <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_dashboard' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">ダッシュボードへ戻る</a>
+    <a class="btn-inline dairymetrics-secondary-btn" href="{% if readonly_compare and member %}{% url 'dairymetrics_member_dashboard' member.id %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}{% else %}{% url 'dairymetrics_dashboard' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}{% endif %}">ダッシュボードへ戻る</a>
   </div>
   {% if selected_card.ranking_metrics %}
   <section class="dairymetrics-compare-board">
@@ -79,6 +80,7 @@
             data-metric-key="{{ metric.key }}"
             data-department-code="{{ selected_card.department.code }}"
             data-scope="{{ selected_scope }}"
+            {% if compare_member_id %}data-member-id="{{ compare_member_id }}"{% endif %}
             data-start-date="{% if selected_card.custom_start_date %}{{ selected_card.custom_start_date|date:'Y-m-d' }}{% endif %}"
             data-end-date="{% if selected_card.custom_end_date %}{{ selected_card.custom_end_date|date:'Y-m-d' }}{% endif %}"
           >詳細</button>

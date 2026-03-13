@@ -4,7 +4,7 @@
 {% block title %}DairyMetrics スコア{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=11" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=12" />
 {% endblock %}
 
 {% block content %}
@@ -33,6 +33,25 @@
     <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
   </header>
 
+  {% if is_admin and member_rows %}
+  <section class="card dairymetrics-compare-member-switcher">
+    <form method="get" class="dairymetrics-compare-member-form">
+      <label for="dairymetrics-compare-member-select">対象メンバー</label>
+      <select id="dairymetrics-compare-member-select" name="member" onchange="this.form.submit()">
+        {% for row in member_rows %}
+        <option value="{{ row.member.id }}" {% if member and row.member.id == member.id %}selected{% endif %}>
+          {{ row.member.name }}{% if not row.member.is_active %}（非アクティブ）{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      {% if selected_department %}<input type="hidden" name="department" value="{{ selected_department.code }}">{% endif %}
+      {% if selected_scope %}<input type="hidden" name="scope" value="{{ selected_scope }}">{% endif %}
+      {% if selected_scope == "custom" and selected_card.custom_start_date %}<input type="hidden" name="start_date" value="{{ selected_card.custom_start_date|date:'Y-m-d' }}">{% endif %}
+      {% if selected_scope == "custom" and selected_card.custom_end_date %}<input type="hidden" name="end_date" value="{{ selected_card.custom_end_date|date:'Y-m-d' }}">{% endif %}
+    </form>
+  </section>
+  {% endif %}
+
   <section class="dairymetrics-grid">
     {% include "dairymetrics/partials/comparison_panel.html" %}
   </section>
@@ -56,5 +75,5 @@
   </div>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
-<script src="{% static 'dairymetrics/comparison.js' %}?v=1"></script>
+<script src="{% static 'dairymetrics/comparison.js' %}?v=2"></script>
 {% endblock %}

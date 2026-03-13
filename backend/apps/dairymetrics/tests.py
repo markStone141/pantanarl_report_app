@@ -1229,6 +1229,32 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "表示中: Member Three")
         self.assertNotContains(response, "Member Threeさんのダッシュボード")
         self.assertNotContains(response, '>ダッシュボード<', html=False)
+        self.assertContains(response, f"{reverse('dairymetrics_compare')}?member={self.member.id}")
+
+    def test_admin_can_open_compare_for_selected_member(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            approach_count=5,
+            communication_count=3,
+            result_count=2,
+            support_amount=4000,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_compare"),
+            {"member": self.member.id, "department": "UN", "scope": "month"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Member Threeさんのスコアページ")
+        self.assertContains(response, "対象メンバー")
+        self.assertContains(response, '>スコア<', html=False)
+        self.assertContains(response, f'value="{self.member.id}"', html=False)
+        self.assertContains(response, f"{reverse('dairymetrics_member_dashboard', args=[self.member.id])}?department=UN&scope=month")
+        self.assertContains(response, f'data-member-id="{self.member.id}"', html=False)
 
     def test_admin_overview_shows_activity_cards_without_submission_summary(self):
         today = timezone.localdate()
