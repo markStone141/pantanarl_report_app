@@ -8,6 +8,7 @@
   const closeButton = document.getElementById('dairymetrics-close-entry');
   const closeTargetButton = document.getElementById('dairymetrics-close-target');
   const memberSelect = document.getElementById('dairymetrics-member-select');
+  const memberFilterSelect = document.getElementById('dairymetrics-member-filter-select');
   const subtitle = document.getElementById('dairymetrics-dashboard-subtitle');
   const viewedMemberName = document.getElementById('dairymetrics-viewed-member-name');
   const memberFilterButtons = Array.from(document.querySelectorAll('[data-member-filter-toggle]'));
@@ -35,6 +36,9 @@
       button.classList.toggle('is-active', isActive);
       button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
+    if (memberFilterSelect && memberFilterSelect.value !== activeMemberFilter) {
+      memberFilterSelect.value = activeMemberFilter;
+    }
 
     if (!selectedVisible) {
       const firstVisibleOption = options.find(function (option) { return !option.hidden; });
@@ -144,6 +148,11 @@
         }
       });
       refreshDashboard(nextUrl);
+      return;
+    }
+    const changedMemberFilterSelect = event.target.closest('[data-member-filter-select]');
+    if (changedMemberFilterSelect) {
+      applyMemberFilter(changedMemberFilterSelect.value);
     }
   });
 

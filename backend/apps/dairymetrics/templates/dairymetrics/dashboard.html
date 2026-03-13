@@ -4,7 +4,7 @@
 {% block title %}DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=5" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=6" />
 {% endblock %}
 
 {% block content %}
@@ -51,6 +51,13 @@
           <h2>メンバーデータ</h2>
         </div>
         <div class="dairymetrics-member-select-wrap">
+          <div class="dairymetrics-member-filter-select-wrap">
+            <select id="dairymetrics-member-filter-select" data-member-filter-select aria-label="部署で絞り込み">
+              {% for department in member_filter_departments %}
+              <option value="{{ department.code }}" {% if forloop.first %}selected{% endif %}>{{ department.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
           <div class="dairymetrics-member-filter-row" role="tablist" aria-label="部署で絞り込み">
             {% for department in member_filter_departments %}
             <button type="button" class="dairymetrics-toggle-btn{% if forloop.first %} is-active{% endif %}" data-member-filter-toggle data-member-filter-value="{{ department.code }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">{{ department.name }}</button>
@@ -111,5 +118,5 @@
   {% endif %}
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
-<script src="{% static 'dairymetrics/dashboard.js' %}?v=2"></script>
+<script src="{% static 'dairymetrics/dashboard.js' %}?v=3"></script>
 {% endblock %}

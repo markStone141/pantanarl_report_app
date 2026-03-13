@@ -768,6 +768,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, 'data-member-filter-value="STYLE1"', html=False)
         self.assertContains(response, ">スタイル1<", html=False)
         self.assertNotContains(response, ">STYLE1<", html=False)
+        self.assertContains(response, 'data-member-filter-select', html=False)
 
     def test_member_dashboard_ajax_switches_selected_member(self):
         inactive_member = Member.objects.create(name="Inactive Member", is_active=False)
