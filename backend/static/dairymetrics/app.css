@@ -629,11 +629,14 @@
 
 .dairymetrics-field input[type="date"],
 .dairymetrics-field input[type="month"],
+.dairymetrics-native-date,
 .dairymetrics-range-form input[type="date"],
 .dairymetrics-range-form input[type="month"],
 .dairymetrics-month-filter input[type="month"] {
   min-inline-size: 0;
+  -webkit-min-logical-width: 0;
   inline-size: 100%;
+  max-inline-size: 100%;
 }
 
 .dairymetrics-form-actions {
