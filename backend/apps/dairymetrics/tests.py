@@ -867,6 +867,10 @@ class DairyMetricsDashboardTests(TestCase):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")
         teammate = Member.objects.create(name="Member Teammate", user=teammate_user)
         MemberDepartment.objects.create(member=teammate, department=self.department)
+        un_department = Department.objects.create(code="UN", name="UN")
+        other_user = get_user_model().objects.create_user(username="member2d", password="pass123")
+        other_member = Member.objects.create(name="Other Department", user=other_user)
+        MemberDepartment.objects.create(member=other_member, department=un_department)
         MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=self.department,
@@ -891,6 +895,17 @@ class DairyMetricsDashboardTests(TestCase):
             location_name="Yokohama",
             activity_closed=True,
         )
+        MemberDailyMetricEntry.objects.create(
+            member=other_member,
+            department=un_department,
+            entry_date=today,
+            approach_count=3,
+            communication_count=2,
+            result_count=1,
+            support_amount=2000,
+            location_name="Ueno",
+            activity_closed=False,
+        )
         self.client.force_login(self.user)
 
         response = self.client.get(reverse("dairymetrics_member_overview"), {"department": "WV"})
@@ -908,6 +923,15 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "活動終了")
         self.assertContains(response, "4,700")
         self.assertNotContains(response, "月次シート")
+        self.assertContains(response, '<option value="UN"', html=False)
+        self.assertNotContains(response, "Other Department")
+
+        other_response = self.client.get(reverse("dairymetrics_member_overview"), {"department": "UN"})
+
+        self.assertEqual(other_response.status_code, 200)
+        self.assertContains(other_response, "Other Department")
+        self.assertContains(other_response, "Ueno")
+        self.assertNotContains(other_response, "Member Teammate")
 
     def test_dashboard_nav_links_to_member_overview(self):
         self.client.force_login(self.user)

@@ -1053,11 +1053,19 @@ def build_member_ranking_detail(member, *, today=None, department_code=None, sco
 def build_member_daily_overview(member, *, department_code="", today=None):
     today_value = today or date.today()
     departments = list(
+        Department.objects.filter(is_active=True, member_links__member__is_active=True).distinct().order_by("code")
+    )
+    member_departments = list(
         Department.objects.filter(is_active=True, member_links__member=member).distinct().order_by("code")
     )
     selected_department = None
     if department_code:
         selected_department = next((department for department in departments if department.code == department_code), None)
+    if not selected_department and member_departments:
+        selected_department = next(
+            (department for department in departments if department.code == member_departments[0].code),
+            None,
+        )
     if not selected_department and departments:
         selected_department = departments[0]
 
