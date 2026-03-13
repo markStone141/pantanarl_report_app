@@ -1274,6 +1274,31 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "Member Three")
         self.assertContains(response, '?department=UN&scope=month', html=False)
 
+    def test_admin_ranking_overview_defaults_to_un_department(self):
+        today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            result_count=1,
+            support_amount=900,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member_wv,
+            department=self.department_wv,
+            entry_date=today,
+            cs_count=1,
+            support_amount=1200,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("dairymetrics_admin_ranking_overview"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "UN 全体ランキング")
+
     def test_admin_ranking_overview_supports_month_scope(self):
         MemberDailyMetricEntry.objects.create(
             member=self.member,

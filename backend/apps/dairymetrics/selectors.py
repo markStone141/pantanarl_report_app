@@ -631,7 +631,7 @@ def build_admin_ranking_overview(*, department_code="", scope="today", start_dat
     if department_code:
         selected_department = next((department for department in departments if department.code == department_code), None)
     if not selected_department and departments:
-        selected_department = departments[0]
+        selected_department = next((department for department in departments if department.code == "UN"), departments[0])
 
     if not selected_department:
         return {
