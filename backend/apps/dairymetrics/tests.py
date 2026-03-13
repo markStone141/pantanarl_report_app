@@ -832,6 +832,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertNotContains(response, "目標を設定")
         self.assertNotContains(response, "dairymetrics-open-entry")
         self.assertNotContains(response, "メンバー一覧へ戻る")
+        self.assertContains(response, reverse("dairymetrics_member_overview"))
 
     def test_member_monthly_overview_shows_month_sheet(self):
         MemberDailyMetricEntry.objects.create(
