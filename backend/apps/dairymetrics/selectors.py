@@ -1263,10 +1263,10 @@ def build_admin_month_overview(*, target_month, department_code="", today=None):
             )
 
             adjustment_metric_specs = [
-                {"label": "郵送件", "field": "return_postal_count"},
-                {"label": "郵送金", "field": "return_postal_amount"},
-                {"label": "QR件", "field": "return_qr_count"},
-                {"label": "QR金", "field": "return_qr_amount"},
+                {"label": "郵送件数", "field": "return_postal_count"},
+                {"label": "郵送金額", "field": "return_postal_amount"},
+                {"label": "QR件数", "field": "return_qr_count"},
+                {"label": "QR金額", "field": "return_qr_amount"},
             ]
             adjustment_metric_rows = []
             for spec in adjustment_metric_specs:
