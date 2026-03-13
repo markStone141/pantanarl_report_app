@@ -5,6 +5,9 @@
   --muted: #69788c;
   --line: rgba(109, 123, 141, 0.20);
   --brand: #0a84ff;
+  --brand-deep: #006adc;
+  --brand-mid: #007df0;
+  --brand-light: #4aa8ff;
   --brand-soft: rgba(10, 132, 255, 0.12);
   --ok: #30a46c;
   --warn: #d0871a;
@@ -45,7 +48,7 @@ a {
 
 .topbar {
   background:
-    linear-gradient(180deg, rgba(18, 100, 191, 0.82) 0%, rgba(11, 127, 235, 0.74) 58%, rgba(78, 168, 255, 0.68) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--brand-deep) 84%, white) 0%, color-mix(in srgb, var(--brand-mid) 82%, white) 58%, color-mix(in srgb, var(--brand-light) 78%, white) 100%);
   color: #f8fbff;
   padding: 16px 20px;
   border-radius: var(--radius-lg);
@@ -334,12 +337,12 @@ textarea {
 }
 
 button {
-  background: linear-gradient(180deg, #1a8cff 0%, #0077ed 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--brand-light) 60%, white) 0%, var(--brand) 34%, var(--brand-deep) 100%);
   color: #fff;
-  border: 1px solid rgba(0, 82, 181, 0.18);
+  border: 1px solid color-mix(in srgb, var(--brand-deep) 30%, transparent);
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(0, 119, 237, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--brand-deep) 22%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 button:hover {
@@ -809,7 +812,7 @@ th {
     right: 0;
     width: min(84vw, 320px);
     height: 100vh;
-    background: linear-gradient(180deg, rgba(16, 95, 186, 0.92) 0%, rgba(12, 122, 228, 0.88) 60%, rgba(63, 155, 247, 0.84) 100%);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--brand-deep) 90%, white) 0%, color-mix(in srgb, var(--brand-mid) 88%, white) 60%, color-mix(in srgb, var(--brand-light) 82%, white) 100%);
     padding: 72px 14px 18px;
     z-index: 120;
     display: flex !important;
