@@ -34,7 +34,6 @@
       <div class="dairymetrics-admin-summary-head">
         <div>
           <strong>今日の活動状況</strong>
-          <div class="muted">同じ部署の活動状況を確認できます。</div>
         </div>
         <div class="dairymetrics-admin-inline-filter">
           <div class="muted dairymetrics-admin-inline-date">{{ today|date:'Y/m/d' }}</div>
@@ -67,7 +66,6 @@
       <div class="dairymetrics-admin-summary-head">
         <div>
           <strong>本日の実績</strong>
-          <div class="muted">同じ部署の今日の入力合計です。</div>
         </div>
         <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_monthly_overview' %}{% if selected_department %}?department={{ selected_department.code }}{% endif %}">月次シート</a>
       </div>
