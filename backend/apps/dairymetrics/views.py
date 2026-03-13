@@ -453,6 +453,64 @@ def admin_monthly_overview(request: HttpRequest) -> HttpResponse:
 
 
 @require_dairymetrics_admin
+def admin_monthly_update_cell(request: HttpRequest) -> HttpResponse:
+    if request.method != "POST":
+        return JsonResponse({"error": "method_not_allowed"}, status=405)
+
+    member_id = request.POST.get("member_id")
+    department_code = (request.POST.get("department") or "").strip()
+    entry_date = parse_date((request.POST.get("entry_date") or "").strip())
+    field_name = (request.POST.get("field") or "").strip()
+    raw_value = (request.POST.get("value") or "").strip()
+
+    if not member_id or not department_code or not entry_date or not field_name:
+        return JsonResponse({"error": "invalid_request"}, status=400)
+
+    department = get_object_or_404(Department.objects.filter(is_active=True), code=department_code)
+    member = get_object_or_404(
+        Member.objects.filter(department_links__department=department).distinct(),
+        pk=member_id,
+    )
+
+    allowed_fields = {
+        "approach_count": "number",
+        "communication_count": "number",
+        "support_amount": "number",
+        "location_name": "text",
+    }
+    if department.code == "WV":
+        allowed_fields.update({"cs_count": "number", "refugee_count": "number"})
+    else:
+        allowed_fields["result_count"] = "number"
+
+    if field_name not in allowed_fields:
+        return JsonResponse({"error": "invalid_field"}, status=400)
+
+    entry, _ = MemberDailyMetricEntry.objects.get_or_create(
+        member=member,
+        department=department,
+        entry_date=entry_date,
+    )
+
+    if allowed_fields[field_name] == "text":
+        setattr(entry, field_name, raw_value)
+    else:
+        if raw_value == "":
+            parsed_value = 0
+        else:
+            try:
+                parsed_value = int(raw_value)
+            except ValueError:
+                return JsonResponse({"error": "invalid_value"}, status=400)
+            if parsed_value < 0:
+                return JsonResponse({"error": "invalid_value"}, status=400)
+        setattr(entry, field_name, parsed_value)
+
+    entry.save()
+    return JsonResponse({"ok": True})
+
+
+@require_dairymetrics_admin
 def admin_monthly_comparison(request: HttpRequest) -> HttpResponse:
     target_month = parse_date(f"{(request.GET.get('month') or timezone.localdate().strftime('%Y-%m'))}-01")
     if not target_month:

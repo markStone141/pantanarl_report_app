@@ -1090,13 +1090,12 @@ class DairyMetricsAdminTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Member Three")
-        self.assertContains(response, "稼働 1日")
         self.assertContains(response, "2")
         self.assertContains(response, "4,000")
         self.assertContains(response, "Shibuya")
         self.assertContains(response, "dairymetrics-admin-month-sheet")
         self.assertNotContains(response, "1,200")
-        self.assertNotContains(response, "戻り 1日")
+        self.assertNotContains(response, "data-day-count-label")
 
     def test_admin_monthly_overview_adjustment_tab_shows_only_return_metrics(self):
         target_month = date(2026, 3, 1)
@@ -1129,7 +1128,6 @@ class DairyMetricsAdminTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "戻り 1日")
         self.assertContains(response, "郵送件")
         self.assertContains(response, "郵送金")
         self.assertContains(response, "QR件")
@@ -1141,6 +1139,58 @@ class DairyMetricsAdminTests(TestCase):
         self.assertNotContains(response, ">件数<", html=False)
         self.assertNotContains(response, ">金額<", html=False)
         self.assertNotContains(response, "Shibuya")
+
+    def test_admin_monthly_update_cell_updates_numeric_field_entry(self):
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            result_count=2,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("dairymetrics_admin_monthly_update_cell"),
+            {
+                "member_id": self.member.id,
+                "department": self.department.code,
+                "entry_date": entry.entry_date.strftime("%Y-%m-%d"),
+                "field": "result_count",
+                "value": "5",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        entry.refresh_from_db()
+        self.assertEqual(entry.result_count, 5)
+
+    def test_admin_monthly_update_cell_updates_location_name(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            location_name="Shibuya",
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("dairymetrics_admin_monthly_update_cell"),
+            {
+                "member_id": self.member.id,
+                "department": self.department.code,
+                "entry_date": "2026-03-09",
+                "field": "location_name",
+                "value": "Ikebukuro",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            MemberDailyMetricEntry.objects.get(member=self.member, department=self.department, entry_date=date(2026, 3, 9)).location_name,
+            "Ikebukuro",
+        )
 
     def test_admin_monthly_overview_filters_by_department(self):
         MemberDailyMetricEntry.objects.create(

@@ -4,7 +4,7 @@
 {% block title %}月次集計 | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=3" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=4" />
 {% endblock %}
 
 {% block content %}
@@ -52,7 +52,7 @@
         href="?month={{ target_month|date:'Y-m' }}{% if selected_department %}&department={{ selected_department.code }}{% endif %}&tab=adjustment"
       >戻り実績</a>
     </div>
-    <div class="table-scroll">
+    <div class="table-scroll" data-monthly-edit-root data-monthly-editable="{% if active_tab == 'field' %}true{% else %}false{% endif %}" data-update-url="{% url 'dairymetrics_admin_monthly_update_cell' %}">
       <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-month-sheet">
         <colgroup>
           <col class="dairymetrics-col-member">
@@ -88,7 +88,6 @@
               <a href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
                 <strong>{{ row.member.name }}</strong>
               </a>
-              <div class="muted">{{ row.day_count_label }} {{ row.active_day_count }}日</div>
             </td>
             {% endif %}
             <td class="dairymetrics-admin-metric-label">{{ metric_row.label }}</td>
@@ -107,7 +106,18 @@
               {% endif %}
             </td>
             {% for cell in metric_row.cells %}
-            <td class="dairymetrics-admin-sheet-cell{% if metric_row.label != '現場' %} dairymetrics-admin-number{% endif %}{% if cell.is_empty %} is-empty{% endif %}">
+            <td
+              class="dairymetrics-admin-sheet-cell{% if metric_row.label != '現場' %} dairymetrics-admin-number{% endif %}{% if cell.is_empty %} is-empty{% endif %}{% if active_tab == 'field' and metric_row.editable %} is-editable{% endif %}"
+              {% if active_tab == 'field' and metric_row.editable %}
+              data-editable-cell
+              data-member-id="{{ row.member.id }}"
+              data-department-code="{{ row.department.code }}"
+              data-entry-date="{{ cell.entry_date|date:'Y-m-d' }}"
+              data-field="{{ metric_row.field }}"
+              data-value="{{ cell.raw_value }}"
+              data-cell-type="{% if metric_row.field == 'location_name' %}text{% else %}number{% endif %}"
+              {% endif %}
+            >
               {% if metric_row.label == '現場' %}
               <span class="dairymetrics-admin-location">{{ cell.value }}</span>
               {% else %}
@@ -128,4 +138,5 @@
   </section>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
+<script src="{% static 'dairymetrics/admin_monthly.js' %}?v=1"></script>
 {% endblock %}
