@@ -52,7 +52,13 @@
         href="?month={{ target_month|date:'Y-m' }}{% if selected_department %}&department={{ selected_department.code }}{% endif %}&tab=adjustment"
       >戻り実績</a>
     </div>
-    <div class="table-scroll" data-monthly-edit-root data-monthly-editable="true" data-update-url="{% url 'dairymetrics_admin_monthly_update_cell' %}">
+    <div class="dairymetrics-admin-bulk-tools">
+      <button type="button" class="btn-inline" data-monthly-edit-start>編集</button>
+      <button type="button" class="btn-inline" data-monthly-edit-save hidden>保存</button>
+      <button type="button" class="btn-inline dairymetrics-secondary-btn" data-monthly-edit-cancel hidden>キャンセル</button>
+      <span class="muted" data-monthly-edit-status></span>
+    </div>
+    <div class="table-scroll" data-monthly-edit-root data-monthly-editable="true" data-update-url="{% url 'dairymetrics_admin_monthly_update_cell' %}" data-bulk-update-url="{% url 'dairymetrics_admin_monthly_bulk_update' %}">
       <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-month-sheet">
         <colgroup>
           <col class="dairymetrics-col-member">
@@ -138,5 +144,5 @@
   </section>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}"></script>
-<script src="{% static 'dairymetrics/admin_monthly.js' %}?v=2"></script>
+<script src="{% static 'dairymetrics/admin_monthly.js' %}?v=3"></script>
 {% endblock %}

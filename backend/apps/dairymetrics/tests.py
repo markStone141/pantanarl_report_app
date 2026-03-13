@@ -1,3 +1,4 @@
+import json
 from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
@@ -1618,6 +1619,118 @@ class DairyMetricsAdminTests(TestCase):
         entry.refresh_from_db()
         self.assertEqual(entry.cs_count, 4)
         self.assertEqual(entry.refugee_count, 2)
+
+    def test_admin_monthly_bulk_update_updates_existing_and_creates_new_entry(self):
+        existing_entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 9),
+            result_count=2,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("dairymetrics_admin_monthly_bulk_update"),
+            data=json.dumps(
+                {
+                    "changes": [
+                        {
+                            "member_id": self.member.id,
+                            "department": self.department.code,
+                            "entry_date": "2026-03-09",
+                            "field": "result_count",
+                            "value": "5",
+                        },
+                        {
+                            "member_id": self.member.id,
+                            "department": self.department.code,
+                            "entry_date": "2026-03-10",
+                            "field": "approach_count",
+                            "value": "9",
+                        },
+                    ]
+                }
+            ),
+            content_type="application/json",
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        existing_entry.refresh_from_db()
+        self.assertEqual(existing_entry.result_count, 5)
+        created_entry = MemberDailyMetricEntry.objects.get(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 3, 10),
+        )
+        self.assertEqual(created_entry.approach_count, 9)
+        self.assertEqual(response.json()["updated_count"], 2)
+
+    def test_admin_monthly_bulk_update_updates_adjustment_totals(self):
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 9),
+            source_type="postal",
+            return_postal_count=1,
+            created_by=self.admin,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("dairymetrics_admin_monthly_bulk_update"),
+            data=json.dumps(
+                {
+                    "changes": [
+                        {
+                            "member_id": self.member.id,
+                            "department": self.department.code,
+                            "entry_date": "2026-03-09",
+                            "field": "return_postal_count",
+                            "value": "4",
+                        }
+                    ]
+                }
+            ),
+            content_type="application/json",
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        inline_adjustment = MetricAdjustment.objects.get(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 3, 9),
+            source_type="other",
+            note="__inline_monthly_adjustment__",
+        )
+        self.assertEqual(inline_adjustment.return_postal_count, 3)
+
+    def test_admin_monthly_bulk_update_rejects_invalid_value(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("dairymetrics_admin_monthly_bulk_update"),
+            data=json.dumps(
+                {
+                    "changes": [
+                        {
+                            "member_id": self.member.id,
+                            "department": self.department.code,
+                            "entry_date": "2026-03-09",
+                            "field": "result_count",
+                            "value": "-1",
+                        }
+                    ]
+                }
+            ),
+            content_type="application/json",
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"], "invalid_value")
+        self.assertEqual(response.json()["index"], 0)
 
     def test_admin_monthly_update_cell_rejects_negative_values(self):
         self.client.force_login(self.admin)

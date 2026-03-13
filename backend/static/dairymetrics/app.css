@@ -999,6 +999,23 @@
   flex-wrap: wrap;
 }
 
+.dairymetrics-admin-bulk-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.dairymetrics-admin-bulk-tools [hidden] {
+  display: none !important;
+}
+
+.dairymetrics-admin-bulk-tools .is-error {
+  color: #bf3b31;
+  font-weight: 700;
+}
+
 .dairymetrics-admin-table {
   width: 100%;
   border-collapse: collapse;
@@ -1220,6 +1237,10 @@
 .dairymetrics-admin-sheet-cell.is-editing {
   padding: 2px;
   background: #eef8ff;
+}
+
+.dairymetrics-admin-sheet-cell.is-dirty {
+  background: #fff5d9;
 }
 
 .dairymetrics-admin-inline-input {

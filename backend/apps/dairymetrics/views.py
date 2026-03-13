@@ -1,6 +1,8 @@
+import json
 from datetime import timedelta
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.db import transaction
 from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -60,6 +62,92 @@ def _login_redirect_url(user, *, fallback=""):
     if user.is_staff:
         return reverse("dairymetrics_admin_overview")
     return reverse("dairymetrics_dashboard")
+
+
+def _admin_monthly_allowed_fields(department):
+    allowed_fields = {
+        "approach_count": "number",
+        "communication_count": "number",
+        "support_amount": "number",
+        "location_name": "text",
+    }
+    if department.code == "WV":
+        allowed_fields.update({"cs_count": "number", "refugee_count": "number"})
+    else:
+        allowed_fields["result_count"] = "number"
+    adjustment_fields = {
+        "return_postal_count",
+        "return_postal_amount",
+        "return_qr_count",
+        "return_qr_amount",
+    }
+    for field_name in adjustment_fields:
+        allowed_fields[field_name] = "number"
+    return allowed_fields, adjustment_fields
+
+
+def _apply_admin_monthly_update(*, member, department, entry_date, field_name, raw_value):
+    allowed_fields, adjustment_fields = _admin_monthly_allowed_fields(department)
+    if field_name not in allowed_fields:
+        return {"error": "invalid_field"}, 400
+
+    if field_name in adjustment_fields:
+        if raw_value == "":
+            desired_value = 0
+        else:
+            try:
+                desired_value = int(raw_value)
+            except ValueError:
+                return {"error": "invalid_value"}, 400
+            if desired_value < 0:
+                return {"error": "invalid_value"}, 400
+
+        inline_adjustment, _ = MetricAdjustment.objects.get_or_create(
+            member=member,
+            department=department,
+            target_date=entry_date,
+            source_type=MetricAdjustment.SOURCE_OTHER,
+            note=INLINE_ADJUSTMENT_NOTE,
+        )
+        other_total = (
+            MetricAdjustment.objects.filter(
+                member=member,
+                department=department,
+                target_date=entry_date,
+            )
+            .exclude(pk=inline_adjustment.pk)
+            .aggregate(total=Sum(field_name))
+            .get("total")
+            or 0
+        )
+        if desired_value < other_total:
+            return {"error": "value_below_existing_adjustments"}, 400
+        setattr(inline_adjustment, field_name, desired_value - int(other_total))
+        inline_adjustment.save()
+        return {"ok": True}, 200
+
+    entry, _ = MemberDailyMetricEntry.objects.get_or_create(
+        member=member,
+        department=department,
+        entry_date=entry_date,
+    )
+
+    if allowed_fields[field_name] == "text":
+        setattr(entry, field_name, raw_value)
+    else:
+        if raw_value == "":
+            parsed_value = 0
+        else:
+            try:
+                parsed_value = int(raw_value)
+            except ValueError:
+                return {"error": "invalid_value"}, 400
+            if parsed_value < 0:
+                return {"error": "invalid_value"}, 400
+        setattr(entry, field_name, parsed_value)
+
+    entry.save()
+    return {"ok": True}, 200
 
 def _member_directory_queryset():
     return (
@@ -551,85 +639,60 @@ def admin_monthly_update_cell(request: HttpRequest) -> HttpResponse:
         Member.objects.filter(department_links__department=department).distinct(),
         pk=member_id,
     )
+    payload, status = _apply_admin_monthly_update(
+        member=member,
+        department=department,
+        entry_date=entry_date,
+        field_name=field_name,
+        raw_value=raw_value,
+    )
+    return JsonResponse(payload, status=status)
 
-    allowed_fields = {
-        "approach_count": "number",
-        "communication_count": "number",
-        "support_amount": "number",
-        "location_name": "text",
-    }
-    if department.code == "WV":
-        allowed_fields.update({"cs_count": "number", "refugee_count": "number"})
-    else:
-        allowed_fields["result_count"] = "number"
-    adjustment_fields = {
-        "return_postal_count",
-        "return_postal_amount",
-        "return_qr_count",
-        "return_qr_amount",
-    }
-    for field_name_key in adjustment_fields:
-        allowed_fields[field_name_key] = "number"
 
-    if field_name not in allowed_fields:
-        return JsonResponse({"error": "invalid_field"}, status=400)
+@require_dairymetrics_admin
+def admin_monthly_bulk_update(request: HttpRequest) -> HttpResponse:
+    if request.method != "POST":
+        return JsonResponse({"error": "method_not_allowed"}, status=405)
 
-    if field_name in adjustment_fields:
-        if raw_value == "":
-            desired_value = 0
-        else:
-            try:
-                desired_value = int(raw_value)
-            except ValueError:
-                return JsonResponse({"error": "invalid_value"}, status=400)
-            if desired_value < 0:
-                return JsonResponse({"error": "invalid_value"}, status=400)
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"error": "invalid_json"}, status=400)
 
-        inline_adjustment, _ = MetricAdjustment.objects.get_or_create(
-            member=member,
-            department=department,
-            target_date=entry_date,
-            source_type=MetricAdjustment.SOURCE_OTHER,
-            note=INLINE_ADJUSTMENT_NOTE,
-        )
-        other_total = (
-            MetricAdjustment.objects.filter(
+    changes = payload.get("changes")
+    if not isinstance(changes, list):
+        return JsonResponse({"error": "invalid_request"}, status=400)
+    if not changes:
+        return JsonResponse({"ok": True, "updated_count": 0})
+
+    with transaction.atomic():
+        for index, change in enumerate(changes):
+            member_id = str(change.get("member_id") or "").strip()
+            department_code = str(change.get("department") or "").strip()
+            entry_date = parse_date(str(change.get("entry_date") or "").strip())
+            field_name = str(change.get("field") or "").strip()
+            raw_value = str(change.get("value") or "").strip()
+
+            if not member_id or not department_code or not entry_date or not field_name:
+                return JsonResponse({"error": "invalid_request", "index": index}, status=400)
+
+            department = get_object_or_404(Department.objects.filter(is_active=True), code=department_code)
+            member = get_object_or_404(
+                Member.objects.filter(department_links__department=department).distinct(),
+                pk=member_id,
+            )
+            result, status = _apply_admin_monthly_update(
                 member=member,
                 department=department,
-                target_date=entry_date,
+                entry_date=entry_date,
+                field_name=field_name,
+                raw_value=raw_value,
             )
-            .exclude(pk=inline_adjustment.pk)
-            .aggregate(total=Sum(field_name))
-            .get("total")
-            or 0
-        )
-        if desired_value < other_total:
-            return JsonResponse({"error": "value_below_existing_adjustments"}, status=400)
-        setattr(inline_adjustment, field_name, desired_value - int(other_total))
-        inline_adjustment.save()
-    else:
-        entry, _ = MemberDailyMetricEntry.objects.get_or_create(
-            member=member,
-            department=department,
-            entry_date=entry_date,
-        )
+            if status != 200:
+                result["index"] = index
+                return JsonResponse(result, status=status)
 
-        if allowed_fields[field_name] == "text":
-            setattr(entry, field_name, raw_value)
-        else:
-            if raw_value == "":
-                parsed_value = 0
-            else:
-                try:
-                    parsed_value = int(raw_value)
-                except ValueError:
-                    return JsonResponse({"error": "invalid_value"}, status=400)
-                if parsed_value < 0:
-                    return JsonResponse({"error": "invalid_value"}, status=400)
-            setattr(entry, field_name, parsed_value)
-
-        entry.save()
-    return JsonResponse({"ok": True})
+    return JsonResponse({"ok": True, "updated_count": len(changes)})
 
 
 @require_dairymetrics_admin
