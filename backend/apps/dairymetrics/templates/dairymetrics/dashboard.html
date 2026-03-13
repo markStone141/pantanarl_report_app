@@ -54,13 +54,13 @@
           <div class="dairymetrics-member-filter-select-wrap">
             <select id="dairymetrics-member-filter-select" data-member-filter-select aria-label="部署で絞り込み">
               {% for department in member_filter_departments %}
-              <option value="{{ department.code }}" {% if forloop.first %}selected{% endif %}>{{ department.name }}</option>
+              <option value="{{ department.code }}" {% if department.code == member_filter_default_code %}selected{% endif %}>{{ department.name }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="dairymetrics-member-filter-row" role="tablist" aria-label="部署で絞り込み">
             {% for department in member_filter_departments %}
-            <button type="button" class="dairymetrics-toggle-btn{% if forloop.first %} is-active{% endif %}" data-member-filter-toggle data-member-filter-value="{{ department.code }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">{{ department.name }}</button>
+            <button type="button" class="dairymetrics-toggle-btn{% if department.code == member_filter_default_code %} is-active{% endif %}" data-member-filter-toggle data-member-filter-value="{{ department.code }}" aria-pressed="{% if department.code == member_filter_default_code %}true{% else %}false{% endif %}">{{ department.name }}</button>
             {% endfor %}
           </div>
           <select id="dairymetrics-member-select" data-member-switch>

@@ -770,6 +770,18 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertNotContains(response, ">STYLE1<", html=False)
         self.assertContains(response, 'data-member-filter-select', html=False)
 
+    def test_member_index_defaults_filter_to_viewer_department(self):
+        un_department = Department.objects.create(code="UN", name="UN")
+        un_member = Member.objects.create(name="UN Member")
+        MemberDepartment.objects.create(member=un_member, department=un_department)
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_member_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-member-filter-value="WV" aria-pressed="true"', html=False)
+        self.assertContains(response, '<option value="WV" selected>WV</option>', html=False)
+
     def test_member_dashboard_ajax_switches_selected_member(self):
         inactive_member = Member.objects.create(name="Inactive Member", is_active=False)
         MemberDepartment.objects.create(member=inactive_member, department=self.department)
@@ -887,7 +899,6 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "今日の活動状況")
         self.assertContains(response, "本日の実績")
         self.assertContains(response, "メンバー実績状況")
-        self.assertContains(response, "月次シート")
         self.assertContains(response, "Shibuya")
         self.assertContains(response, "Yokohama")
         self.assertContains(response, "Member Two")
@@ -895,6 +906,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "活動中")
         self.assertContains(response, "活動終了")
         self.assertContains(response, "4,700")
+        self.assertNotContains(response, "月次シート")
 
     def test_dashboard_nav_links_to_member_overview(self):
         self.client.force_login(self.user)

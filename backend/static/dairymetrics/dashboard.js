@@ -13,7 +13,10 @@
   const viewedMemberName = document.getElementById('dairymetrics-viewed-member-name');
   const memberFilterButtons = Array.from(document.querySelectorAll('[data-member-filter-toggle]'));
   if (!cardRoot) return;
-  let activeMemberFilter = memberFilterButtons[0] ? memberFilterButtons[0].getAttribute('data-member-filter-value') || '' : '';
+  let activeMemberFilter =
+    (memberFilterSelect && memberFilterSelect.value) ||
+    (memberFilterButtons.find(function (button) { return button.classList.contains('is-active'); }) || memberFilterButtons[0] || { getAttribute: function () { return ''; } }).getAttribute('data-member-filter-value') ||
+    '';
 
   function applyMemberFilter(filterValue) {
     if (!memberSelect) return;

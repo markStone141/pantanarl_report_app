@@ -21,7 +21,6 @@
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
       <a href="{% url 'dairymetrics_member_overview' %}">実績確認</a>
       <a href="{% url 'dairymetrics_compare' %}">スコア</a>
-      <a href="{% url 'dairymetrics_member_monthly_overview' %}">月次シート</a>
       {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>{% endif %}
       <a href="{% url 'report_index' %}">Report App</a>
       <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
@@ -67,7 +66,6 @@
         <div>
           <strong>本日の実績</strong>
         </div>
-        <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_member_monthly_overview' %}{% if selected_department %}?department={{ selected_department.code }}{% endif %}">月次シート</a>
       </div>
       <div class="dairymetrics-admin-total-list">
         {% for total in today_department_totals %}

@@ -89,6 +89,21 @@ def _member_filter_departments(member_rows):
     return [departments_by_code[code] for code in sorted(departments_by_code)]
 
 
+def _default_member_filter_code(viewer_member, filter_departments):
+    department_codes = [department.code for department in filter_departments]
+    if viewer_member:
+        viewer_department = (
+            Department.objects.filter(is_active=True, member_links__member=viewer_member)
+            .order_by("code")
+            .first()
+        )
+        if viewer_department and viewer_department.code in department_codes:
+            return viewer_department.code
+    if "UN" in department_codes:
+        return "UN"
+    return department_codes[0] if department_codes else ""
+
+
 def _build_member_dashboard_context(*, request, member, readonly=False, viewer_member=None):
     selected_department_code = (request.GET.get("department") or "").strip()
     selected_scope = (request.GET.get("scope") or "today").strip()
@@ -126,6 +141,7 @@ def _build_member_dashboard_context(*, request, member, readonly=False, viewer_m
                 f"{reverse('dairymetrics_scope_target')}?department={selected_department.code}&scope={selected_card['scope']}"
             )
     member_rows = _build_member_directory() if readonly else []
+    member_filter_departments = _member_filter_departments(member_rows) if readonly else []
     return {
         "page_title": "DairyMetrics",
         "member": member,
@@ -141,7 +157,8 @@ def _build_member_dashboard_context(*, request, member, readonly=False, viewer_m
         "readonly_dashboard": readonly,
         "viewer_member": viewer_member if readonly else (viewer_member or member),
         "member_rows": member_rows,
-        "member_filter_departments": _member_filter_departments(member_rows) if readonly else [],
+        "member_filter_departments": member_filter_departments,
+        "member_filter_default_code": _default_member_filter_code(viewer_member, member_filter_departments) if readonly else "",
     }
 
 
@@ -229,6 +246,7 @@ def member_index(request: HttpRequest) -> HttpResponse:
                 "readonly_dashboard": True,
                 "member_rows": [],
                 "member_filter_departments": [],
+                "member_filter_default_code": "",
             },
         )
     return member_dashboard(request, selected_member.id)
