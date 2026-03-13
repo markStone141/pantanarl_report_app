@@ -766,14 +766,6 @@
   overflow: hidden;
 }
 
-.dairymetrics-admin-summary-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 4px;
-  background: linear-gradient(90deg, #0f6d8c, #2aa889);
-}
-
 .dairymetrics-admin-summary-head,
 .dairymetrics-admin-table-head {
   display: flex;
