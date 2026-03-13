@@ -450,12 +450,13 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertIsNone(entry.activity_closed_at)
 
     def test_dashboard_ajax_switches_department_and_prefills_form(self):
+        today = timezone.localdate()
         second_department = Department.objects.create(code="UN", name="UN")
         MemberDepartment.objects.create(member=self.member, department=second_department)
         MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=second_department,
-            entry_date=date(2026, 3, 9),
+            entry_date=today,
             approach_count=7,
             communication_count=3,
             result_count=1,
