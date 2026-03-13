@@ -26,7 +26,7 @@
       <a
         class="dairymetrics-toggle-btn {% if selected_department and department.code == selected_department.code %}is-active{% endif %}"
         href="{% url 'dairymetrics_compare' %}?department={{ department.code }}&scope={{ selected_scope }}"
-      >{{ department.code }}</a>
+      >{{ department.name }}</a>
       {% endfor %}
     </div>
     {% endif %}

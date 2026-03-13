@@ -16,7 +16,7 @@
         >
           {% for department in departments %}
           <option value="{{ department.code }}" {% if selected_department and selected_department.code == department.code %}selected{% endif %}>
-            {{ department.code }}
+            {{ department.name }}
           </option>
           {% endfor %}
         </select>

@@ -756,6 +756,19 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertNotContains(response, 'data-member-filter-value="UN"')
         self.assertContains(response, 'data-department-codes="WV"')
 
+    def test_member_index_uses_department_display_name_for_filter_tags(self):
+        style_department = Department.objects.create(code="STYLE1", name="スタイル1")
+        style_member = Member.objects.create(name="Style Member")
+        MemberDepartment.objects.create(member=style_member, department=style_department)
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_member_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-member-filter-value="STYLE1"', html=False)
+        self.assertContains(response, ">スタイル1<", html=False)
+        self.assertNotContains(response, ">STYLE1<", html=False)
+
     def test_member_dashboard_ajax_switches_selected_member(self):
         inactive_member = Member.objects.create(name="Inactive Member", is_active=False)
         MemberDepartment.objects.create(member=inactive_member, department=self.department)
