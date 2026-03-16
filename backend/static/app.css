@@ -857,7 +857,7 @@ th {
   .dashboard-drawer-toggle {
     display: inline-flex;
     position: relative;
-    z-index: 230;
+    z-index: 1002;
   }
 
   .dashboard-drawer-topbar .topbar-menu-toggle,
@@ -871,9 +871,9 @@ th {
     right: 0;
     width: min(84vw, 320px);
     height: 100vh;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--brand-deep) 94%, black 6%) 0%, color-mix(in srgb, var(--brand-mid) 90%, black 10%) 100%);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--brand-deep) 96%, black 4%) 0%, color-mix(in srgb, var(--brand-mid) 94%, black 6%) 100%);
     padding: 72px 14px 18px;
-    z-index: 240;
+    z-index: 1003;
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
@@ -887,8 +887,6 @@ th {
     opacity: 0 !important;
     pointer-events: none !important;
     border-left: 1px solid rgba(255, 255, 255, 0.20);
-    backdrop-filter: blur(28px) saturate(150%);
-    -webkit-backdrop-filter: blur(28px) saturate(150%);
   }
 
   .dashboard-drawer-topbar .dashboard-drawer-nav a {
@@ -904,16 +902,14 @@ th {
     visibility: visible !important;
     opacity: 1 !important;
     pointer-events: auto !important;
-    box-shadow: -14px 0 34px rgba(0, 0, 0, 0.25);
+    box-shadow: -18px 0 40px rgba(0, 0, 0, 0.28);
   }
 
   .dashboard-drawer-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(30, 41, 59, 0.26);
-    z-index: 230;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: rgba(15, 23, 42, 0.22);
+    z-index: 1001;
   }
 
   .dashboard-drawer-backdrop:not([hidden]) {
