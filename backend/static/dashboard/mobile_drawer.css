@@ -1,0 +1,93 @@
+.dashboard-drawer-topbar {
+  position: relative;
+}
+
+.dashboard-drawer-toggle {
+  display: none;
+  margin-left: auto;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-drawer-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dashboard-drawer-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .dashboard-drawer-toggle {
+    display: inline-flex;
+  }
+
+  .dashboard-drawer-topbar .topbar-menu-toggle,
+  .dashboard-drawer-topbar .topbar-mobile-logout {
+    display: none !important;
+  }
+
+  .dashboard-drawer-topbar {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .dashboard-drawer-topbar .dashboard-drawer-nav {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(84vw, 320px);
+    height: 100vh;
+    background: linear-gradient(150deg, #184f97, var(--brand) 62%, #2a7fd0);
+    padding: 72px 14px 18px;
+    z-index: 240;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: visible !important;
+    overflow-y: auto !important;
+    transform: translateX(100%) !important;
+    transition: transform 0.24s ease;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.20);
+  }
+
+  .dashboard-drawer-topbar .dashboard-drawer-nav a {
+    width: 100%;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    color: #fff;
+  }
+
+  .dashboard-drawer-topbar.drawer-open .dashboard-drawer-nav {
+    transform: translateX(0) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    box-shadow: -14px 0 34px rgba(0, 0, 0, 0.25);
+  }
+
+  .dashboard-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 33, 62, 0.42);
+    z-index: 230;
+  }
+
+  .dashboard-drawer-backdrop:not([hidden]) {
+    display: block;
+  }
+}
