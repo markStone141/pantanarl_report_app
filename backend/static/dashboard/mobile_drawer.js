@@ -26,11 +26,9 @@
   });
 
   nav.addEventListener("click", function (e) {
-    const link = e.target instanceof Element ? e.target.closest("a") : null;
-    if (!link) return;
-    e.preventDefault();
-    setOpen(false);
-    window.location.assign(link.href);
+    if (e.target && e.target.tagName === "A") {
+      setOpen(false);
+    }
   });
 
   window.addEventListener("resize", function () {
