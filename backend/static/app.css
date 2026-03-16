@@ -88,6 +88,7 @@ a {
 
 .dashboard-drawer-topbar {
   position: relative;
+  z-index: 220;
 }
 
 .dashboard-drawer-toggle {
@@ -855,6 +856,8 @@ th {
 
   .dashboard-drawer-toggle {
     display: inline-flex;
+    position: relative;
+    z-index: 230;
   }
 
   .dashboard-drawer-topbar .topbar-menu-toggle,
@@ -870,7 +873,7 @@ th {
     height: 100vh;
     background: linear-gradient(180deg, color-mix(in srgb, var(--brand-deep) 94%, black 6%) 0%, color-mix(in srgb, var(--brand-mid) 90%, black 10%) 100%);
     padding: 72px 14px 18px;
-    z-index: 120;
+    z-index: 240;
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
@@ -908,7 +911,7 @@ th {
     position: fixed;
     inset: 0;
     background: rgba(30, 41, 59, 0.26);
-    z-index: 110;
+    z-index: 230;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
   }
