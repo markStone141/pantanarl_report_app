@@ -89,7 +89,6 @@ a {
 .dashboard-drawer-topbar {
   position: relative;
   z-index: 220;
-  isolation: isolate;
 }
 
 .dashboard-drawer-toggle {
@@ -874,7 +873,7 @@ th {
     height: 100vh;
     background: linear-gradient(180deg, color-mix(in srgb, var(--brand-deep) 96%, black 4%) 0%, color-mix(in srgb, var(--brand-mid) 94%, black 6%) 100%);
     padding: 72px 14px 18px;
-    z-index: 1003;
+    z-index: 120;
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
@@ -889,14 +888,20 @@ th {
     pointer-events: none !important;
     border-left: 1px solid rgba(255, 255, 255, 0.20);
     touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
   }
 
   .dashboard-drawer-topbar .dashboard-drawer-nav a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     text-align: center;
     background: rgba(255, 255, 255, 0.16);
     border: 1px solid rgba(255, 255, 255, 0.24);
     color: #fff;
+    pointer-events: auto !important;
+    touch-action: manipulation;
   }
 
   .dashboard-drawer-topbar.drawer-open .dashboard-drawer-nav {
@@ -907,16 +912,16 @@ th {
     box-shadow: -18px 0 40px rgba(0, 0, 0, 0.28);
   }
 
-  .dashboard-drawer-topbar.drawer-open .dashboard-drawer-nav,
-  .dashboard-drawer-topbar.drawer-open .dashboard-drawer-nav * {
-    pointer-events: auto !important;
+  .dashboard-drawer-topbar.drawer-open {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .dashboard-drawer-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.22);
-    z-index: 1001;
+    z-index: 110;
     pointer-events: auto;
   }
 
