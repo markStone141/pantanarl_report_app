@@ -25,12 +25,6 @@
     setOpen(false);
   });
 
-  nav.addEventListener("click", function (e) {
-    if (e.target && e.target.tagName === "A") {
-      setOpen(false);
-    }
-  });
-
   window.addEventListener("resize", function () {
     if (window.innerWidth > 768) setOpen(false);
   });
