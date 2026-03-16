@@ -89,6 +89,7 @@ a {
 .dashboard-drawer-topbar {
   position: relative;
   z-index: 220;
+  isolation: isolate;
 }
 
 .dashboard-drawer-toggle {
@@ -887,6 +888,7 @@ th {
     opacity: 0 !important;
     pointer-events: none !important;
     border-left: 1px solid rgba(255, 255, 255, 0.20);
+    touch-action: pan-y;
   }
 
   .dashboard-drawer-topbar .dashboard-drawer-nav a {
@@ -905,11 +907,17 @@ th {
     box-shadow: -18px 0 40px rgba(0, 0, 0, 0.28);
   }
 
+  .dashboard-drawer-topbar.drawer-open .dashboard-drawer-nav,
+  .dashboard-drawer-topbar.drawer-open .dashboard-drawer-nav * {
+    pointer-events: auto !important;
+  }
+
   .dashboard-drawer-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.22);
     z-index: 1001;
+    pointer-events: auto;
   }
 
   .dashboard-drawer-backdrop:not([hidden]) {
