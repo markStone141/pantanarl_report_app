@@ -26,6 +26,10 @@
 }
 
 @media (max-width: 768px) {
+  .dashboard-drawer-topbar {
+    --dashboard-drawer-width: min(84vw, 320px);
+  }
+
   .dashboard-drawer-toggle {
     display: inline-flex;
   }
@@ -44,7 +48,7 @@
     position: fixed;
     top: 0;
     right: 0;
-    width: min(84vw, 320px);
+    width: var(--dashboard-drawer-width);
     height: 100vh;
     background: linear-gradient(150deg, #184f97, var(--brand) 62%, #2a7fd0);
     padding: 72px 14px 18px;
@@ -82,7 +86,10 @@
 
   .dashboard-drawer-backdrop {
     position: fixed;
-    inset: 0;
+    top: 0;
+    right: var(--dashboard-drawer-width);
+    bottom: 0;
+    left: 0;
     background: rgba(15, 33, 62, 0.42);
     z-index: 230;
   }
