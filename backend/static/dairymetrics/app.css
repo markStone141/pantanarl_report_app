@@ -1350,10 +1350,12 @@
   align-items: center;
   justify-content: center;
   background: rgba(19, 34, 40, 0.45);
-  z-index: 130;
+  z-index: 320;
 }
 
 .dairymetrics-sheet {
+  position: relative;
+  z-index: 321;
   width: min(760px, calc(100vw - 28px));
   max-height: calc(100dvh - 28px);
   overflow: auto;
