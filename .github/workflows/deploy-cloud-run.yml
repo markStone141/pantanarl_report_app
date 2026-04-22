@@ -17,6 +17,7 @@ env:
   IMAGE: asia-northeast1-docker.pkg.dev/reportapp-488507/report-app/report-app:${{ github.sha }}
   MIGRATE_JOB: report-app-migrate
   MIGRATE_JOB_ENV_VARS: DJANGO_SETTINGS_MODULE=config.settings.prod
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 concurrency:
   group: deploy-cloud-run-main
