@@ -10,9 +10,14 @@ class MonthlyGuideTests(TestCase):
         self.assertContains(response, "ユニセフ・マンスリーガイド")
         self.assertContains(response, "日本語")
         self.assertContains(response, "英語")
+        self.assertContains(response, "インドネシア語")
+        self.assertContains(response, "クメール語")
         self.assertContains(response, "タイ語")
+        self.assertContains(response, "タガログ語")
+        self.assertContains(response, "ベトナム語")
         self.assertContains(response, "ミャンマー語")
-        self.assertContains(response, "<option", count=3)
+        self.assertContains(response, "中国語")
+        self.assertContains(response, "<option", count=8)
 
     def test_monthly_guide_page_contains_sample_sections(self):
         response = self.client.get(reverse("monthly_guide_index"))
