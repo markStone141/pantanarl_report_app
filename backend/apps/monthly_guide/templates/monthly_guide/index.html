@@ -1,0 +1,85 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ユニセフ・マンスリーガイド</title>
+  <link rel="stylesheet" href="{% static 'monthly_guide/app.css' %}?v=1" />
+</head>
+<body class="monthly-guide-body">
+  <main class="monthly-guide-shell">
+    <section class="monthly-guide-hero">
+      <p class="monthly-guide-kicker">UNICEF Monthly Guide</p>
+      <h1>ユニセフ・マンスリーガイド</h1>
+      <p class="monthly-guide-lead">
+        言語を切り替えながら、ユニセフのマンスリー支援についてその場で説明できる試作ページです。
+      </p>
+      <div class="monthly-guide-language-box">
+        <label for="monthly-guide-language">表示言語</label>
+        <select id="monthly-guide-language">
+          {% for language in language_options %}
+          <option value="{{ language.code }}" {% if language.code == default_language %}selected{% endif %}>{{ language.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </section>
+
+    <section id="monthly-guide-sections" class="monthly-guide-sections">
+      {% for section in initial_sections %}
+      <article class="monthly-guide-card" data-topic="{{ section.slug }}">
+        <h2 class="monthly-guide-card-title">{{ section.title }}</h2>
+        <div class="monthly-guide-card-body">{{ section.body }}</div>
+      </article>
+      {% endfor %}
+    </section>
+  </main>
+
+  {{ guide_payload|json_script:"monthly-guide-data" }}
+  <script>
+    (function () {
+      const languageSelect = document.getElementById("monthly-guide-language");
+      const sectionsRoot = document.getElementById("monthly-guide-sections");
+      const payloadNode = document.getElementById("monthly-guide-data");
+      if (!languageSelect || !sectionsRoot || !payloadNode) return;
+
+      const payload = JSON.parse(payloadNode.textContent);
+
+      function getTranslation(topic, languageCode) {
+        return topic.translations[languageCode] || Object.values(topic.translations)[0];
+      }
+
+      function render(languageCode) {
+        sectionsRoot.innerHTML = payload.topics
+          .slice()
+          .sort((left, right) => left.sort_order - right.sort_order)
+          .map(function (topic) {
+            const translation = getTranslation(topic, languageCode);
+            return `
+              <article class="monthly-guide-card" data-topic="${topic.slug}">
+                <h2 class="monthly-guide-card-title"></h2>
+                <div class="monthly-guide-card-body"></div>
+              </article>
+            `;
+          })
+          .join("");
+
+        const cards = sectionsRoot.querySelectorAll(".monthly-guide-card");
+        payload.topics
+          .slice()
+          .sort((left, right) => left.sort_order - right.sort_order)
+          .forEach(function (topic, index) {
+            const translation = getTranslation(topic, languageCode);
+            const card = cards[index];
+            card.querySelector(".monthly-guide-card-title").textContent = translation.title;
+            card.querySelector(".monthly-guide-card-body").textContent = translation.body;
+          });
+      }
+
+      languageSelect.addEventListener("change", function () {
+        render(languageSelect.value);
+      });
+    })();
+  </script>
+</body>
+</html>

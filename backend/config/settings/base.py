@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "apps.talks",
     "apps.testimony",
     "apps.dairymetrics",
+    "apps.monthly_guide",
 ]
 
 MIDDLEWARE = [

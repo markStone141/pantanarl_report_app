@@ -1,0 +1,148 @@
+:root {
+  --monthly-guide-bg: #f4f7fb;
+  --monthly-guide-ink: #17324d;
+  --monthly-guide-muted: #64778d;
+  --monthly-guide-brand: #1f73d9;
+  --monthly-guide-brand-deep: #0d4f9e;
+  --monthly-guide-line: rgba(31, 61, 95, 0.12);
+  --monthly-guide-card: rgba(255, 255, 255, 0.96);
+  --monthly-guide-shadow: 0 18px 40px rgba(14, 47, 84, 0.10);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body.monthly-guide-body {
+  margin: 0;
+  font-family: "Noto Sans Thai", "Noto Sans Myanmar", "SF Pro Display", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  background:
+    radial-gradient(960px 520px at 8% -10%, rgba(83, 152, 255, 0.18) 0%, rgba(83, 152, 255, 0) 56%),
+    linear-gradient(180deg, #f9fbfe 0%, var(--monthly-guide-bg) 100%);
+  color: var(--monthly-guide-ink);
+}
+
+.monthly-guide-shell {
+  width: min(920px, calc(100vw - 28px));
+  margin: 0 auto;
+  padding: 28px 0 44px;
+}
+
+.monthly-guide-hero {
+  padding: 24px;
+  border-radius: 28px;
+  background: linear-gradient(160deg, rgba(11, 85, 167, 0.96) 0%, rgba(31, 115, 217, 0.92) 64%, rgba(76, 156, 246, 0.88) 100%);
+  color: #fff;
+  box-shadow: 0 24px 56px rgba(15, 59, 116, 0.22);
+}
+
+.monthly-guide-kicker {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+
+.monthly-guide-hero h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  line-height: 1.08;
+}
+
+.monthly-guide-lead {
+  margin: 14px 0 0;
+  max-width: 720px;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: rgba(248, 251, 255, 0.9);
+}
+
+.monthly-guide-language-box {
+  margin-top: 22px;
+  display: grid;
+  gap: 8px;
+  max-width: 260px;
+}
+
+.monthly-guide-language-box label {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.monthly-guide-language-box select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 1rem;
+}
+
+.monthly-guide-language-box select option {
+  color: #17324d;
+}
+
+.monthly-guide-sections {
+  margin-top: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.monthly-guide-card {
+  padding: 20px 20px 18px;
+  border-radius: 24px;
+  border: 1px solid var(--monthly-guide-line);
+  background: var(--monthly-guide-card);
+  box-shadow: var(--monthly-guide-shadow);
+}
+
+.monthly-guide-card-title {
+  margin: 0 0 12px;
+  font-size: 1.28rem;
+  line-height: 1.45;
+}
+
+.monthly-guide-card-body {
+  color: var(--monthly-guide-ink);
+  font-size: 1rem;
+  line-height: 1.95;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 768px) {
+  .monthly-guide-shell {
+    width: min(100vw - 16px, 920px);
+    padding: 10px 0 28px;
+  }
+
+  .monthly-guide-hero {
+    padding: 20px 16px 18px;
+    border-radius: 22px;
+  }
+
+  .monthly-guide-lead {
+    font-size: 0.96rem;
+    line-height: 1.75;
+  }
+
+  .monthly-guide-language-box {
+    max-width: 100%;
+  }
+
+  .monthly-guide-card {
+    padding: 16px 15px 15px;
+    border-radius: 18px;
+  }
+
+  .monthly-guide-card-title {
+    font-size: 1.12rem;
+  }
+
+  .monthly-guide-card-body {
+    font-size: 0.98rem;
+    line-height: 1.88;
+  }
+}
