@@ -9,9 +9,9 @@ class MonthlyGuideTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "ユニセフ・マンスリーガイド")
         self.assertContains(response, "日本語")
-        self.assertContains(response, "English")
-        self.assertContains(response, "ไทย")
-        self.assertContains(response, "မြန်မာ")
+        self.assertContains(response, "英語")
+        self.assertContains(response, "タイ語")
+        self.assertContains(response, "ミャンマー語")
 
     def test_monthly_guide_page_contains_sample_sections(self):
         response = self.client.get(reverse("monthly_guide_index"))
@@ -24,5 +24,5 @@ class MonthlyGuideTests(TestCase):
         response = self.client.get(reverse("monthly_guide_index"))
 
         self.assertContains(response, "日本語")
-        self.assertContains(response, "English")
+        self.assertContains(response, "英語")
         self.assertContains(response, "What is UNICEF Monthly Support?")

@@ -1,8 +1,8 @@
 LANGUAGE_OPTIONS = [
     {"code": "ja", "label": "日本語"},
-    {"code": "en", "label": "English"},
-    {"code": "th", "label": "ไทย"},
-    {"code": "my", "label": "မြန်မာ"},
+    {"code": "en", "label": "英語"},
+    {"code": "th", "label": "タイ語"},
+    {"code": "my", "label": "ミャンマー語"},
 ]
 
 SAMPLE_TOPICS = [
@@ -73,4 +73,3 @@ SAMPLE_TOPICS = [
         },
     },
 ]
-
