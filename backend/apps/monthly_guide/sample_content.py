@@ -58,39 +58,39 @@ SAMPLE_TOPICS = [
         "translations": {
             "ja": {
                 "title": "支援の方法",
-                "body": "ご支援は口座振替やクレジットカードなどで毎月自動的に行われます。\n\n一度お手続きいただくと、毎月のお手続きは不要です。",
+                "body": "ご支援は口座振替やクレジットカードなどで毎月自動的に行われます。\n\n一度お手続きいただくと、毎月のお手続きは不要です。\n\n※ 日本で開設した銀行口座、およびその口座に紐づいたクレジットカードでのみご登録いただけます。",
             },
             "en": {
                 "title": "How the donation works",
-                "body": "Your donation is automatically made every month by bank transfer, credit card, or other available methods.\n\nOnce you complete the procedure, no monthly action is needed.",
+                "body": "Your donation is automatically made every month by bank transfer, credit card, or other available methods.\n\nOnce you complete the procedure, no monthly action is needed.\n\n* Registration is available only with a bank account opened in Japan or a credit card linked to that bank account.",
             },
             "id": {
                 "title": "Cara dukungan dilakukan",
-                "body": "Donasi Anda dilakukan secara otomatis setiap bulan melalui transfer bank, kartu kredit, atau metode lain yang tersedia.\n\nSetelah Anda menyelesaikan pendaftaran, tidak perlu melakukan tindakan lagi setiap bulan.",
+                "body": "Donasi Anda dilakukan secara otomatis setiap bulan melalui transfer bank, kartu kredit, atau metode lain yang tersedia.\n\nSetelah Anda menyelesaikan pendaftaran, tidak perlu melakukan tindakan lagi setiap bulan.\n\n* Pendaftaran hanya dapat dilakukan dengan rekening bank yang dibuka di Jepang atau kartu kredit yang terhubung dengan rekening tersebut.",
             },
             "km": {
                 "title": "របៀបនៃការគាំទ្រ",
-                "body": "ការបរិច្ចាគរបស់អ្នកនឹងត្រូវបានធ្វើដោយស្វ័យប្រវត្តិរៀងរាល់ខែ តាមរយៈការផ្ទេរប្រាក់ធនាគារ កាតឥណទាន ឬវិធីផ្សេងៗដែលមាន។\n\nបន្ទាប់ពីបំពេញដំណើរការម្តងរួច អ្នកមិនចាំបាច់ធ្វើអ្វីបន្ថែមរៀងរាល់ខែទៀតទេ។",
+                "body": "ការបរិច្ចាគរបស់អ្នកនឹងត្រូវបានធ្វើដោយស្វ័យប្រវត្តិរៀងរាល់ខែ តាមរយៈការផ្ទេរប្រាក់ធនាគារ កាតឥណទាន ឬវិធីផ្សេងៗដែលមាន។\n\nបន្ទាប់ពីបំពេញដំណើរការម្តងរួច អ្នកមិនចាំបាច់ធ្វើអ្វីបន្ថែមរៀងរាល់ខែទៀតទេ។\n\n* អាចចុះឈ្មោះបានតែជាមួយគណនីធនាគារដែលបានបើកនៅប្រទេសជប៉ុន ឬកាតឥណទានដែលភ្ជាប់ជាមួយគណនីនោះប៉ុណ្ណោះ។",
             },
             "th": {
                 "title": "วิธีการสนับสนุน",
-                "body": "การบริจาคจะดำเนินการอัตโนมัติทุกเดือนผ่านบัญชีธนาคาร บัตรเครดิต หรือวิธีที่รองรับ\n\nเมื่อดำเนินการสมัครครั้งแรกแล้ว จะไม่ต้องทำรายการทุกเดือน",
+                "body": "การบริจาคจะดำเนินการอัตโนมัติทุกเดือนผ่านบัญชีธนาคาร บัตรเครดิต หรือวิธีที่รองรับ\n\nเมื่อดำเนินการสมัครครั้งแรกแล้ว จะไม่ต้องทำรายการทุกเดือน\n\n* สามารถลงทะเบียนได้เฉพาะบัญชีธนาคารที่เปิดในประเทศญี่ปุ่น หรือบัตรเครดิตที่ผูกกับบัญชีนั้นเท่านั้น",
             },
             "tl": {
                 "title": "Paano ginagawa ang suporta",
-                "body": "Awtomatikong ginagawa ang inyong donasyon buwan-buwan sa pamamagitan ng bank transfer, credit card, o iba pang available na paraan.\n\nKapag natapos na ang unang proseso, hindi na kailangan ng buwanang aksyon.",
+                "body": "Awtomatikong ginagawa ang inyong donasyon buwan-buwan sa pamamagitan ng bank transfer, credit card, o iba pang available na paraan.\n\nKapag natapos na ang unang proseso, hindi na kailangan ng buwanang aksyon.\n\n* Maaari lamang magparehistro gamit ang bank account na binuksan sa Japan o credit card na nakaugnay sa account na iyon.",
             },
             "vi": {
                 "title": "Cách thức ủng hộ",
-                "body": "Khoản ủng hộ của bạn sẽ được thực hiện tự động mỗi tháng qua chuyển khoản ngân hàng, thẻ tín dụng hoặc các phương thức khả dụng khác.\n\nSau khi hoàn tất đăng ký một lần, bạn không cần thao tác lại hàng tháng.",
+                "body": "Khoản ủng hộ của bạn sẽ được thực hiện tự động mỗi tháng qua chuyển khoản ngân hàng, thẻ tín dụng hoặc các phương thức khả dụng khác.\n\nSau khi hoàn tất đăng ký một lần, bạn không cần thao tác lại hàng tháng.\n\n* Chỉ có thể đăng ký bằng tài khoản ngân hàng mở tại Nhật Bản hoặc thẻ tín dụng được liên kết với tài khoản đó.",
             },
             "my": {
                 "title": "ပံ့ပိုးပေးသည့်နည်းလမ်း",
-                "body": "ပံ့ပိုးမှုကို ဘဏ်အကောင့်၊ ခရက်ဒစ်ကတ် သို့မဟုတ် ရရှိနိုင်သော နည်းလမ်းများဖြင့် လစဉ်အလိုအလျောက် ဆောင်ရွက်ပါသည်။\n\nတစ်ကြိမ်သာ လုပ်ဆောင်ပြီးပါက လစဉ် ထပ်မံဆောင်ရွက်ရန် မလိုအပ်ပါ။",
+                "body": "ပံ့ပိုးမှုကို ဘဏ်အကောင့်၊ ခရက်ဒစ်ကတ် သို့မဟုတ် ရရှိနိုင်သော နည်းလမ်းများဖြင့် လစဉ်အလိုအလျောက် ဆောင်ရွက်ပါသည်။\n\nတစ်ကြိမ်သာ လုပ်ဆောင်ပြီးပါက လစဉ် ထပ်မံဆောင်ရွက်ရန် မလိုအပ်ပါ။\n\n* ဂျပန်နိုင်ငံတွင် ဖွင့်ထားသော ဘဏ်အကောင့် သို့မဟုတ် ထိုဘဏ်အကောင့်နှင့် ချိတ်ဆက်ထားသော ခရက်ဒစ်ကတ်ဖြင့်သာ စာရင်းသွင်းနိုင်ပါသည်။",
             },
             "zh": {
                 "title": "如何进行支持",
-                "body": "您的捐款可通过银行转账、信用卡或其他可用方式每月自动完成。\n\n完成一次申请后，无需每个月再次办理。",
+                "body": "您的捐款可通过银行转账、信用卡或其他可用方式每月自动完成。\n\n完成一次申请后，无需每个月再次办理。\n\n* 仅可使用在日本开设的银行账户，或与该账户绑定的信用卡进行申请登记。",
             },
         },
     },
