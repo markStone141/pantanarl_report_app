@@ -112,6 +112,15 @@ body.monthly-guide-body {
   border: 1px solid rgba(31, 61, 95, 0.09);
 }
 
+.monthly-guide-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
 .monthly-guide-panel-selected {
   background: linear-gradient(180deg, rgba(228, 241, 255, 0.92) 0%, rgba(240, 247, 255, 0.96) 100%);
 }
@@ -125,12 +134,30 @@ body.monthly-guide-body {
   align-items: center;
   min-height: 30px;
   padding: 4px 10px;
-  margin-bottom: 12px;
   border-radius: 999px;
   background: rgba(19, 73, 139, 0.08);
   color: var(--monthly-guide-brand-deep);
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.monthly-guide-copy-button {
+  appearance: none;
+  border: 1px solid rgba(19, 73, 139, 0.14);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--monthly-guide-brand-deep);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.monthly-guide-copy-button:hover {
+  background: #fff;
+  transform: translateY(-1px);
 }
 
 .monthly-guide-card-title {

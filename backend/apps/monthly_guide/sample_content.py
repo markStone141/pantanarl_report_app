@@ -16,39 +16,39 @@ SAMPLE_TOPICS = [
         "translations": {
             "ja": {
                 "title": "ユニセフ・マンスリーサポートとは",
-                "body": "本日はいち早く子どもたちに支援を届けるために、公式窓口を設けて受付だけ行っております。\n\nユニセフ・マンスリーサポートは、毎月一定額を継続してご支援いただく仕組みです。\n\n子どもたちに必要な栄養、医療、安全な水、教育などを安定して届けるために使われます。",
+                "body": "ユニセフ・マンスリーサポートは、毎月一定額を継続してご支援いただく仕組みです。\n\n子どもたちに必要な栄養、医療、安全な水、教育などを安定して届けるために使われます。\n\n本日はいち早く子どもたちに支援を届けるために、公式窓口を設けて受付だけ行っております。",
             },
             "en": {
                 "title": "What is UNICEF Monthly Support?",
-                "body": "UNICEF Monthly Support is a way to give a fixed amount every month on an ongoing basis.\n\nYour support helps provide children with nutrition, health care, safe water, education, and protection in a stable way.",
+                "body": "UNICEF Monthly Support is a way to give a fixed amount every month on an ongoing basis.\n\nYour support helps provide children with nutrition, health care, safe water, education, and protection in a stable way.\n\nToday, in order to deliver support to children as quickly as possible, we have set up an official desk and are only accepting registrations.",
             },
             "id": {
                 "title": "Apa itu Dukungan Bulanan UNICEF?",
-                "body": "Dukungan Bulanan UNICEF adalah cara untuk memberikan donasi dalam jumlah tetap setiap bulan secara berkelanjutan.\n\nDukungan Anda membantu menyediakan gizi, layanan kesehatan, air bersih, pendidikan, dan perlindungan bagi anak-anak secara stabil.",
+                "body": "Dukungan Bulanan UNICEF adalah cara untuk memberikan donasi dalam jumlah tetap setiap bulan secara berkelanjutan.\n\nDukungan Anda membantu menyediakan gizi, layanan kesehatan, air bersih, pendidikan, dan perlindungan bagi anak-anak secara stabil.\n\nHari ini, agar bantuan dapat segera sampai kepada anak-anak, kami membuka loket resmi dan hanya menerima pendaftaran.",
             },
             "km": {
                 "title": "តើការគាំទ្រប្រចាំខែរបស់យូនីសេហ្វគឺជាអ្វី?",
-                "body": "ការគាំទ្រប្រចាំខែរបស់យូនីសេហ្វ គឺជាវិធីមួយក្នុងការបរិច្ចាគចំនួនថេររៀងរាល់ខែជាបន្តបន្ទាប់។\n\nការគាំទ្ររបស់អ្នកជួយផ្តល់អាហារូបត្ថម្ភ សេវាសុខាភិបាល ទឹកស្អាត ការអប់រំ និងការការពារ​ដល់កុមារយ៉ាងមានស្ថិរភាព។",
+                "body": "ការគាំទ្រប្រចាំខែរបស់យូនីសេហ្វ គឺជាវិធីមួយក្នុងការបរិច្ចាគចំនួនថេររៀងរាល់ខែជាបន្តបន្ទាប់។\n\nការគាំទ្ររបស់អ្នកជួយផ្តល់អាហារូបត្ថម្ភ សេវាសុខាភិបាល ទឹកស្អាត ការអប់រំ និងការការពារ​ដល់កុមារយ៉ាងមានស្ថិរភាព។\n\nនៅថ្ងៃនេះ ដើម្បីឲ្យជំនួយអាចទៅដល់កុមារបានឆាប់បំផុត យើងបានបើកកន្លែងទទួលជាផ្លូវការ និងទទួលតែការចុះឈ្មោះប៉ុណ្ណោះ។",
             },
             "th": {
                 "title": "การสนับสนุนรายเดือนของยูนิเซฟคืออะไร",
-                "body": "การสนับสนุนรายเดือนของยูนิเซฟ คือการบริจาคจำนวนเงินที่กำหนดไว้ทุกเดือนอย่างต่อเนื่อง\n\nเงินสนับสนุนจะช่วยให้เด็ก ๆ ได้รับโภชนาการ การรักษาพยาบาล น้ำสะอาด การศึกษา และการคุ้มครองอย่างต่อเนื่อง",
+                "body": "การสนับสนุนรายเดือนของยูนิเซฟ คือการบริจาคจำนวนเงินที่กำหนดไว้ทุกเดือนอย่างต่อเนื่อง\n\nเงินสนับสนุนจะช่วยให้เด็ก ๆ ได้รับโภชนาการ การรักษาพยาบาล น้ำสะอาด การศึกษา และการคุ้มครองอย่างต่อเนื่อง\n\nในวันนี้ เพื่อให้ความช่วยเหลือไปถึงเด็ก ๆ ได้เร็วที่สุด เราได้จัดจุดรับสมัครอย่างเป็นทางการและเปิดรับเฉพาะการลงทะเบียนเท่านั้น",
             },
             "tl": {
                 "title": "Ano ang UNICEF Monthly Support?",
-                "body": "Ang UNICEF Monthly Support ay isang paraan ng tuloy-tuloy na pagbibigay ng nakatakdang halaga bawat buwan.\n\nAng inyong suporta ay tumutulong upang maibigay sa mga bata ang nutrisyon, serbisyong pangkalusugan, malinis na tubig, edukasyon, at proteksyon nang tuloy-tuloy.",
+                "body": "Ang UNICEF Monthly Support ay isang paraan ng tuloy-tuloy na pagbibigay ng nakatakdang halaga bawat buwan.\n\nAng inyong suporta ay tumutulong upang maibigay sa mga bata ang nutrisyon, serbisyong pangkalusugan, malinis na tubig, edukasyon, at proteksyon nang tuloy-tuloy.\n\nNgayong araw, upang mas mabilis na maihatid ang suporta sa mga bata, nagbukas kami ng opisyal na registration desk at pagtanggap ng aplikasyon lamang ang isinasagawa.",
             },
             "vi": {
                 "title": "UNICEF Monthly Support là gì?",
-                "body": "UNICEF Monthly Support là hình thức ủng hộ một khoản cố định mỗi tháng một cách liên tục.\n\nSự ủng hộ của bạn giúp trẻ em được tiếp cận dinh dưỡng, chăm sóc y tế, nước sạch, giáo dục và sự bảo vệ một cách ổn định.",
+                "body": "UNICEF Monthly Support là hình thức ủng hộ một khoản cố định mỗi tháng một cách liên tục.\n\nSự ủng hộ của bạn giúp trẻ em được tiếp cận dinh dưỡng, chăm sóc y tế, nước sạch, giáo dục và sự bảo vệ một cách ổn định.\n\nHôm nay, để hỗ trợ có thể đến với trẻ em nhanh nhất có thể, chúng tôi mở quầy chính thức và chỉ tiếp nhận đăng ký.",
             },
             "my": {
                 "title": "ယူနီဆက်ဖ် လစဉ်ပံ့ပိုးမှုဆိုတာဘာလဲ",
-                "body": "ယူနီဆက်ဖ် လစဉ်ပံ့ပိုးမှုသည် လစဉ်သတ်မှတ်ထားသော ပမာဏကို ဆက်လက်လှူဒါန်းပေးသည့် အစီအစဉ်ဖြစ်ပါသည်။\n\nသင်၏ပံ့ပိုးမှုက ကလေးများအတွက် အာဟာရ၊ ဆေးဝါးကုသမှု၊ သန့်ရှင်းသောရေ၊ ပညာရေးနှင့် ကာကွယ်စောင့်ရှောက်မှုများကို ဆက်လက်ပံ့ပိုးရန် ကူညီပေးပါသည်။",
+                "body": "ယူနီဆက်ဖ် လစဉ်ပံ့ပိုးမှုသည် လစဉ်သတ်မှတ်ထားသော ပမာဏကို ဆက်လက်လှူဒါန်းပေးသည့် အစီအစဉ်ဖြစ်ပါသည်။\n\nသင်၏ပံ့ပိုးမှုက ကလေးများအတွက် အာဟာရ၊ ဆေးဝါးကုသမှု၊ သန့်ရှင်းသောရေ၊ ပညာရေးနှင့် ကာကွယ်စောင့်ရှောက်မှုများကို ဆက်လက်ပံ့ပိုးရန် ကူညီပေးပါသည်။\n\nယနေ့တွင် ကလေးများထံ အကူအညီကို အမြန်ဆုံးရောက်ရှိစေရန်အတွက် တရားဝင်လက်ခံရေးဌာနကို ဖွင့်လှစ်ထားပြီး စာရင်းသွင်းခြင်းကိုသာ လက်ခံဆောင်ရွက်နေပါသည်။",
             },
             "zh": {
                 "title": "什么是联合国儿童基金会月度支持？",
-                "body": "联合国儿童基金会月度支持，是指每月持续捐赠固定金额的一种方式。\n\n您的支持将稳定地帮助儿童获得营养、医疗、安全饮水、教育和保护。",
+                "body": "联合国儿童基金会月度支持，是指每月持续捐赠固定金额的一种方式。\n\n您的支持将稳定地帮助儿童获得营养、医疗、安全饮水、教育和保护。\n\n今天，为了尽快把援助送达儿童，我们设立了官方受理窗口，目前仅进行登记受理。",
             },
         },
     },

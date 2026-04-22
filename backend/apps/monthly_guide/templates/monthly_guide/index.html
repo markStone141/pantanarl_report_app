@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ユニセフ・マンスリーガイド</title>
-  <link rel="stylesheet" href="{% static 'monthly_guide/app.css' %}?v=1" />
+  <link rel="stylesheet" href="{% static 'monthly_guide/app.css' %}?v=2" />
 </head>
 <body class="monthly-guide-body">
   <main class="monthly-guide-shell">
@@ -35,7 +35,10 @@
             <div class="monthly-guide-card-body">{{ section.selected_body }}</div>
           </section>
           <section class="monthly-guide-panel monthly-guide-panel-ja">
-            <div class="monthly-guide-panel-label">日本語</div>
+            <div class="monthly-guide-panel-head">
+              <div class="monthly-guide-panel-label">日本語</div>
+              <button type="button" class="monthly-guide-copy-button" data-copy-japanese>日本語をコピー</button>
+            </div>
             <h2 class="monthly-guide-card-title">{{ section.japanese_title }}</h2>
             <div class="monthly-guide-card-body">{{ section.japanese_body }}</div>
           </section>
@@ -59,6 +62,38 @@
         return topic.translations[languageCode] || Object.values(topic.translations)[0];
       }
 
+      async function copyText(text, trigger) {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            const helper = document.createElement("textarea");
+            helper.value = text;
+            helper.setAttribute("readonly", "");
+            helper.style.position = "absolute";
+            helper.style.left = "-9999px";
+            document.body.appendChild(helper);
+            helper.select();
+            document.execCommand("copy");
+            document.body.removeChild(helper);
+          }
+
+          const originalLabel = trigger.dataset.originalLabel || trigger.textContent;
+          trigger.dataset.originalLabel = originalLabel;
+          trigger.textContent = "コピーしました";
+          window.setTimeout(function () {
+            trigger.textContent = originalLabel;
+          }, 1400);
+        } catch (error) {
+          const originalLabel = trigger.dataset.originalLabel || trigger.textContent;
+          trigger.dataset.originalLabel = originalLabel;
+          trigger.textContent = "コピー失敗";
+          window.setTimeout(function () {
+            trigger.textContent = originalLabel;
+          }, 1600);
+        }
+      }
+
       function render(languageCode) {
         const selectedLanguage = payload.languages.find(function (language) {
           return language.code === languageCode;
@@ -78,7 +113,10 @@
                     <div class="monthly-guide-card-body"></div>
                   </section>
                   <section class="monthly-guide-panel monthly-guide-panel-ja">
-                    <div class="monthly-guide-panel-label">日本語</div>
+                    <div class="monthly-guide-panel-head">
+                      <div class="monthly-guide-panel-label">日本語</div>
+                      <button type="button" class="monthly-guide-copy-button" data-copy-japanese>日本語をコピー</button>
+                    </div>
                     <h2 class="monthly-guide-card-title"></h2>
                     <div class="monthly-guide-card-body"></div>
                   </section>
@@ -111,6 +149,25 @@
 
       languageSelect.addEventListener("change", function () {
         render(languageSelect.value);
+      });
+
+      sectionsRoot.addEventListener("click", function (event) {
+        const copyButton = event.target.closest("[data-copy-japanese]");
+        if (!copyButton) return;
+
+        const card = copyButton.closest(".monthly-guide-card");
+        if (!card) return;
+
+        const topic = payload.topics.find(function (item) {
+          return item.slug === card.dataset.topic;
+        });
+        if (!topic) return;
+
+        const japaneseTranslation = getTranslation(topic, "ja");
+        copyText(
+          japaneseTranslation.title + "\n\n" + japaneseTranslation.body,
+          copyButton
+        );
       });
     })();
   </script>
