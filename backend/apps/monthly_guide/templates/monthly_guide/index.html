@@ -13,7 +13,7 @@
       <p class="monthly-guide-kicker">UNICEF Monthly Guide</p>
       <h1>ユニセフ・マンスリーガイド</h1>
       <p class="monthly-guide-lead">
-        言語を切り替えながら、ユニセフのマンスリー支援についてその場で説明できる試作ページです。
+        選択した言語と日本語を並べて見比べながら、ユニセフのマンスリー支援についてその場で説明できる試作ページです。
       </p>
       <div class="monthly-guide-language-box">
         <label for="monthly-guide-language">表示言語</label>
@@ -28,8 +28,18 @@
     <section id="monthly-guide-sections" class="monthly-guide-sections">
       {% for section in initial_sections %}
       <article class="monthly-guide-card" data-topic="{{ section.slug }}">
-        <h2 class="monthly-guide-card-title">{{ section.title }}</h2>
-        <div class="monthly-guide-card-body">{{ section.body }}</div>
+        <div class="monthly-guide-compare-grid">
+          <section class="monthly-guide-panel monthly-guide-panel-selected">
+            <div class="monthly-guide-panel-label" data-selected-language-label>{{ default_language_label }}</div>
+            <h2 class="monthly-guide-card-title">{{ section.selected_title }}</h2>
+            <div class="monthly-guide-card-body">{{ section.selected_body }}</div>
+          </section>
+          <section class="monthly-guide-panel monthly-guide-panel-ja">
+            <div class="monthly-guide-panel-label">日本語</div>
+            <h2 class="monthly-guide-card-title">{{ section.japanese_title }}</h2>
+            <div class="monthly-guide-card-body">{{ section.japanese_body }}</div>
+          </section>
+        </div>
       </article>
       {% endfor %}
     </section>
@@ -50,15 +60,29 @@
       }
 
       function render(languageCode) {
+        const selectedLanguage = payload.languages.find(function (language) {
+          return language.code === languageCode;
+        });
+        const selectedLanguageLabel = selectedLanguage ? selectedLanguage.label : languageCode;
+
         sectionsRoot.innerHTML = payload.topics
           .slice()
           .sort((left, right) => left.sort_order - right.sort_order)
           .map(function (topic) {
-            const translation = getTranslation(topic, languageCode);
             return `
               <article class="monthly-guide-card" data-topic="${topic.slug}">
-                <h2 class="monthly-guide-card-title"></h2>
-                <div class="monthly-guide-card-body"></div>
+                <div class="monthly-guide-compare-grid">
+                  <section class="monthly-guide-panel monthly-guide-panel-selected">
+                    <div class="monthly-guide-panel-label" data-selected-language-label></div>
+                    <h2 class="monthly-guide-card-title"></h2>
+                    <div class="monthly-guide-card-body"></div>
+                  </section>
+                  <section class="monthly-guide-panel monthly-guide-panel-ja">
+                    <div class="monthly-guide-panel-label">日本語</div>
+                    <h2 class="monthly-guide-card-title"></h2>
+                    <div class="monthly-guide-card-body"></div>
+                  </section>
+                </div>
               </article>
             `;
           })
@@ -70,9 +94,18 @@
           .sort((left, right) => left.sort_order - right.sort_order)
           .forEach(function (topic, index) {
             const translation = getTranslation(topic, languageCode);
+            const japaneseTranslation = getTranslation(topic, "ja");
             const card = cards[index];
-            card.querySelector(".monthly-guide-card-title").textContent = translation.title;
-            card.querySelector(".monthly-guide-card-body").textContent = translation.body;
+            const panels = card.querySelectorAll(".monthly-guide-panel");
+            const selectedPanel = panels[0];
+            const japanesePanel = panels[1];
+
+            selectedPanel.querySelector("[data-selected-language-label]").textContent = selectedLanguageLabel;
+            selectedPanel.querySelector(".monthly-guide-card-title").textContent = translation.title;
+            selectedPanel.querySelector(".monthly-guide-card-body").textContent = translation.body;
+
+            japanesePanel.querySelector(".monthly-guide-card-title").textContent = japaneseTranslation.title;
+            japanesePanel.querySelector(".monthly-guide-card-body").textContent = japaneseTranslation.body;
           });
       }
 

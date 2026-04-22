@@ -20,3 +20,9 @@ class MonthlyGuideTests(TestCase):
         self.assertContains(response, "支援の方法")
         self.assertContains(response, "途中で変更や停止はできますか")
 
+    def test_monthly_guide_page_shows_japanese_and_selected_language(self):
+        response = self.client.get(reverse("monthly_guide_index"))
+
+        self.assertContains(response, "日本語")
+        self.assertContains(response, "English")
+        self.assertContains(response, "What is UNICEF Monthly Support?")
