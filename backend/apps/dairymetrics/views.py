@@ -212,6 +212,7 @@ def _build_member_dashboard_context(*, request, member, readonly=False, viewer_m
     selected_scope = (request.GET.get("scope") or "today").strip()
     selected_start_date = parse_date((request.GET.get("start_date") or "").strip())
     selected_end_date = parse_date((request.GET.get("end_date") or "").strip())
+    selected_period_id = (request.GET.get("period_id") or "").strip()
     dashboard_data = build_member_dashboard(
         member,
         today=timezone.localdate(),
@@ -219,6 +220,7 @@ def _build_member_dashboard_context(*, request, member, readonly=False, viewer_m
         scope=selected_scope,
         start_date=selected_start_date,
         end_date=selected_end_date,
+        period_id=selected_period_id or None,
     )
     selected_department = dashboard_data["selected_department"]
     entry_form = None
@@ -262,7 +264,21 @@ def _build_member_dashboard_context(*, request, member, readonly=False, viewer_m
         "member_rows": member_rows,
         "member_filter_departments": member_filter_departments,
         "member_filter_default_code": _default_member_filter_code(viewer_member, member_filter_departments) if readonly else "",
+        "card_base_url": (
+            reverse("dairymetrics_member_dashboard", args=[member.id])
+            if readonly
+            else reverse("dairymetrics_dashboard")
+        ),
     }
+
+
+def _resolve_comparison_target_member(request: HttpRequest):
+    viewer_member = get_member_profile(request.user)
+    target_member = viewer_member
+    requested_member_id = (request.GET.get("member") or "").strip()
+    if requested_member_id:
+        target_member = _member_directory_queryset().filter(pk=requested_member_id).first() or viewer_member
+    return viewer_member, target_member
 
 
 def login_view(request: HttpRequest) -> HttpResponse:
@@ -387,15 +403,55 @@ def member_dashboard(request: HttpRequest, member_id: int) -> HttpResponse:
 def comparison_view(request: HttpRequest) -> HttpResponse:
     if request.user.is_staff:
         return redirect("dairymetrics_admin_overview")
-    member = get_member_profile(request.user)
-    context = _build_member_dashboard_context(request=request, member=member) if member else {
+    viewer_member, target_member = _resolve_comparison_target_member(request)
+    if target_member:
+        selected_department_code = (request.GET.get("department") or "").strip()
+        selected_scope = (request.GET.get("scope") or "today").strip()
+        selected_start_date = parse_date((request.GET.get("start_date") or "").strip())
+        selected_end_date = parse_date((request.GET.get("end_date") or "").strip())
+        selected_period_id = (request.GET.get("period_id") or "").strip()
+        dashboard_data = build_member_dashboard(
+            target_member,
+            today=timezone.localdate(),
+            department_code=selected_department_code,
+            scope=selected_scope,
+            start_date=selected_start_date,
+            end_date=selected_end_date,
+            period_id=selected_period_id or None,
+        )
+        context = {
+            "page_title": "DairyMetrics",
+            "member": target_member,
+            "viewer_member": viewer_member,
+            "departments": dashboard_data["departments"],
+            "selected_department": dashboard_data["selected_department"],
+            "selected_card": dashboard_data["selected_card"],
+            "scope_options": dashboard_data["scope_options"],
+            "selected_scope": dashboard_data["selected_scope"],
+            "is_admin": request.user.is_staff,
+            "comparison_member_id": (
+                str(target_member.id) if viewer_member and target_member.id != viewer_member.id else ""
+            ),
+            "return_dashboard_url": (
+                reverse("dairymetrics_member_dashboard", args=[target_member.id])
+                if viewer_member and target_member.id != viewer_member.id
+                else reverse("dairymetrics_dashboard")
+            ),
+        }
+    else:
+        context = {
         "page_title": "DairyMetrics",
         "member": None,
+        "viewer_member": None,
         "departments": [],
         "selected_department": None,
         "selected_card": None,
+        "scope_options": [],
+        "selected_scope": "today",
         "entry_form": None,
         "is_admin": request.user.is_staff,
+        "comparison_member_id": "",
+        "return_dashboard_url": reverse("dairymetrics_dashboard"),
     }
     return render(request, "dairymetrics/comparison.html", context)
 
@@ -462,8 +518,8 @@ def member_monthly_overview(request: HttpRequest) -> HttpResponse:
 def comparison_ranking_detail(request: HttpRequest) -> HttpResponse:
     if request.user.is_staff:
         return JsonResponse({"error": "admin_not_supported"}, status=404)
-    member = get_member_profile(request.user)
-    if not member:
+    viewer_member, target_member = _resolve_comparison_target_member(request)
+    if not target_member:
         return JsonResponse({"error": "member_not_found"}, status=404)
 
     metric_key = (request.GET.get("metric") or "").strip()
@@ -471,13 +527,15 @@ def comparison_ranking_detail(request: HttpRequest) -> HttpResponse:
     selected_scope = (request.GET.get("scope") or "today").strip()
     selected_start_date = parse_date((request.GET.get("start_date") or "").strip())
     selected_end_date = parse_date((request.GET.get("end_date") or "").strip())
+    selected_period_id = (request.GET.get("period_id") or "").strip()
     detail = build_member_ranking_detail(
-        member,
+        target_member,
         today=timezone.localdate(),
         department_code=selected_department_code,
         scope=selected_scope,
         start_date=selected_start_date,
         end_date=selected_end_date,
+        period_id=selected_period_id or None,
         metric_key=metric_key,
     )
     if not detail:

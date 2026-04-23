@@ -74,9 +74,20 @@
   <div id="dairymetrics-viewed-member-name" class="muted">表示中: {{ member.name }}</div>
   {% endif %}
   {% if selected_card.scope == "custom" %}
-  <form method="get" action="{% url 'dairymetrics_dashboard' %}" class="dairymetrics-range-form">
+  <form method="get" action="{{ card_base_url }}" class="dairymetrics-range-form">
     <input type="hidden" name="department" value="{{ selected_card.department.code }}">
     <input type="hidden" name="scope" value="custom">
+    {% if selected_card.saved_period_options %}
+    <div class="dairymetrics-period-select-wrap">
+      <label for="dairymetrics-period-id">保存済み路程</label>
+      <select id="dairymetrics-period-id" name="period_id">
+        <option value="">日付で指定する</option>
+        {% for period in selected_card.saved_period_options %}
+        <option value="{{ period.id }}" {% if selected_card.selected_saved_period_id == period.id %}selected{% endif %}>{{ period.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
     <div>
       <label for="dairymetrics-start-date">開始日</label>
       <div class="dairymetrics-date-wrap">

@@ -318,7 +318,16 @@ def _member_activity_bounds(member, department, today):
     return {"start_date": start_date, "end_date": today}
 
 
-def _resolve_scope(today, scope, *, member=None, department=None, requested_start_date=None, requested_end_date=None):
+def _resolve_scope(
+    today,
+    scope,
+    *,
+    member=None,
+    department=None,
+    requested_start_date=None,
+    requested_end_date=None,
+    requested_period_id=None,
+):
     month_start = today.replace(day=1)
     month_end = today.replace(day=monthrange(today.year, today.month)[1])
     current_period = (
@@ -345,22 +354,31 @@ def _resolve_scope(today, scope, *, member=None, department=None, requested_star
             "period": current_period,
         }
     if scope == "custom" and member and department:
+        selected_period = None
+        if requested_period_id:
+            selected_period = Period.objects.filter(pk=requested_period_id).first()
         bounds = _member_activity_bounds(member, department, today)
-        start_date = requested_start_date or bounds["start_date"]
-        end_date = requested_end_date or bounds["end_date"]
+        start_date = selected_period.start_date if selected_period else (requested_start_date or bounds["start_date"])
+        end_date = selected_period.end_date if selected_period else (requested_end_date or bounds["end_date"])
         if start_date > end_date:
             start_date, end_date = end_date, start_date
-        is_lifetime = requested_start_date is None and requested_end_date is None
+        is_lifetime = requested_period_id is None and requested_start_date is None and requested_end_date is None
         return {
             "scope": "custom",
             "label": "期間指定",
-            "summary": "生涯" if is_lifetime else f"{start_date.strftime('%Y/%m/%d')} - {end_date.strftime('%Y/%m/%d')}",
+            "summary": (
+                selected_period.name
+                if selected_period
+                else "生涯" if is_lifetime
+                else f"{start_date.strftime('%Y/%m/%d')} - {end_date.strftime('%Y/%m/%d')}"
+            ),
             "start_date": start_date,
             "end_date": end_date,
             "period": current_period,
             "custom_start_date": start_date,
             "custom_end_date": end_date,
             "is_lifetime": is_lifetime,
+            "selected_period_id": selected_period.id if selected_period else None,
         }
     return {
         "scope": "today",
@@ -919,6 +937,7 @@ def build_member_dashboard_card(
     scope="today",
     start_date=None,
     end_date=None,
+    period_id=None,
     is_lifetime=False,
 ):
     today = today or date.today()
@@ -929,6 +948,7 @@ def build_member_dashboard_card(
         department=department,
         requested_start_date=start_date,
         requested_end_date=end_date,
+        requested_period_id=period_id,
     )
     if scope_data["scope"] == "custom" and is_lifetime:
         scope_data["summary"] = "生涯"
@@ -992,6 +1012,13 @@ def build_member_dashboard_card(
         include_adjustments=include_adjustments,
     )
     previous_scope_label = "前路程比" if scope_data["scope"] == "period" else "前月比" if scope_data["scope"] == "month" else None
+    saved_period_options = [
+        {
+            "id": period.id,
+            "label": f"{period.name} ({period.start_date.strftime('%Y/%m/%d')} - {period.end_date.strftime('%Y/%m/%d')})",
+        }
+        for period in Period.objects.order_by("-start_date", "-id")
+    ]
     return {
         "department": department,
         "scope": scope_data["scope"],
@@ -1001,6 +1028,8 @@ def build_member_dashboard_card(
         "month_start": scope_data["start_date"] if scope_data["scope"] == "month" else None,
         "custom_start_date": scope_data.get("custom_start_date"),
         "custom_end_date": scope_data.get("custom_end_date"),
+        "selected_saved_period_id": scope_data.get("selected_period_id"),
+        "saved_period_options": saved_period_options,
         "today_status": "入力済み" if today_entry else "未入力",
         "today_entry": today_entry,
         "activity_status": (
@@ -1074,7 +1103,7 @@ def build_member_dashboard_card(
     }
 
 
-def build_member_dashboard(member, *, today=None, department_code=None, scope="today", start_date=None, end_date=None):
+def build_member_dashboard(member, *, today=None, department_code=None, scope="today", start_date=None, end_date=None, period_id=None):
     today = today or date.today()
     departments = list(
         Department.objects.filter(is_active=True, member_links__member=member).distinct().order_by("code")
@@ -1099,6 +1128,7 @@ def build_member_dashboard(member, *, today=None, department_code=None, scope="t
         department=selected_department,
         requested_start_date=start_date,
         requested_end_date=end_date,
+        requested_period_id=period_id,
     )
     scope_options = [
         {"value": "today", "label": "今日", "is_active": scope_data["scope"] == "today"},
@@ -1116,6 +1146,7 @@ def build_member_dashboard(member, *, today=None, department_code=None, scope="t
             scope=scope_data["scope"],
             start_date=scope_data.get("custom_start_date"),
             end_date=scope_data.get("custom_end_date"),
+            period_id=scope_data.get("selected_period_id"),
             is_lifetime=scope_data.get("is_lifetime", False),
         ),
         "scope_options": scope_options,
@@ -1123,7 +1154,7 @@ def build_member_dashboard(member, *, today=None, department_code=None, scope="t
     }
 
 
-def build_member_ranking_detail(member, *, today=None, department_code=None, scope="today", start_date=None, end_date=None, metric_key=""):
+def build_member_ranking_detail(member, *, today=None, department_code=None, scope="today", start_date=None, end_date=None, period_id=None, metric_key=""):
     dashboard = build_member_dashboard(
         member,
         today=today,
@@ -1131,6 +1162,7 @@ def build_member_ranking_detail(member, *, today=None, department_code=None, sco
         scope=scope,
         start_date=start_date,
         end_date=end_date,
+        period_id=period_id,
     )
     selected_card = dashboard["selected_card"]
     if not selected_card:

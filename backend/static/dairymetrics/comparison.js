@@ -21,8 +21,16 @@
     url.searchParams.set('metric', button.getAttribute('data-metric-key') || '');
     url.searchParams.set('department', button.getAttribute('data-department-code') || '');
     url.searchParams.set('scope', button.getAttribute('data-scope') || 'today');
+    const memberId = button.getAttribute('data-member-id');
+    const periodId = button.getAttribute('data-period-id');
     const startDate = button.getAttribute('data-start-date');
     const endDate = button.getAttribute('data-end-date');
+    if (memberId) {
+      url.searchParams.set('member', memberId);
+    }
+    if (periodId) {
+      url.searchParams.set('period_id', periodId);
+    }
     if (startDate) {
       url.searchParams.set('start_date', startDate);
     }

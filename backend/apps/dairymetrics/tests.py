@@ -285,10 +285,11 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "ダッシュボードへ戻る")
 
     def test_comparison_page_month_scope_shows_average_cards(self):
+        today = timezone.localdate()
         MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=self.department,
-            entry_date=date(2026, 3, 2),
+            entry_date=today,
             approach_count=6,
             communication_count=4,
             support_amount=3000,
@@ -301,7 +302,7 @@ class DairyMetricsDashboardTests(TestCase):
         MemberDailyMetricEntry.objects.create(
             member=teammate,
             department=self.department,
-            entry_date=date(2026, 3, 3),
+            entry_date=today,
             approach_count=3,
             communication_count=2,
             support_amount=1000,
@@ -323,14 +324,104 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "前月比")
         self.assertContains(response, "+100.0%")
 
+    def test_comparison_page_can_show_selected_member_scores(self):
+        teammate_user = get_user_model().objects.create_user(username="member2selected", password="pass123")
+        teammate = Member.objects.create(name="Selected Compare Member", user=teammate_user)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=teammate,
+            department=self.department,
+            entry_date=date(2026, 3, 3),
+            approach_count=8,
+            communication_count=6,
+            support_amount=4200,
+            cs_count=2,
+            refugee_count=1,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_compare"),
+            {"member": teammate.id, "scope": "month"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Selected Compare Memberさんのスコアページ")
+        self.assertContains(response, "Selected Compare Member")
+        self.assertContains(response, f"?department=WV&scope=month&member={teammate.id}")
+
+    def test_comparison_page_custom_scope_can_select_saved_period(self):
+        teammate_user = get_user_model().objects.create_user(username="member2period", password="pass123")
+        teammate = Member.objects.create(name="Period Compare Member", user=teammate_user)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
+        period = Period.objects.create(
+            name="第2路程",
+            month=date(2026, 3, 1),
+            start_date=date(2026, 3, 10),
+            end_date=date(2026, 3, 20),
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=teammate,
+            department=self.department,
+            entry_date=date(2026, 3, 12),
+            approach_count=5,
+            communication_count=4,
+            support_amount=2600,
+            cs_count=1,
+            refugee_count=1,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_compare"),
+            {"member": teammate.id, "scope": "custom", "period_id": period.id},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "保存済み路程")
+        self.assertContains(response, "第2路程")
+        self.assertContains(response, f'<option value="{period.id}" selected>', html=False)
+
+    def test_member_dashboard_custom_scope_form_posts_back_to_selected_member(self):
+        teammate_user = get_user_model().objects.create_user(username="member2readonly", password="pass123")
+        teammate = Member.objects.create(name="Readonly Compare Member", user=teammate_user)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
+        Period.objects.create(
+            name="第3路程",
+            month=date(2026, 3, 1),
+            start_date=date(2026, 3, 21),
+            end_date=date(2026, 3, 31),
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=teammate,
+            department=self.department,
+            entry_date=date(2026, 3, 22),
+            approach_count=4,
+            communication_count=3,
+            support_amount=1800,
+            cs_count=1,
+            refugee_count=0,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_member_dashboard", args=[teammate.id]),
+            {"scope": "custom"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'action="{reverse("dairymetrics_member_dashboard", args=[teammate.id])}"', html=False)
+        self.assertContains(response, "保存済み路程")
+
     def test_comparison_ranking_detail_returns_full_modal_html(self):
+        today = timezone.localdate()
         teammate_user = get_user_model().objects.create_user(username="member2g", password="pass123")
         teammate = Member.objects.create(name="Member Modal", user=teammate_user)
         MemberDepartment.objects.create(member=teammate, department=self.department)
         MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=self.department,
-            entry_date=date(2026, 3, 9),
+            entry_date=today,
             approach_count=3,
             communication_count=2,
             support_amount=900,
@@ -339,7 +430,7 @@ class DairyMetricsDashboardTests(TestCase):
         MemberDailyMetricEntry.objects.create(
             member=teammate,
             department=self.department,
-            entry_date=date(2026, 3, 9),
+            entry_date=today,
             approach_count=6,
             communication_count=4,
             support_amount=2500,
@@ -889,10 +980,11 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertIn("3,500", payload["card_html"])
 
     def test_member_dashboard_ajax_supports_month_scope(self):
+        today = timezone.localdate()
         MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=self.department,
-            entry_date=date(2026, 3, 9),
+            entry_date=today,
             approach_count=7,
             communication_count=5,
             support_amount=3500,
@@ -909,24 +1001,25 @@ class DairyMetricsDashboardTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertIn("今月: 2026/03", payload["card_html"])
+        self.assertIn(f"今月: {today.strftime('%Y/%m')}", payload["card_html"])
         self.assertIn('?department=WV&scope=month', payload["card_html"])
 
     def test_member_dashboard_ajax_supports_period_scope_for_un(self):
+        today = timezone.localdate()
         un_department = Department.objects.create(code="UN", name="UN")
         target_user = get_user_model().objects.create_user(username="member-un", password="pass123")
         target_member = Member.objects.create(name="UN Member", user=target_user)
         MemberDepartment.objects.create(member=target_member, department=un_department)
         Period.objects.create(
             name="第1路程",
-            month=date(2026, 3, 1),
-            start_date=date(2026, 3, 1),
-            end_date=date(2026, 3, 31),
+            month=today.replace(day=1),
+            start_date=today - timedelta(days=1),
+            end_date=today + timedelta(days=1),
         )
         MemberDailyMetricEntry.objects.create(
             member=target_member,
             department=un_department,
-            entry_date=date(2026, 3, 9),
+            entry_date=today,
             approach_count=7,
             communication_count=5,
             result_count=3,
