@@ -335,14 +335,16 @@ def _resolve_scope(
         .order_by("-month", "start_date", "id")
         .first()
     )
-    if scope == "period" and current_period:
+    latest_period = Period.objects.order_by("-end_date", "-start_date", "-id").first()
+    available_period = current_period or latest_period
+    if scope == "period" and available_period:
         return {
             "scope": "period",
             "label": "今路程",
-            "summary": current_period.name,
-            "start_date": current_period.start_date,
-            "end_date": today,
-            "period": current_period,
+            "summary": available_period.name,
+            "start_date": available_period.start_date,
+            "end_date": available_period.end_date if available_period.end_date < today else today,
+            "period": available_period,
         }
     if scope == "month":
         return {
@@ -351,7 +353,7 @@ def _resolve_scope(
             "summary": today.strftime("%Y/%m"),
             "start_date": month_start,
             "end_date": today,
-            "period": current_period,
+            "period": available_period,
         }
     if scope == "custom" and member and department:
         selected_period = None
@@ -374,7 +376,7 @@ def _resolve_scope(
             ),
             "start_date": start_date,
             "end_date": end_date,
-            "period": current_period,
+            "period": available_period,
             "custom_start_date": start_date,
             "custom_end_date": end_date,
             "is_lifetime": is_lifetime,
@@ -386,7 +388,7 @@ def _resolve_scope(
         "summary": today.strftime("%Y/%m/%d"),
         "start_date": today,
         "end_date": today,
-        "period": current_period,
+        "period": available_period,
     }
 
 
@@ -1015,7 +1017,7 @@ def build_member_dashboard_card(
     saved_period_options = [
         {
             "id": period.id,
-            "label": f"{period.name} ({period.start_date.strftime('%Y/%m/%d')} - {period.end_date.strftime('%Y/%m/%d')})",
+            "label": f"{period.start_date.strftime('%Y/%m/%d')} - {period.end_date.strftime('%Y/%m/%d')}",
         }
         for period in Period.objects.order_by("-start_date", "-id")
     ]

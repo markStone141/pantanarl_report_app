@@ -413,6 +413,55 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, f'action="{reverse("dairymetrics_member_dashboard", args=[teammate.id])}"', html=False)
         self.assertContains(response, "保存済み路程")
 
+    def test_member_dashboard_custom_scope_saved_period_select_uses_date_only_labels(self):
+        period = Period.objects.create(
+            name="2026年度3月 第2次路程",
+            month=date(2026, 3, 1),
+            start_date=date(2026, 3, 16),
+            end_date=date(2026, 3, 21),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_dashboard"), {"scope": "custom"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f">{period.start_date.strftime('%Y/%m/%d')} - {period.end_date.strftime('%Y/%m/%d')}<", html=False)
+        self.assertNotContains(response, period.name)
+
+    def test_member_dashboard_period_scope_falls_back_to_latest_saved_period(self):
+        today = timezone.localdate()
+        target_user = get_user_model().objects.create_user(username="member-period-fallback", password="pass123")
+        target_member = Member.objects.create(name="Period Fallback Member", user=target_user)
+        MemberDepartment.objects.create(member=target_member, department=self.department)
+        latest_period = Period.objects.create(
+            name="第4路程",
+            month=date(2026, 3, 1),
+            start_date=today - timedelta(days=12),
+            end_date=today - timedelta(days=5),
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=target_member,
+            department=self.department,
+            entry_date=latest_period.start_date,
+            approach_count=6,
+            communication_count=4,
+            support_amount=2200,
+            cs_count=1,
+            refugee_count=0,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_member_dashboard", args=[target_member.id]),
+            {"scope": "period"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn("今路程: 第4路程", payload["card_html"])
+        self.assertNotIn('aria-disabled="true"', payload["card_html"])
+
     def test_comparison_ranking_detail_returns_full_modal_html(self):
         today = timezone.localdate()
         teammate_user = get_user_model().objects.create_user(username="member2g", password="pass123")
