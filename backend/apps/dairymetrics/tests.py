@@ -355,9 +355,9 @@ class DairyMetricsDashboardTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "コミュ率")
-        self.assertContains(response, "-15.0pt")
+        self.assertContains(response, "-15.0%")
         self.assertContains(response, "参加率")
-        self.assertContains(response, "+13.8pt")
+        self.assertContains(response, "+13.8%")
 
     def test_comparison_page_can_show_selected_member_scores(self):
         today = timezone.localdate()

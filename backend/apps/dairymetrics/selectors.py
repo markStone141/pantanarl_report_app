@@ -464,7 +464,7 @@ def _metric_diff_text(metric_key, value, average):
     if metric_key in {"communication_rate", "participation_rate"}:
         diff_value = round(value - average, 1)
         sign = "+" if diff_value > 0 else ""
-        return f"{sign}{diff_value}pt"
+        return f"{sign}{diff_value}%"
     diff_rate = round(((value - average) / average) * 100, 1)
     sign = "+" if diff_rate > 0 else ""
     return f"{sign}{diff_rate}%"
