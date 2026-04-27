@@ -499,6 +499,56 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertIn("Member Modal", payload["modal_html"])
         self.assertIn("Member Two", payload["modal_html"])
 
+    def test_comparison_average_support_amount_ranking_shows_count_denominator(self):
+        today = timezone.localdate()
+        teammate_user = get_user_model().objects.create_user(username="member2avgdenom", password="pass123")
+        teammate = Member.objects.create(name="Member Avg Denom", user=teammate_user)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            support_amount=3000,
+            cs_count=2,
+            refugee_count=1,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=teammate,
+            department=self.department,
+            entry_date=today,
+            support_amount=1000,
+            cs_count=1,
+            refugee_count=0,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_compare"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "1,000.0 / 1件")
+
+    def test_admin_ranking_average_support_amount_shows_count_denominator(self):
+        today = timezone.localdate()
+        admin = get_user_model().objects.create_user(username="dm_admin_rankavg", password="pass123", is_staff=True)
+        teammate_user = get_user_model().objects.create_user(username="member2adminavg", password="pass123")
+        teammate = Member.objects.create(name="Member Admin Avg", user=teammate_user)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            support_amount=4800,
+            cs_count=3,
+            refugee_count=1,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+        )
+        self.client.force_login(admin)
+
+        response = self.client.get(reverse("dairymetrics_admin_ranking_overview"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "1,200.0 / 4件")
+
     def test_entry_form_updates_existing_record(self):
         entry = MemberDailyMetricEntry.objects.create(
             member=self.member,

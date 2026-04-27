@@ -468,7 +468,12 @@ def _metric_diff_text(value, average):
 
 def _metric_display_text(metric_key, department, totals, *, include_returns=False):
     value = _metric_value_for_scope(metric_key, department, totals, include_returns=include_returns)
-    return _format_metric_display(metric_key, value)
+    text = _format_metric_display(metric_key, value)
+    if metric_key == "average_support_amount" and value is not None:
+        count_value = _count_value_for_department(department, totals, include_returns=include_returns)
+        if count_value > 0:
+            return f"{text} / {count_value}件"
+    return text
 
 
 def _format_metric_display(metric_key, value):
