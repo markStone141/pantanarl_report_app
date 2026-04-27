@@ -1154,17 +1154,28 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertIn('?department=UN&scope=period', payload["card_html"])
 
     def test_member_dashboard_is_readonly_and_allows_inactive_member(self):
+        today = timezone.localdate()
         inactive_member = Member.objects.create(name="Inactive Member", is_active=False)
         MemberDepartment.objects.create(member=inactive_member, department=self.department)
         MemberDailyMetricEntry.objects.create(
             member=inactive_member,
             department=self.department,
-            entry_date=date(2026, 3, 9),
+            entry_date=today,
             approach_count=7,
             communication_count=5,
             support_amount=3500,
             cs_count=2,
             refugee_count=1,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            approach_count=4,
+            communication_count=3,
+            support_amount=1000,
+            cs_count=1,
+            refugee_count=0,
         )
         self.client.force_login(self.user)
         response = self.client.get(reverse("dairymetrics_member_dashboard", args=[inactive_member.id]))
@@ -1179,7 +1190,78 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertNotContains(response, "目標を設定")
         self.assertNotContains(response, "dairymetrics-open-entry")
         self.assertNotContains(response, "メンバー一覧へ戻る")
-        self.assertContains(response, reverse("dairymetrics_member_overview"))
+        self.assertContains(response, "自分と比較")
+        self.assertContains(response, "Inactive MemberさんとMember Twoさんの差分")
+
+    def test_member_dashboard_readonly_month_scope_shows_self_comparison(self):
+        today = timezone.localdate()
+        inactive_member = Member.objects.create(name="Month Compare Member", is_active=False)
+        MemberDepartment.objects.create(member=inactive_member, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=inactive_member,
+            department=self.department,
+            entry_date=today,
+            support_amount=4000,
+            cs_count=2,
+            refugee_count=0,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            support_amount=1000,
+            cs_count=1,
+            refugee_count=0,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_member_dashboard", args=[inactive_member.id]),
+            {"scope": "month"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "自分と比較")
+        self.assertContains(response, "+3,000")
+        self.assertContains(response, "+300.00%")
+
+    def test_member_dashboard_readonly_period_scope_shows_self_comparison(self):
+        today = timezone.localdate()
+        inactive_member = Member.objects.create(name="Period Compare Member", is_active=False)
+        MemberDepartment.objects.create(member=inactive_member, department=self.department)
+        Period.objects.create(
+            name="第1路程",
+            month=today.replace(day=1),
+            start_date=today - timedelta(days=1),
+            end_date=today + timedelta(days=1),
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=inactive_member,
+            department=self.department,
+            entry_date=today,
+            support_amount=2400,
+            cs_count=2,
+            refugee_count=0,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            support_amount=1200,
+            cs_count=1,
+            refugee_count=0,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_member_dashboard", args=[inactive_member.id]),
+            {"scope": "period"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "自分と比較")
+        self.assertContains(response, "+1,200")
+        self.assertContains(response, "+100.00%")
 
     def test_member_dashboard_allows_scope_switch_links(self):
         MemberDailyMetricEntry.objects.create(

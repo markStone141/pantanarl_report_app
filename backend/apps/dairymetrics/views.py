@@ -248,7 +248,7 @@ def _build_member_dashboard_context(*, request, member, readonly=False, viewer_m
             )
     member_rows = _build_member_directory() if readonly else []
     member_filter_departments = _member_filter_departments(member_rows) if readonly else []
-    return {
+    context = {
         "page_title": "DairyMetrics",
         "member": member,
         "departments": dashboard_data["departments"],
@@ -271,6 +271,22 @@ def _build_member_dashboard_context(*, request, member, readonly=False, viewer_m
             else reverse("dairymetrics_dashboard")
         ),
     }
+    if readonly and viewer_member and member and viewer_member.id != member.id and dashboard_data["selected_card"]:
+        start_date, end_date = _comparison_scope_bounds(
+            dashboard_data["selected_card"],
+            today=timezone.localdate(),
+        )
+        context["member_comparison"] = build_member_to_member_comparison(
+            viewer_member,
+            member,
+            selected_department,
+            start_date,
+            end_date,
+            today_only=dashboard_data["selected_scope"] == "today",
+        )
+    else:
+        context["member_comparison"] = None
+    return context
 
 
 def _resolve_comparison_target_member(request: HttpRequest):

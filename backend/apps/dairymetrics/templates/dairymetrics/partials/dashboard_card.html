@@ -134,6 +134,51 @@
     <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_compare' %}?department={{ selected_card.department.code }}&scope={{ selected_scope }}">スコアを見る</a>
     {% endif %}
   </div>
+  {% if member_comparison %}
+  <section class="dairymetrics-compare-board">
+    <div class="row">
+      <div>
+        <h3>自分と比較</h3>
+        <div class="muted">{{ member_comparison.target_member_name }}さんと{{ member_comparison.base_member_name }}さんの差分</div>
+      </div>
+    </div>
+    <article class="comparison-card">
+      <div class="table-scroll">
+        <table class="dairymetrics-admin-table">
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>{{ member_comparison.target_member_name }}</th>
+              <th>{{ member_comparison.base_member_name }}</th>
+              <th>差分</th>
+              <th>増減率</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in member_comparison.rows %}
+            <tr>
+              <td class="dairymetrics-admin-metric-label">
+                <span class="dairymetrics-rank-card-title">
+                  <span class="dairymetrics-rank-metric-icon"><i class="fa-solid {{ row.icon }}" aria-hidden="true"></i></span>
+                  <strong>{{ row.label }}</strong>
+                </span>
+              </td>
+              <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number">{{ row.target_text }}</td>
+              <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number">{{ row.base_text }}</td>
+              <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number{% if row.is_positive %} is-positive{% elif row.is_negative %} is-negative{% endif %}">
+                {% if row.diff_value > 0 %}+{% elif row.diff_value < 0 %}-{% endif %}{{ row.diff_text }}
+              </td>
+              <td class="dairymetrics-admin-sheet-summary dairymetrics-admin-number{% if row.is_positive %} is-positive{% elif row.is_negative %} is-negative{% endif %}">
+                {{ row.rate_text }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+  {% endif %}
   <div class="grid grid-2 dairymetrics-stat-grid">
     {% if selected_card.scope == "custom" %}
     <div class="metric-card">
