@@ -359,6 +359,52 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "参加率")
         self.assertContains(response, "+13.8%")
 
+    def test_comparison_page_rate_average_diff_uses_direct_rate_gap(self):
+        today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            approach_count=110,
+            communication_count=24,
+            support_amount=1000,
+            cs_count=8,
+            refugee_count=0,
+        )
+        teammate_user = get_user_model().objects.create_user(username="member2rategap", password="pass123")
+        teammate = Member.objects.create(name="Member Rate Gap", user=teammate_user)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=teammate,
+            department=self.department,
+            entry_date=today,
+            approach_count=10,
+            communication_count=5,
+            support_amount=1000,
+            cs_count=1,
+            refugee_count=0,
+        )
+        third_user = get_user_model().objects.create_user(username="member2rategap3", password="pass123")
+        third_member = Member.objects.create(name="Member Rate Gap Three", user=third_user)
+        MemberDepartment.objects.create(member=third_member, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=third_member,
+            department=self.department,
+            entry_date=today,
+            approach_count=200,
+            communication_count=13,
+            support_amount=1000,
+            cs_count=1,
+            refugee_count=0,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_compare"), {"scope": "month"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "コミュ率")
+        self.assertContains(response, "-4.3%")
+
     def test_comparison_page_can_show_selected_member_scores(self):
         today = timezone.localdate()
         MemberDailyMetricEntry.objects.create(
