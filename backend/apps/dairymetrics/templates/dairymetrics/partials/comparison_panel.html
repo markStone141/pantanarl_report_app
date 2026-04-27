@@ -10,6 +10,19 @@
     >{{ option.label }}</a>
     {% endfor %}
   </div>
+  <form method="get" action="{% url 'dairymetrics_compare' %}" class="dairymetrics-scope-mobile-form">
+    <input type="hidden" name="department" value="{{ selected_card.department.code }}">
+    {% if comparison_member_id %}<input type="hidden" name="member" value="{{ comparison_member_id }}">{% endif %}
+    {% if selected_card.custom_start_date %}<input type="hidden" name="start_date" value="{{ selected_card.custom_start_date|date:'Y-m-d' }}">{% endif %}
+    {% if selected_card.custom_end_date %}<input type="hidden" name="end_date" value="{{ selected_card.custom_end_date|date:'Y-m-d' }}">{% endif %}
+    {% if selected_card.selected_saved_period_id %}<input type="hidden" name="period_id" value="{{ selected_card.selected_saved_period_id }}">{% endif %}
+    <label for="dairymetrics-compare-scope-mobile-select" class="muted">表示期間</label>
+    <select id="dairymetrics-compare-scope-mobile-select" name="scope" data-scope-select-submit>
+      {% for option in scope_options %}
+      <option value="{{ option.value }}" {% if option.is_active %}selected{% endif %} {% if option.is_disabled %}disabled{% endif %}>{{ option.label }}</option>
+      {% endfor %}
+    </select>
+  </form>
   <div class="dairymetrics-card-head">
     <div>
       <div class="dairymetrics-title-row">

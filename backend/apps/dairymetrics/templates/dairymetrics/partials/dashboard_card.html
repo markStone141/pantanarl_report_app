@@ -13,6 +13,18 @@
     >{{ option.label }}</a>
     {% endfor %}
   </div>
+  <form method="get" action="{{ card_base_url }}" class="dairymetrics-scope-mobile-form">
+    <input type="hidden" name="department" value="{{ selected_card.department.code }}">
+    {% if selected_card.custom_start_date %}<input type="hidden" name="start_date" value="{{ selected_card.custom_start_date|date:'Y-m-d' }}">{% endif %}
+    {% if selected_card.custom_end_date %}<input type="hidden" name="end_date" value="{{ selected_card.custom_end_date|date:'Y-m-d' }}">{% endif %}
+    {% if selected_card.selected_saved_period_id %}<input type="hidden" name="period_id" value="{{ selected_card.selected_saved_period_id }}">{% endif %}
+    <label for="dairymetrics-scope-mobile-select" class="muted">表示期間</label>
+    <select id="dairymetrics-scope-mobile-select" name="scope" data-scope-select>
+      {% for option in scope_options %}
+      <option value="{{ option.value }}" {% if option.is_active %}selected{% endif %} {% if option.is_disabled %}disabled{% endif %}>{{ option.label }}</option>
+      {% endfor %}
+    </select>
+  </form>
   {% if selected_card.scope != "custom" %}
   <section class="dairymetrics-goal-hero {% if selected_card.goal_completed %}is-complete{% endif %}">
     <div class="dairymetrics-goal-hero-head">

@@ -99,6 +99,20 @@
     await refreshDashboard(url);
   }
 
+  function buildUrlFromForm(form) {
+    const url = new URL(form.getAttribute('action') || window.location.href, window.location.origin);
+    const formData = new FormData(form);
+    Array.from(formData.entries()).forEach(function (entry) {
+      const [key, value] = entry;
+      if (value) {
+        url.searchParams.set(key, value);
+      } else {
+        url.searchParams.delete(key);
+      }
+    });
+    return url;
+  }
+
   document.addEventListener('click', function (event) {
     const scopeToggle = event.target.closest('[data-scope-toggle]');
     if (scopeToggle) {
@@ -171,6 +185,11 @@
     const changedMemberFilterSelect = event.target.closest('[data-member-filter-select]');
     if (changedMemberFilterSelect) {
       applyMemberFilter(changedMemberFilterSelect.value);
+      return;
+    }
+    const changedScopeSelect = event.target.closest('[data-scope-select]');
+    if (changedScopeSelect && changedScopeSelect.form) {
+      refreshDashboard(buildUrlFromForm(changedScopeSelect.form));
     }
   });
 

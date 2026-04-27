@@ -65,6 +65,13 @@
     }
   });
 
+  document.addEventListener('change', function (event) {
+    const scopeSelect = event.target.closest('[data-scope-select-submit]');
+    if (scopeSelect && scopeSelect.form) {
+      scopeSelect.form.submit();
+    }
+  });
+
   if (closeButton) {
     closeButton.addEventListener('click', function () {
       closeOverlay();

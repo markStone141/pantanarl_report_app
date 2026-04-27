@@ -446,6 +446,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "+100.00%")
         self.assertContains(response, "2,000.0 / 1件")
         self.assertContains(response, f"?department=WV&scope=today&member={teammate.id}")
+        self.assertContains(response, 'data-scope-select-submit', html=False)
 
     def test_comparison_page_custom_scope_can_select_saved_period(self):
         teammate_user = get_user_model().objects.create_user(username="member2period", password="pass123")
@@ -1305,6 +1306,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "自分と比較")
         self.assertContains(response, "+3,000")
         self.assertContains(response, "+300.00%")
+        self.assertContains(response, 'data-scope-select', html=False)
 
     def test_member_dashboard_readonly_period_scope_shows_self_comparison(self):
         today = timezone.localdate()

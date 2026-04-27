@@ -104,6 +104,16 @@
   display: none;
 }
 
+.dairymetrics-scope-mobile-form {
+  display: none;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.dairymetrics-scope-mobile-form select {
+  width: 100%;
+}
+
 .dairymetrics-scope-tab {
   position: relative;
   flex: 0 0 136px;
@@ -1489,6 +1499,7 @@
   .dairymetrics-entry-grid,
   .dairymetrics-entry-section-grid,
   .dairymetrics-goal-grid,
+  .dairymetrics-stat-grid,
   .dairymetrics-insight-grid,
   .dairymetrics-compare-grid,
   .dairymetrics-member-grid,
@@ -1498,25 +1509,11 @@
   }
 
   .dairymetrics-scope-tabbar {
-    width: 100%;
-    min-width: 0;
-    margin-inline: 0;
-    padding-inline: 0;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0;
-    overflow: hidden;
+    display: none;
   }
 
-  .dairymetrics-scope-tab {
-    min-height: 40px;
-    width: 100%;
-    min-width: 0;
-    padding: 8px 6px 7px;
-    font-size: 0.82rem;
-    letter-spacing: 0;
-    text-align: center;
-    white-space: nowrap;
+  .dairymetrics-scope-mobile-form {
+    display: grid;
   }
 
   .dairymetrics-goal-hero-head {
