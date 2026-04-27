@@ -1399,6 +1399,51 @@
   gap: 8px;
 }
 
+.dairymetrics-member-compare-mobile {
+  display: none;
+}
+
+.dairymetrics-member-compare-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #d6e4ee;
+  background: #f8fbff;
+}
+
+.dairymetrics-member-compare-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dairymetrics-member-compare-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.dairymetrics-member-compare-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dairymetrics-member-compare-row strong {
+  margin-top: 0;
+  text-align: right;
+}
+
+.dairymetrics-member-compare-positive {
+  color: #1f7a56;
+}
+
+.dairymetrics-member-compare-negative {
+  color: #b54848;
+}
+
 @media (max-width: 768px) {
   .dairymetrics-login-card {
     width: min(100vw - 20px, 620px);
@@ -1418,6 +1463,15 @@
 
   .dairymetrics-rank-card-head {
     align-items: flex-start;
+  }
+
+  .dairymetrics-member-compare-desktop {
+    display: none;
+  }
+
+  .dairymetrics-member-compare-mobile {
+    display: grid;
+    gap: 10px;
   }
 
   .dairymetrics-rank-detail-btn {
