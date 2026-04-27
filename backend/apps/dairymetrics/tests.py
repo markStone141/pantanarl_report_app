@@ -325,30 +325,46 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "+100.0%")
 
     def test_comparison_page_can_show_selected_member_scores(self):
+        today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            support_amount=1000,
+            cs_count=1,
+            refugee_count=0,
+        )
         teammate_user = get_user_model().objects.create_user(username="member2selected", password="pass123")
         teammate = Member.objects.create(name="Selected Compare Member", user=teammate_user)
         MemberDepartment.objects.create(member=teammate, department=self.department)
         MemberDailyMetricEntry.objects.create(
             member=teammate,
             department=self.department,
-            entry_date=date(2026, 3, 3),
+            entry_date=today,
             approach_count=8,
             communication_count=6,
-            support_amount=4200,
-            cs_count=2,
-            refugee_count=1,
+            support_amount=2000,
+            cs_count=1,
+            refugee_count=0,
         )
         self.client.force_login(self.user)
 
         response = self.client.get(
             reverse("dairymetrics_compare"),
-            {"member": teammate.id, "scope": "month"},
+            {"member": teammate.id, "scope": "today"},
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Selected Compare Memberさんのスコアページ")
         self.assertContains(response, "Selected Compare Member")
-        self.assertContains(response, f"?department=WV&scope=month&member={teammate.id}")
+        self.assertContains(response, "自分と比較")
+        self.assertContains(response, "Selected Compare MemberさんとMember Twoさんの差分")
+        self.assertContains(response, "2,000")
+        self.assertContains(response, "1,000")
+        self.assertContains(response, "+1,000")
+        self.assertContains(response, "+100.00%")
+        self.assertContains(response, "2,000.0 / 1件")
+        self.assertContains(response, f"?department=WV&scope=today&member={teammate.id}")
 
     def test_comparison_page_custom_scope_can_select_saved_period(self):
         teammate_user = get_user_model().objects.create_user(username="member2period", password="pass123")

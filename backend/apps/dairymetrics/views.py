@@ -23,6 +23,7 @@ from .selectors import (
     build_admin_month_overview,
     build_member_daily_overview,
     build_member_month_overview,
+    build_member_to_member_comparison,
     build_member_dashboard,
     build_member_ranking_detail,
 )
@@ -281,6 +282,18 @@ def _resolve_comparison_target_member(request: HttpRequest):
     return viewer_member, target_member
 
 
+def _comparison_scope_bounds(selected_card, *, today):
+    scope = selected_card["scope"]
+    if scope == "today":
+        return today, today
+    if scope == "period" and selected_card.get("period_obj"):
+        period = selected_card["period_obj"]
+        return period.start_date, min(period.end_date, today)
+    if scope == "month":
+        return selected_card["month_start"], today
+    return selected_card.get("custom_start_date"), selected_card.get("custom_end_date")
+
+
 def login_view(request: HttpRequest) -> HttpResponse:
     if request.user.is_authenticated:
         return redirect(_login_redirect_url(request.user))
@@ -436,8 +449,23 @@ def comparison_view(request: HttpRequest) -> HttpResponse:
                 reverse("dairymetrics_member_dashboard", args=[target_member.id])
                 if viewer_member and target_member.id != viewer_member.id
                 else reverse("dairymetrics_dashboard")
-            ),
+            )
         }
+        if viewer_member and target_member.id != viewer_member.id and dashboard_data["selected_card"]:
+            start_date, end_date = _comparison_scope_bounds(
+                dashboard_data["selected_card"],
+                today=timezone.localdate(),
+            )
+            context["member_comparison"] = build_member_to_member_comparison(
+                viewer_member,
+                target_member,
+                dashboard_data["selected_department"],
+                start_date,
+                end_date,
+                today_only=dashboard_data["selected_scope"] == "today",
+            )
+        else:
+            context["member_comparison"] = None
     else:
         context = {
         "page_title": "DairyMetrics",
@@ -452,6 +480,7 @@ def comparison_view(request: HttpRequest) -> HttpResponse:
         "is_admin": request.user.is_staff,
         "comparison_member_id": "",
         "return_dashboard_url": reverse("dairymetrics_dashboard"),
+        "member_comparison": None,
     }
     return render(request, "dairymetrics/comparison.html", context)
 

@@ -512,6 +512,89 @@ def _metric_previous_comparison(metric_key, department, current_totals, previous
     return f"{delta_text} / {rate_text}"
 
 
+def _member_to_member_metric_specs(department):
+    specs = [
+        {"key": "approach_count", "label": "アプローチ数", "icon": "fa-bullseye"},
+        {"key": "communication_count", "label": "コミュニケーション数", "icon": "fa-comments"},
+    ]
+    if department.code == "WV":
+        specs.extend(
+            [
+                {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
+                {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
+                {"key": "average_support_amount", "label": "平均支援額", "icon": "fa-coins"},
+            ]
+        )
+    else:
+        specs.extend(
+            [
+                {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
+                {"key": "support_amount", "label": "金額", "icon": "fa-yen-sign"},
+                {"key": "average_support_amount", "label": "平均支援額", "icon": "fa-coins"},
+            ]
+        )
+    specs.extend(
+        [
+            {"key": "communication_rate", "label": "コミュ率", "icon": "fa-wave-square"},
+            {"key": "participation_rate", "label": "参加率", "icon": "fa-user-check"},
+        ]
+    )
+    return specs
+
+
+def build_member_to_member_comparison(
+    base_member,
+    target_member,
+    department,
+    start_date,
+    end_date,
+    *,
+    today_only=False,
+):
+    include_returns = not today_only
+    include_adjustments = not today_only
+    base_totals = _department_totals(
+        base_member,
+        department,
+        start_date,
+        end_date,
+        include_adjustments=include_adjustments,
+    )
+    target_totals = _department_totals(
+        target_member,
+        department,
+        start_date,
+        end_date,
+        include_adjustments=include_adjustments,
+    )
+    rows = []
+    for spec in _member_to_member_metric_specs(department):
+        key = spec["key"]
+        target_value = _metric_value_for_scope(key, department, target_totals, include_returns=include_returns)
+        base_value = _metric_value_for_scope(key, department, base_totals, include_returns=include_returns)
+        target_numeric = 0 if target_value is None else target_value
+        base_numeric = 0 if base_value is None else base_value
+        diff_value = target_numeric - base_numeric
+        rows.append(
+            {
+                "label": spec["label"],
+                "icon": spec["icon"],
+                "target_text": _metric_display_text(key, department, target_totals, include_returns=include_returns),
+                "base_text": _metric_display_text(key, department, base_totals, include_returns=include_returns),
+                "diff_value": diff_value,
+                "diff_text": _format_diff_display(key, abs(diff_value), digits=2),
+                "rate_text": _comparison_label_precise(_change_rate(target_numeric, base_numeric), digits=2),
+                "is_positive": diff_value > 0,
+                "is_negative": diff_value < 0,
+            }
+        )
+    return {
+        "base_member_name": base_member.name,
+        "target_member_name": target_member.name,
+        "rows": rows,
+    }
+
+
 def _members_with_scope_activity(department, start_date, end_date, *, today_only=False):
     if today_only:
         member_ids = set(
