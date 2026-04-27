@@ -456,11 +456,15 @@ def _metric_value_for_scope(metric_key, department, totals, *, include_returns=F
     return _display_amount_value(totals, include_returns=include_returns)
 
 
-def _metric_diff_text(value, average):
+def _metric_diff_text(metric_key, value, average):
     if value is None:
         return "-"
     if average <= 0:
         return "-"
+    if metric_key in {"communication_rate", "participation_rate"}:
+        diff_value = round(value - average, 1)
+        sign = "+" if diff_value > 0 else ""
+        return f"{sign}{diff_value}pt"
     diff_rate = round(((value - average) / average) * 100, 1)
     sign = "+" if diff_rate > 0 else ""
     return f"{sign}{diff_rate}%"
@@ -833,7 +837,7 @@ def _build_scope_average_metrics(member, department, start_date, end_date, *, to
                 "self_value": self_value,
                 "average_text": _format_metric_display(spec["key"], average) if metric_values else "-",
                 "self_text": _format_metric_display(spec["key"], self_value),
-                "diff_text": _metric_diff_text(self_value, average),
+                "diff_text": _metric_diff_text(spec["key"], self_value, average),
                 "previous_label": previous_label,
                 "previous_text": (
                     _metric_previous_comparison(
