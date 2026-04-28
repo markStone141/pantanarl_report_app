@@ -1943,6 +1943,9 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, "4,000")
         self.assertContains(response, "Shibuya")
         self.assertContains(response, "dairymetrics-admin-month-sheet")
+        self.assertContains(response, "data-monthly-header-scroll", html=False)
+        self.assertContains(response, "data-monthly-left-scroll", html=False)
+        self.assertContains(response, "data-monthly-right-body", html=False)
         self.assertNotContains(response, "1,200")
         self.assertNotContains(response, "data-day-count-label")
 

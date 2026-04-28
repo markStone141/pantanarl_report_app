@@ -5,6 +5,12 @@
   const bulkUpdateUrl = root.getAttribute('data-bulk-update-url');
   if (!bulkUpdateUrl) return;
 
+  const headerScroll = document.querySelector('[data-monthly-header-scroll]');
+  const leftScroll = document.querySelector('[data-monthly-left-scroll]');
+  const cornerHead = document.querySelector('[data-monthly-corner-head]');
+  const headerHead = document.querySelector('[data-monthly-header-head]');
+  const leftBody = document.querySelector('[data-monthly-left-body]');
+  const rightBody = document.querySelector('[data-monthly-right-body]');
   const editButton = document.querySelector('[data-monthly-edit-start]');
   const saveButton = document.querySelector('[data-monthly-edit-save]');
   const cancelButton = document.querySelector('[data-monthly-edit-cancel]');
@@ -25,15 +31,48 @@
     try {
       const payload = JSON.parse(sessionStorage.getItem(RESTORE_KEY) || '{}');
       if (typeof payload.left === 'number') root.scrollLeft = payload.left;
-      if (typeof payload.top === 'number') window.scrollTo(0, payload.top);
+      if (typeof payload.top === 'number') root.scrollTop = payload.top;
       sessionStorage.removeItem(RESTORE_KEY);
     } catch (error) {
       sessionStorage.removeItem(RESTORE_KEY);
     }
+    syncPaneScroll();
   }
 
   function rememberScroll() {
-    sessionStorage.setItem(RESTORE_KEY, JSON.stringify({ left: root.scrollLeft, top: window.scrollY }));
+    sessionStorage.setItem(RESTORE_KEY, JSON.stringify({ left: root.scrollLeft, top: root.scrollTop }));
+  }
+
+  function syncPaneScroll() {
+    if (headerScroll) headerScroll.scrollLeft = root.scrollLeft;
+    if (leftScroll) leftScroll.scrollTop = root.scrollTop;
+  }
+
+  function syncSectionHeights(sourceRows, targetRows) {
+    if (!sourceRows || !targetRows || sourceRows.length !== targetRows.length) return;
+    sourceRows.forEach(function (row) { row.style.height = ''; });
+    targetRows.forEach(function (row) { row.style.height = ''; });
+    sourceRows.forEach(function (row, index) {
+      const targetRow = targetRows[index];
+      const height = Math.max(row.getBoundingClientRect().height, targetRow.getBoundingClientRect().height);
+      row.style.height = height + 'px';
+      targetRow.style.height = height + 'px';
+    });
+  }
+
+  function syncPaneHeights() {
+    if (cornerHead && headerHead) {
+      syncSectionHeights(
+        Array.from(cornerHead.querySelectorAll('thead tr')),
+        Array.from(headerHead.querySelectorAll('thead tr'))
+      );
+    }
+    if (leftBody && rightBody) {
+      syncSectionHeights(
+        Array.from(leftBody.querySelectorAll('tr')),
+        Array.from(rightBody.querySelectorAll('tr'))
+      );
+    }
   }
 
   function setStatus(message, isError) {
@@ -111,6 +150,7 @@
       cell.innerHTML = '';
       cell.appendChild(buildInput(cell));
     });
+    syncPaneHeights();
     if (editButton) editButton.hidden = true;
     if (saveButton) saveButton.hidden = false;
     if (cancelButton) cancelButton.hidden = false;
@@ -124,6 +164,7 @@
       renderDisplay(cell);
       cell.removeAttribute('data-original-value');
     });
+    syncPaneHeights();
     if (editButton) editButton.hidden = false;
     if (saveButton) saveButton.hidden = true;
     if (cancelButton) cancelButton.hidden = true;
@@ -211,5 +252,8 @@
     });
   }
 
+  root.addEventListener('scroll', syncPaneScroll, { passive: true });
+  window.addEventListener('resize', syncPaneHeights);
   restoreScroll();
+  syncPaneHeights();
 })();
