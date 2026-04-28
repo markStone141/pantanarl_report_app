@@ -1106,15 +1106,21 @@
 .dairymetrics-admin-month-sheet thead th {
   white-space: nowrap;
   text-align: center;
-  position: sticky;
-  top: 0;
-  z-index: 5;
   box-shadow: inset 0 -1px 0 #d6e1ea;
 }
 
-.dairymetrics-admin-month-sheet thead tr:nth-child(2) th {
-  top: 30px;
+.dairymetrics-admin-sticky-head {
+  position: sticky;
+  top: 0;
   z-index: 6;
+  background: #fdfefe;
+}
+
+.dairymetrics-admin-sticky-subhead {
+  position: sticky;
+  top: 30px;
+  z-index: 7;
+  background: #fdfefe;
 }
 
 .dairymetrics-admin-member-row.is-first td {
@@ -1127,6 +1133,17 @@
   left: 0;
   z-index: 2;
   background: #fdfefe;
+}
+
+.dairymetrics-admin-sticky-col-1 {
+  left: 0;
+}
+
+.dairymetrics-admin-sticky-col-2 {
+  position: sticky;
+  left: 136px;
+  z-index: 4;
+  background: #f7fbff;
 }
 
 .dairymetrics-admin-month-sheet tbody td.dairymetrics-admin-sticky-col {
@@ -1166,34 +1183,22 @@
   background: #7f97ad;
 }
 
-.dairymetrics-admin-month-sheet thead th:nth-child(1) {
-  position: sticky;
-  left: 0;
-  z-index: 7;
+.dairymetrics-admin-month-sheet thead .dairymetrics-admin-sticky-col-1 {
+  z-index: 10;
 }
 
-.dairymetrics-admin-month-sheet thead th:nth-child(2) {
-  position: sticky;
-  left: 136px;
-  z-index: 7;
+.dairymetrics-admin-month-sheet thead .dairymetrics-admin-sticky-col-2 {
+  z-index: 10;
 }
 
-.dairymetrics-admin-month-sheet thead tr:nth-child(2) th:nth-child(1) {
-  z-index: 8;
+.dairymetrics-admin-month-sheet tbody .dairymetrics-admin-sticky-col-2 {
+  z-index: 4;
 }
 
-.dairymetrics-admin-month-sheet tbody .dairymetrics-admin-metric-label {
-  position: sticky;
-  left: 136px;
-  z-index: 3;
-  background: #f7fbff;
-  box-shadow: inset -1px 0 0 #d6e1ea;
-}
-
-.dairymetrics-admin-month-sheet thead th:nth-child(1),
-.dairymetrics-admin-month-sheet thead th:nth-child(2),
+.dairymetrics-admin-month-sheet thead .dairymetrics-admin-sticky-col-1,
+.dairymetrics-admin-month-sheet thead .dairymetrics-admin-sticky-col-2,
 .dairymetrics-admin-month-sheet tbody .dairymetrics-admin-sticky-col,
-.dairymetrics-admin-month-sheet tbody .dairymetrics-admin-metric-label {
+.dairymetrics-admin-month-sheet tbody .dairymetrics-admin-sticky-col-2 {
   box-shadow: inset -1px 0 0 #d6e1ea;
 }
 
