@@ -1143,7 +1143,6 @@
   border-radius: 14px;
   overflow: hidden;
   background: #f8fbfe;
-  align-items: start;
 }
 
 .dairymetrics-freeze-corner,
@@ -1179,9 +1178,11 @@
 .dairymetrics-freeze-left {
   grid-column: 1;
   grid-row: 2;
+  display: flex;
   overflow: visible;
   border-right: 1px solid #d6e1ea;
   background: #fff;
+  align-self: stretch;
 }
 
 .dairymetrics-freeze-body {
@@ -1191,6 +1192,7 @@
   overflow-y: visible;
   padding-bottom: 0;
   scrollbar-gutter: auto;
+  align-self: stretch;
 }
 
 .dairymetrics-admin-month-pane-table {
@@ -1205,6 +1207,10 @@
   width: 228px;
   min-width: 228px;
   max-width: 228px;
+}
+
+.dairymetrics-admin-month-left-table {
+  height: 100%;
 }
 
 .dairymetrics-admin-month-header-table,
