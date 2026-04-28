@@ -1172,8 +1172,29 @@
   z-index: 7;
 }
 
+.dairymetrics-admin-month-sheet thead th:nth-child(2) {
+  position: sticky;
+  left: 136px;
+  z-index: 7;
+}
+
 .dairymetrics-admin-month-sheet thead tr:nth-child(2) th:nth-child(1) {
   z-index: 8;
+}
+
+.dairymetrics-admin-month-sheet tbody .dairymetrics-admin-metric-label {
+  position: sticky;
+  left: 136px;
+  z-index: 3;
+  background: #f7fbff;
+  box-shadow: inset -1px 0 0 #d6e1ea;
+}
+
+.dairymetrics-admin-month-sheet thead th:nth-child(1),
+.dairymetrics-admin-month-sheet thead th:nth-child(2),
+.dairymetrics-admin-month-sheet tbody .dairymetrics-admin-sticky-col,
+.dairymetrics-admin-month-sheet tbody .dairymetrics-admin-metric-label {
+  box-shadow: inset -1px 0 0 #d6e1ea;
 }
 
 .dairymetrics-admin-month-sheet th:nth-child(1),
