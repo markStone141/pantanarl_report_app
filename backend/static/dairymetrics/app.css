@@ -1138,11 +1138,12 @@
 .dairymetrics-freeze-sheet {
   display: grid;
   grid-template-columns: 228px minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
   border: 1px solid #c9d7e3;
   border-radius: 14px;
   overflow: hidden;
   background: #f8fbfe;
+  align-items: start;
 }
 
 .dairymetrics-freeze-corner,
@@ -1156,6 +1157,9 @@
 .dairymetrics-freeze-corner {
   grid-column: 1;
   grid-row: 1;
+  position: sticky;
+  top: 0;
+  z-index: 20;
   border-right: 1px solid #d6e1ea;
   border-bottom: 1px solid #d6e1ea;
   background: #eef4f9;
@@ -1164,6 +1168,9 @@
 .dairymetrics-freeze-header {
   grid-column: 2;
   grid-row: 1;
+  position: sticky;
+  top: 0;
+  z-index: 19;
   overflow: hidden;
   border-bottom: 1px solid #d6e1ea;
   background: #eef4f9;
@@ -1172,7 +1179,7 @@
 .dairymetrics-freeze-left {
   grid-column: 1;
   grid-row: 2;
-  overflow: hidden;
+  overflow: visible;
   border-right: 1px solid #d6e1ea;
   background: #fff;
 }
@@ -1180,8 +1187,8 @@
 .dairymetrics-freeze-body {
   grid-column: 2;
   grid-row: 2;
-  overflow: auto;
-  max-height: calc(100vh - 220px);
+  overflow-x: auto;
+  overflow-y: visible;
   padding-bottom: 0;
   scrollbar-gutter: auto;
 }

@@ -6,7 +6,6 @@
   if (!bulkUpdateUrl) return;
 
   const headerScroll = document.querySelector('[data-monthly-header-scroll]');
-  const leftScroll = document.querySelector('[data-monthly-left-scroll]');
   const cornerHead = document.querySelector('[data-monthly-corner-head]');
   const headerHead = document.querySelector('[data-monthly-header-head]');
   const leftBody = document.querySelector('[data-monthly-left-body]');
@@ -31,7 +30,7 @@
     try {
       const payload = JSON.parse(sessionStorage.getItem(RESTORE_KEY) || '{}');
       if (typeof payload.left === 'number') root.scrollLeft = payload.left;
-      if (typeof payload.top === 'number') root.scrollTop = payload.top;
+      if (typeof payload.top === 'number') window.scrollTo(0, payload.top);
       sessionStorage.removeItem(RESTORE_KEY);
     } catch (error) {
       sessionStorage.removeItem(RESTORE_KEY);
@@ -40,12 +39,11 @@
   }
 
   function rememberScroll() {
-    sessionStorage.setItem(RESTORE_KEY, JSON.stringify({ left: root.scrollLeft, top: root.scrollTop }));
+    sessionStorage.setItem(RESTORE_KEY, JSON.stringify({ left: root.scrollLeft, top: window.scrollY }));
   }
 
   function syncPaneScroll() {
     if (headerScroll) headerScroll.scrollLeft = root.scrollLeft;
-    if (leftScroll) leftScroll.scrollTop = root.scrollTop;
   }
 
   function syncSectionHeights(sourceRows, targetRows) {
