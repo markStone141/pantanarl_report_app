@@ -68,10 +68,23 @@
       );
     }
     if (leftBody && rightBody) {
-      syncSectionHeights(
-        Array.from(leftBody.querySelectorAll('tr')),
-        Array.from(rightBody.querySelectorAll('tr'))
-      );
+      const leftRows = Array.from(leftBody.querySelectorAll('tr'));
+      const rightRows = Array.from(rightBody.querySelectorAll('tr'));
+      syncSectionHeights(leftRows, rightRows);
+
+      leftRows.forEach(function (row) {
+        const memberCell = row.querySelector('.dairymetrics-admin-member-cell[rowspan]');
+        if (!memberCell) return;
+        memberCell.style.height = '';
+        const groupSize = Number(memberCell.getAttribute('rowspan') || '1');
+        const startIndex = leftRows.indexOf(row);
+        const totalHeight = rightRows
+          .slice(startIndex, startIndex + groupSize)
+          .reduce(function (sum, currentRow) {
+            return sum + currentRow.getBoundingClientRect().height;
+          }, 0);
+        memberCell.style.height = totalHeight + 'px';
+      });
     }
   }
 
