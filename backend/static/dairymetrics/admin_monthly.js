@@ -8,8 +8,6 @@
   const headerScroll = document.querySelector('[data-monthly-header-scroll]');
   const cornerHead = document.querySelector('[data-monthly-corner-head]');
   const headerHead = document.querySelector('[data-monthly-header-head]');
-  const leftBody = document.querySelector('[data-monthly-left-body]');
-  const rightBody = document.querySelector('[data-monthly-right-body]');
   const editButton = document.querySelector('[data-monthly-edit-start]');
   const saveButton = document.querySelector('[data-monthly-edit-save]');
   const cancelButton = document.querySelector('[data-monthly-edit-cancel]');
@@ -64,25 +62,6 @@
         Array.from(cornerHead.querySelectorAll('thead tr')),
         Array.from(headerHead.querySelectorAll('thead tr'))
       );
-    }
-    if (leftBody && rightBody) {
-      const leftRows = Array.from(leftBody.querySelectorAll('tr'));
-      const rightRows = Array.from(rightBody.querySelectorAll('tr'));
-      syncSectionHeights(leftRows, rightRows);
-
-      leftRows.forEach(function (row) {
-        const memberCell = row.querySelector('.dairymetrics-admin-member-cell[rowspan]');
-        if (!memberCell) return;
-        memberCell.style.height = '';
-        const groupSize = Number(memberCell.getAttribute('rowspan') || '1');
-        const startIndex = leftRows.indexOf(row);
-        const totalHeight = rightRows
-          .slice(startIndex, startIndex + groupSize)
-          .reduce(function (sum, currentRow) {
-            return sum + currentRow.getBoundingClientRect().height;
-          }, 0);
-        memberCell.style.height = totalHeight + 'px';
-      });
     }
   }
 

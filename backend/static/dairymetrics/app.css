@@ -1111,7 +1111,7 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.dairymetrics-admin-monthly-page .table-scroll {
+.dairymetrics-admin-monthly-page .table-scroll:not(.dairymetrics-freeze-body) {
   max-height: calc(100vh - 220px);
   overflow-y: auto;
 }
@@ -1138,7 +1138,7 @@
 .dairymetrics-freeze-sheet {
   display: grid;
   grid-template-columns: 228px minmax(0, 1fr);
-  grid-template-rows: auto auto;
+  grid-template-rows: auto 1fr;
   border: 1px solid #c9d7e3;
   border-radius: 14px;
   overflow: hidden;
@@ -1147,7 +1147,6 @@
 
 .dairymetrics-freeze-corner,
 .dairymetrics-freeze-header,
-.dairymetrics-freeze-left,
 .dairymetrics-freeze-body {
   min-width: 0;
   min-height: 0;
@@ -1175,24 +1174,14 @@
   background: #eef4f9;
 }
 
-.dairymetrics-freeze-left {
-  grid-column: 1;
-  grid-row: 2;
-  display: flex;
-  overflow: visible;
-  border-right: 1px solid #d6e1ea;
-  background: #fff;
-  align-self: stretch;
-}
-
 .dairymetrics-freeze-body {
-  grid-column: 2;
+  grid-column: 1 / span 2;
   grid-row: 2;
   overflow-x: auto;
   overflow-y: visible;
+  max-height: none;
   padding-bottom: 0;
   scrollbar-gutter: auto;
-  align-self: stretch;
 }
 
 .dairymetrics-admin-month-pane-table {
@@ -1202,26 +1191,20 @@
   margin: 0;
 }
 
-.dairymetrics-admin-month-left-table,
 .dairymetrics-freeze-corner .dairymetrics-admin-month-pane-table {
   width: 228px;
   min-width: 228px;
   max-width: 228px;
 }
 
-.dairymetrics-admin-month-left-table {
-  height: 100%;
-}
-
 .dairymetrics-admin-month-header-table,
 .dairymetrics-admin-month-body-table {
-  width: 1726px;
-  min-width: 1726px;
+  width: 1954px;
+  min-width: 1954px;
 }
 
 .dairymetrics-freeze-corner .dairymetrics-admin-month-pane-table,
 .dairymetrics-freeze-header .dairymetrics-admin-month-pane-table,
-.dairymetrics-freeze-left .dairymetrics-admin-month-pane-table,
 .dairymetrics-freeze-body .dairymetrics-admin-month-pane-table {
   margin: 0;
 }
@@ -1230,6 +1213,22 @@
   white-space: nowrap;
   text-align: center;
   background: #eef4f9;
+}
+
+.dairymetrics-admin-month-body-table .dairymetrics-admin-body-sticky-col-1 {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: #fcfeff;
+  box-shadow: inset -1px 0 0 #d6e1ea;
+}
+
+.dairymetrics-admin-month-body-table .dairymetrics-admin-body-sticky-col-2 {
+  position: sticky;
+  left: 136px;
+  z-index: 5;
+  background: #f7fbff;
+  box-shadow: inset -1px 0 0 #d6e1ea;
 }
 
 .dairymetrics-admin-member-cell {

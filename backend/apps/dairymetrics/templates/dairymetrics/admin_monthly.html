@@ -4,7 +4,7 @@
 {% block title %}月次集計 | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=19" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=21" />
 {% endblock %}
 
 {% block content %}
@@ -106,37 +106,11 @@
           </thead>
         </table>
       </div>
-      <div class="dairymetrics-freeze-left" data-monthly-left-scroll>
-        <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-month-pane-table dairymetrics-admin-month-left-table">
-          <colgroup>
-            <col class="dairymetrics-col-member">
-            <col class="dairymetrics-col-metric">
-          </colgroup>
-          <tbody data-monthly-left-body>
-            {% for row in rows %}
-            {% for metric_row in row.metric_rows %}
-            <tr class="dairymetrics-admin-member-row{% if forloop.first %} is-first{% endif %}">
-              {% if forloop.first %}
-              <td rowspan="{{ row.metric_rows|length }}" class="dairymetrics-admin-member-cell">
-                <a href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
-                  <strong>{{ row.member.name }}</strong>
-                </a>
-              </td>
-              {% endif %}
-              <td class="dairymetrics-admin-metric-label">{{ metric_row.label }}</td>
-            </tr>
-            {% endfor %}
-            {% empty %}
-            <tr>
-              <td colspan="2">この月の対象データはまだありません。</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
       <div class="dairymetrics-freeze-body table-scroll" data-monthly-edit-root data-monthly-editable="true" data-update-url="{% url 'dairymetrics_admin_monthly_update_cell' %}" data-bulk-update-url="{% url 'dairymetrics_admin_monthly_bulk_update' %}">
         <table class="dairymetrics-admin-table dairymetrics-admin-sheet dairymetrics-admin-month-sheet dairymetrics-admin-month-pane-table dairymetrics-admin-month-body-table">
           <colgroup>
+            <col class="dairymetrics-col-member">
+            <col class="dairymetrics-col-metric">
             <col class="dairymetrics-col-summary">
             <col class="dairymetrics-col-summary">
             {% for month_day in month_days %}
@@ -147,6 +121,14 @@
             {% for row in rows %}
             {% for metric_row in row.metric_rows %}
             <tr class="dairymetrics-admin-member-row{% if forloop.first %} is-first{% endif %}">
+              {% if forloop.first %}
+              <td rowspan="{{ row.metric_rows|length }}" class="dairymetrics-admin-member-cell dairymetrics-admin-body-sticky-col-1">
+                <a href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
+                  <strong>{{ row.member.name }}</strong>
+                </a>
+              </td>
+              {% endif %}
+              <td class="dairymetrics-admin-metric-label dairymetrics-admin-body-sticky-col-2">{{ metric_row.label }}</td>
               <td class="dairymetrics-admin-sheet-summary{% if metric_row.label != '現場' %} dairymetrics-admin-number{% endif %}">
                 {% if metric_row.label == '現場' %}
                 <span class="dairymetrics-admin-location">{{ metric_row.monthly_total }}</span>
@@ -185,7 +167,7 @@
             {% endfor %}
             {% empty %}
             <tr>
-              <td colspan="35">この月の対象データはまだありません。</td>
+              <td colspan="37">この月の対象データはまだありません。</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -195,5 +177,5 @@
   </section>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
-<script src="{% static 'dairymetrics/admin_monthly.js' %}?v=5"></script>
+<script src="{% static 'dairymetrics/admin_monthly.js' %}?v=6"></script>
 {% endblock %}
