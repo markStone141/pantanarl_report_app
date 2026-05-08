@@ -1,13 +1,14 @@
 import re
 from datetime import date
 
+from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, require_roles
 from apps.accounts.models import Department
-from apps.common.report_metrics import format_metric_value
+from apps.common.report_metrics import collect_actual_totals, format_metric_value, metric_detail_rows
 
 from .models import (
     MonthTargetMetricValue,
@@ -36,6 +37,11 @@ DEFAULT_METRICS_BY_DEPT = {
 
 PERIOD_SEQUENCE_OPTIONS = list(range(1, 11))
 STATUS_OPTIONS = [{"value": value, "label": value} for value, _ in TARGET_STATUS_CHOICES]
+STATUS_LABELS = {
+    TARGET_STATUS_ACTIVE: "進行中",
+    TARGET_STATUS_PLANNED: "予定",
+    TARGET_STATUS_FINISHED: "終了",
+}
 
 
 def _month_value_from_date(value: date) -> str:
@@ -214,6 +220,8 @@ def _period_history_rows():
                 "id": period.id,
                 "name": period.name,
                 "status": _period_status(period.start_date, period.end_date),
+                "status_label": STATUS_LABELS.get(_period_status(period.start_date, period.end_date), _period_status(period.start_date, period.end_date)),
+                "status_class": f"is-{_period_status(period.start_date, period.end_date)}",
                 "month_label": f"{period.month.year}年{period.month.month}月",
                 "month_param": _month_value_from_date(period.month),
                 "start_date": period.start_date.isoformat(),
@@ -222,6 +230,63 @@ def _period_history_rows():
             }
         )
     return rows
+
+
+def _period_target_values_by_department(*, period: Period):
+    values = {}
+    for value in (
+        PeriodTargetMetricValue.objects.filter(period=period, metric__is_active=True)
+        .select_related("department", "metric")
+    ):
+        values.setdefault(value.department.code, {})[value.metric_id] = value.value
+    return values
+
+
+def _build_period_history_entry(*, period: Period, configs):
+    status = _period_status(period.start_date, period.end_date)
+    target_values_by_department = _period_target_values_by_department(period=period)
+    actual_totals_by_code = collect_actual_totals(
+        start_date=period.start_date,
+        end_date=period.end_date,
+        target_codes=[config["code"] for config in configs],
+    )
+    department_rows = []
+    for config in configs:
+        detail_rows = metric_detail_rows(
+            metrics=config["metrics"],
+            target_values=target_values_by_department.get(config["code"], {}),
+            actual_totals=actual_totals_by_code.get(
+                config["code"],
+                {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0},
+            ),
+        )
+        department_rows.append(
+            {
+                "label": config["label"],
+                "detail_rows": detail_rows,
+            }
+        )
+
+    return {
+        "id": period.id,
+        "name": period.name,
+        "status": status,
+        "status_label": STATUS_LABELS.get(status, status),
+        "status_class": f"is-{status}",
+        "month_label": f"{period.month.year}年{period.month.month}月",
+        "month_param": _month_value_from_date(period.month),
+        "start_date": period.start_date.isoformat(),
+        "end_date": period.end_date.isoformat(),
+        "range_label": f"{period.start_date:%Y/%m/%d} - {period.end_date:%Y/%m/%d}",
+        "department_rows": department_rows,
+    }
+
+
+def _period_history_page(*, configs, page_number):
+    paginator = Paginator(Period.objects.order_by("-month", "-start_date", "-id"), 10)
+    page_obj = paginator.get_page(page_number)
+    rows = [_build_period_history_entry(period=period, configs=configs) for period in page_obj.object_list]
+    return page_obj, rows
 
 
 def _current_month() -> date:
@@ -456,6 +521,7 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
 @require_roles(ROLE_ADMIN)
 def target_period_settings(request: HttpRequest) -> HttpResponse:
     configs = _department_configs()
+    history_page_number = request.GET.get("page") or request.POST.get("page") or 1
     selected_period = None
     is_edit_mode = False
     period_id = request.GET.get("period")
@@ -499,6 +565,7 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
         selected_period = _current_period()
 
     form_values = _period_form_values(selected_period, include_edit_id=is_edit_mode)
+    history_page, history_rows = _period_history_page(configs=configs, page_number=history_page_number)
 
     return render(
         request,
@@ -515,6 +582,8 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
             "period_deleted": period_deleted,
             "target_saved": target_saved or request.GET.get("target_saved") == "1",
             "form_error": form_error,
-            "history_rows": _period_history_rows(),
+            "history_rows": history_rows,
+            "history_page": history_page,
+            "history_paginator": history_page.paginator,
         },
     )

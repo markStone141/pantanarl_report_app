@@ -6,7 +6,8 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.accounts.models import Department
+from apps.accounts.models import Department, Member
+from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
 
 from . import views as target_views
 from .models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
@@ -313,6 +314,72 @@ class TargetsFlowTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Period.objects.filter(id=period.id).exists())
+
+    def test_period_history_is_paginated_by_ten(self):
+        base_month = timezone.localdate().replace(day=1)
+        for offset in range(11):
+            month = (base_month - timedelta(days=offset * 31)).replace(day=1)
+            Period.objects.create(
+                month=month,
+                name=f"{month.year}年度{month.month}月 第1次路程",
+                status="finished",
+                start_date=month,
+                end_date=month + timedelta(days=6),
+            )
+
+        response = self.client.get(reverse("target_period_settings"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["history_rows"]), 10)
+        self.assertEqual(response.context["history_paginator"].count, 11)
+
+        response_page_2 = self.client.get(reverse("target_period_settings"), {"page": 2})
+        self.assertEqual(response_page_2.status_code, 200)
+        self.assertEqual(len(response_page_2.context["history_rows"]), 1)
+
+    def test_period_history_shows_status_badge_and_actuals_accordion(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        reporter = Member.objects.create(name="Reporter", login_id="period_reporter", password="x")
+        period = Period.objects.create(
+            month=current_month,
+            name=f"{today.year}年度{today.month}月 第1次路程",
+            status="finished",
+            start_date=today - timedelta(days=7),
+            end_date=today - timedelta(days=1),
+        )
+
+        self.client.get(reverse("target_period_settings"))
+        count_metric = TargetMetric.objects.get(department__code="UN", code="count")
+        PeriodTargetMetricValue.objects.create(
+            period=period,
+            department=Department.objects.get(code="UN"),
+            metric=count_metric,
+            value=10,
+        )
+        report = DailyDepartmentReport.objects.create(
+            department=Department.objects.get(code="UN"),
+            report_date=today - timedelta(days=3),
+            reporter=reporter,
+            total_count=5,
+            followup_count=3000,
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=reporter,
+            amount=3000,
+            count=5,
+        )
+
+        response = self.client.get(reverse("target_period_settings"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "target-status-badge is-finished")
+        self.assertContains(response, "実績を見る")
+        self.assertContains(response, "<td>件数</td>", html=False)
+        self.assertContains(response, "<td>10件</td>", html=False)
+        self.assertContains(response, "<td>5件</td>", html=False)
+        self.assertContains(response, "<td>50.0%</td>", html=False)
 
 
 class TargetStatusBoundaryTests(TestCase):

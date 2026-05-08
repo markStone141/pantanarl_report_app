@@ -1,0 +1,118 @@
+.target-history-headline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 10px 0 14px;
+}
+
+.target-history-list {
+  display: grid;
+  gap: 14px;
+}
+
+.target-history-card {
+  border: 1px solid #d4e2ea;
+  border-radius: 12px;
+  background: #fbfdff;
+  padding: 14px;
+}
+
+.target-history-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.target-status-badge.is-active {
+  background: #e7f7ee;
+  color: #18794e;
+  border: 1px solid #bce6cd;
+}
+
+.target-status-badge.is-planned {
+  background: #eef5ff;
+  color: #285ea8;
+  border: 1px solid #cdddf8;
+}
+
+.target-status-badge.is-finished {
+  background: #f3f5f7;
+  color: #5f6d79;
+  border: 1px solid #d9dfe5;
+}
+
+.target-history-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.target-history-details {
+  margin-top: 12px;
+  border-top: 1px solid #e2ebf2;
+  padding-top: 12px;
+}
+
+.target-history-details summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #20415d;
+}
+
+.target-history-details-body {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.target-history-department {
+  border: 1px solid #e1e8ef;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fff;
+}
+
+.target-history-department h4 {
+  margin: 0 0 8px;
+  font-size: 0.98rem;
+}
+
+.target-history-metric-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.target-history-metric-table th,
+.target-history-metric-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e7edf3;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.target-history-metric-table th {
+  background: #f6f9fc;
+  white-space: nowrap;
+}
+
+.target-history-pagination {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+@media (max-width: 768px) {
+  .target-history-card-head {
+    flex-direction: column;
+  }
+
+  .target-history-metric-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
