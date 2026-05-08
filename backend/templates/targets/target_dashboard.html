@@ -43,6 +43,28 @@
   <section class="card" style="margin-top: 16px;">
     <h3>作成済み月目標</h3>
     {% if month_history_rows %}
+    <form method="get" class="target-history-controls">
+      {% if period_history_page.number > 1 %}<input type="hidden" name="period_page" value="{{ period_history_page.number }}">{% endif %}
+      {% if period_status_filter %}<input type="hidden" name="period_status" value="{{ period_status_filter }}">{% endif %}
+      {% if period_sort %}<input type="hidden" name="period_sort" value="{{ period_sort }}">{% endif %}
+      <div>
+        <label>状態</label>
+        <select name="month_status">
+          {% for option in status_filter_options %}
+          <option value="{{ option.value }}" {% if month_status_filter == option.value %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>並び順</label>
+        <select name="month_sort">
+          {% for option in history_sort_options %}
+          <option value="{{ option.value }}" {% if month_sort == option.value %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div><button type="submit" class="btn-inline">絞り込み</button></div>
+    </form>
     <div class="target-history-headline">
       <span class="muted">{{ month_history_paginator.count }}件 / 10件ずつ表示</span>
       <span class="muted">{{ month_history_page.number }} / {{ month_history_paginator.num_pages }} ページ</span>
@@ -56,6 +78,9 @@
           </div>
           <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
         </div>
+        <div class="target-history-actions">
+          <a class="btn-inline" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">編集</a>
+        </div>
         <details class="target-history-details">
           <summary>実績を見る</summary>
           <div class="target-history-details-body" data-history-detail-body data-detail-url="{% url 'target_month_history_detail' %}?month={{ row.month_param }}">
@@ -68,13 +93,13 @@
     {% if month_history_paginator.num_pages > 1 %}
     <div class="target-history-pagination">
       {% if month_history_page.has_previous %}
-      <a class="btn-inline" href="?month_page={{ month_history_page.previous_page_number }}{% if period_history_page.number > 1 %}&period_page={{ period_history_page.number }}{% endif %}">前へ</a>
+      <a class="btn-inline" href="?month_page={{ month_history_page.previous_page_number }}{% if month_status_filter %}&month_status={{ month_status_filter }}{% endif %}{% if month_sort %}&month_sort={{ month_sort }}{% endif %}{% if period_history_page.number > 1 %}&period_page={{ period_history_page.number }}{% endif %}{% if period_status_filter %}&period_status={{ period_status_filter }}{% endif %}{% if period_sort %}&period_sort={{ period_sort }}{% endif %}">前へ</a>
       {% endif %}
       {% for num in month_history_paginator.page_range %}
         {% if num == month_history_page.number %}
         <span class="badge">{{ num }}</span>
         {% elif num == 1 or num == month_history_paginator.num_pages or num >= month_history_page.number|add:"-2" and num <= month_history_page.number|add:"2" %}
-        <a class="btn-inline" href="?month_page={{ num }}{% if period_history_page.number > 1 %}&period_page={{ period_history_page.number }}{% endif %}">{{ num }}</a>
+        <a class="btn-inline" href="?month_page={{ num }}{% if month_status_filter %}&month_status={{ month_status_filter }}{% endif %}{% if month_sort %}&month_sort={{ month_sort }}{% endif %}{% if period_history_page.number > 1 %}&period_page={{ period_history_page.number }}{% endif %}{% if period_status_filter %}&period_status={{ period_status_filter }}{% endif %}{% if period_sort %}&period_sort={{ period_sort }}{% endif %}">{{ num }}</a>
         {% elif num == 2 and month_history_page.number|add:"-2" > 2 %}
         <span class="muted">…</span>
         {% elif num == month_history_paginator.num_pages|add:"-1" and month_history_page.number|add:"2" < month_history_paginator.num_pages|add:"-1" %}
@@ -82,7 +107,7 @@
         {% endif %}
       {% endfor %}
       {% if month_history_page.has_next %}
-      <a class="btn-inline" href="?month_page={{ month_history_page.next_page_number }}{% if period_history_page.number > 1 %}&period_page={{ period_history_page.number }}{% endif %}">次へ</a>
+      <a class="btn-inline" href="?month_page={{ month_history_page.next_page_number }}{% if month_status_filter %}&month_status={{ month_status_filter }}{% endif %}{% if month_sort %}&month_sort={{ month_sort }}{% endif %}{% if period_history_page.number > 1 %}&period_page={{ period_history_page.number }}{% endif %}{% if period_status_filter %}&period_status={{ period_status_filter }}{% endif %}{% if period_sort %}&period_sort={{ period_sort }}{% endif %}">次へ</a>
       {% endif %}
     </div>
     {% endif %}
@@ -111,6 +136,28 @@
   <section class="card" style="margin-top: 16px;">
     <h3>作成済み路程目標</h3>
     {% if period_history_rows %}
+    <form method="get" class="target-history-controls">
+      {% if month_history_page.number > 1 %}<input type="hidden" name="month_page" value="{{ month_history_page.number }}">{% endif %}
+      {% if month_status_filter %}<input type="hidden" name="month_status" value="{{ month_status_filter }}">{% endif %}
+      {% if month_sort %}<input type="hidden" name="month_sort" value="{{ month_sort }}">{% endif %}
+      <div>
+        <label>状態</label>
+        <select name="period_status">
+          {% for option in status_filter_options %}
+          <option value="{{ option.value }}" {% if period_status_filter == option.value %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>並び順</label>
+        <select name="period_sort">
+          {% for option in history_sort_options %}
+          <option value="{{ option.value }}" {% if period_sort == option.value %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div><button type="submit" class="btn-inline">絞り込み</button></div>
+    </form>
     <div class="target-history-headline">
       <span class="muted">{{ period_history_paginator.count }}件 / 10件ずつ表示</span>
       <span class="muted">{{ period_history_page.number }} / {{ period_history_paginator.num_pages }} ページ</span>
@@ -125,6 +172,9 @@
           </div>
           <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
         </div>
+        <div class="target-history-actions">
+          <a class="btn-inline" href="{% url 'target_period_settings' %}?period={{ row.id }}">編集</a>
+        </div>
         <details class="target-history-details">
           <summary>実績を見る</summary>
           <div class="target-history-details-body" data-history-detail-body data-detail-url="{% url 'target_period_history_detail' row.id %}">
@@ -137,13 +187,13 @@
     {% if period_history_paginator.num_pages > 1 %}
     <div class="target-history-pagination">
       {% if period_history_page.has_previous %}
-      <a class="btn-inline" href="?period_page={{ period_history_page.previous_page_number }}{% if month_history_page.number > 1 %}&month_page={{ month_history_page.number }}{% endif %}">前へ</a>
+      <a class="btn-inline" href="?period_page={{ period_history_page.previous_page_number }}{% if period_status_filter %}&period_status={{ period_status_filter }}{% endif %}{% if period_sort %}&period_sort={{ period_sort }}{% endif %}{% if month_history_page.number > 1 %}&month_page={{ month_history_page.number }}{% endif %}{% if month_status_filter %}&month_status={{ month_status_filter }}{% endif %}{% if month_sort %}&month_sort={{ month_sort }}{% endif %}">前へ</a>
       {% endif %}
       {% for num in period_history_paginator.page_range %}
         {% if num == period_history_page.number %}
         <span class="badge">{{ num }}</span>
         {% elif num == 1 or num == period_history_paginator.num_pages or num >= period_history_page.number|add:"-2" and num <= period_history_page.number|add:"2" %}
-        <a class="btn-inline" href="?period_page={{ num }}{% if month_history_page.number > 1 %}&month_page={{ month_history_page.number }}{% endif %}">{{ num }}</a>
+        <a class="btn-inline" href="?period_page={{ num }}{% if period_status_filter %}&period_status={{ period_status_filter }}{% endif %}{% if period_sort %}&period_sort={{ period_sort }}{% endif %}{% if month_history_page.number > 1 %}&month_page={{ month_history_page.number }}{% endif %}{% if month_status_filter %}&month_status={{ month_status_filter }}{% endif %}{% if month_sort %}&month_sort={{ month_sort }}{% endif %}">{{ num }}</a>
         {% elif num == 2 and period_history_page.number|add:"-2" > 2 %}
         <span class="muted">…</span>
         {% elif num == period_history_paginator.num_pages|add:"-1" and period_history_page.number|add:"2" < period_history_paginator.num_pages|add:"-1" %}
@@ -151,7 +201,7 @@
         {% endif %}
       {% endfor %}
       {% if period_history_page.has_next %}
-      <a class="btn-inline" href="?period_page={{ period_history_page.next_page_number }}{% if month_history_page.number > 1 %}&month_page={{ month_history_page.number }}{% endif %}">次へ</a>
+      <a class="btn-inline" href="?period_page={{ period_history_page.next_page_number }}{% if period_status_filter %}&period_status={{ period_status_filter }}{% endif %}{% if period_sort %}&period_sort={{ period_sort }}{% endif %}{% if month_history_page.number > 1 %}&month_page={{ month_history_page.number }}{% endif %}{% if month_status_filter %}&month_status={{ month_status_filter }}{% endif %}{% if month_sort %}&month_sort={{ month_sort }}{% endif %}">次へ</a>
       {% endif %}
     </div>
     {% endif %}

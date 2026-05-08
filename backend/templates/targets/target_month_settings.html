@@ -2,6 +2,12 @@
 
 {% block title %}月目標設定 | 管理者ページ{% endblock %}
 
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=3" />
+{% endblock %}
+
 {% block content %}
 <div class="container">
   <header class="topbar topbar-desktop-expanded">
@@ -57,34 +63,29 @@
     {% if month_deleted %}
     <div class="note" style="margin: 10px 0;">月目標を削除しました。</div>
     {% endif %}
-    <table>
-      <thead>
-        <tr><th>対象月</th><th>状態</th><th>操作</th></tr>
-      </thead>
-      <tbody>
-        {% if history_rows %}
-        {% for row in history_rows %}
-        <tr>
-          <td>{{ row.month_label }}</td>
-          <td>{{ row.status }}</td>
-          <td class="target-op-cell">
-            <a class="btn-inline" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">表示</a>
-            <form method="post" class="target-delete-form" onsubmit="return confirm('この月目標を削除します。よろしいですか？');">
-              {% csrf_token %}
-              <input type="hidden" name="action" value="delete_month_targets" />
-              <input type="hidden" name="delete_month" value="{{ row.month_param }}" />
-              <button type="submit" class="btn-inline btn-danger">削除</button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-        {% else %}
-        <tr>
-          <td colspan="3"><span class="muted">作成済みデータがありません。</span></td>
-        </tr>
-        {% endif %}
-      </tbody>
-    </table>
+    {% if history_rows %}
+    <div class="target-history-list">
+      {% for row in history_rows %}
+      <article class="target-history-card">
+        <div class="target-history-card-head">
+          <div><strong>{{ row.month_label }}</strong></div>
+          <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
+        </div>
+        <div class="target-history-actions">
+          <a class="btn-inline" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">編集</a>
+          <form method="post" class="target-delete-form" onsubmit="return confirm('この月目標を削除します。よろしいですか？');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_month_targets" />
+            <input type="hidden" name="delete_month" value="{{ row.month_param }}" />
+            <button type="submit" class="btn-inline btn-danger">削除</button>
+          </form>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">作成済みデータがありません。</p>
+    {% endif %}
   </section>
 </div>
 <script>

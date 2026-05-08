@@ -6,6 +6,25 @@
   margin: 10px 0 14px;
 }
 
+.target-history-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: end;
+  margin: 10px 0 14px;
+}
+
+.target-history-controls > div {
+  min-width: 140px;
+}
+
+.target-history-controls label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .target-history-list {
   display: grid;
   gap: 14px;

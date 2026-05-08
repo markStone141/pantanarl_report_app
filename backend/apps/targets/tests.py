@@ -385,6 +385,32 @@ class TargetsFlowTests(TestCase):
         self.assertContains(detail_response, "<td>5件</td>", html=False)
         self.assertContains(detail_response, "<td>50.0%</td>", html=False)
 
+    def test_target_dashboard_can_filter_period_history_by_status(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        Period.objects.create(
+            month=current_month,
+            name=f"{today.year}年度{today.month}月 第1次路程",
+            status="active",
+            start_date=today - timedelta(days=1),
+            end_date=today + timedelta(days=1),
+        )
+        future_month = (current_month + timedelta(days=35)).replace(day=1)
+        future_period = Period.objects.create(
+            month=future_month,
+            name=f"{future_month.year}年度{future_month.month}月 第1次路程",
+            status="planned",
+            start_date=today + timedelta(days=10),
+            end_date=today + timedelta(days=15),
+        )
+
+        response = self.client.get(reverse("target_index"), {"period_status": "planned"})
+
+        self.assertEqual(response.status_code, 200)
+        history_names = [row["name"] for row in response.context["period_history_rows"]]
+        self.assertIn(future_period.name, history_names)
+        self.assertNotIn(f"{today.year}年度{today.month}月 第1次路程", history_names)
+
     def test_target_dashboard_month_history_shows_actuals_accordion(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)
@@ -425,6 +451,32 @@ class TargetsFlowTests(TestCase):
         self.assertContains(detail_response, "<td>10,000円</td>", html=False)
         self.assertContains(detail_response, "<td>2,500円</td>", html=False)
         self.assertContains(detail_response, "<td>25.0%</td>", html=False)
+
+    def test_target_dashboard_shows_edit_links_for_month_and_period_history(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        period = Period.objects.create(
+            month=current_month,
+            name=f"{today.year}年度{today.month}月 第2次路程",
+            status="finished",
+            start_date=today - timedelta(days=5),
+            end_date=today - timedelta(days=1),
+        )
+        self.client.get(reverse("target_month_settings"))
+        amount_metric = TargetMetric.objects.get(department__code="UN", code="amount")
+        MonthTargetMetricValue.objects.create(
+            department=Department.objects.get(code="UN"),
+            target_month=current_month,
+            metric=amount_metric,
+            value=5000,
+            status="active",
+        )
+
+        response = self.client.get(reverse("target_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("target_month_settings") + f"?month={current_month.strftime('%Y-%m')}")
+        self.assertContains(response, reverse("target_period_settings") + f"?period={period.id}")
 
 
 class TargetStatusBoundaryTests(TestCase):

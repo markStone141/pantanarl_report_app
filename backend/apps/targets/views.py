@@ -42,6 +42,17 @@ STATUS_LABELS = {
     TARGET_STATUS_PLANNED: "予定",
     TARGET_STATUS_FINISHED: "終了",
 }
+HISTORY_SORT_OPTIONS = [
+    {"value": "newest", "label": "新しい順"},
+    {"value": "oldest", "label": "古い順"},
+    {"value": "status", "label": "状態順"},
+]
+STATUS_FILTER_OPTIONS = [
+    {"value": "", "label": "すべて"},
+    {"value": TARGET_STATUS_ACTIVE, "label": STATUS_LABELS[TARGET_STATUS_ACTIVE]},
+    {"value": TARGET_STATUS_PLANNED, "label": STATUS_LABELS[TARGET_STATUS_PLANNED]},
+    {"value": TARGET_STATUS_FINISHED, "label": STATUS_LABELS[TARGET_STATUS_FINISHED]},
+]
 
 
 def _month_value_from_date(value: date) -> str:
@@ -201,11 +212,14 @@ def _month_history_rows(selected_month: date | None = None, include_selected: bo
     if selected_month and include_selected:
         month_set.add(selected_month)
     for month in sorted(month_set, reverse=True):
+        status = _month_status(month)
         rows.append(
             {
                 "month": month,
                 "month_label": f"{month.year}年{month.month}月",
-                "status": _month_status(month),
+                "status": status,
+                "status_label": STATUS_LABELS.get(status, status),
+                "status_class": f"is-{status}",
                 "month_param": _month_value_from_date(month),
             }
         )
@@ -284,6 +298,37 @@ def _build_month_history_summary(*, target_month: date):
         "status_class": f"is-{status}",
         "month_param": _month_value_from_date(target_month),
     }
+
+
+def _history_sort_key(*, item, sort_value, kind):
+    if sort_value == "oldest":
+        if kind == "month":
+            return (item["month"],)
+        return (item["start_date"], item.get("id", 0))
+    if sort_value == "status":
+        order = {
+            TARGET_STATUS_ACTIVE: 0,
+            TARGET_STATUS_PLANNED: 1,
+            TARGET_STATUS_FINISHED: 2,
+        }
+        if kind == "month":
+            return (order.get(item["status"], 99), -item["month"].toordinal())
+        return (order.get(item["status"], 99), item["start_date"], item.get("id", 0))
+    if kind == "month":
+        return (-item["month"].toordinal(),)
+    return (-date.fromisoformat(item["start_date"]).toordinal(), -int(item.get("id", 0)))
+
+
+def _apply_history_controls(*, rows, status_filter, sort_value, kind):
+    filtered = [row for row in rows if not status_filter or row["status"] == status_filter]
+    reverse = sort_value not in {"newest", "status"}
+    if sort_value == "oldest":
+        filtered = sorted(filtered, key=lambda row: _history_sort_key(item=row, sort_value=sort_value, kind=kind))
+    elif sort_value == "status":
+        filtered = sorted(filtered, key=lambda row: _history_sort_key(item=row, sort_value=sort_value, kind=kind))
+    else:
+        filtered = sorted(filtered, key=lambda row: _history_sort_key(item=row, sort_value=sort_value, kind=kind))
+    return filtered
 
 
 def _period_target_values_by_department(*, period: Period):
@@ -371,22 +416,29 @@ def _month_history_page(*, configs, page_number):
     return page_obj, rows
 
 
-def _period_history_summary_page(*, page_number):
-    paginator = Paginator(Period.objects.order_by("-month", "-start_date", "-id"), 10)
+def _period_history_summary_page(*, page_number, status_filter="", sort_value="newest"):
+    rows = [
+        _build_period_history_summary(period=period)
+        for period in Period.objects.order_by("-month", "-start_date", "-id")
+    ]
+    rows = _apply_history_controls(rows=rows, status_filter=status_filter, sort_value=sort_value, kind="period")
+    paginator = Paginator(rows, 10)
     page_obj = paginator.get_page(page_number)
-    rows = [_build_period_history_summary(period=period) for period in page_obj.object_list]
+    rows = list(page_obj.object_list)
     return page_obj, rows
 
 
-def _month_history_summary_page(*, page_number):
-    months = (
+def _month_history_summary_page(*, page_number, status_filter="", sort_value="newest"):
+    months = list(
         MonthTargetMetricValue.objects.order_by("-target_month")
         .values_list("target_month", flat=True)
         .distinct()
     )
-    paginator = Paginator(months, 10)
+    rows = [_build_month_history_summary(target_month=target_month) for target_month in months]
+    rows = _apply_history_controls(rows=rows, status_filter=status_filter, sort_value=sort_value, kind="month")
+    paginator = Paginator(rows, 10)
     page_obj = paginator.get_page(page_number)
-    rows = [_build_month_history_summary(target_month=target_month) for target_month in page_obj.object_list]
+    rows = list(page_obj.object_list)
     return page_obj, rows
 
 
@@ -566,10 +618,18 @@ def target_index(request: HttpRequest) -> HttpResponse:
     configs = _department_configs()
     current_month = _current_month()
     current_period = _current_period()
+    month_status_filter = request.GET.get("month_status", "")
+    month_sort = request.GET.get("month_sort", "newest")
+    period_status_filter = request.GET.get("period_status", "")
+    period_sort = request.GET.get("period_sort", "newest")
     month_history_page, month_history_rows = _month_history_summary_page(
+        status_filter=month_status_filter,
+        sort_value=month_sort,
         page_number=request.GET.get("month_page") or 1,
     )
     period_history_page, period_history_rows = _period_history_summary_page(
+        status_filter=period_status_filter,
+        sort_value=period_sort,
         page_number=request.GET.get("period_page") or 1,
     )
     return render(
@@ -587,9 +647,15 @@ def target_index(request: HttpRequest) -> HttpResponse:
             "month_history_rows": month_history_rows,
             "month_history_page": month_history_page,
             "month_history_paginator": month_history_page.paginator,
+            "month_status_filter": month_status_filter,
+            "month_sort": month_sort,
             "period_history_rows": period_history_rows,
             "period_history_page": period_history_page,
             "period_history_paginator": period_history_page.paginator,
+            "period_status_filter": period_status_filter,
+            "period_sort": period_sort,
+            "history_sort_options": HISTORY_SORT_OPTIONS,
+            "status_filter_options": STATUS_FILTER_OPTIONS,
         },
     )
 

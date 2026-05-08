@@ -2,6 +2,12 @@
 
 {% block title %}路程設定 | 管理者ページ{% endblock %}
 
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=3" />
+{% endblock %}
+
 {% block content %}
 <div class="container">
   <header class="topbar topbar-desktop-expanded">
@@ -112,29 +118,28 @@
     <div class="note" style="margin: 10px 0;">路程を削除しました。</div>
     {% endif %}
     {% if history_rows %}
-    <table>
-      <thead>
-        <tr><th>路程名</th><th>期間</th><th>状態</th><th>操作</th></tr>
-      </thead>
-      <tbody>
-        {% for row in history_rows %}
-        <tr>
-          <td>{{ row.name }}</td>
-          <td>{{ row.range_label }}</td>
-          <td>{{ row.status }}</td>
-          <td class="target-op-cell">
-            <a class="btn-inline" href="{% url 'target_period_settings' %}?period={{ row.id }}">表示</a>
-            <form method="post" class="target-delete-form" onsubmit="return confirm('この路程を削除します。よろしいですか？');">
-              {% csrf_token %}
-              <input type="hidden" name="action" value="delete_period" />
-              <input type="hidden" name="delete_period_id" value="{{ row.id }}" />
-              <button type="submit" class="btn-inline btn-danger">削除</button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="target-history-list">
+      {% for row in history_rows %}
+      <article class="target-history-card">
+        <div class="target-history-card-head">
+          <div>
+            <strong>{{ row.name }}</strong>
+            <div class="muted">{{ row.range_label }}</div>
+          </div>
+          <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
+        </div>
+        <div class="target-history-actions">
+          <a class="btn-inline" href="{% url 'target_period_settings' %}?period={{ row.id }}">編集</a>
+          <form method="post" class="target-delete-form" onsubmit="return confirm('この路程を削除します。よろしいですか？');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_period" />
+            <input type="hidden" name="delete_period_id" value="{{ row.id }}" />
+            <button type="submit" class="btn-inline btn-danger">削除</button>
+          </form>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
     {% else %}
     <p class="muted">作成済みの路程目標はありません。</p>
     {% endif %}
