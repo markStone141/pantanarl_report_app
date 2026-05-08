@@ -888,12 +888,15 @@ def member_settings(request: HttpRequest) -> HttpResponse:
         else:
             form = _member_form()
 
-    members = (
+    members_qs = (
         Member.objects.prefetch_related("department_links")
         .select_related("default_department")
         .select_related("user")
         .order_by("-is_active", "name")
     )
+    paginator = Paginator(members_qs, 20)
+    page_number = request.GET.get("page") or "1"
+    page_obj = paginator.get_page(page_number)
     selected_department_ids = {
         str(dept_id) for dept_id in (form["departments"].value() or [])
     }
@@ -903,7 +906,9 @@ def member_settings(request: HttpRequest) -> HttpResponse:
         "dashboard/member_settings.html",
         {
             "form": form,
-            "members": members,
+            "members": page_obj.object_list,
+            "page_obj": page_obj,
+            "paginator": paginator,
             "edit_member": edit_member,
             "status_message": status_message,
             "department_choices": department_choices,

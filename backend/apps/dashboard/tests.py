@@ -122,6 +122,25 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "UN")
 
+    def test_member_settings_paginates_members_by_twenty(self):
+        for index in range(21):
+            Member.objects.create(
+                name=f"Member {index:02d}",
+                login_id=f"member_page_{index:02d}",
+                password="",
+            )
+
+        response = self.client.get(reverse("member_settings"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["members"]), 20)
+        self.assertEqual(response.context["paginator"].count, 21)
+        self.assertContains(response, "1 / 2 ページ")
+
+        response_page_2 = self.client.get(reverse("member_settings"), {"page": 2})
+        self.assertEqual(response_page_2.status_code, 200)
+        self.assertEqual(len(response_page_2.context["members"]), 1)
+
     def test_register_member_with_auth_credentials_links_user(self):
         response = self.client.post(
             reverse("member_settings"),

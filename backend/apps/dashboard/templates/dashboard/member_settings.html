@@ -22,7 +22,7 @@
   </header>
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
-  <section class="grid grid-2 mt-16">
+  <section class="mt-16">
     <article class="card">
       <h3>{% if edit_member %}メンバー編集{% else %}新規メンバー登録{% endif %}</h3>
       <form method="post">
@@ -88,7 +88,7 @@
       </form>
     </article>
 
-    <article class="card">
+    <article class="card mt-16">
       <h3>現在のメンバー</h3>
       {% if status_message %}
       <div class="note" style="margin-bottom: 10px;">
@@ -134,6 +134,28 @@
         </tbody>
       </table>
       </div>
+      {% if paginator.num_pages > 1 %}
+      <div class="target-history-pagination">
+        {% if page_obj.has_previous %}
+        <a class="btn-inline" href="?page={{ page_obj.previous_page_number }}{% if edit_member %}&edit={{ edit_member.id }}{% endif %}">前へ</a>
+        {% endif %}
+        {% for num in paginator.page_range %}
+          {% if num == page_obj.number %}
+          <span class="badge">{{ num }}</span>
+          {% elif num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+          <a class="btn-inline" href="?page={{ num }}{% if edit_member %}&edit={{ edit_member.id }}{% endif %}">{{ num }}</a>
+          {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
+          <span class="muted">…</span>
+          {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
+          <span class="muted">…</span>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <a class="btn-inline" href="?page={{ page_obj.next_page_number }}{% if edit_member %}&edit={{ edit_member.id }}{% endif %}">次へ</a>
+        {% endif %}
+        <span class="muted ml-auto">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
+      </div>
+      {% endif %}
       {% else %}
       <p class="muted">まだメンバーは登録されていません。</p>
       {% endif %}
