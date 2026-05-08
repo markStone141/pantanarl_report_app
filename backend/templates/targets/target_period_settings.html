@@ -118,6 +118,10 @@
     <div class="note" style="margin: 10px 0;">路程を削除しました。</div>
     {% endif %}
     {% if history_rows %}
+    <div class="target-history-headline">
+      <span class="muted">{{ history_paginator.count }}件 / 10件ずつ表示</span>
+      <span class="muted">{{ history_page.number }} / {{ history_paginator.num_pages }} ページ</span>
+    </div>
     <div class="target-history-list">
       {% for row in history_rows %}
       <article class="target-history-card">
@@ -134,18 +138,46 @@
             {% csrf_token %}
             <input type="hidden" name="action" value="delete_period" />
             <input type="hidden" name="delete_period_id" value="{{ row.id }}" />
+            <input type="hidden" name="history_page" value="{{ history_page.number }}" />
             <button type="submit" class="btn-inline btn-danger">削除</button>
           </form>
         </div>
+        <details class="target-history-details">
+          <summary>実績を見る</summary>
+          <div class="target-history-details-body" data-history-detail-body data-detail-url="{% url 'target_period_history_detail' row.id %}">
+            <div class="muted">読み込み中...</div>
+          </div>
+        </details>
       </article>
       {% endfor %}
     </div>
+    {% if history_paginator.num_pages > 1 %}
+    <div class="target-history-pagination">
+      {% if history_page.has_previous %}
+      <a class="btn-inline" href="?history_page={{ history_page.previous_page_number }}{% if selected_period %}&period={{ selected_period.id }}{% endif %}">前へ</a>
+      {% endif %}
+      {% for num in history_paginator.page_range %}
+        {% if num == history_page.number %}
+        <span class="badge">{{ num }}</span>
+        {% elif num == 1 or num == history_paginator.num_pages or num >= history_page.number|add:"-2" and num <= history_page.number|add:"2" %}
+        <a class="btn-inline" href="?history_page={{ num }}{% if selected_period %}&period={{ selected_period.id }}{% endif %}">{{ num }}</a>
+        {% elif num == 2 and history_page.number|add:"-2" > 2 %}
+        <span class="muted">…</span>
+        {% elif num == history_paginator.num_pages|add:"-1" and history_page.number|add:"2" < history_paginator.num_pages|add:"-1" %}
+        <span class="muted">…</span>
+        {% endif %}
+      {% endfor %}
+      {% if history_page.has_next %}
+      <a class="btn-inline" href="?history_page={{ history_page.next_page_number }}{% if selected_period %}&period={{ selected_period.id }}{% endif %}">次へ</a>
+      {% endif %}
+    </div>
+    {% endif %}
     {% else %}
     <p class="muted">作成済みの路程目標はありません。</p>
     {% endif %}
   </section>
 </div>
-{{ history_rows|json_script:"period-history-data" }}
+{{ history_all_rows|json_script:"period-history-data" }}
 <script>
   (function () {
     function formatAmountValue(value) {
@@ -179,6 +211,32 @@
       if (form.querySelector("input[name='action'][value='save_period_targets']")) {
         bindForm(form);
       }
+    });
+
+    async function loadDetail(details) {
+      const body = details.querySelector("[data-history-detail-body]");
+      if (!body || body.dataset.loaded === "1") return;
+      const url = body.getAttribute("data-detail-url");
+      if (!url) return;
+      body.dataset.loaded = "loading";
+      try {
+        const response = await fetch(url, {
+          headers: {"X-Requested-With": "XMLHttpRequest"},
+          credentials: "same-origin",
+        });
+        if (!response.ok) throw new Error("failed");
+        body.innerHTML = await response.text();
+        body.dataset.loaded = "1";
+      } catch (error) {
+        body.innerHTML = '<div class="error-text">実績の読み込みに失敗しました。</div>';
+        body.dataset.loaded = "error";
+      }
+    }
+
+    document.querySelectorAll(".target-history-details").forEach(function (details) {
+      details.addEventListener("toggle", function () {
+        if (details.open) loadDetail(details);
+      });
     });
 
     const savePeriodForm = document.querySelector("form input[name='action'][value='save_period']")?.form;

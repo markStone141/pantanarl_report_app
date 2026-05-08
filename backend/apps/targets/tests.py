@@ -337,6 +337,26 @@ class TargetsFlowTests(TestCase):
         self.assertEqual(response_page_2.status_code, 200)
         self.assertEqual(len(response_page_2.context["period_history_rows"]), 1)
 
+    def test_target_period_settings_history_is_paginated_by_ten(self):
+        base_month = timezone.localdate().replace(day=1)
+        for offset in range(11):
+            month = (base_month + timedelta(days=35 * offset)).replace(day=1)
+            Period.objects.create(
+                month=month,
+                name=f"{month.year}年度{month.month}月 第1次路程",
+                status="planned",
+                start_date=month,
+                end_date=month + timedelta(days=6),
+            )
+
+        response = self.client.get(reverse("target_period_settings"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["history_rows"]), 10)
+
+        response_page_2 = self.client.get(reverse("target_period_settings"), {"history_page": 2})
+        self.assertEqual(response_page_2.status_code, 200)
+        self.assertEqual(len(response_page_2.context["history_rows"]), 1)
+
     def test_target_dashboard_period_history_shows_status_badge_and_actuals_accordion(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)
@@ -384,6 +404,44 @@ class TargetsFlowTests(TestCase):
         self.assertContains(detail_response, "<td>10件</td>", html=False)
         self.assertContains(detail_response, "<td>5件</td>", html=False)
         self.assertContains(detail_response, "<td>50.0%</td>", html=False)
+
+    def test_target_period_settings_history_shows_actuals_accordion(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        period = Period.objects.create(
+            month=current_month,
+            name=f"{today.year}年度{today.month}月 第1次路程",
+            status="active",
+            start_date=today - timedelta(days=2),
+            end_date=today + timedelta(days=2),
+        )
+        member = Member.objects.create(name="対象者", login_id="period_target_member", password="x")
+        report = DailyDepartmentReport.objects.create(
+            report_date=today,
+            department=Department.objects.get(code="UN"),
+            reporter=member,
+            total_count=5,
+            followup_count=5000,
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=member,
+            amount=5000,
+            count=5,
+        )
+        self.client.get(reverse("target_period_settings"))
+        un_count_metric = TargetMetric.objects.get(department__code="UN", code="count")
+        PeriodTargetMetricValue.objects.create(
+            period=period,
+            department=Department.objects.get(code="UN"),
+            metric=un_count_metric,
+            value=10,
+        )
+
+        response = self.client.get(reverse("target_period_settings"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("target_period_history_detail", args=[period.id]))
 
     def test_target_dashboard_can_filter_period_history_by_status(self):
         today = timezone.localdate()

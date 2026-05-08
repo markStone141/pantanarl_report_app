@@ -725,6 +725,7 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
     period_deleted = False
     target_saved = False
     form_error = None
+    history_page_number = request.GET.get("history_page") or request.POST.get("history_page") or 1
 
     if request.method == "POST":
         action = request.POST.get("action")
@@ -757,6 +758,9 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
         selected_period = _current_period()
 
     form_values = _period_form_values(selected_period, include_edit_id=is_edit_mode)
+    full_history_rows = _period_history_rows()
+    history_paginator = Paginator(full_history_rows, 10)
+    history_page = history_paginator.get_page(history_page_number)
 
     return render(
         request,
@@ -773,6 +777,9 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
             "period_deleted": period_deleted,
             "target_saved": target_saved or request.GET.get("target_saved") == "1",
             "form_error": form_error,
-            "history_rows": _period_history_rows(),
+            "history_rows": list(history_page.object_list),
+            "history_page": history_page,
+            "history_paginator": history_paginator,
+            "history_all_rows": full_history_rows,
         },
     )
