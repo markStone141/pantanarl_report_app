@@ -89,7 +89,6 @@
         <thead>
           <tr>
             <th>メンバー</th>
-            <th>金額(円)</th>
             {% if split_counts %}
             <th>CS件数</th>
             <th>難民件数</th>
@@ -99,6 +98,7 @@
             {% if show_location %}
             <th>{{ location_label }}</th>
             {% endif %}
+            <th>金額(円)</th>
           </tr>
         </thead>
         <tbody id="member-rows">
@@ -112,7 +112,6 @@
                 {% endfor %}
               </select>
             </td>
-            <td data-label="金額(円)"><input type="text" inputmode="numeric" name="amounts" value="{{ row.amount|default:'0' }}"></td>
             {% if split_counts %}
             <td data-label="CS件数"><input type="number" min="0" name="cs_counts" value="{{ row.cs_count|default:'0' }}"></td>
             <td data-label="難民件数"><input type="number" min="0" name="refugee_counts" value="{{ row.refugee_count|default:'0' }}"></td>
@@ -122,6 +121,7 @@
             {% if show_location %}
             <td data-label="{{ location_label }}"><input name="locations" value="{{ row.location }}"></td>
             {% endif %}
+            <td data-label="金額(円)"><input type="text" inputmode="numeric" name="amounts" value="{{ row.amount|default:'0' }}"></td>
           </tr>
           {% endfor %}
         </tbody>

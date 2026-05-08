@@ -79,6 +79,17 @@ class ReportMemberFilteringTests(TestCase):
         self.assertNotContains(response, "<th>現場</th>", html=True)
         self.assertNotContains(response, 'name="locations"')
 
+    def test_report_form_places_amount_column_after_count_inputs(self):
+        department = Department.objects.create(name="ユニセフ", code="UN")
+        reporter = Member.objects.create(name="Leader", login_id="leader_un_order", password="x")
+        MemberDepartment.objects.create(member=reporter, department=department)
+
+        response = self.client.get(reverse("report_un"))
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        self.assertLess(content.index("<th>件数</th>"), content.index("<th>金額(円)</th>"))
+
 
 class ReportSubmitFlowTests(TestCase):
     def setUp(self):
