@@ -2,12 +2,6 @@
 
 {% block title %}路程設定 | 管理者ページ{% endblock %}
 
-{% load static %}
-
-{% block extra_head %}
-<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=1" />
-{% endblock %}
-
 {% block content %}
 <div class="container">
   <header class="topbar topbar-desktop-expanded">
@@ -118,79 +112,29 @@
     <div class="note" style="margin: 10px 0;">路程を削除しました。</div>
     {% endif %}
     {% if history_rows %}
-    <div class="target-history-headline">
-      <span class="muted">{{ history_paginator.count }}件 / 10件ずつ表示</span>
-      <span class="muted">{{ history_page.number }} / {{ history_paginator.num_pages }} ページ</span>
-    </div>
-    <div class="target-history-list">
-      {% for row in history_rows %}
-      <article class="target-history-card">
-        <div class="target-history-card-head">
-          <div>
-            <strong>{{ row.name }}</strong>
-            <div class="muted">{{ row.range_label }}</div>
-          </div>
-          <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
-        </div>
-        <div class="target-history-actions">
-          <a class="btn-inline" href="{% url 'target_period_settings' %}?period={{ row.id }}&page={{ history_page.number }}">表示</a>
-          <form method="post" class="target-delete-form" onsubmit="return confirm('この路程を削除します。よろしいですか？');">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="delete_period" />
-            <input type="hidden" name="delete_period_id" value="{{ row.id }}" />
-            <input type="hidden" name="page" value="{{ history_page.number }}" />
-            <button type="submit" class="btn-inline btn-danger">削除</button>
-          </form>
-        </div>
-        <details class="target-history-details">
-          <summary>実績を見る</summary>
-          <div class="target-history-details-body">
-            {% for department_row in row.department_rows %}
-            <section class="target-history-department">
-              <h4>{{ department_row.label }}</h4>
-              <table class="target-history-metric-table">
-                <thead>
-                  <tr><th>項目</th><th>目標</th><th>実績</th><th>達成率</th></tr>
-                </thead>
-                <tbody>
-                  {% for metric in department_row.detail_rows %}
-                  <tr>
-                    <td>{{ metric.label }}</td>
-                    <td>{{ metric.target_text }}{{ metric.unit }}</td>
-                    <td>{{ metric.actual_text }}{{ metric.unit }}</td>
-                    <td>{{ metric.rate }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </section>
-            {% endfor %}
-          </div>
-        </details>
-      </article>
-      {% endfor %}
-    </div>
-    {% if history_paginator.num_pages > 1 %}
-    <div class="target-history-pagination">
-      {% if history_page.has_previous %}
-      <a class="btn-inline" href="?page={{ history_page.previous_page_number }}{% if selected_period %}&period={{ selected_period.id }}{% endif %}">前へ</a>
-      {% endif %}
-      {% for num in history_paginator.page_range %}
-        {% if num == history_page.number %}
-        <span class="badge">{{ num }}</span>
-        {% elif num == 1 or num == history_paginator.num_pages or num >= history_page.number|add:"-2" and num <= history_page.number|add:"2" %}
-        <a class="btn-inline" href="?page={{ num }}{% if selected_period %}&period={{ selected_period.id }}{% endif %}">{{ num }}</a>
-        {% elif num == 2 and history_page.number|add:"-2" > 2 %}
-        <span class="muted">…</span>
-        {% elif num == history_paginator.num_pages|add:"-1" and history_page.number|add:"2" < history_paginator.num_pages|add:"-1" %}
-        <span class="muted">…</span>
-        {% endif %}
-      {% endfor %}
-      {% if history_page.has_next %}
-      <a class="btn-inline" href="?page={{ history_page.next_page_number }}{% if selected_period %}&period={{ selected_period.id }}{% endif %}">次へ</a>
-      {% endif %}
-    </div>
-    {% endif %}
+    <table>
+      <thead>
+        <tr><th>路程名</th><th>期間</th><th>状態</th><th>操作</th></tr>
+      </thead>
+      <tbody>
+        {% for row in history_rows %}
+        <tr>
+          <td>{{ row.name }}</td>
+          <td>{{ row.range_label }}</td>
+          <td>{{ row.status }}</td>
+          <td class="target-op-cell">
+            <a class="btn-inline" href="{% url 'target_period_settings' %}?period={{ row.id }}">表示</a>
+            <form method="post" class="target-delete-form" onsubmit="return confirm('この路程を削除します。よろしいですか？');">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete_period" />
+              <input type="hidden" name="delete_period_id" value="{{ row.id }}" />
+              <button type="submit" class="btn-inline btn-danger">削除</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
     {% else %}
     <p class="muted">作成済みの路程目標はありません。</p>
     {% endif %}

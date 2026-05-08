@@ -2,6 +2,12 @@
 
 {% block title %}目標ダッシュボード | 管理者ページ{% endblock %}
 
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=2" />
+{% endblock %}
+
 {% block content %}
 <div class="container">
   <header class="topbar topbar-desktop-expanded">
@@ -37,19 +43,68 @@
   <section class="card" style="margin-top: 16px;">
     <h3>作成済み月目標</h3>
     {% if month_history_rows %}
-    <table>
-      <thead>
-        <tr><th>対象月</th><th>状態</th></tr>
-      </thead>
-      <tbody>
-        {% for row in month_history_rows %}
-        <tr>
-          <td>{{ row.month_label }}</td>
-          <td>{{ row.status }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="target-history-headline">
+      <span class="muted">{{ month_history_paginator.count }}件 / 10件ずつ表示</span>
+      <span class="muted">{{ month_history_page.number }} / {{ month_history_paginator.num_pages }} ページ</span>
+    </div>
+    <div class="target-history-list">
+      {% for row in month_history_rows %}
+      <article class="target-history-card">
+        <div class="target-history-card-head">
+          <div>
+            <strong>{{ row.month_label }}</strong>
+          </div>
+          <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
+        </div>
+        <details class="target-history-details">
+          <summary>実績を見る</summary>
+          <div class="target-history-details-body">
+            {% for department_row in row.department_rows %}
+            <section class="target-history-department">
+              <h4>{{ department_row.label }}</h4>
+              <table class="target-history-metric-table">
+                <thead>
+                  <tr><th>項目</th><th>目標</th><th>実績</th><th>達成率</th></tr>
+                </thead>
+                <tbody>
+                  {% for metric in department_row.detail_rows %}
+                  <tr>
+                    <td>{{ metric.label }}</td>
+                    <td>{{ metric.target_text }}{{ metric.unit }}</td>
+                    <td>{{ metric.actual_text }}{{ metric.unit }}</td>
+                    <td>{{ metric.rate }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </section>
+            {% endfor %}
+          </div>
+        </details>
+      </article>
+      {% endfor %}
+    </div>
+    {% if month_history_paginator.num_pages > 1 %}
+    <div class="target-history-pagination">
+      {% if month_history_page.has_previous %}
+      <a class="btn-inline" href="?month_page={{ month_history_page.previous_page_number }}{% if period_history_page.number > 1 %}&period_page={{ period_history_page.number }}{% endif %}">前へ</a>
+      {% endif %}
+      {% for num in month_history_paginator.page_range %}
+        {% if num == month_history_page.number %}
+        <span class="badge">{{ num }}</span>
+        {% elif num == 1 or num == month_history_paginator.num_pages or num >= month_history_page.number|add:"-2" and num <= month_history_page.number|add:"2" %}
+        <a class="btn-inline" href="?month_page={{ num }}{% if period_history_page.number > 1 %}&period_page={{ period_history_page.number }}{% endif %}">{{ num }}</a>
+        {% elif num == 2 and month_history_page.number|add:"-2" > 2 %}
+        <span class="muted">…</span>
+        {% elif num == month_history_paginator.num_pages|add:"-1" and month_history_page.number|add:"2" < month_history_paginator.num_pages|add:"-1" %}
+        <span class="muted">…</span>
+        {% endif %}
+      {% endfor %}
+      {% if month_history_page.has_next %}
+      <a class="btn-inline" href="?month_page={{ month_history_page.next_page_number }}{% if period_history_page.number > 1 %}&period_page={{ period_history_page.number }}{% endif %}">次へ</a>
+      {% endif %}
+    </div>
+    {% endif %}
     {% else %}
     <p class="muted">月目標はまだありません。</p>
     {% endif %}
@@ -75,20 +130,69 @@
   <section class="card" style="margin-top: 16px;">
     <h3>作成済み路程目標</h3>
     {% if period_history_rows %}
-    <table>
-      <thead>
-        <tr><th>路程名</th><th>期間</th><th>状態</th></tr>
-      </thead>
-      <tbody>
-        {% for row in period_history_rows %}
-        <tr>
-          <td>{{ row.name }}</td>
-          <td>{{ row.range_label }}</td>
-          <td>{{ row.status }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="target-history-headline">
+      <span class="muted">{{ period_history_paginator.count }}件 / 10件ずつ表示</span>
+      <span class="muted">{{ period_history_page.number }} / {{ period_history_paginator.num_pages }} ページ</span>
+    </div>
+    <div class="target-history-list">
+      {% for row in period_history_rows %}
+      <article class="target-history-card">
+        <div class="target-history-card-head">
+          <div>
+            <strong>{{ row.name }}</strong>
+            <div class="muted">{{ row.range_label }}</div>
+          </div>
+          <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
+        </div>
+        <details class="target-history-details">
+          <summary>実績を見る</summary>
+          <div class="target-history-details-body">
+            {% for department_row in row.department_rows %}
+            <section class="target-history-department">
+              <h4>{{ department_row.label }}</h4>
+              <table class="target-history-metric-table">
+                <thead>
+                  <tr><th>項目</th><th>目標</th><th>実績</th><th>達成率</th></tr>
+                </thead>
+                <tbody>
+                  {% for metric in department_row.detail_rows %}
+                  <tr>
+                    <td>{{ metric.label }}</td>
+                    <td>{{ metric.target_text }}{{ metric.unit }}</td>
+                    <td>{{ metric.actual_text }}{{ metric.unit }}</td>
+                    <td>{{ metric.rate }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </section>
+            {% endfor %}
+          </div>
+        </details>
+      </article>
+      {% endfor %}
+    </div>
+    {% if period_history_paginator.num_pages > 1 %}
+    <div class="target-history-pagination">
+      {% if period_history_page.has_previous %}
+      <a class="btn-inline" href="?period_page={{ period_history_page.previous_page_number }}{% if month_history_page.number > 1 %}&month_page={{ month_history_page.number }}{% endif %}">前へ</a>
+      {% endif %}
+      {% for num in period_history_paginator.page_range %}
+        {% if num == period_history_page.number %}
+        <span class="badge">{{ num }}</span>
+        {% elif num == 1 or num == period_history_paginator.num_pages or num >= period_history_page.number|add:"-2" and num <= period_history_page.number|add:"2" %}
+        <a class="btn-inline" href="?period_page={{ num }}{% if month_history_page.number > 1 %}&month_page={{ month_history_page.number }}{% endif %}">{{ num }}</a>
+        {% elif num == 2 and period_history_page.number|add:"-2" > 2 %}
+        <span class="muted">…</span>
+        {% elif num == period_history_paginator.num_pages|add:"-1" and period_history_page.number|add:"2" < period_history_paginator.num_pages|add:"-1" %}
+        <span class="muted">…</span>
+        {% endif %}
+      {% endfor %}
+      {% if period_history_page.has_next %}
+      <a class="btn-inline" href="?period_page={{ period_history_page.next_page_number }}{% if month_history_page.number > 1 %}&month_page={{ month_history_page.number }}{% endif %}">次へ</a>
+      {% endif %}
+    </div>
+    {% endif %}
     {% else %}
     <p class="muted">路程目標はまだありません。</p>
     {% endif %}

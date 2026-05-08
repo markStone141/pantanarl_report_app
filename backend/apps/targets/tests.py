@@ -315,7 +315,7 @@ class TargetsFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Period.objects.filter(id=period.id).exists())
 
-    def test_period_history_is_paginated_by_ten(self):
+    def test_target_dashboard_period_history_is_paginated_by_ten(self):
         base_month = timezone.localdate().replace(day=1)
         for offset in range(11):
             month = (base_month - timedelta(days=offset * 31)).replace(day=1)
@@ -327,17 +327,17 @@ class TargetsFlowTests(TestCase):
                 end_date=month + timedelta(days=6),
             )
 
-        response = self.client.get(reverse("target_period_settings"))
+        response = self.client.get(reverse("target_index"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context["history_rows"]), 10)
-        self.assertEqual(response.context["history_paginator"].count, 11)
+        self.assertEqual(len(response.context["period_history_rows"]), 10)
+        self.assertEqual(response.context["period_history_paginator"].count, 11)
 
-        response_page_2 = self.client.get(reverse("target_period_settings"), {"page": 2})
+        response_page_2 = self.client.get(reverse("target_index"), {"period_page": 2})
         self.assertEqual(response_page_2.status_code, 200)
-        self.assertEqual(len(response_page_2.context["history_rows"]), 1)
+        self.assertEqual(len(response_page_2.context["period_history_rows"]), 1)
 
-    def test_period_history_shows_status_badge_and_actuals_accordion(self):
+    def test_target_dashboard_period_history_shows_status_badge_and_actuals_accordion(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)
         reporter = Member.objects.create(name="Reporter", login_id="period_reporter", password="x")
@@ -371,7 +371,7 @@ class TargetsFlowTests(TestCase):
             count=5,
         )
 
-        response = self.client.get(reverse("target_period_settings"))
+        response = self.client.get(reverse("target_index"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "target-status-badge is-finished")
@@ -380,6 +380,43 @@ class TargetsFlowTests(TestCase):
         self.assertContains(response, "<td>10件</td>", html=False)
         self.assertContains(response, "<td>5件</td>", html=False)
         self.assertContains(response, "<td>50.0%</td>", html=False)
+
+    def test_target_dashboard_month_history_shows_actuals_accordion(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        reporter = Member.objects.create(name="Month Reporter", login_id="month_reporter", password="x")
+
+        self.client.get(reverse("target_month_settings"))
+        amount_metric = TargetMetric.objects.get(department__code="UN", code="amount")
+        MonthTargetMetricValue.objects.create(
+            department=Department.objects.get(code="UN"),
+            target_month=current_month,
+            metric=amount_metric,
+            value=10000,
+            status="active",
+        )
+        report = DailyDepartmentReport.objects.create(
+            department=Department.objects.get(code="UN"),
+            report_date=today,
+            reporter=reporter,
+            total_count=1,
+            followup_count=2500,
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=reporter,
+            amount=2500,
+            count=1,
+        )
+
+        response = self.client.get(reverse("target_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "target-status-badge is-active")
+        self.assertContains(response, "<td>金額</td>", html=False)
+        self.assertContains(response, "<td>10,000円</td>", html=False)
+        self.assertContains(response, "<td>2,500円</td>", html=False)
+        self.assertContains(response, "<td>25.0%</td>", html=False)
 
 
 class TargetStatusBoundaryTests(TestCase):

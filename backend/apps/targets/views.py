@@ -1,5 +1,5 @@
 import re
-from datetime import date
+from datetime import date, timedelta
 
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
@@ -232,6 +232,48 @@ def _period_history_rows():
     return rows
 
 
+def _month_target_values_by_department(*, target_month: date):
+    values = {}
+    for value in (
+        MonthTargetMetricValue.objects.filter(target_month=target_month, metric__is_active=True)
+        .select_related("department", "metric")
+    ):
+        values.setdefault(value.department.code, {})[value.metric_id] = value.value
+    return values
+
+
+def _build_month_history_entry(*, target_month: date, configs):
+    status = _month_status(target_month)
+    target_values_by_department = _month_target_values_by_department(target_month=target_month)
+    month_end = (target_month.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    actual_totals_by_code = collect_actual_totals(
+        start_date=target_month,
+        end_date=month_end,
+        target_codes=[config["code"] for config in configs],
+    )
+    department_rows = []
+    for config in configs:
+        detail_rows = metric_detail_rows(
+            metrics=config["metrics"],
+            target_values=target_values_by_department.get(config["code"], {}),
+            actual_totals=actual_totals_by_code.get(
+                config["code"],
+                {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0},
+            ),
+        )
+        department_rows.append({"label": config["label"], "detail_rows": detail_rows})
+
+    return {
+        "month": target_month,
+        "month_label": f"{target_month.year}年{target_month.month}月",
+        "status": status,
+        "status_label": STATUS_LABELS.get(status, status),
+        "status_class": f"is-{status}",
+        "month_param": _month_value_from_date(target_month),
+        "department_rows": department_rows,
+    }
+
+
 def _period_target_values_by_department(*, period: Period):
     values = {}
     for value in (
@@ -286,6 +328,18 @@ def _period_history_page(*, configs, page_number):
     paginator = Paginator(Period.objects.order_by("-month", "-start_date", "-id"), 10)
     page_obj = paginator.get_page(page_number)
     rows = [_build_period_history_entry(period=period, configs=configs) for period in page_obj.object_list]
+    return page_obj, rows
+
+
+def _month_history_page(*, configs, page_number):
+    months = (
+        MonthTargetMetricValue.objects.order_by("-target_month")
+        .values_list("target_month", flat=True)
+        .distinct()
+    )
+    paginator = Paginator(months, 10)
+    page_obj = paginator.get_page(page_number)
+    rows = [_build_month_history_entry(target_month=target_month, configs=configs) for target_month in page_obj.object_list]
     return page_obj, rows
 
 
@@ -465,6 +519,14 @@ def target_index(request: HttpRequest) -> HttpResponse:
     configs = _department_configs()
     current_month = _current_month()
     current_period = _current_period()
+    month_history_page, month_history_rows = _month_history_page(
+        configs=configs,
+        page_number=request.GET.get("month_page") or 1,
+    )
+    period_history_page, period_history_rows = _period_history_page(
+        configs=configs,
+        page_number=request.GET.get("period_page") or 1,
+    )
     return render(
         request,
         "targets/target_dashboard.html",
@@ -477,8 +539,12 @@ def target_index(request: HttpRequest) -> HttpResponse:
             else TARGET_STATUS_PLANNED,
             "month_rows": _build_month_rows(target_month=current_month, configs=configs),
             "period_rows": _build_period_rows(period=current_period, configs=configs),
-            "month_history_rows": _month_history_rows(),
-            "period_history_rows": _period_history_rows(),
+            "month_history_rows": month_history_rows,
+            "month_history_page": month_history_page,
+            "month_history_paginator": month_history_page.paginator,
+            "period_history_rows": period_history_rows,
+            "period_history_page": period_history_page,
+            "period_history_paginator": period_history_page.paginator,
         },
     )
 
@@ -521,7 +587,6 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
 @require_roles(ROLE_ADMIN)
 def target_period_settings(request: HttpRequest) -> HttpResponse:
     configs = _department_configs()
-    history_page_number = request.GET.get("page") or request.POST.get("page") or 1
     selected_period = None
     is_edit_mode = False
     period_id = request.GET.get("period")
@@ -565,7 +630,6 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
         selected_period = _current_period()
 
     form_values = _period_form_values(selected_period, include_edit_id=is_edit_mode)
-    history_page, history_rows = _period_history_page(configs=configs, page_number=history_page_number)
 
     return render(
         request,
@@ -582,8 +646,6 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
             "period_deleted": period_deleted,
             "target_saved": target_saved or request.GET.get("target_saved") == "1",
             "form_error": form_error,
-            "history_rows": history_rows,
-            "history_page": history_page,
-            "history_paginator": history_page.paginator,
+            "history_rows": _period_history_rows(),
         },
     )
