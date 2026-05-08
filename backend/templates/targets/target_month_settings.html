@@ -69,10 +69,10 @@
       <article class="target-history-card">
         <div class="target-history-card-head">
           <div><strong>{{ row.month_label }}</strong></div>
-          <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
-        </div>
-        <div class="target-history-actions">
-          <a class="btn-inline" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">編集</a>
+          <div class="target-history-actions target-history-actions-inline">
+            <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
+            <a class="btn-inline" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">編集</a>
+          </div>
           <form method="post" class="target-delete-form" onsubmit="return confirm('この月目標を削除します。よろしいですか？');">
             {% csrf_token %}
             <input type="hidden" name="action" value="delete_month_targets" />

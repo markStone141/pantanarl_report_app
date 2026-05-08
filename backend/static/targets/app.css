@@ -69,6 +69,12 @@
   margin-top: 12px;
 }
 
+.target-history-actions-inline {
+  margin-top: 0;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .target-history-details {
   margin-top: 12px;
   border-top: 1px solid #e2ebf2;
@@ -128,6 +134,11 @@
 @media (max-width: 768px) {
   .target-history-card-head {
     flex-direction: column;
+  }
+
+  .target-history-actions-inline {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .target-history-metric-table {

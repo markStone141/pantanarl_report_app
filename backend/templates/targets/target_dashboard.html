@@ -76,10 +76,10 @@
           <div>
             <strong>{{ row.month_label }}</strong>
           </div>
-          <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
-        </div>
-        <div class="target-history-actions">
-          <a class="btn-inline" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">編集</a>
+          <div class="target-history-actions target-history-actions-inline">
+            <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
+            <a class="btn-inline" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">編集</a>
+          </div>
         </div>
         <details class="target-history-details">
           <summary>実績を見る</summary>
@@ -170,10 +170,10 @@
             <strong>{{ row.name }}</strong>
             <div class="muted">{{ row.range_label }}</div>
           </div>
-          <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
-        </div>
-        <div class="target-history-actions">
-          <a class="btn-inline" href="{% url 'target_period_settings' %}?period={{ row.id }}">編集</a>
+          <div class="target-history-actions target-history-actions-inline">
+            <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
+            <a class="btn-inline" href="{% url 'target_period_settings' %}?period={{ row.id }}">編集</a>
+          </div>
         </div>
         <details class="target-history-details">
           <summary>実績を見る</summary>
