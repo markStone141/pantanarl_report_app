@@ -58,27 +58,8 @@
         </div>
         <details class="target-history-details">
           <summary>実績を見る</summary>
-          <div class="target-history-details-body">
-            {% for department_row in row.department_rows %}
-            <section class="target-history-department">
-              <h4>{{ department_row.label }}</h4>
-              <table class="target-history-metric-table">
-                <thead>
-                  <tr><th>項目</th><th>目標</th><th>実績</th><th>達成率</th></tr>
-                </thead>
-                <tbody>
-                  {% for metric in department_row.detail_rows %}
-                  <tr>
-                    <td>{{ metric.label }}</td>
-                    <td>{{ metric.target_text }}{{ metric.unit }}</td>
-                    <td>{{ metric.actual_text }}{{ metric.unit }}</td>
-                    <td>{{ metric.rate }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </section>
-            {% endfor %}
+          <div class="target-history-details-body" data-history-detail-body data-detail-url="{% url 'target_month_history_detail' %}?month={{ row.month_param }}">
+            <div class="muted">読み込み中...</div>
           </div>
         </details>
       </article>
@@ -146,27 +127,8 @@
         </div>
         <details class="target-history-details">
           <summary>実績を見る</summary>
-          <div class="target-history-details-body">
-            {% for department_row in row.department_rows %}
-            <section class="target-history-department">
-              <h4>{{ department_row.label }}</h4>
-              <table class="target-history-metric-table">
-                <thead>
-                  <tr><th>項目</th><th>目標</th><th>実績</th><th>達成率</th></tr>
-                </thead>
-                <tbody>
-                  {% for metric in department_row.detail_rows %}
-                  <tr>
-                    <td>{{ metric.label }}</td>
-                    <td>{{ metric.target_text }}{{ metric.unit }}</td>
-                    <td>{{ metric.actual_text }}{{ metric.unit }}</td>
-                    <td>{{ metric.rate }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </section>
-            {% endfor %}
+          <div class="target-history-details-body" data-history-detail-body data-detail-url="{% url 'target_period_history_detail' row.id %}">
+            <div class="muted">読み込み中...</div>
           </div>
         </details>
       </article>
@@ -198,4 +160,33 @@
     {% endif %}
   </section>
 </div>
+<script>
+  (function () {
+    async function loadDetail(details) {
+      const body = details.querySelector("[data-history-detail-body]");
+      if (!body || body.dataset.loaded === "1") return;
+      const url = body.getAttribute("data-detail-url");
+      if (!url) return;
+      body.dataset.loaded = "loading";
+      try {
+        const response = await fetch(url, {
+          headers: {"X-Requested-With": "XMLHttpRequest"},
+          credentials: "same-origin",
+        });
+        if (!response.ok) throw new Error("failed");
+        body.innerHTML = await response.text();
+        body.dataset.loaded = "1";
+      } catch (error) {
+        body.innerHTML = '<div class="error-text">実績の読み込みに失敗しました。</div>';
+        body.dataset.loaded = "error";
+      }
+    }
+
+    document.querySelectorAll(".target-history-details").forEach(function (details) {
+      details.addEventListener("toggle", function () {
+        if (details.open) loadDetail(details);
+      });
+    });
+  })();
+</script>
 {% endblock %}

@@ -1,0 +1,20 @@
+{% for department_row in row.department_rows %}
+<section class="target-history-department">
+  <h4>{{ department_row.label }}</h4>
+  <table class="target-history-metric-table">
+    <thead>
+      <tr><th>項目</th><th>目標</th><th>実績</th><th>達成率</th></tr>
+    </thead>
+    <tbody>
+      {% for metric in department_row.detail_rows %}
+      <tr>
+        <td>{{ metric.label }}</td>
+        <td>{{ metric.target_text }}{{ metric.unit }}</td>
+        <td>{{ metric.actual_text }}{{ metric.unit }}</td>
+        <td>{{ metric.rate }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endfor %}

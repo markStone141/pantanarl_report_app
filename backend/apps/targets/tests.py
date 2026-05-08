@@ -376,10 +376,14 @@ class TargetsFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "target-status-badge is-finished")
         self.assertContains(response, "実績を見る")
-        self.assertContains(response, "<td>件数</td>", html=False)
-        self.assertContains(response, "<td>10件</td>", html=False)
-        self.assertContains(response, "<td>5件</td>", html=False)
-        self.assertContains(response, "<td>50.0%</td>", html=False)
+        self.assertContains(response, reverse("target_period_history_detail", args=[period.id]))
+
+        detail_response = self.client.get(reverse("target_period_history_detail", args=[period.id]))
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertContains(detail_response, "<td>件数</td>", html=False)
+        self.assertContains(detail_response, "<td>10件</td>", html=False)
+        self.assertContains(detail_response, "<td>5件</td>", html=False)
+        self.assertContains(detail_response, "<td>50.0%</td>", html=False)
 
     def test_target_dashboard_month_history_shows_actuals_accordion(self):
         today = timezone.localdate()
@@ -413,10 +417,14 @@ class TargetsFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "target-status-badge is-active")
-        self.assertContains(response, "<td>金額</td>", html=False)
-        self.assertContains(response, "<td>10,000円</td>", html=False)
-        self.assertContains(response, "<td>2,500円</td>", html=False)
-        self.assertContains(response, "<td>25.0%</td>", html=False)
+        self.assertContains(response, reverse("target_month_history_detail"))
+
+        detail_response = self.client.get(reverse("target_month_history_detail"), {"month": current_month.strftime("%Y-%m")})
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertContains(detail_response, "<td>金額</td>", html=False)
+        self.assertContains(detail_response, "<td>10,000円</td>", html=False)
+        self.assertContains(detail_response, "<td>2,500円</td>", html=False)
+        self.assertContains(detail_response, "<td>25.0%</td>", html=False)
 
 
 class TargetStatusBoundaryTests(TestCase):

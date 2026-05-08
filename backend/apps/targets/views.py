@@ -274,6 +274,18 @@ def _build_month_history_entry(*, target_month: date, configs):
     }
 
 
+def _build_month_history_summary(*, target_month: date):
+    status = _month_status(target_month)
+    return {
+        "month": target_month,
+        "month_label": f"{target_month.year}年{target_month.month}月",
+        "status": status,
+        "status_label": STATUS_LABELS.get(status, status),
+        "status_class": f"is-{status}",
+        "month_param": _month_value_from_date(target_month),
+    }
+
+
 def _period_target_values_by_department(*, period: Period):
     values = {}
     for value in (
@@ -324,6 +336,22 @@ def _build_period_history_entry(*, period: Period, configs):
     }
 
 
+def _build_period_history_summary(*, period: Period):
+    status = _period_status(period.start_date, period.end_date)
+    return {
+        "id": period.id,
+        "name": period.name,
+        "status": status,
+        "status_label": STATUS_LABELS.get(status, status),
+        "status_class": f"is-{status}",
+        "month_label": f"{period.month.year}年{period.month.month}月",
+        "month_param": _month_value_from_date(period.month),
+        "start_date": period.start_date.isoformat(),
+        "end_date": period.end_date.isoformat(),
+        "range_label": f"{period.start_date:%Y/%m/%d} - {period.end_date:%Y/%m/%d}",
+    }
+
+
 def _period_history_page(*, configs, page_number):
     paginator = Paginator(Period.objects.order_by("-month", "-start_date", "-id"), 10)
     page_obj = paginator.get_page(page_number)
@@ -340,6 +368,25 @@ def _month_history_page(*, configs, page_number):
     paginator = Paginator(months, 10)
     page_obj = paginator.get_page(page_number)
     rows = [_build_month_history_entry(target_month=target_month, configs=configs) for target_month in page_obj.object_list]
+    return page_obj, rows
+
+
+def _period_history_summary_page(*, page_number):
+    paginator = Paginator(Period.objects.order_by("-month", "-start_date", "-id"), 10)
+    page_obj = paginator.get_page(page_number)
+    rows = [_build_period_history_summary(period=period) for period in page_obj.object_list]
+    return page_obj, rows
+
+
+def _month_history_summary_page(*, page_number):
+    months = (
+        MonthTargetMetricValue.objects.order_by("-target_month")
+        .values_list("target_month", flat=True)
+        .distinct()
+    )
+    paginator = Paginator(months, 10)
+    page_obj = paginator.get_page(page_number)
+    rows = [_build_month_history_summary(target_month=target_month) for target_month in page_obj.object_list]
     return page_obj, rows
 
 
@@ -519,12 +566,10 @@ def target_index(request: HttpRequest) -> HttpResponse:
     configs = _department_configs()
     current_month = _current_month()
     current_period = _current_period()
-    month_history_page, month_history_rows = _month_history_page(
-        configs=configs,
+    month_history_page, month_history_rows = _month_history_summary_page(
         page_number=request.GET.get("month_page") or 1,
     )
-    period_history_page, period_history_rows = _period_history_page(
-        configs=configs,
+    period_history_page, period_history_rows = _period_history_summary_page(
         page_number=request.GET.get("period_page") or 1,
     )
     return render(
@@ -547,6 +592,22 @@ def target_index(request: HttpRequest) -> HttpResponse:
             "period_history_paginator": period_history_page.paginator,
         },
     )
+
+
+@require_roles(ROLE_ADMIN)
+def target_month_history_detail(request: HttpRequest) -> HttpResponse:
+    configs = _department_configs()
+    target_month = _month_start(request.GET.get("month"))
+    row = _build_month_history_entry(target_month=target_month, configs=configs)
+    return render(request, "targets/_history_detail_body.html", {"row": row})
+
+
+@require_roles(ROLE_ADMIN)
+def target_period_history_detail(request: HttpRequest, period_id: int) -> HttpResponse:
+    configs = _department_configs()
+    period = get_object_or_404(Period, id=period_id)
+    row = _build_period_history_entry(period=period, configs=configs)
+    return render(request, "targets/_history_detail_body.html", {"row": row})
 
 
 @require_roles(ROLE_ADMIN)
