@@ -44,7 +44,11 @@
       </div>
       <div class="dairymetrics-field">
         <label for="dairymetrics-v2-date">日付</label>
-        <input id="dairymetrics-v2-date" class="dairymetrics-date-input" type="date" name="date" value="{{ entry_date|date:'Y-m-d' }}">
+        <div class="dairymetrics-date-wrap">
+          <div class="dairymetrics-date-field">
+            <input id="dairymetrics-v2-date" class="dairymetrics-date-input" type="date" name="date" value="{{ entry_date|date:'Y-m-d' }}">
+          </div>
+        </div>
       </div>
       <div class="dairymetrics-field dairymetrics-v2-context-actions">
         <button type="submit" class="btn-inline dairymetrics-secondary-btn">この条件で見る</button>
