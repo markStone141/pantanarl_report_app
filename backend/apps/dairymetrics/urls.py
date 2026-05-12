@@ -13,6 +13,7 @@ urlpatterns = [
     path("monthly/", views.member_monthly_overview, name="dairymetrics_member_monthly_overview"),
     path("compare/ranking-detail/", views.comparison_ranking_detail, name="dairymetrics_compare_ranking_detail"),
     path("entry/", views.entry_form, name="dairymetrics_entry"),
+    path("entry-v2/", views.entry_form_v2_demo, name="dairymetrics_entry_v2_demo"),
     path("targets/scope/", views.scope_target_form, name="dairymetrics_scope_target"),
     path("admin/", views.admin_overview, name="dairymetrics_admin_overview"),
     path("admin/rankings/", views.admin_ranking_overview, name="dairymetrics_admin_ranking_overview"),

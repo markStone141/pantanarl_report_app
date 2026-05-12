@@ -30,6 +30,22 @@ from .selectors import (
 
 
 INLINE_ADJUSTMENT_NOTE = "__inline_monthly_adjustment__"
+ENTRY_V2_AGE_BANDS = [
+    {"key": "teens_or_younger", "label": "10代以下"},
+    {"key": "twenties", "label": "20代"},
+    {"key": "thirties", "label": "30代"},
+    {"key": "forties", "label": "40代"},
+    {"key": "fifties", "label": "50代"},
+    {"key": "sixties_or_older", "label": "60代以上"},
+]
+ENTRY_V2_GENDER_BANDS = [
+    {"key": "male", "label": "男性"},
+    {"key": "female", "label": "女性"},
+]
+ENTRY_V2_NATIONALITY_BANDS = [
+    {"key": "domestic", "label": "国内"},
+    {"key": "overseas", "label": "海外"},
+]
 
 
 def _build_entry_form(*, member, data=None, department_code="", entry_date=None):
@@ -56,6 +72,60 @@ def _build_entry_form(*, member, data=None, department_code="", entry_date=None)
         member=member,
         initial=initial,
     )
+
+
+def _member_departments(member):
+    return Department.objects.filter(is_active=True, member_links__member=member).distinct().order_by("code")
+
+
+def _default_entry_department_code(*, member, departments, selected_department):
+    if selected_department:
+        return selected_department
+    department_codes = [department.code for department in departments]
+    if member.default_department and member.default_department.code in department_codes:
+        return member.default_department.code
+    return department_codes[0] if department_codes else ""
+
+
+def _build_entry_v2_demo_context(*, member, selected_department, entry_date):
+    departments = list(_member_departments(member))
+    selected_department_code = _default_entry_department_code(
+        member=member,
+        departments=departments,
+        selected_department=selected_department,
+    )
+    existing_entry = None
+    if selected_department_code:
+        existing_entry = (
+            MemberDailyMetricEntry.objects.filter(
+                member=member,
+                department__code=selected_department_code,
+                entry_date=entry_date,
+            )
+            .select_related("department")
+            .first()
+        )
+    initial_count = 0
+    initial_amount = 0
+    if existing_entry:
+        if existing_entry.department.code == "WV":
+            initial_count = int(existing_entry.cs_count or 0) + int(existing_entry.refugee_count or 0)
+        else:
+            initial_count = int(existing_entry.result_count or 0)
+        initial_amount = int(existing_entry.support_amount or 0)
+    return {
+        "member": member,
+        "departments": departments,
+        "selected_department_code": selected_department_code,
+        "entry_date": entry_date,
+        "initial_total_count": initial_count,
+        "initial_total_amount": initial_amount,
+        "age_bands": ENTRY_V2_AGE_BANDS,
+        "gender_bands": ENTRY_V2_GENDER_BANDS,
+        "nationality_bands": ENTRY_V2_NATIONALITY_BANDS,
+        "is_admin": False,
+        "demo_mode": True,
+    }
 
 
 def _login_redirect_url(user, *, fallback=""):
@@ -706,7 +776,7 @@ def entry_form(request: HttpRequest) -> HttpResponse:
         saved.save()
         return redirect(f"{reverse('dairymetrics_dashboard')}?saved=1")
 
-    departments = Department.objects.filter(is_active=True, member_links__member=member).distinct().order_by("code")
+    departments = _member_departments(member)
     context = {
         "form": form,
         "member": member,
@@ -714,6 +784,22 @@ def entry_form(request: HttpRequest) -> HttpResponse:
         "selected_department_code": selected_department,
     }
     return render(request, "dairymetrics/entry_form.html", context)
+
+
+@require_dairymetrics_member
+def entry_form_v2_demo(request: HttpRequest) -> HttpResponse:
+    member = get_member_profile(request.user)
+    if not member:
+        return redirect("dairymetrics_dashboard")
+
+    entry_date = parse_date((request.GET.get("date") or "").strip()) or timezone.localdate()
+    selected_department = (request.GET.get("department") or "").strip()
+    context = _build_entry_v2_demo_context(
+        member=member,
+        selected_department=selected_department,
+        entry_date=entry_date,
+    )
+    return render(request, "dairymetrics/entry_form_v2_demo.html", context)
 
 
 @require_dairymetrics_admin

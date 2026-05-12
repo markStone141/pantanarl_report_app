@@ -209,6 +209,35 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "is-complete")
         self.assertContains(response, "fa-crown")
 
+    def test_entry_v2_demo_requires_login(self):
+        response = self.client.get(reverse("dairymetrics_entry_v2_demo"))
+        self.assertRedirects(response, reverse("dairymetrics_login"))
+
+    def test_entry_v2_demo_prefills_total_count_from_existing_entry(self):
+        self.department.code = "UN"
+        self.department.save(update_fields=["code"])
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=timezone.localdate(),
+            result_count=7,
+            support_amount=12000,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_demo"),
+            {"department": self.department.code},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "実績入力 v2 デモ")
+        self.assertContains(response, 'value="7"', html=False)
+        self.assertContains(response, 'value="12000"', html=False)
+        self.assertContains(response, "年代内訳")
+        self.assertContains(response, "男女比")
+        self.assertContains(response, "国籍分類")
+
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")
         teammate = Member.objects.create(name="Member Compare", user=teammate_user)
