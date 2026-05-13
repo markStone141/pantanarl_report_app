@@ -1875,3 +1875,164 @@
     min-width: 0;
   }
 }
+
+.dairymetrics-v2-transaction-shell {
+  display: grid;
+  gap: 20px;
+}
+
+.dairymetrics-v2-progress-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dairymetrics-v2-progress-card {
+  display: grid;
+  gap: 8px;
+}
+
+.dairymetrics-v2-progress-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dairymetrics-v2-progress-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink-strong);
+}
+
+.dairymetrics-v2-progress-current {
+  font-size: 1.85rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dairymetrics-v2-progress-meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: var(--ink-soft);
+  font-size: 0.94rem;
+}
+
+.dairymetrics-v2-demo-grid,
+.dairymetrics-v2-transaction-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.dairymetrics-v2-demo-card {
+  padding: 22px;
+  border: 1px solid rgba(142, 174, 206, 0.3);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 255, 0.96));
+  box-shadow: 0 14px 36px rgba(10, 41, 71, 0.08);
+  display: grid;
+  gap: 18px;
+}
+
+.dairymetrics-v2-demo-head {
+  display: grid;
+  gap: 6px;
+}
+
+.dairymetrics-v2-demo-head h3 {
+  margin: 0;
+}
+
+.dairymetrics-v2-target-form,
+.dairymetrics-v2-parent-summary,
+.dairymetrics-v2-transaction-form,
+.dairymetrics-v2-transaction-list {
+  display: grid;
+  gap: 14px;
+}
+
+.dairymetrics-v2-inline-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.dairymetrics-v2-parent-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dairymetrics-v2-parent-summary > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(238, 245, 253, 0.9);
+}
+
+.dairymetrics-v2-transaction-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dairymetrics-v2-transaction-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dairymetrics-v2-transaction-item {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(242, 247, 253, 0.95);
+  border: 1px solid rgba(156, 183, 210, 0.3);
+}
+
+.dairymetrics-v2-transaction-top,
+.dairymetrics-v2-transaction-main {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dairymetrics-v2-transaction-main span {
+  min-width: 0;
+}
+
+.dairymetrics-v2-mail-preview-card {
+  gap: 14px;
+}
+
+.dairymetrics-v2-mail-subject {
+  font-size: 0.98rem;
+  color: var(--ink-strong);
+}
+
+.dairymetrics-v2-mail-body {
+  margin: 0;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(10, 26, 44, 0.94);
+  color: #f4f8fc;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .dairymetrics-v2-progress-board,
+  .dairymetrics-v2-demo-grid,
+  .dairymetrics-v2-transaction-layout,
+  .dairymetrics-v2-transaction-form,
+  .dairymetrics-v2-parent-summary {
+    grid-template-columns: 1fr;
+  }
+}

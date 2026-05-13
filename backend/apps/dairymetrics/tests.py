@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
-from apps.targets.models import Period
+from apps.targets.models import DepartmentMonthTarget, DepartmentPeriodTarget, Period, TARGET_STATUS_ACTIVE
 
 from .forms import MemberDailyMetricEntryForm
 from .models import (
@@ -237,6 +237,68 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "年代内訳")
         self.assertContains(response, "男女比")
         self.assertContains(response, "国籍分類")
+
+    def test_entry_v2_transaction_demo_requires_login(self):
+        response = self.client.get(reverse("dairymetrics_entry_v2_transaction_demo"))
+        self.assertRedirects(response, reverse("dairymetrics_login"))
+
+    def test_entry_v2_transaction_demo_shows_goal_cards_and_mail_preview_flow(self):
+        self.department.code = "UN"
+        self.department.name = "UN"
+        self.department.save(update_fields=["code", "name"])
+        entry_date = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            result_count=4,
+            support_amount=8000,
+            daily_target_amount=12000,
+        )
+        teammate_user = get_user_model().objects.create_user(username="member2_sample", password="pass123")
+        teammate = Member.objects.create(name="Member Sample", user=teammate_user)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=teammate,
+            department=self.department,
+            entry_date=entry_date,
+            support_amount=5000,
+            daily_target_amount=10000,
+        )
+        period = Period.objects.create(
+            month=entry_date.replace(day=1),
+            name="2026年5月 第2次路程",
+            status=TARGET_STATUS_ACTIVE,
+            start_date=entry_date - timedelta(days=2),
+            end_date=entry_date + timedelta(days=3),
+        )
+        DepartmentPeriodTarget.objects.create(
+            department=self.department,
+            period=period,
+            target_amount=50000,
+        )
+        DepartmentMonthTarget.objects.create(
+            department=self.department,
+            target_month=entry_date.replace(day=1),
+            target_amount=200000,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "決済登録 v2 サンプル")
+        self.assertContains(response, "全体の日目標")
+        self.assertContains(response, "路程目標")
+        self.assertContains(response, "月目標")
+        self.assertContains(response, "決済を1件登録する")
+        self.assertContains(response, "送信本文プレビュー")
+        self.assertContains(response, "登録してメール送信へ進む")
+        self.assertContains(response, "今日の集計箱")
+        self.assertContains(response, "13,000")
 
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")

@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from apps.accounts.models import Department, Member
+from apps.targets.models import DepartmentMonthTarget, DepartmentPeriodTarget, Period
 
 from .auth import get_member_profile, require_dairymetrics_admin, require_dairymetrics_member
 from .forms import DairyMetricsLoginForm, MemberDailyMetricEntryForm, MemberScopeTargetForm, MetricAdjustmentForm
@@ -125,6 +126,181 @@ def _build_entry_v2_demo_context(*, member, selected_department, entry_date):
         "nationality_bands": ENTRY_V2_NATIONALITY_BANDS,
         "is_admin": False,
         "demo_mode": True,
+    }
+
+
+def _build_demo_progress_card(*, label, current_amount, target_amount, helper_text="", target_source=""):
+    current_amount = int(current_amount or 0)
+    target_amount = int(target_amount or 0)
+    remaining_amount = max(target_amount - current_amount, 0) if target_amount else 0
+    achievement_rate = round((current_amount / target_amount) * 100, 1) if target_amount else None
+    return {
+        "label": label,
+        "current_amount": current_amount,
+        "target_amount": target_amount,
+        "remaining_amount": remaining_amount,
+        "achievement_rate": achievement_rate,
+        "helper_text": helper_text,
+        "target_source": target_source,
+        "has_target": bool(target_amount),
+        "is_complete": bool(target_amount) and current_amount >= target_amount,
+    }
+
+
+def _build_entry_v2_transaction_demo_context(*, member, selected_department, entry_date):
+    base_context = _build_entry_v2_demo_context(
+        member=member,
+        selected_department=selected_department,
+        entry_date=entry_date,
+    )
+    selected_department_code = base_context["selected_department_code"]
+    selected_department_obj = next(
+        (department for department in base_context["departments"] if department.code == selected_department_code),
+        None,
+    )
+    existing_entry = None
+    if selected_department_obj:
+        existing_entry = (
+            MemberDailyMetricEntry.objects.filter(
+                member=member,
+                department=selected_department_obj,
+                entry_date=entry_date,
+            )
+            .select_related("department")
+            .first()
+        )
+    personal_target_amount = int(getattr(existing_entry, "daily_target_amount", 0) or 0)
+    personal_total_amount = int(base_context["initial_total_amount"] or 0)
+    department_day_entries = MemberDailyMetricEntry.objects.filter(
+        department__code=selected_department_code,
+        entry_date=entry_date,
+    )
+    department_day_total = int(department_day_entries.aggregate(total=Sum("support_amount"))["total"] or 0)
+    department_day_target = int(department_day_entries.aggregate(total=Sum("daily_target_amount"))["total"] or 0)
+    active_period = (
+        Period.objects.filter(start_date__lte=entry_date, end_date__gte=entry_date)
+        .order_by("-start_date", "-id")
+        .first()
+    )
+    period_target_amount = 0
+    period_total_amount = 0
+    period_label = "保存済み路程がない日の見え方"
+    period_target_source = ""
+    if active_period and selected_department_obj:
+        period_label = active_period.name
+        period_target = DepartmentPeriodTarget.objects.filter(
+            period=active_period,
+            department=selected_department_obj,
+        ).first()
+        period_target_amount = int(getattr(period_target, "target_amount", 0) or 0)
+        period_total_amount = int(
+            MemberDailyMetricEntry.objects.filter(
+                department=selected_department_obj,
+                entry_date__gte=active_period.start_date,
+                entry_date__lte=active_period.end_date,
+            ).aggregate(total=Sum("support_amount"))["total"]
+            or 0
+        )
+        if period_target:
+            period_target_source = f"{selected_department_obj.code} の保存済み路程目標"
+    month_target_amount = 0
+    month_total_amount = 0
+    month_target_source = ""
+    month_label = entry_date.strftime("%Y年%m月")
+    if selected_department_obj:
+        month_target = DepartmentMonthTarget.objects.filter(
+            department=selected_department_obj,
+            target_month=entry_date.replace(day=1),
+        ).first()
+        month_target_amount = int(getattr(month_target, "target_amount", 0) or 0)
+        month_total_amount = int(
+            MemberDailyMetricEntry.objects.filter(
+                department=selected_department_obj,
+                entry_date__year=entry_date.year,
+                entry_date__month=entry_date.month,
+            ).aggregate(total=Sum("support_amount"))["total"]
+            or 0
+        )
+        if month_target:
+            month_target_source = f"{selected_department_obj.code} の保存済み月目標"
+    # Keep the sample visually useful even when no targets are set locally.
+    if not personal_target_amount:
+        personal_target_amount = 6000
+    if not department_day_target:
+        department_day_target = 30000
+    if not period_target_amount:
+        period_target_amount = max(period_total_amount, 120000)
+    if not month_target_amount:
+        month_target_amount = max(month_total_amount, 400000)
+    progress_cards = [
+        _build_demo_progress_card(
+            label="個人の日目標",
+            current_amount=personal_total_amount,
+            target_amount=personal_target_amount,
+            helper_text=f"{member.name}さんの当日累計",
+            target_source="本人の日目標",
+        ),
+        _build_demo_progress_card(
+            label="全体の日目標",
+            current_amount=department_day_total,
+            target_amount=department_day_target,
+            helper_text=f"{selected_department_code or '-'} の当日累計",
+            target_source="部署全体の日目標",
+        ),
+        _build_demo_progress_card(
+            label="路程目標",
+            current_amount=period_total_amount,
+            target_amount=period_target_amount,
+            helper_text=period_label,
+            target_source=period_target_source or "保存済み路程目標がない場合のサンプル値",
+        ),
+        _build_demo_progress_card(
+            label="月目標",
+            current_amount=month_total_amount,
+            target_amount=month_target_amount,
+            helper_text=month_label,
+            target_source=month_target_source or "保存済み月目標がない場合のサンプル値",
+        ),
+    ]
+    sample_transactions = [
+        {
+            "sequence": 1,
+            "time_label": "10:05",
+            "amount": 1000,
+            "age_band": "70代",
+            "gender": "女性",
+            "nationality": "国内",
+            "location": "渋谷駅前",
+            "comment": "早坂さんとの一体化での勝利",
+            "mail_status": "送信済み",
+        },
+        {
+            "sequence": 2,
+            "time_label": "11:40",
+            "amount": 2000,
+            "age_band": "30代",
+            "gender": "男性",
+            "nationality": "海外",
+            "location": "駅前デッキ",
+            "comment": "短時間で決済まで到達したケース",
+            "mail_status": "未送信",
+        },
+    ]
+    return {
+        **base_context,
+        "progress_cards": progress_cards,
+        "sample_transactions": sample_transactions,
+        "selected_department_name": getattr(selected_department_obj, "name", selected_department_code),
+        "demo_mail_subject": f"{entry_date.month}/{entry_date.day}{member.name}です({selected_department_code or 'UN①'})",
+        "demo_mail_comment": "早坂さんとの一体化での勝利",
+        "demo_mail_location": "渋谷駅前",
+        "demo_mail_amount": 1000,
+        "demo_mail_age_band": "70代",
+        "demo_mail_gender": "女性",
+        "demo_mail_nationality": "国内",
+        "demo_department_daily_target": department_day_target,
+        "demo_department_daily_total": department_day_total,
+        "demo_member_name": member.name,
     }
 
 
@@ -800,6 +976,22 @@ def entry_form_v2_demo(request: HttpRequest) -> HttpResponse:
         entry_date=entry_date,
     )
     return render(request, "dairymetrics/entry_form_v2_demo.html", context)
+
+
+@require_dairymetrics_member
+def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
+    member = get_member_profile(request.user)
+    if not member:
+        return redirect("dairymetrics_dashboard")
+
+    entry_date = parse_date((request.GET.get("date") or "").strip()) or timezone.localdate()
+    selected_department = (request.GET.get("department") or "").strip()
+    context = _build_entry_v2_transaction_demo_context(
+        member=member,
+        selected_department=selected_department,
+        entry_date=entry_date,
+    )
+    return render(request, "dairymetrics/entry_form_v2_transaction_demo.html", context)
 
 
 @require_dairymetrics_admin
