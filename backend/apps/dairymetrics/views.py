@@ -37,7 +37,10 @@ ENTRY_V2_AGE_BANDS = [
     {"key": "thirties", "label": "30代"},
     {"key": "forties", "label": "40代"},
     {"key": "fifties", "label": "50代"},
-    {"key": "sixties_or_older", "label": "60代以上"},
+    {"key": "sixties", "label": "60代"},
+    {"key": "seventies", "label": "70代"},
+    {"key": "eighties", "label": "80代"},
+    {"key": "nineties_or_older", "label": "90代以上"},
 ]
 ENTRY_V2_GENDER_BANDS = [
     {"key": "male", "label": "男性"},
