@@ -331,6 +331,7 @@ def _build_entry_v2_transaction_demo_context(
     personal_target_amount = int(getattr(existing_entry, "daily_target_amount", 0) or 0)
     personal_total_count = int(getattr(existing_entry, "result_count", 0) or 0)
     personal_total_amount = int(getattr(existing_entry, "support_amount", 0) or 0)
+    current_location_name = getattr(existing_entry, "location_name", "") or ""
     department_day_total = int(getattr(department_summary, "support_amount", 0) or 0)
     department_day_target = int(getattr(department_summary, "daily_target_amount", 0) or 0)
 
@@ -454,6 +455,7 @@ def _build_entry_v2_transaction_demo_context(
         initial={
             "department": selected_department_obj,
             "entry_date": entry_date,
+            "location_name": current_location_name,
             "daily_target_count": personal_target_count or previous_personal_target_count,
             "daily_target_amount": personal_target_amount or previous_personal_target_amount,
         },
@@ -493,6 +495,7 @@ def _build_entry_v2_transaction_demo_context(
 
     personal_target_count_value = str(personal_setup_form["daily_target_count"].value() or previous_personal_target_count)
     personal_target_amount_value = str(personal_setup_form["daily_target_amount"].value() or previous_personal_target_amount)
+    personal_location_name_value = str(personal_setup_form["location_name"].value() or current_location_name)
     department_target_amount_value = str(department_target_form["daily_target_amount"].value() or previous_department_target_amount)
     transaction_amount_value = str(transaction_form["support_amount"].value() or "1000")
     transaction_age_band_value = transaction_form["age_band"].value() or MemberMetricTransaction.AGE_BAND_SEVENTIES
@@ -526,10 +529,12 @@ def _build_entry_v2_transaction_demo_context(
         "transaction_amount_options": ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS,
         "personal_target_count_value": personal_target_count_value,
         "personal_target_amount_value": personal_target_amount_value,
+        "personal_location_name_value": personal_location_name_value,
         "department_target_amount_value": department_target_amount_value,
         "transaction_amount_value": transaction_amount_value,
         "personal_entry_date_value": personal_entry_date_value,
         "department_entry_date_value": department_entry_date_value,
+        "current_location_name": current_location_name,
         "show_student_field": transaction_age_band_value
         in {
             MemberMetricTransaction.AGE_BAND_TEENS,
@@ -1266,11 +1271,13 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                 )
                 entry.daily_target_count = personal_setup_form.cleaned_data["daily_target_count"]
                 entry.daily_target_amount = personal_setup_form.cleaned_data["daily_target_amount"]
+                entry.location_name = personal_setup_form.cleaned_data["location_name"]
                 entry.input_source = MemberDailyMetricEntry.SOURCE_MEMBER
                 entry.save(
                     update_fields=[
                         "daily_target_count",
                         "daily_target_amount",
+                        "location_name",
                         "input_source",
                         "updated_at",
                     ]

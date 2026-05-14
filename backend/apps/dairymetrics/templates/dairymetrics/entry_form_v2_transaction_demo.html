@@ -74,6 +74,11 @@
               {% if personal_setup_form.entry_date.errors %}<div class="error-text">{{ personal_setup_form.entry_date.errors|striptags }}</div>{% endif %}
             </div>
             <div class="dairymetrics-field">
+              <label for="v2-personal-location">今日の活動現場</label>
+              <input id="v2-personal-location" type="text" name="location_name" value="{{ personal_location_name_value }}">
+              {% if personal_setup_form.location_name.errors %}<div class="error-text">{{ personal_setup_form.location_name.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="dairymetrics-field">
               <label for="v2-personal-target-count-select">個人の件数目標</label>
               <select id="v2-personal-target-count-select" data-target-select data-target-custom="#v2-personal-target-count-wrap" data-target-hidden="#v2-personal-target-count-hidden">
                 {% for count in target_count_options %}
@@ -245,6 +250,18 @@
     {% endif %}
 
     <section class="dairymetrics-v2-progress-board">
+      <article class="metric-card dairymetrics-v2-progress-card">
+        <div class="dairymetrics-v2-progress-head">
+          <strong>今日の活動現場</strong>
+        </div>
+        <div class="dairymetrics-v2-progress-main">
+          <span class="dairymetrics-v2-progress-current">{{ current_location_name|default:"未設定" }}</span>
+        </div>
+        <div class="dairymetrics-subtext">個人の日目標と同じフォームから更新できます。</div>
+        <div class="dairymetrics-v2-inline-actions">
+          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-personal-target-edit>修正する</button>
+        </div>
+      </article>
       {% for card in progress_cards %}
       <article class="metric-card dairymetrics-v2-progress-card{% if card.is_complete %} is-complete{% endif %}">
         <div class="dairymetrics-v2-progress-head">
@@ -283,11 +300,15 @@
               </div>
               <div class="dairymetrics-field">
                 <label for="v2-inline-personal-date">活動日</label>
-                <div class="dairymetrics-date-wrap">
-                  <div class="dairymetrics-date-field">
-                    <input id="v2-inline-personal-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ personal_entry_date_value }}">
-                  </div>
+              <div class="dairymetrics-date-wrap">
+                <div class="dairymetrics-date-field">
+                  <input id="v2-inline-personal-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ personal_entry_date_value }}">
                 </div>
+              </div>
+            </div>
+              <div class="dairymetrics-field">
+                <label for="v2-inline-personal-location">今日の活動現場</label>
+                <input id="v2-inline-personal-location" type="text" name="location_name" value="{{ personal_location_name_value }}">
               </div>
               <div class="dairymetrics-field">
                 <label for="v2-inline-personal-count-select">個人の件数目標</label>

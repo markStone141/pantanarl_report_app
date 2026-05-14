@@ -305,6 +305,7 @@ class DairymetricsV2PersonalSetupForm(forms.Form):
         label="活動日",
         widget=forms.DateInput(attrs={"type": "date", "class": "dairymetrics-native-date dairymetrics-date-input"}),
     )
+    location_name = forms.CharField(label="今日の活動現場", max_length=128, required=False)
     daily_target_count = forms.IntegerField(label="個人の件数目標", min_value=0, initial=0)
     daily_target_amount = forms.IntegerField(label="個人の金額目標", min_value=0, initial=0)
 

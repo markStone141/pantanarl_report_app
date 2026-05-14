@@ -297,6 +297,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "全体の日目標")
         self.assertContains(response, "路程目標")
         self.assertContains(response, "月目標")
+        self.assertContains(response, "今日の活動現場")
         self.assertContains(response, "修正する")
         self.assertContains(response, "決済を1件登録する")
         self.assertContains(response, "送信本文プレビュー")
@@ -394,6 +395,7 @@ class DairyMetricsDashboardTests(TestCase):
                 "action": "save_personal_setup",
                 "department": self.department.id,
                 "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "location_name": "渋谷駅前",
                 "daily_target_count": "3",
                 "daily_target_amount": "6000",
             },
@@ -406,6 +408,7 @@ class DairyMetricsDashboardTests(TestCase):
         entry = MemberDailyMetricEntry.objects.get(member=self.member, department=self.department, entry_date=entry_date)
         self.assertEqual(entry.daily_target_count, 3)
         self.assertEqual(entry.daily_target_amount, 6000)
+        self.assertEqual(entry.location_name, "渋谷駅前")
 
     def test_entry_v2_transaction_demo_updates_personal_target_from_progress_card(self):
         self.client.force_login(self.user)
@@ -424,6 +427,7 @@ class DairyMetricsDashboardTests(TestCase):
                 "action": "save_personal_setup",
                 "department": self.department.id,
                 "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "location_name": "池袋駅前",
                 "daily_target_count": "5",
                 "daily_target_amount": "9000",
             },
@@ -436,6 +440,7 @@ class DairyMetricsDashboardTests(TestCase):
         entry = MemberDailyMetricEntry.objects.get(member=self.member, department=self.department, entry_date=entry_date)
         self.assertEqual(entry.daily_target_count, 5)
         self.assertEqual(entry.daily_target_amount, 9000)
+        self.assertEqual(entry.location_name, "池袋駅前")
 
     def test_entry_v2_transaction_demo_saves_department_daily_target_summary(self):
         self.client.force_login(self.user)
