@@ -305,6 +305,7 @@ def _build_entry_v2_transaction_demo_context(*, member, selected_department, ent
         "demo_member_name": member.name,
         "has_personal_target": bool(raw_personal_target_amount),
         "has_department_target": bool(raw_department_day_target),
+        "department_target_entry_date": entry_date,
     }
 
 

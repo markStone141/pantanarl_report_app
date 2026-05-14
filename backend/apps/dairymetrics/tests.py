@@ -306,6 +306,26 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "直接入力")
         self.assertContains(response, "活動終了時の最終実績を確認")
 
+    def test_entry_v2_transaction_demo_shows_separate_department_target_setup_when_missing(self):
+        self.department.code = "UN"
+        self.department.name = "UN"
+        self.department.save(update_fields=["code", "name"])
+        entry_date = timezone.localdate()
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "活動前の準備")
+        self.assertContains(response, "部署全体の日目標を入力")
+        self.assertContains(response, "全体目標の対象日")
+        self.assertContains(response, "全体目標を保存")
+        self.assertNotContains(response, "入力内容を確定")
+        self.assertNotContains(response, "<span class=\"muted\">対象</span>", html=True)
+
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")
         teammate = Member.objects.create(name="Member Compare", user=teammate_user)

@@ -61,60 +61,68 @@
       <div class="dairymetrics-v2-setup-head">
         <div>
           <h3>活動前の準備</h3>
-          <p class="muted">まず個人目標、全体目標、現場名をここで入力する前提です。</p>
-        </div>
-        <div class="dairymetrics-v2-setup-actions">
-          {% if has_personal_target %}
-          <span class="status-badge status-badge-active">個人目標入力済み</span>
-          {% endif %}
-          {% if has_department_target %}
-          <span class="status-badge status-badge-active">全体目標入力済み</span>
-          {% endif %}
+          <p class="muted">個人の日目標と、部署全体の日目標は分けて管理する前提です。</p>
         </div>
       </div>
-      <div class="dairymetrics-v2-transaction-form">
-        <div class="dairymetrics-field">
-          <label for="dairymetrics-v2x-setup-date">活動日</label>
-          <div class="dairymetrics-date-wrap">
-            <div class="dairymetrics-date-field">
-              <input id="dairymetrics-v2x-setup-date" class="dairymetrics-date-input" type="date" value="{{ entry_date|date:'Y-m-d' }}">
+
+      {% if not has_personal_target %}
+      <div class="dairymetrics-v2-demo-card">
+        <div class="dairymetrics-v2-demo-head">
+          <h3>個人の日目標を入力</h3>
+          <p class="muted">{{ member.name }}さんが今日活動するための準備です。</p>
+        </div>
+        <div class="dairymetrics-v2-transaction-form">
+          <div class="dairymetrics-field">
+            <label for="dairymetrics-v2x-setup-date">活動日</label>
+            <div class="dairymetrics-date-wrap">
+              <div class="dairymetrics-date-field">
+                <input id="dairymetrics-v2x-setup-date" class="dairymetrics-date-input" type="date" value="{{ entry_date|date:'Y-m-d' }}">
+              </div>
             </div>
           </div>
+          <div class="dairymetrics-field">
+            <label for="dairymetrics-v2x-setup-target">個人の目標金額</label>
+            <input id="dairymetrics-v2x-setup-target" type="number" min="0" step="1000" value="{{ progress_cards.0.target_amount }}">
+          </div>
+          <div class="dairymetrics-field dairymetrics-field-full">
+            <label for="dairymetrics-v2x-setup-location">現場名</label>
+            <input id="dairymetrics-v2x-setup-location" type="text" value="{{ demo_mail_location }}">
+          </div>
         </div>
-        <div class="dairymetrics-field">
-          <label for="dairymetrics-v2x-setup-target">個人の目標金額</label>
-          <input id="dairymetrics-v2x-setup-target" type="number" min="0" step="1000" value="{{ progress_cards.0.target_amount }}">
-        </div>
-        <div class="dairymetrics-field">
-          <label for="dairymetrics-v2x-daily-target">今日の全体目標金額</label>
-          <input id="dairymetrics-v2x-daily-target" type="number" min="0" step="1000" value="{{ demo_department_daily_target }}">
-        </div>
-        <div class="dairymetrics-field dairymetrics-field-full">
-          <label for="dairymetrics-v2x-setup-location">現場名</label>
-          <input id="dairymetrics-v2x-setup-location" type="text" value="{{ demo_mail_location }}">
-        </div>
-      </div>
-      <div class="dairymetrics-v2-inline-meta">
-        <span>現在の全体累計 {{ demo_department_daily_total|intcomma }}円</span>
-        <span>最終更新: {{ member.name }} 10:12</span>
-      </div>
-      <div class="dairymetrics-v2-transaction-actions">
-        <button type="button" class="btn-inline dairymetrics-save-btn">入力内容を確定</button>
-      </div>
-      <div class="dairymetrics-v2-parent-summary">
-        <div>
-          <span class="muted">対象</span>
-          <strong>{{ member.name }} / {{ selected_department_name }}</strong>
-        </div>
-        <div>
-          <span class="muted">活動日</span>
-          <strong>{{ entry_date|date:"Y/m/d" }}</strong>
-        </div>
-        <div>
-          <span class="muted">現場名</span>
-          <strong>{{ demo_mail_location }}</strong>
+        <div class="dairymetrics-v2-transaction-actions">
+          <button type="button" class="btn-inline dairymetrics-save-btn">個人の準備を保存</button>
         </div>
       </div>
+      {% endif %}
+
+      {% if not has_department_target %}
+      <div class="dairymetrics-v2-demo-card">
+        <div class="dairymetrics-v2-demo-head">
+          <h3>部署全体の日目標を入力</h3>
+          <p class="muted">前日に決めておきたい日もあるので、活動日と目標金額を指定する想定です。</p>
+        </div>
+        <div class="dairymetrics-v2-transaction-form">
+          <div class="dairymetrics-field">
+            <label for="dairymetrics-v2x-daily-target-date">全体目標の対象日</label>
+            <div class="dairymetrics-date-wrap">
+              <div class="dairymetrics-date-field">
+                <input id="dairymetrics-v2x-daily-target-date" class="dairymetrics-date-input" type="date" value="{{ department_target_entry_date|date:'Y-m-d' }}">
+              </div>
+            </div>
+          </div>
+          <div class="dairymetrics-field">
+            <label for="dairymetrics-v2x-daily-target">全体目標金額</label>
+            <input id="dairymetrics-v2x-daily-target" type="number" min="0" step="1000" value="{{ demo_department_daily_target }}">
+          </div>
+        </div>
+        <div class="dairymetrics-v2-inline-meta">
+          <span>保存された時点でその日の全体エントリーが作られる想定です</span>
+        </div>
+        <div class="dairymetrics-v2-transaction-actions">
+          <button type="button" class="btn-inline dairymetrics-save-btn">全体目標を保存</button>
+        </div>
+      </div>
+      {% endif %}
     </section>
     {% endif %}
 
@@ -208,6 +216,34 @@
     </section>
 
     <section class="dairymetrics-v2-transaction-layout">
+      <article class="dairymetrics-v2-demo-card">
+        <div class="dairymetrics-v2-demo-head">
+          <h3>部署全体の日目標</h3>
+          <p class="muted">誰かが設定した今日の全体目標を確認し、必要ならここから修正する想定です。</p>
+        </div>
+        <div class="dairymetrics-v2-parent-summary">
+          <div>
+            <span class="muted">対象日</span>
+            <strong>{{ department_target_entry_date|date:"Y/m/d" }}</strong>
+          </div>
+          <div>
+            <span class="muted">目標金額</span>
+            <strong>{{ demo_department_daily_target|intcomma }}円</strong>
+          </div>
+          <div>
+            <span class="muted">累計実績</span>
+            <strong>{{ demo_department_daily_total|intcomma }}円</strong>
+          </div>
+        </div>
+        <div class="dairymetrics-v2-inline-meta">
+          <span>設定者: {{ member.name }}</span>
+          <span>最終更新: 今日 10:12</span>
+        </div>
+        <div class="dairymetrics-v2-inline-actions">
+          <button type="button" class="btn-inline dairymetrics-secondary-btn">修正する</button>
+        </div>
+      </article>
+
       <article class="dairymetrics-v2-demo-card">
         <div class="dairymetrics-v2-demo-head">
           <h3>本日の決済明細イメージ</h3>
