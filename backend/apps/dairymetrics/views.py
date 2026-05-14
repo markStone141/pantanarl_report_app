@@ -469,7 +469,7 @@ def _build_entry_v2_transaction_demo_context(
     transaction_form = transaction_form or DairymetricsV2TransactionForm(
         initial={
             "support_amount": 1000,
-            "location": "",
+            "location": current_location_name,
             "age_band": MemberMetricTransaction.AGE_BAND_SEVENTIES,
             "gender": MemberMetricTransaction.GENDER_FEMALE,
             "nationality_type": MemberMetricTransaction.NATIONALITY_DOMESTIC,

@@ -442,6 +442,26 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertEqual(entry.daily_target_amount, 9000)
         self.assertEqual(entry.location_name, "池袋駅前")
 
+    def test_entry_v2_transaction_demo_prefills_transaction_location_from_activity_location(self):
+        self.client.force_login(self.user)
+        entry_date = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+            location_name="新宿駅前",
+        )
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="v2-transaction-location" type="text" name="location" value="新宿駅前"', html=False)
+
     def test_entry_v2_transaction_demo_saves_department_daily_target_summary(self):
         self.client.force_login(self.user)
         entry_date = timezone.localdate() + timedelta(days=1)
