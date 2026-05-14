@@ -479,7 +479,7 @@ def _build_entry_v2_transaction_demo_context(
     )
     transaction_form = transaction_form or DairymetricsV2TransactionForm(
         initial={
-            "support_amount": 1000,
+            "support_amount": 3000,
             "location": current_location_name,
             "age_band": MemberMetricTransaction.AGE_BAND_SEVENTIES,
             "gender": MemberMetricTransaction.GENDER_FEMALE,
@@ -508,7 +508,7 @@ def _build_entry_v2_transaction_demo_context(
     personal_target_amount_value = str(personal_setup_form["daily_target_amount"].value() or previous_personal_target_amount)
     personal_location_name_value = str(personal_setup_form["location_name"].value() or current_location_name)
     department_target_amount_value = str(department_target_form["daily_target_amount"].value() or previous_department_target_amount)
-    transaction_amount_value = str(transaction_form["support_amount"].value() or "1000")
+    transaction_amount_value = str(transaction_form["support_amount"].value() or "3000")
     transaction_age_band_value = transaction_form["age_band"].value() or MemberMetricTransaction.AGE_BAND_SEVENTIES
     personal_entry_date_value = str(personal_setup_form["entry_date"].value() or entry_date.strftime("%Y-%m-%d"))
     department_entry_date_value = str(department_target_form["entry_date"].value() or entry_date.strftime("%Y-%m-%d"))
@@ -1488,7 +1488,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
             "personal_setup": "個人の日目標を保存しました。",
             "department_target": "部署全体の日目標を保存しました。",
             "transaction": "決済明細を登録しました。",
-            "mail_sent": "メールを送信した前提で履歴を保存しました。",
+            "mail_sent": "メール履歴を保存しました。",
             "closeout": "活動終了時の最終実績を保存しました。",
         }.get(saved, "")
 
