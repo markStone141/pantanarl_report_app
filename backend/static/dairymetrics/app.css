@@ -2012,6 +2012,23 @@
   flex-wrap: wrap;
 }
 
+.dairymetrics-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.dairymetrics-checkbox-label input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--brand);
+  flex: 0 0 auto;
+}
+
 .dairymetrics-v2-transaction-item {
   display: grid;
   gap: 8px;
