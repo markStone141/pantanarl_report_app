@@ -296,7 +296,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "月目標")
         self.assertContains(response, "決済を1件登録する")
         self.assertContains(response, "送信本文プレビュー")
-        self.assertContains(response, "登録してメール送信へ進む")
+        self.assertContains(response, "登録してメール送信")
+        self.assertContains(response, "登録して閉じる")
         self.assertContains(response, "今日の集計箱")
         self.assertContains(response, "13,000")
 

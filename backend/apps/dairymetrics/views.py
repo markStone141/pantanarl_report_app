@@ -169,14 +169,16 @@ def _build_entry_v2_transaction_demo_context(*, member, selected_department, ent
             .select_related("department")
             .first()
         )
-    personal_target_amount = int(getattr(existing_entry, "daily_target_amount", 0) or 0)
+    raw_personal_target_amount = int(getattr(existing_entry, "daily_target_amount", 0) or 0)
+    personal_target_amount = raw_personal_target_amount
     personal_total_amount = int(base_context["initial_total_amount"] or 0)
     department_day_entries = MemberDailyMetricEntry.objects.filter(
         department__code=selected_department_code,
         entry_date=entry_date,
     )
     department_day_total = int(department_day_entries.aggregate(total=Sum("support_amount"))["total"] or 0)
-    department_day_target = int(department_day_entries.aggregate(total=Sum("daily_target_amount"))["total"] or 0)
+    raw_department_day_target = int(department_day_entries.aggregate(total=Sum("daily_target_amount"))["total"] or 0)
+    department_day_target = raw_department_day_target
     active_period = (
         Period.objects.filter(start_date__lte=entry_date, end_date__gte=entry_date)
         .order_by("-start_date", "-id")
@@ -301,6 +303,8 @@ def _build_entry_v2_transaction_demo_context(*, member, selected_department, ent
         "demo_department_daily_target": department_day_target,
         "demo_department_daily_total": department_day_total,
         "demo_member_name": member.name,
+        "has_personal_target": bool(raw_personal_target_amount),
+        "has_department_target": bool(raw_department_day_target),
     }
 
 
