@@ -403,7 +403,7 @@
             <div class="dairymetrics-v2-transaction-item">
               <div class="dairymetrics-v2-transaction-top">
                 <strong>{{ transaction.time_label }}</strong>
-                <span class="status-badge{% if transaction.mail_status == '送信済み' %} status-badge-active{% else %} status-badge-planned{% endif %}">{{ transaction.mail_status }}</span>
+                <span class="dairymetrics-v2-mail-badge {% if transaction.mail_status == '送信済み' %}is-sent{% else %}is-unsent{% endif %}">{{ transaction.mail_status }}</span>
               </div>
               <div class="dairymetrics-v2-transaction-main">
                 <span>{{ transaction.amount|intcomma }}円</span>
@@ -412,7 +412,7 @@
               </div>
               <div class="dairymetrics-subtext">{{ transaction.comment|default:"コメントなし" }}</div>
               <div class="dairymetrics-v2-inline-actions">
-                <a class="btn-inline dairymetrics-secondary-btn" href="{% url 'dairymetrics_entry_v2_transaction_demo' %}?department={{ selected_department_code }}&date={{ entry_date|date:'Y-m-d' }}&preview_tx={{ transaction.id }}">メール送信</a>
+                <a class="btn-inline dairymetrics-v2-mail-send-link" href="{% url 'dairymetrics_entry_v2_transaction_demo' %}?department={{ selected_department_code }}&date={{ entry_date|date:'Y-m-d' }}&preview_tx={{ transaction.id }}">メール送信</a>
               </div>
             </div>
             {% endfor %}
@@ -439,7 +439,7 @@
             <div class="dairymetrics-v2-transaction-item">
               <div class="dairymetrics-v2-transaction-top">
                 <strong>{{ mail.sent_at }}</strong>
-                <span class="status-badge status-badge-active">送信済み</span>
+                <span class="dairymetrics-v2-mail-badge is-sent">送信済み</span>
               </div>
               <div class="dairymetrics-v2-transaction-main">
                 <span>{{ mail.recipient_group|default:"-" }}</span>

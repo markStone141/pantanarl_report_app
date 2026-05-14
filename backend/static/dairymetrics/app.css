@@ -2065,6 +2065,47 @@
   min-width: 0;
 }
 
+.dairymetrics-v2-mail-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #fff;
+}
+
+.dairymetrics-v2-mail-badge.is-unsent {
+  background: #d63b47;
+}
+
+.dairymetrics-v2-mail-badge.is-sent {
+  background: #2f9a53;
+}
+
+.dairymetrics-v2-mail-send-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 10px 20px rgba(22, 110, 207, 0.22);
+}
+
+.dairymetrics-v2-mail-send-link:hover,
+.dairymetrics-v2-mail-send-link:focus-visible {
+  color: #fff;
+  background: var(--brand-deep);
+}
+
 .dairymetrics-v2-mail-preview-card {
   gap: 14px;
 }
