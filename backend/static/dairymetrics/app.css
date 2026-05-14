@@ -2091,9 +2091,9 @@
   }
 
   .dairymetrics-v2-modal {
-    top: auto;
-    bottom: 12px;
-    transform: translateX(-50%);
+    top: 50%;
+    bottom: auto;
+    transform: translate(-50%, -50%);
     width: min(100vw - 18px, 720px);
     max-height: calc(100vh - 24px);
     border-radius: 24px;

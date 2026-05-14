@@ -56,6 +56,7 @@
       </div>
     </form>
 
+    {% if not has_personal_target or not has_department_target %}
     <section class="dairymetrics-v2-setup-card">
       <div class="dairymetrics-v2-setup-head">
         <div>
@@ -90,30 +91,7 @@
         </div>
       </div>
     </section>
-
-    <section class="dairymetrics-v2-progress-board">
-      {% for card in progress_cards %}
-      <article class="metric-card dairymetrics-v2-progress-card{% if card.is_complete %} is-complete{% endif %}">
-        <div class="dairymetrics-v2-progress-head">
-          <strong>{{ card.label }}</strong>
-          {% if card.target_source %}
-          <span class="muted">{{ card.target_source }}</span>
-          {% endif %}
-        </div>
-        <div class="dairymetrics-v2-progress-main">
-          <span class="dairymetrics-v2-progress-current">{{ card.current_amount|intcomma }}</span>
-          <span class="muted">/ {{ card.target_amount|intcomma }}</span>
-        </div>
-        <div class="dairymetrics-v2-progress-meta">
-          <span>残り {% if card.has_target %}{{ card.remaining_amount|intcomma }}円{% else %}-{% endif %}</span>
-          <span>{% if card.achievement_rate is not None %}{{ card.achievement_rate }}%{% else %}-{% endif %}</span>
-        </div>
-        {% if card.helper_text %}
-        <div class="dairymetrics-subtext">{{ card.helper_text }}</div>
-        {% endif %}
-      </article>
-      {% endfor %}
-    </section>
+    {% endif %}
 
     <section class="dairymetrics-v2-demo-card dairymetrics-v2-quick-entry">
       <div class="dairymetrics-v2-demo-head">
@@ -163,6 +141,30 @@
         <button type="button" class="btn-inline dairymetrics-save-btn" data-open-mail-preview>登録してメール送信</button>
         <button type="button" class="btn-inline">登録して閉じる</button>
       </div>
+    </section>
+
+    <section class="dairymetrics-v2-progress-board">
+      {% for card in progress_cards %}
+      <article class="metric-card dairymetrics-v2-progress-card{% if card.is_complete %} is-complete{% endif %}">
+        <div class="dairymetrics-v2-progress-head">
+          <strong>{{ card.label }}</strong>
+          {% if card.target_source %}
+          <span class="muted">{{ card.target_source }}</span>
+          {% endif %}
+        </div>
+        <div class="dairymetrics-v2-progress-main">
+          <span class="dairymetrics-v2-progress-current">{{ card.current_amount|intcomma }}</span>
+          <span class="muted">/ {{ card.target_amount|intcomma }}</span>
+        </div>
+        <div class="dairymetrics-v2-progress-meta">
+          <span>残り {% if card.has_target %}{{ card.remaining_amount|intcomma }}円{% else %}-{% endif %}</span>
+          <span>{% if card.achievement_rate is not None %}{{ card.achievement_rate }}%{% else %}-{% endif %}</span>
+        </div>
+        {% if card.helper_text %}
+        <div class="dairymetrics-subtext">{{ card.helper_text }}</div>
+        {% endif %}
+      </article>
+      {% endfor %}
     </section>
 
     <section class="dairymetrics-v2-transaction-layout">
