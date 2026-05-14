@@ -271,26 +271,6 @@
         </div>
       </article>
 
-      <article class="dairymetrics-v2-demo-card">
-        <div class="dairymetrics-v2-demo-head">
-          <h3>今日の集計箱</h3>
-          <p class="muted">親モデルに残る想定の値です。子明細がある日は自動計算専用です。</p>
-        </div>
-        <div class="dairymetrics-v2-parent-summary">
-          <div>
-            <span class="muted">件数</span>
-            <strong>{{ initial_total_count }}件</strong>
-          </div>
-          <div>
-            <span class="muted">金額</span>
-            <strong>{{ initial_total_amount|intcomma }}円</strong>
-          </div>
-          <div>
-            <span class="muted">全体累計</span>
-            <strong>{{ demo_department_daily_total|intcomma }}円</strong>
-          </div>
-        </div>
-      </article>
     </section>
 
     <section class="dairymetrics-v2-mail-preview-card card" id="dairymetrics-v2-mail-preview" hidden>
@@ -331,54 +311,27 @@
             </div>
           </div>
           <div class="dairymetrics-field">
-            <label>件数目標</label>
-            <input type="number" value="{{ progress_cards.0.target_amount|default:0 }}" readonly data-closeout-target-count>
+            <label>アプローチ</label>
+            <input type="number" value="0">
           </div>
           <div class="dairymetrics-field">
-            <label>金額目標</label>
-            <input type="number" value="{{ progress_cards.0.target_amount|default:0 }}" readonly data-closeout-target-amount>
+            <label>コミュニケーション</label>
+            <input type="number" value="0">
           </div>
-
-          <div class="dairymetrics-field-full dairymetrics-entry-section">
-            <div class="dairymetrics-entry-section-head">現場</div>
-            <div class="dairymetrics-entry-section-grid">
-              <div class="dairymetrics-field">
-                <label>アプローチ</label>
-                <input type="number" value="0" readonly>
-              </div>
-              <div class="dairymetrics-field">
-                <label>コミュニケーション</label>
-                <input type="number" value="0" readonly>
-              </div>
-              {% if selected_department_code == "WV" %}
-              <div class="dairymetrics-field">
-                <label>CS件数</label>
-                <input type="number" value="0" readonly>
-              </div>
-              <div class="dairymetrics-field">
-                <label>難民件数</label>
-                <input type="number" value="0" readonly>
-              </div>
-              {% else %}
-              <div class="dairymetrics-field">
-                <label>件数</label>
-                <input type="number" value="{{ initial_total_count }}" readonly data-closeout-count>
-              </div>
-              {% endif %}
-              <div class="dairymetrics-field">
-                <label>支援金額</label>
-                <input type="number" value="{{ initial_total_amount }}" readonly data-closeout-amount>
-              </div>
-            </div>
-          </div>
-
+          {% if selected_department_code == "WV" %}
           <div class="dairymetrics-field">
-            <label>現場名</label>
-            <input type="text" value="{{ demo_mail_location }}" readonly data-closeout-location>
+            <label>件数</label>
+            <input type="number" value="{{ initial_total_count }}" readonly data-closeout-count>
           </div>
-          <div class="dairymetrics-field dairymetrics-field-full">
-            <label>メモ</label>
-            <textarea rows="3" readonly data-closeout-memo>{{ demo_mail_comment }}</textarea>
+          {% else %}
+          <div class="dairymetrics-field">
+            <label>件数</label>
+            <input type="number" value="{{ initial_total_count }}" readonly data-closeout-count>
+          </div>
+          {% endif %}
+          <div class="dairymetrics-field">
+            <label>支援金額</label>
+            <input type="number" value="{{ initial_total_amount }}" readonly data-closeout-amount>
           </div>
           <div class="dairymetrics-field-full dairymetrics-form-actions">
             <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-closeout>閉じる</button>
@@ -406,8 +359,6 @@
     const closeoutPanel = document.getElementById("dairymetrics-v2-closeout-panel");
     const closeoutCountInput = document.querySelector("[data-closeout-count]");
     const closeoutAmountInput = document.querySelector("[data-closeout-amount]");
-    const closeoutLocationInput = document.querySelector("[data-closeout-location]");
-    const closeoutMemoInput = document.querySelector("[data-closeout-memo]");
     const closeoutButtons = document.querySelectorAll("[data-open-closeout]");
     const closeCloseoutButtons = document.querySelectorAll("[data-close-closeout]");
     const baseCount = {{ initial_total_count|default:0 }};
@@ -436,12 +387,6 @@
       }
       if (closeoutAmountInput) {
         closeoutAmountInput.value = baseAmount + amount;
-      }
-      if (closeoutLocationInput) {
-        closeoutLocationInput.value = locationInput?.value || "";
-      }
-      if (closeoutMemoInput) {
-        closeoutMemoInput.value = commentInput?.value || "";
       }
     }
 

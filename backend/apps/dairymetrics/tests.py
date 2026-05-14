@@ -298,13 +298,13 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "送信本文プレビュー")
         self.assertContains(response, "登録してメール送信")
         self.assertContains(response, "登録して閉じる")
-        self.assertContains(response, "今日の集計箱")
         self.assertContains(response, "13,000")
         self.assertNotContains(response, "活動前の準備")
         self.assertContains(response, "1,000円")
         self.assertContains(response, "5,000円")
         self.assertContains(response, "直接入力")
         self.assertContains(response, "活動終了時の最終実績を確認")
+        self.assertNotContains(response, "今日の集計箱")
 
     def test_entry_v2_transaction_demo_shows_separate_department_target_setup_when_missing(self):
         self.department.code = "UN"
