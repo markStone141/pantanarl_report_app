@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+from urllib.parse import urlencode
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.db import transaction
@@ -12,11 +13,21 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from apps.accounts.models import Department, Member
+from apps.mail.models import MailSendHistory
 from apps.targets.models import DepartmentMonthTarget, DepartmentPeriodTarget, Period
 
 from .auth import get_member_profile, require_dairymetrics_admin, require_dairymetrics_member
-from .forms import DairyMetricsLoginForm, MemberDailyMetricEntryForm, MemberScopeTargetForm, MetricAdjustmentForm
-from .models import MemberDailyMetricEntry, MetricAdjustment
+from .forms import (
+    DairyMetricsLoginForm,
+    DairymetricsV2CloseoutForm,
+    DairymetricsV2DepartmentTargetForm,
+    DairymetricsV2PersonalSetupForm,
+    DairymetricsV2TransactionForm,
+    MemberDailyMetricEntryForm,
+    MemberScopeTargetForm,
+    MetricAdjustmentForm,
+)
+from .models import DepartmentDailyMetricSummary, MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjustment
 from .selectors import (
     build_admin_daily_overview,
     build_admin_ranking_overview,
@@ -50,6 +61,9 @@ ENTRY_V2_NATIONALITY_BANDS = [
     {"key": "domestic", "label": "国内"},
     {"key": "overseas", "label": "海外"},
 ]
+ENTRY_V2_TARGET_COUNT_OPTIONS = [1, 2, 3, 4, 5]
+ENTRY_V2_TARGET_AMOUNT_OPTIONS = list(range(1000, 10001, 500))
+ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS = list(range(1000, 5001, 500))
 
 
 def _build_entry_form(*, member, data=None, department_code="", entry_date=None):
@@ -150,7 +164,94 @@ def _build_demo_progress_card(*, label, current_amount, target_amount, helper_te
     }
 
 
-def _build_entry_v2_transaction_demo_context(*, member, selected_department, entry_date):
+def _build_v2_redirect_url(*, department_code, entry_date, saved="", preview_tx=None):
+    query = {
+        "department": department_code,
+        "date": entry_date.strftime("%Y-%m-%d"),
+    }
+    if saved:
+        query["saved"] = saved
+    if preview_tx:
+        query["preview_tx"] = str(preview_tx)
+    return f"{reverse('dairymetrics_entry_v2_transaction_demo')}?{urlencode(query)}"
+
+
+def _get_or_create_department_daily_summary(*, department, entry_date, member):
+    summary, created = DepartmentDailyMetricSummary.objects.get_or_create(
+        department=department,
+        entry_date=entry_date,
+        defaults={
+            "created_by": member,
+            "updated_by": member,
+        },
+    )
+    if not created and summary.updated_by_id is None:
+        summary.updated_by = member
+        summary.save(update_fields=["updated_by", "updated_at"])
+    return summary
+
+
+def _transaction_mail_status(transaction_obj):
+    latest_history = transaction_obj.mail_send_histories.order_by("-sent_at", "-created_at", "-id").first()
+    if latest_history and latest_history.status == MailSendHistory.STATUS_SENT:
+        return "送信済み"
+    return "未送信"
+
+
+def _build_transaction_mail_preview(*, member, department_code, transaction_obj, progress_cards):
+    personal_card, department_card, period_card, month_card = progress_cards
+    subject = (
+        f"{transaction_obj.entry.entry_date.month}/{transaction_obj.entry.entry_date.day}"
+        f"{member.name}です({department_code or 'UN①'})"
+    )
+    body = "\n".join(
+        [
+            department_code or "",
+            f"会員1名 {transaction_obj.support_amount:,}円",
+            f"日目まで {department_card['remaining_amount']:,}円",
+            f"路目まで {period_card['remaining_amount']:,}円",
+            f"月目まで {month_card['remaining_amount']:,}円",
+            "",
+            " ".join(
+                filter(
+                    None,
+                    [
+                        transaction_obj.get_age_band_display(),
+                        "学生" if transaction_obj.is_student else "",
+                        transaction_obj.get_gender_display(),
+                        transaction_obj.get_nationality_type_display(),
+                    ],
+                )
+            ),
+            transaction_obj.location,
+            transaction_obj.comment,
+            "",
+            "栄光在天✨全体精誠に感謝です！",
+            "",
+            f"{personal_card['current_amount']:,}/{personal_card['target_amount']:,}円",
+        ]
+    ).strip()
+    return {
+        "subject": subject,
+        "body": body,
+    }
+
+
+def _build_entry_v2_transaction_demo_context(
+    *,
+    member,
+    selected_department,
+    entry_date,
+    personal_setup_form=None,
+    department_target_form=None,
+    transaction_form=None,
+    closeout_form=None,
+    status_message="",
+    open_entry_panel=False,
+    open_department_target_panel=False,
+    open_closeout_panel=False,
+    preview_transaction=None,
+):
     base_context = _build_entry_v2_demo_context(
         member=member,
         selected_department=selected_department,
@@ -162,6 +263,7 @@ def _build_entry_v2_transaction_demo_context(*, member, selected_department, ent
         None,
     )
     existing_entry = None
+    department_summary = None
     if selected_department_obj:
         existing_entry = (
             MemberDailyMetricEntry.objects.filter(
@@ -170,18 +272,21 @@ def _build_entry_v2_transaction_demo_context(*, member, selected_department, ent
                 entry_date=entry_date,
             )
             .select_related("department")
+            .prefetch_related("transactions__mail_send_histories")
             .first()
         )
-    raw_personal_target_amount = int(getattr(existing_entry, "daily_target_amount", 0) or 0)
-    personal_target_amount = raw_personal_target_amount
-    personal_total_amount = int(base_context["initial_total_amount"] or 0)
-    department_day_entries = MemberDailyMetricEntry.objects.filter(
-        department__code=selected_department_code,
-        entry_date=entry_date,
-    )
-    department_day_total = int(department_day_entries.aggregate(total=Sum("support_amount"))["total"] or 0)
-    raw_department_day_target = int(department_day_entries.aggregate(total=Sum("daily_target_amount"))["total"] or 0)
-    department_day_target = raw_department_day_target
+        department_summary = DepartmentDailyMetricSummary.objects.filter(
+            department=selected_department_obj,
+            entry_date=entry_date,
+        ).select_related("department", "created_by", "updated_by").first()
+
+    personal_target_count = int(getattr(existing_entry, "daily_target_count", 0) or 0)
+    personal_target_amount = int(getattr(existing_entry, "daily_target_amount", 0) or 0)
+    personal_total_count = int(getattr(existing_entry, "result_count", 0) or 0)
+    personal_total_amount = int(getattr(existing_entry, "support_amount", 0) or 0)
+    department_day_total = int(getattr(department_summary, "support_amount", 0) or 0)
+    department_day_target = int(getattr(department_summary, "daily_target_amount", 0) or 0)
+
     active_period = (
         Period.objects.filter(start_date__lte=entry_date, end_date__gte=entry_date)
         .order_by("-start_date", "-id")
@@ -189,7 +294,7 @@ def _build_entry_v2_transaction_demo_context(*, member, selected_department, ent
     )
     period_target_amount = 0
     period_total_amount = 0
-    period_label = "保存済み路程がない日の見え方"
+    period_label = "保存済み路程がありません"
     period_target_source = ""
     if active_period and selected_department_obj:
         period_label = active_period.name
@@ -208,6 +313,7 @@ def _build_entry_v2_transaction_demo_context(*, member, selected_department, ent
         )
         if period_target:
             period_target_source = f"{selected_department_obj.code} の保存済み路程目標"
+
     month_target_amount = 0
     month_total_amount = 0
     month_target_source = ""
@@ -228,102 +334,155 @@ def _build_entry_v2_transaction_demo_context(*, member, selected_department, ent
         )
         if month_target:
             month_target_source = f"{selected_department_obj.code} の保存済み月目標"
-    # Keep the sample visually useful even when no targets are set locally.
-    if not personal_target_amount:
-        personal_target_amount = 6000
-    if not department_day_target:
-        department_day_target = 30000
-    if not period_target_amount:
-        period_target_amount = max(period_total_amount, 120000)
-    if not month_target_amount:
-        month_target_amount = max(month_total_amount, 400000)
+
     progress_cards = [
         _build_demo_progress_card(
             label="個人の日目標",
             current_amount=personal_total_amount,
             target_amount=personal_target_amount,
             helper_text=f"{member.name}さんの当日累計",
-            target_source="本人の日目標",
+            target_source="本人の日目標" if personal_target_amount or personal_target_count else "",
         ),
         _build_demo_progress_card(
             label="全体の日目標",
             current_amount=department_day_total,
             target_amount=department_day_target,
             helper_text=f"{selected_department_code or '-'} の当日累計",
-            target_source="部署全体の日目標",
+            target_source="部署全体の日目標" if department_day_target else "",
         ),
         _build_demo_progress_card(
             label="路程目標",
             current_amount=period_total_amount,
             target_amount=period_target_amount,
             helper_text=period_label,
-            target_source=period_target_source or "保存済み路程目標がない場合のサンプル値",
+            target_source=period_target_source,
         ),
         _build_demo_progress_card(
             label="月目標",
             current_amount=month_total_amount,
             target_amount=month_target_amount,
             helper_text=month_label,
-            target_source=month_target_source or "保存済み月目標がない場合のサンプル値",
+            target_source=month_target_source,
         ),
     ]
-    sample_transactions = [
-        {
-            "sequence": 1,
-            "time_label": "10:05",
-            "amount": 1000,
-            "age_band": "70代",
-            "gender": "女性",
-            "nationality": "国内",
-            "location": "渋谷駅前",
-            "comment": "早坂さんとの一体化での勝利",
-            "mail_status": "送信済み",
+
+    transactions = []
+    if existing_entry:
+        for tx in existing_entry.transactions.all():
+            transactions.append(
+                {
+                    "id": tx.id,
+                    "time_label": timezone.localtime(tx.created_at).strftime("%H:%M"),
+                    "amount": tx.support_amount,
+                    "age_band": tx.get_age_band_display(),
+                    "gender": tx.get_gender_display(),
+                    "nationality": tx.get_nationality_type_display(),
+                    "location": tx.location,
+                    "comment": tx.comment,
+                    "mail_status": _transaction_mail_status(tx),
+                }
+            )
+
+    sent_mail_histories = []
+    if selected_department_obj:
+        sent_mail_qs = MailSendHistory.objects.filter(
+            department=selected_department_obj,
+            activity_date=entry_date,
+            status=MailSendHistory.STATUS_SENT,
+            is_test=False,
+        ).select_related("recipient_group")
+        for history in sent_mail_qs:
+            summary = history.body_snapshot.splitlines()[0] if history.body_snapshot else ""
+            sent_mail_histories.append(
+                {
+                    "sent_at": timezone.localtime(history.sent_at).strftime("%H:%M") if history.sent_at else "-",
+                    "subject": history.subject_snapshot,
+                    "recipient_group": history.recipient_group.name if history.recipient_group else history.sent_to_snapshot,
+                    "summary": summary,
+                }
+            )
+
+    personal_setup_form = personal_setup_form or DairymetricsV2PersonalSetupForm(
+        member=member,
+        initial={
+            "department": selected_department_obj,
+            "entry_date": entry_date,
+            "daily_target_count": personal_target_count or 1,
+            "daily_target_amount": personal_target_amount or 6000,
         },
-        {
-            "sequence": 2,
-            "time_label": "11:40",
-            "amount": 2000,
-            "age_band": "30代",
-            "gender": "男性",
-            "nationality": "海外",
-            "location": "駅前デッキ",
-            "comment": "短時間で決済まで到達したケース",
-            "mail_status": "未送信",
+    )
+    department_target_form = department_target_form or DairymetricsV2DepartmentTargetForm(
+        initial={
+            "entry_date": entry_date,
+            "daily_target_amount": department_day_target or 10000,
+        }
+    )
+    transaction_form = transaction_form or DairymetricsV2TransactionForm(
+        initial={
+            "support_amount": 1000,
+            "location": "",
+            "age_band": MemberMetricTransaction.AGE_BAND_SEVENTIES,
+            "gender": MemberMetricTransaction.GENDER_FEMALE,
+            "nationality_type": MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            "comment": "",
+        }
+    )
+    closeout_form = closeout_form or DairymetricsV2CloseoutForm(
+        instance=existing_entry,
+        initial={
+            "approach_count": getattr(existing_entry, "approach_count", 0),
+            "communication_count": getattr(existing_entry, "communication_count", 0),
         },
-    ]
-    sample_sent_mails = [
-        {
-            "sent_at": "10:08",
-            "subject": f"{entry_date.month}/{entry_date.day}{member.name}です({selected_department_code or 'UN①'})",
-            "recipient_group": "当日共有グループA",
-            "summary": "会員1名 1,000円 / 日目まで 24,000円",
-        },
-        {
-            "sent_at": "10:46",
-            "subject": f"{entry_date.month}/{entry_date.day}{member.name}です({selected_department_code or 'UN①'})",
-            "recipient_group": "当日共有グループB",
-            "summary": "再送: コメント修正版",
-        },
-    ]
+    )
+
+    preview_payload = None
+    if preview_transaction:
+        preview_payload = _build_transaction_mail_preview(
+            member=member,
+            department_code=selected_department_code,
+            transaction_obj=preview_transaction,
+            progress_cards=progress_cards,
+        )
+
+    personal_target_count_value = str(personal_setup_form["daily_target_count"].value() or "1")
+    personal_target_amount_value = str(personal_setup_form["daily_target_amount"].value() or "6000")
+    department_target_amount_value = str(department_target_form["daily_target_amount"].value() or "10000")
+    transaction_amount_value = str(transaction_form["support_amount"].value() or "1000")
+    transaction_age_band_value = transaction_form["age_band"].value() or MemberMetricTransaction.AGE_BAND_SEVENTIES
+
     return {
         **base_context,
         "progress_cards": progress_cards,
-        "sample_transactions": sample_transactions,
-        "sample_sent_mails": sample_sent_mails,
+        "transactions": transactions,
+        "sent_mail_histories": sent_mail_histories,
         "selected_department_name": getattr(selected_department_obj, "name", selected_department_code),
-        "demo_mail_subject": f"{entry_date.month}/{entry_date.day}{member.name}です({selected_department_code or 'UN①'})",
-        "demo_mail_comment": "早坂さんとの一体化での勝利",
-        "demo_mail_location": "渋谷駅前",
-        "demo_mail_amount": 1000,
-        "demo_mail_age_band": "70代",
-        "demo_mail_gender": "女性",
-        "demo_mail_nationality": "国内",
-        "demo_department_daily_target": department_day_target,
-        "demo_department_daily_total": department_day_total,
-        "demo_member_name": member.name,
-        "has_personal_target": bool(raw_personal_target_amount),
-        "has_department_target": bool(raw_department_day_target),
+        "department_summary": department_summary,
+        "entry": existing_entry,
+        "has_personal_target": bool(personal_target_amount or personal_target_count),
+        "has_department_target": bool(department_day_target),
         "department_target_entry_date": entry_date,
+        "personal_setup_form": personal_setup_form,
+        "department_target_form": department_target_form,
+        "transaction_form": transaction_form,
+        "closeout_form": closeout_form,
+        "status_message": status_message,
+        "open_entry_panel": open_entry_panel,
+        "open_department_target_panel": open_department_target_panel,
+        "open_closeout_panel": open_closeout_panel,
+        "preview_payload": preview_payload,
+        "preview_transaction": preview_transaction,
+        "target_count_options": ENTRY_V2_TARGET_COUNT_OPTIONS,
+        "target_amount_options": ENTRY_V2_TARGET_AMOUNT_OPTIONS,
+        "transaction_amount_options": ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS,
+        "personal_target_count_value": personal_target_count_value,
+        "personal_target_amount_value": personal_target_amount_value,
+        "department_target_amount_value": department_target_amount_value,
+        "transaction_amount_value": transaction_amount_value,
+        "show_student_field": transaction_age_band_value
+        in {
+            MemberMetricTransaction.AGE_BAND_TEENS,
+            MemberMetricTransaction.AGE_BAND_TWENTIES,
+        },
     }
 
 
@@ -1007,12 +1166,219 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
     if not member:
         return redirect("dairymetrics_dashboard")
 
-    entry_date = parse_date((request.GET.get("date") or "").strip()) or timezone.localdate()
-    selected_department = (request.GET.get("department") or "").strip()
+    raw_department_code = (
+        request.POST.get("department_code")
+        or request.POST.get("department")
+        or request.GET.get("department")
+        or ""
+    ).strip()
+    raw_entry_date = (
+        request.POST.get("entry_date")
+        or request.POST.get("target_entry_date")
+        or request.GET.get("date")
+        or ""
+    ).strip()
+    entry_date = parse_date(raw_entry_date) or timezone.localdate()
+    selected_department = raw_department_code
+
+    status_message = ""
+    open_entry_panel = False
+    open_department_target_panel = False
+    open_closeout_panel = False
+    personal_setup_form = None
+    department_target_form = None
+    transaction_form = None
+    closeout_form = None
+
+    if request.method == "POST":
+        action = (request.POST.get("action") or "").strip()
+        selected_department = raw_department_code
+        selected_department_obj = Department.objects.filter(
+            is_active=True,
+            code=selected_department,
+            member_links__member=member,
+        ).distinct().first()
+
+        if action == "save_personal_setup":
+            personal_setup_form = DairymetricsV2PersonalSetupForm(request.POST, member=member)
+            if personal_setup_form.is_valid():
+                selected_department_obj = personal_setup_form.cleaned_data["department"]
+                selected_department = selected_department_obj.code
+                entry_date = personal_setup_form.cleaned_data["entry_date"]
+                entry, _ = MemberDailyMetricEntry.objects.get_or_create(
+                    member=member,
+                    department=selected_department_obj,
+                    entry_date=entry_date,
+                    defaults={"input_source": MemberDailyMetricEntry.SOURCE_MEMBER},
+                )
+                entry.daily_target_count = personal_setup_form.cleaned_data["daily_target_count"]
+                entry.daily_target_amount = personal_setup_form.cleaned_data["daily_target_amount"]
+                entry.input_source = MemberDailyMetricEntry.SOURCE_MEMBER
+                entry.save(
+                    update_fields=[
+                        "daily_target_count",
+                        "daily_target_amount",
+                        "input_source",
+                        "updated_at",
+                    ]
+                )
+                _get_or_create_department_daily_summary(
+                    department=selected_department_obj,
+                    entry_date=entry_date,
+                    member=member,
+                )
+                return redirect(
+                    _build_v2_redirect_url(
+                        department_code=selected_department,
+                        entry_date=entry_date,
+                        saved="personal_setup",
+                    )
+                )
+            selected_department_obj = personal_setup_form.fields["department"].queryset.filter(
+                pk=request.POST.get("department")
+            ).first()
+            if selected_department_obj:
+                selected_department = selected_department_obj.code
+            status_message = "個人の日目標を確認してください。"
+        elif action == "save_department_target":
+            if not selected_department_obj:
+                status_message = "部署を選択してください。"
+            else:
+                department_target_form = DairymetricsV2DepartmentTargetForm(request.POST)
+                if department_target_form.is_valid():
+                    entry_date = department_target_form.cleaned_data["entry_date"]
+                    summary = _get_or_create_department_daily_summary(
+                        department=selected_department_obj,
+                        entry_date=entry_date,
+                        member=member,
+                    )
+                    summary.daily_target_amount = department_target_form.cleaned_data["daily_target_amount"]
+                    if summary.created_by_id is None:
+                        summary.created_by = member
+                    summary.updated_by = member
+                    summary.save(update_fields=["daily_target_amount", "created_by", "updated_by", "updated_at"])
+                    return redirect(
+                        _build_v2_redirect_url(
+                            department_code=selected_department,
+                            entry_date=entry_date,
+                            saved="department_target",
+                        )
+                    )
+                status_message = "部署全体の日目標を確認してください。"
+                open_department_target_panel = True
+        elif action in {"save_transaction", "save_transaction_preview"}:
+            if not selected_department_obj:
+                status_message = "部署を選択してください。"
+            else:
+                transaction_form = DairymetricsV2TransactionForm(request.POST)
+                if transaction_form.is_valid():
+                    entry, _ = MemberDailyMetricEntry.objects.get_or_create(
+                        member=member,
+                        department=selected_department_obj,
+                        entry_date=entry_date,
+                        defaults={"input_source": MemberDailyMetricEntry.SOURCE_MEMBER},
+                    )
+                    transaction_obj = transaction_form.save(commit=False)
+                    transaction_obj.entry = entry
+                    transaction_obj.save()
+                    entry.recalculate_from_transactions()
+                    summary = _get_or_create_department_daily_summary(
+                        department=selected_department_obj,
+                        entry_date=entry_date,
+                        member=member,
+                    )
+                    summary.recalculate_from_entries()
+                    return redirect(
+                        _build_v2_redirect_url(
+                            department_code=selected_department,
+                            entry_date=entry_date,
+                            saved="transaction",
+                            preview_tx=transaction_obj.id if action == "save_transaction_preview" else None,
+                        )
+                    )
+                status_message = "決済明細を確認してください。"
+                open_entry_panel = True
+        elif action == "save_closeout":
+            if not selected_department_obj:
+                status_message = "部署を選択してください。"
+            else:
+                entry = MemberDailyMetricEntry.objects.filter(
+                    member=member,
+                    department=selected_department_obj,
+                    entry_date=entry_date,
+                ).first()
+                if not entry:
+                    status_message = "先に決済を登録してください。"
+                    open_closeout_panel = True
+                else:
+                    closeout_form = DairymetricsV2CloseoutForm(request.POST, instance=entry)
+                    if closeout_form.is_valid():
+                        closeout_entry = closeout_form.save(commit=False)
+                        closeout_entry.activity_closed = True
+                        closeout_entry.activity_closed_at = timezone.now()
+                        closeout_entry.input_source = MemberDailyMetricEntry.SOURCE_MEMBER
+                        closeout_entry.save(
+                            update_fields=[
+                                "approach_count",
+                                "communication_count",
+                                "activity_closed",
+                                "activity_closed_at",
+                                "input_source",
+                                "updated_at",
+                            ]
+                        )
+                        summary = _get_or_create_department_daily_summary(
+                            department=selected_department_obj,
+                            entry_date=entry_date,
+                            member=member,
+                        )
+                        summary.recalculate_from_entries()
+                        return redirect(
+                            _build_v2_redirect_url(
+                                department_code=selected_department,
+                                entry_date=entry_date,
+                                saved="closeout",
+                            )
+                        )
+                    status_message = "最終実績の入力内容を確認してください。"
+                    open_closeout_panel = True
+
+    preview_transaction = None
+    preview_tx_id = request.GET.get("preview_tx")
+    if preview_tx_id and preview_tx_id.isdigit():
+        preview_transaction = (
+            MemberMetricTransaction.objects.filter(
+                id=int(preview_tx_id),
+                entry__member=member,
+                entry__department__code=selected_department,
+                entry__entry_date=entry_date,
+            )
+            .select_related("entry", "entry__department")
+            .first()
+        )
+
+    if not status_message:
+        saved = (request.GET.get("saved") or "").strip()
+        status_message = {
+            "personal_setup": "個人の日目標を保存しました。",
+            "department_target": "部署全体の日目標を保存しました。",
+            "transaction": "決済明細を登録しました。",
+            "closeout": "活動終了時の最終実績を保存しました。",
+        }.get(saved, "")
+
     context = _build_entry_v2_transaction_demo_context(
         member=member,
         selected_department=selected_department,
         entry_date=entry_date,
+        personal_setup_form=personal_setup_form,
+        department_target_form=department_target_form,
+        transaction_form=transaction_form,
+        closeout_form=closeout_form,
+        status_message=status_message,
+        open_entry_panel=open_entry_panel,
+        open_department_target_panel=open_department_target_panel,
+        open_closeout_panel=open_closeout_panel,
+        preview_transaction=preview_transaction,
     )
     return render(request, "dairymetrics/entry_form_v2_transaction_demo.html", context)
 

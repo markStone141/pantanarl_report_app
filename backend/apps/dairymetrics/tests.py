@@ -7,11 +7,14 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.mail.models import MailSendHistory, MailRecipientGroup
 from apps.targets.models import DepartmentMonthTarget, DepartmentPeriodTarget, Period, TARGET_STATUS_ACTIVE
 
 from .forms import MemberDailyMetricEntryForm
 from .models import (
+    DepartmentDailyMetricSummary,
     MemberDailyMetricEntry,
+    MemberMetricTransaction,
     MemberMonthMetricTarget,
     MemberPeriodMetricTarget,
     MetricAdjustment,
@@ -290,7 +293,7 @@ class DairyMetricsDashboardTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "決済登録 v2 サンプル")
+        self.assertContains(response, "決済登録 v2")
         self.assertContains(response, "全体の日目標")
         self.assertContains(response, "路程目標")
         self.assertContains(response, "月目標")
@@ -299,7 +302,8 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "登録してメール送信")
         self.assertContains(response, "登録して閉じる")
         self.assertContains(response, "13,000")
-        self.assertNotContains(response, "活動前の準備")
+        self.assertContains(response, "活動前の準備")
+        self.assertContains(response, "部署全体の日目標を入力")
         self.assertContains(response, "1,000円")
         self.assertContains(response, "5,000円")
         self.assertContains(response, "直接入力")
@@ -332,6 +336,150 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "全体目標を保存")
         self.assertNotContains(response, "入力内容を確定")
         self.assertNotContains(response, "<span class=\"muted\">対象</span>", html=True)
+
+    def test_entry_v2_transaction_demo_saves_personal_target_entry(self):
+        self.client.force_login(self.user)
+        entry_date = timezone.localdate()
+
+        response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "save_personal_setup",
+                "department": self.department.id,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "daily_target_count": "3",
+                "daily_target_amount": "6000",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=personal_setup",
+        )
+        entry = MemberDailyMetricEntry.objects.get(member=self.member, department=self.department, entry_date=entry_date)
+        self.assertEqual(entry.daily_target_count, 3)
+        self.assertEqual(entry.daily_target_amount, 6000)
+
+    def test_entry_v2_transaction_demo_saves_department_daily_target_summary(self):
+        self.client.force_login(self.user)
+        entry_date = timezone.localdate() + timedelta(days=1)
+
+        response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "save_department_target",
+                "department_code": self.department.code,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "daily_target_amount": "20000",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=department_target",
+        )
+        summary = DepartmentDailyMetricSummary.objects.get(department=self.department, entry_date=entry_date)
+        self.assertEqual(summary.daily_target_amount, 20000)
+        self.assertEqual(summary.created_by, self.member)
+        self.assertEqual(summary.updated_by, self.member)
+
+    def test_entry_v2_transaction_demo_saves_transaction_and_updates_totals(self):
+        entry_date = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "save_transaction",
+                "department_code": self.department.code,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "support_amount": "1500",
+                "location": "渋谷駅前",
+                "age_band": MemberMetricTransaction.AGE_BAND_SEVENTIES,
+                "gender": MemberMetricTransaction.GENDER_FEMALE,
+                "nationality_type": MemberMetricTransaction.NATIONALITY_DOMESTIC,
+                "comment": "テストコメント",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=transaction",
+        )
+        entry = MemberDailyMetricEntry.objects.get(member=self.member, department=self.department, entry_date=entry_date)
+        self.assertEqual(entry.result_count, 1)
+        self.assertEqual(entry.support_amount, 1500)
+        summary = DepartmentDailyMetricSummary.objects.get(department=self.department, entry_date=entry_date)
+        self.assertEqual(summary.result_count, 1)
+        self.assertEqual(summary.support_amount, 1500)
+
+    def test_entry_v2_transaction_demo_closeout_updates_entry_and_shows_department_mail_history(self):
+        entry_date = timezone.localdate()
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=2000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            is_student=True,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="駅前",
+            comment="一体化",
+        )
+        entry.recalculate_from_transactions()
+        recipient_group = MailRecipientGroup.objects.create(name="共有A")
+        MailSendHistory.objects.create(
+            department=self.department,
+            activity_date=entry_date,
+            sender_member=self.member,
+            transaction=transaction,
+            recipient_group=recipient_group,
+            subject_snapshot="5/14Memberです(WV)",
+            body_snapshot="会員1名 2,000円",
+            status=MailSendHistory.STATUS_SENT,
+            sent_at=timezone.now(),
+        )
+        self.client.force_login(self.user)
+
+        closeout_response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "save_closeout",
+                "department_code": self.department.code,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "approach_count": "12",
+                "communication_count": "7",
+            },
+        )
+
+        self.assertRedirects(
+            closeout_response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=closeout",
+        )
+        entry.refresh_from_db()
+        self.assertEqual(entry.approach_count, 12)
+        self.assertEqual(entry.communication_count, 7)
+        self.assertTrue(entry.activity_closed)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+        self.assertContains(response, "共有A")
+        self.assertContains(response, "会員1名 2,000円")
 
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")

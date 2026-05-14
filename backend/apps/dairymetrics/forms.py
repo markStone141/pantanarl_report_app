@@ -4,7 +4,14 @@ from django.utils import timezone
 
 from apps.accounts.models import Department, Member
 
-from .models import MemberDailyMetricEntry, MemberMonthMetricTarget, MemberPeriodMetricTarget, MetricAdjustment
+from .models import (
+    DepartmentDailyMetricSummary,
+    MemberDailyMetricEntry,
+    MemberMetricTransaction,
+    MemberMonthMetricTarget,
+    MemberPeriodMetricTarget,
+    MetricAdjustment,
+)
 
 
 class DairyMetricsLoginForm(forms.Form):
@@ -290,3 +297,94 @@ class MemberScopeTargetForm(forms.Form):
         instance.target_amount = self.cleaned_data["target_amount"]
         instance.save()
         return instance
+
+
+class DairymetricsV2PersonalSetupForm(forms.Form):
+    department = forms.ModelChoiceField(queryset=Department.objects.none(), label="部署")
+    entry_date = forms.DateField(
+        label="活動日",
+        widget=forms.DateInput(attrs={"type": "date", "class": "dairymetrics-native-date dairymetrics-date-input"}),
+    )
+    daily_target_count = forms.IntegerField(label="個人の件数目標", min_value=0, initial=0)
+    daily_target_amount = forms.IntegerField(label="個人の金額目標", min_value=0, initial=0)
+
+    def __init__(self, *args, member=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        departments = Department.objects.filter(is_active=True)
+        if member is not None:
+            departments = departments.filter(member_links__member=member).distinct()
+        self.fields["department"].queryset = departments.order_by("code")
+
+
+class DairymetricsV2DepartmentTargetForm(forms.ModelForm):
+    class Meta:
+        model = DepartmentDailyMetricSummary
+        fields = ["entry_date", "daily_target_amount"]
+        widgets = {
+            "entry_date": forms.DateInput(attrs={"type": "date", "class": "dairymetrics-native-date dairymetrics-date-input"}),
+        }
+        labels = {
+            "entry_date": "全体目標の対象日",
+            "daily_target_amount": "全体目標金額",
+        }
+
+    def __init__(self, *args, department=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.department = department
+        self.fields["daily_target_amount"].min_value = 0
+
+
+class DairymetricsV2TransactionForm(forms.ModelForm):
+    class Meta:
+        model = MemberMetricTransaction
+        fields = ["support_amount", "location", "age_band", "is_student", "gender", "nationality_type", "comment"]
+        widgets = {
+            "comment": forms.Textarea(attrs={"rows": 4}),
+        }
+        labels = {
+            "support_amount": "決済金額",
+            "location": "場所",
+            "age_band": "年代",
+            "is_student": "学生",
+            "gender": "性別",
+            "nationality_type": "国籍分類",
+            "comment": "コメント",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["support_amount"].min_value = 0
+
+    def clean(self):
+        cleaned_data = super().clean()
+        age_band = cleaned_data.get("age_band")
+        if age_band not in {
+            MemberMetricTransaction.AGE_BAND_TEENS,
+            MemberMetricTransaction.AGE_BAND_TWENTIES,
+        }:
+            cleaned_data["is_student"] = False
+        return cleaned_data
+
+
+class DairymetricsV2CloseoutForm(forms.ModelForm):
+    class Meta:
+        model = MemberDailyMetricEntry
+        fields = ["approach_count", "communication_count"]
+        labels = {
+            "approach_count": "アプローチ",
+            "communication_count": "コミュニケーション",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in ("approach_count", "communication_count"):
+            self.fields[field_name].min_value = 0
+            self.fields[field_name].required = False
+            self.fields[field_name].initial = self.initial.get(field_name, 0)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        for field_name in ("approach_count", "communication_count"):
+            if cleaned_data.get(field_name) in {None, ""}:
+                cleaned_data[field_name] = 0
+        return cleaned_data
