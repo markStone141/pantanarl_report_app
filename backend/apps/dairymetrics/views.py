@@ -13,7 +13,8 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from apps.accounts.models import Department, Member
-from apps.mail.models import MailSendHistory
+from apps.mail.models import MailRecipientGroup, MailSendHistory
+from apps.mail.services import send_transaction_mail_mock
 from apps.targets.models import DepartmentMonthTarget, DepartmentPeriodTarget, Period
 
 from .auth import get_member_profile, require_dairymetrics_admin, require_dairymetrics_member
@@ -432,7 +433,17 @@ def _build_entry_v2_transaction_demo_context(
             )
 
     sent_mail_histories = []
+    available_mail_groups = []
     if selected_department_obj:
+        available_mail_groups = list(
+            MailRecipientGroup.objects.filter(is_active=True)
+            .filter(department=selected_department_obj)
+            .order_by("name")
+        )
+        if not available_mail_groups:
+            available_mail_groups = list(
+                MailRecipientGroup.objects.filter(is_active=True, department__isnull=True).order_by("name")
+            )
         sent_mail_qs = MailSendHistory.objects.filter(
             department=selected_department_obj,
             activity_date=entry_date,
@@ -524,6 +535,7 @@ def _build_entry_v2_transaction_demo_context(
         "open_closeout_panel": open_closeout_panel,
         "preview_payload": preview_payload,
         "preview_transaction": preview_transaction,
+        "available_mail_groups": available_mail_groups,
         "target_count_options": ENTRY_V2_TARGET_COUNT_OPTIONS,
         "target_amount_options": ENTRY_V2_TARGET_AMOUNT_OPTIONS,
         "transaction_amount_options": ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS,
@@ -1247,6 +1259,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
     department_target_form = None
     transaction_form = None
     closeout_form = None
+    selected_mail_group_id = (request.POST.get("recipient_group") or request.GET.get("recipient_group") or "").strip()
 
     if request.method == "POST":
         action = (request.POST.get("action") or "").strip()
@@ -1359,6 +1372,57 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                     )
                 status_message = "決済明細を確認してください。"
                 open_entry_panel = True
+        elif action == "send_transaction_mock":
+            preview_tx_id = (request.POST.get("preview_transaction_id") or "").strip()
+            if not selected_department_obj or not preview_tx_id.isdigit():
+                status_message = "送信対象の決済を確認してください。"
+            else:
+                preview_transaction = (
+                    MemberMetricTransaction.objects.filter(
+                        id=int(preview_tx_id),
+                        entry__member=member,
+                        entry__department=selected_department_obj,
+                        entry__entry_date=entry_date,
+                    )
+                    .select_related("entry", "entry__department")
+                    .first()
+                )
+                if not preview_transaction:
+                    status_message = "送信対象の決済が見つかりません。"
+                else:
+                    recipient_group = MailRecipientGroup.objects.filter(
+                        id=request.POST.get("recipient_group"),
+                        is_active=True,
+                    ).first()
+                    if not recipient_group:
+                        status_message = "送信先グループを選択してください。"
+                    else:
+                        preview_context = _build_entry_v2_transaction_demo_context(
+                            member=member,
+                            selected_department=selected_department,
+                            entry_date=entry_date,
+                            preview_transaction=preview_transaction,
+                        )
+                        preview_payload = preview_context["preview_payload"] or _build_transaction_mail_preview(
+                            member=member,
+                            department_code=selected_department,
+                            transaction_obj=preview_transaction,
+                            progress_cards=preview_context["progress_cards"],
+                        )
+                        send_transaction_mail_mock(
+                            sender_member=member,
+                            transaction=preview_transaction,
+                            recipient_group=recipient_group,
+                            subject=preview_payload["subject"],
+                            body=preview_payload["body"],
+                        )
+                        return redirect(
+                            _build_v2_redirect_url(
+                                department_code=selected_department,
+                                entry_date=entry_date,
+                                saved="mail_sent",
+                            )
+                        )
         elif action == "save_closeout":
             if not selected_department_obj:
                 status_message = "部署を選択してください。"
@@ -1424,6 +1488,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
             "personal_setup": "個人の日目標を保存しました。",
             "department_target": "部署全体の日目標を保存しました。",
             "transaction": "決済明細を登録しました。",
+            "mail_sent": "メールを送信した前提で履歴を保存しました。",
             "closeout": "活動終了時の最終実績を保存しました。",
         }.get(saved, "")
 
@@ -1442,6 +1507,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
         open_closeout_panel=open_closeout_panel,
         preview_transaction=preview_transaction,
     )
+    context["selected_mail_group_id"] = selected_mail_group_id
     return render(request, "dairymetrics/entry_form_v2_transaction_demo.html", context)
 
 

@@ -463,18 +463,35 @@
     <section class="dairymetrics-v2-mail-preview-card card" id="dairymetrics-v2-mail-preview" {% if not preview_payload %}hidden{% endif %}>
       <div class="dairymetrics-v2-demo-head">
         <h3>送信本文プレビュー</h3>
-        <p class="muted">送信処理自体はまだ未接続です。今は transaction から本文を生成するところまで繋いでいます。</p>
+        <p class="muted">今は mock 送信です。履歴だけ保存して、当日送信メール一覧に反映します。</p>
       </div>
       {% if preview_payload %}
       <div class="dairymetrics-v2-mail-subject">
         件名: <strong>{{ preview_payload.subject }}</strong>
       </div>
       <pre class="dairymetrics-v2-mail-body">{{ preview_payload.body }}</pre>
-      {% endif %}
-      <div class="dairymetrics-v2-transaction-actions">
+      <form method="post" class="dairymetrics-v2-transaction-actions">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="send_transaction_mock">
+        <input type="hidden" name="department_code" value="{{ selected_department_code }}">
+        <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
+        <input type="hidden" name="preview_transaction_id" value="{{ preview_transaction.id }}">
+        <div class="dairymetrics-field dairymetrics-field-full">
+          <label for="v2-mail-recipient-group">送信先グループ</label>
+          <select id="v2-mail-recipient-group" name="recipient_group">
+            <option value="">グループを選択</option>
+            {% for group in available_mail_groups %}
+            <option value="{{ group.id }}" {% if selected_mail_group_id == group.id|stringformat:"s" %}selected{% endif %}>{{ group.name }}</option>
+            {% endfor %}
+          </select>
+          {% if not available_mail_groups %}
+          <div class="muted">先にメールグループ管理で送信先グループを作成してください。</div>
+          {% endif %}
+        </div>
         <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}?department={{ selected_department_code }}&date={{ entry_date|date:'Y-m-d' }}" class="btn-inline dairymetrics-secondary-btn">戻る</a>
-        <button type="button" class="btn-inline" disabled>送信確定（未実装）</button>
-      </div>
+        <button type="submit" class="btn-inline dairymetrics-save-btn" {% if not available_mail_groups %}disabled{% endif %}>送信確定</button>
+      </form>
+      {% endif %}
     </section>
 
     <section class="dairymetrics-v2-demo-card dairymetrics-v2-closeout-card">

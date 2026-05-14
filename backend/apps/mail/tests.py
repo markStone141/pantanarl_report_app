@@ -1,10 +1,14 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.accounts.models import Department, Member
 
-from .models import MailIntegrationSetting, MailRecipientGroup
+from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction
+
+from .models import MailIntegrationSetting, MailRecipientGroup, MailSendHistory
+from .services import send_transaction_mail_mock
 
 
 User = get_user_model()
@@ -81,3 +85,38 @@ class MailManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "alice@example.com")
         self.assertContains(response, "bob@example.com")
+
+    def test_send_transaction_mail_mock_creates_sent_history(self):
+        group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)
+        group.members.set([self.member_one, self.member_two])
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member_one,
+            department=self.department,
+            entry_date=timezone.localdate(),
+            daily_target_count=1,
+            daily_target_amount=3000,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=1000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            is_student=True,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+            comment="テスト",
+        )
+
+        history = send_transaction_mail_mock(
+            sender_member=self.member_one,
+            transaction=transaction,
+            recipient_group=group,
+            subject="件名",
+            body="本文",
+        )
+
+        self.assertEqual(history.status, MailSendHistory.STATUS_SENT)
+        self.assertEqual(history.transaction, transaction)
+        self.assertEqual(history.recipient_group, group)
+        self.assertIn("alice@example.com", history.sent_to_snapshot)
+        self.assertIn("bob@example.com", history.sent_to_snapshot)

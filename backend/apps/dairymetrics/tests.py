@@ -531,6 +531,8 @@ class DairyMetricsDashboardTests(TestCase):
             daily_target_count=2,
             daily_target_amount=4000,
         )
+        self.member.email = "member-two@example.com"
+        self.member.save(update_fields=["email"])
         transaction = MemberMetricTransaction.objects.create(
             entry=entry,
             support_amount=2000,
@@ -582,6 +584,57 @@ class DairyMetricsDashboardTests(TestCase):
         )
         self.assertContains(response, "共有A")
         self.assertContains(response, "会員1名 2,000円")
+
+    def test_entry_v2_transaction_demo_mock_send_creates_mail_history_and_shows_it(self):
+        entry_date = timezone.localdate()
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=1500,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            is_student=True,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+            comment="テストコメント",
+        )
+        entry.recalculate_from_transactions()
+        self.client.force_login(self.user)
+        recipient_group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)
+        recipient_group.members.add(self.member)
+
+        response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "send_transaction_mock",
+                "department_code": self.department.code,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "preview_transaction_id": str(transaction.id),
+                "recipient_group": str(recipient_group.id),
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=mail_sent",
+        )
+        history = MailSendHistory.objects.get(transaction=transaction, recipient_group=recipient_group)
+        self.assertEqual(history.status, MailSendHistory.STATUS_SENT)
+        self.assertEqual(history.sender_member, self.member)
+        self.assertIn(self.member.email, history.sent_to_snapshot)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+        self.assertContains(response, "共有B")
+        self.assertContains(response, history.subject_snapshot)
 
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")
