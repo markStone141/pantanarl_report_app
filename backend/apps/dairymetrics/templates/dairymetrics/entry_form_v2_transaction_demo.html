@@ -34,28 +34,6 @@
       <div class="note">既存運用には未接続です。今回のサンプルは UI と流れの確認用です。</div>
     </div>
 
-    <form method="get" class="dairymetrics-v2-context-grid">
-      <div class="dairymetrics-field">
-        <label for="dairymetrics-v2x-department">部署</label>
-        <select id="dairymetrics-v2x-department" name="department">
-          {% for department in departments %}
-          <option value="{{ department.code }}" {% if selected_department_code == department.code %}selected{% endif %}>{{ department.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="dairymetrics-field">
-        <label for="dairymetrics-v2x-date">日付</label>
-        <div class="dairymetrics-date-wrap">
-          <div class="dairymetrics-date-field">
-            <input id="dairymetrics-v2x-date" class="dairymetrics-date-input" type="date" name="date" value="{{ entry_date|date:'Y-m-d' }}">
-          </div>
-        </div>
-      </div>
-      <div class="dairymetrics-field dairymetrics-v2-context-actions">
-        <button type="submit" class="btn-inline dairymetrics-secondary-btn">この条件で見る</button>
-      </div>
-    </form>
-
     {% if not has_personal_target or not has_department_target %}
     <section class="dairymetrics-v2-setup-card">
       <div class="dairymetrics-v2-setup-head">
@@ -72,6 +50,14 @@
           <p class="muted">{{ member.name }}さんが今日活動するための準備です。</p>
         </div>
         <div class="dairymetrics-v2-transaction-form">
+          <div class="dairymetrics-field">
+            <label for="dairymetrics-v2x-setup-department">部署</label>
+            <select id="dairymetrics-v2x-setup-department">
+              {% for department in departments %}
+              <option value="{{ department.code }}" {% if selected_department_code == department.code %}selected{% endif %}>{{ department.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
           <div class="dairymetrics-field">
             <label for="dairymetrics-v2x-setup-date">活動日</label>
             <div class="dairymetrics-date-wrap">
