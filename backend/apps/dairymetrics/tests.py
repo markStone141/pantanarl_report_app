@@ -376,6 +376,8 @@ class DairyMetricsDashboardTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'id="v2-personal-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{entry_date.strftime("%Y-%m-%d")}"', html=False)
+        self.assertContains(response, f'id="v2-dept-target-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{entry_date.strftime("%Y-%m-%d")}"', html=False)
         self.assertContains(response, 'id="v2-personal-target-count-hidden" value="1"', html=False)
         self.assertContains(response, 'id="v2-personal-target-amount-hidden" value="3000"', html=False)
         self.assertContains(response, 'id="v2-dept-target-amount-hidden" value="10000"', html=False)

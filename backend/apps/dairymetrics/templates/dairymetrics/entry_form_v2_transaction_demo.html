@@ -68,7 +68,7 @@
               <label for="v2-personal-date">活動日</label>
               <div class="dairymetrics-date-wrap">
                 <div class="dairymetrics-date-field">
-                  <input id="v2-personal-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ personal_setup_form.entry_date.value|date:'Y-m-d'|default:entry_date|date:'Y-m-d' }}">
+                  <input id="v2-personal-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ personal_entry_date_value }}">
                 </div>
               </div>
               {% if personal_setup_form.entry_date.errors %}<div class="error-text">{{ personal_setup_form.entry_date.errors|striptags }}</div>{% endif %}
@@ -126,7 +126,7 @@
               <label for="v2-dept-target-date">全体目標の対象日</label>
               <div class="dairymetrics-date-wrap">
                 <div class="dairymetrics-date-field">
-                  <input id="v2-dept-target-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ department_target_form.entry_date.value|date:'Y-m-d'|default:entry_date|date:'Y-m-d' }}">
+                  <input id="v2-dept-target-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ department_entry_date_value }}">
                 </div>
               </div>
               {% if department_target_form.entry_date.errors %}<div class="error-text">{{ department_target_form.entry_date.errors|striptags }}</div>{% endif %}
@@ -276,7 +276,7 @@
                 <label for="v2-inline-target-date">全体目標の対象日</label>
                 <div class="dairymetrics-date-wrap">
                   <div class="dairymetrics-date-field">
-                    <input id="v2-inline-target-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ department_target_form.entry_date.value|date:'Y-m-d'|default:entry_date|date:'Y-m-d' }}">
+                    <input id="v2-inline-target-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ department_entry_date_value }}">
                   </div>
                 </div>
               </div>

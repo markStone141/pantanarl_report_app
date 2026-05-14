@@ -495,6 +495,8 @@ def _build_entry_v2_transaction_demo_context(
     department_target_amount_value = str(department_target_form["daily_target_amount"].value() or previous_department_target_amount)
     transaction_amount_value = str(transaction_form["support_amount"].value() or "1000")
     transaction_age_band_value = transaction_form["age_band"].value() or MemberMetricTransaction.AGE_BAND_SEVENTIES
+    personal_entry_date_value = str(personal_setup_form["entry_date"].value() or entry_date.strftime("%Y-%m-%d"))
+    department_entry_date_value = str(department_target_form["entry_date"].value() or entry_date.strftime("%Y-%m-%d"))
 
     return {
         **base_context,
@@ -524,6 +526,8 @@ def _build_entry_v2_transaction_demo_context(
         "personal_target_amount_value": personal_target_amount_value,
         "department_target_amount_value": department_target_amount_value,
         "transaction_amount_value": transaction_amount_value,
+        "personal_entry_date_value": personal_entry_date_value,
+        "department_entry_date_value": department_entry_date_value,
         "show_student_field": transaction_age_band_value
         in {
             MemberMetricTransaction.AGE_BAND_TEENS,
