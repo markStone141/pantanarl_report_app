@@ -271,6 +271,86 @@
         <button type="button" class="btn-inline">送信確定（未実装）</button>
       </div>
     </section>
+
+    <section class="dairymetrics-v2-demo-card dairymetrics-v2-closeout-card">
+      <div class="dairymetrics-v2-demo-head">
+        <h3>活動終了時の最終確認</h3>
+        <p class="muted">`v1` の締め処理に近い見え方で、登録済み決済の合計が入った状態を確認する想定です。</p>
+      </div>
+      <div class="dairymetrics-v2-transaction-actions">
+        <button type="button" class="btn-inline dairymetrics-close-activity-btn" data-open-closeout>活動終了時の最終実績を確認</button>
+      </div>
+      <section class="dairymetrics-v2-closeout-panel" id="dairymetrics-v2-closeout-panel" hidden>
+        <div class="grid dairymetrics-entry-grid dairymetrics-v2-closeout-grid">
+          <div class="dairymetrics-field">
+            <label>部署</label>
+            <input type="text" value="{{ selected_department_name }}" readonly>
+          </div>
+          <div class="dairymetrics-field">
+            <label>日付</label>
+            <div class="dairymetrics-date-wrap">
+              <div class="dairymetrics-date-field">
+                <input class="dairymetrics-date-input" type="date" value="{{ entry_date|date:'Y-m-d' }}" readonly>
+              </div>
+            </div>
+          </div>
+          <div class="dairymetrics-field">
+            <label>件数目標</label>
+            <input type="number" value="{{ progress_cards.0.target_amount|default:0 }}" readonly data-closeout-target-count>
+          </div>
+          <div class="dairymetrics-field">
+            <label>金額目標</label>
+            <input type="number" value="{{ progress_cards.0.target_amount|default:0 }}" readonly data-closeout-target-amount>
+          </div>
+
+          <div class="dairymetrics-field-full dairymetrics-entry-section">
+            <div class="dairymetrics-entry-section-head">現場</div>
+            <div class="dairymetrics-entry-section-grid">
+              <div class="dairymetrics-field">
+                <label>アプローチ</label>
+                <input type="number" value="0" readonly>
+              </div>
+              <div class="dairymetrics-field">
+                <label>コミュニケーション</label>
+                <input type="number" value="0" readonly>
+              </div>
+              {% if selected_department_code == "WV" %}
+              <div class="dairymetrics-field">
+                <label>CS件数</label>
+                <input type="number" value="0" readonly>
+              </div>
+              <div class="dairymetrics-field">
+                <label>難民件数</label>
+                <input type="number" value="0" readonly>
+              </div>
+              {% else %}
+              <div class="dairymetrics-field">
+                <label>件数</label>
+                <input type="number" value="{{ initial_total_count }}" readonly data-closeout-count>
+              </div>
+              {% endif %}
+              <div class="dairymetrics-field">
+                <label>支援金額</label>
+                <input type="number" value="{{ initial_total_amount }}" readonly data-closeout-amount>
+              </div>
+            </div>
+          </div>
+
+          <div class="dairymetrics-field">
+            <label>現場名</label>
+            <input type="text" value="{{ demo_mail_location }}" readonly data-closeout-location>
+          </div>
+          <div class="dairymetrics-field dairymetrics-field-full">
+            <label>メモ</label>
+            <textarea rows="3" readonly data-closeout-memo>{{ demo_mail_comment }}</textarea>
+          </div>
+          <div class="dairymetrics-field-full dairymetrics-form-actions">
+            <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-closeout>閉じる</button>
+            <button type="button" class="btn-inline dairymetrics-close-activity-btn">活動終了（未実装）</button>
+          </div>
+        </div>
+      </section>
+    </section>
   </section>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
@@ -287,6 +367,15 @@
     const genderInput = document.querySelector("[data-mail-gender]");
     const nationalityInput = document.querySelector("[data-mail-nationality]");
     const commentInput = document.querySelector("[data-mail-comment]");
+    const closeoutPanel = document.getElementById("dairymetrics-v2-closeout-panel");
+    const closeoutCountInput = document.querySelector("[data-closeout-count]");
+    const closeoutAmountInput = document.querySelector("[data-closeout-amount]");
+    const closeoutLocationInput = document.querySelector("[data-closeout-location]");
+    const closeoutMemoInput = document.querySelector("[data-closeout-memo]");
+    const closeoutButtons = document.querySelectorAll("[data-open-closeout]");
+    const closeCloseoutButtons = document.querySelectorAll("[data-close-closeout]");
+    const baseCount = {{ initial_total_count|default:0 }};
+    const baseAmount = {{ initial_total_amount|default:0 }};
 
     function yen(value) {
       const number = Number(value || 0);
@@ -302,6 +391,22 @@
 
     function remainingText(current, target) {
       return Math.max(Number(target || 0) - Number(current || 0), 0).toLocaleString("ja-JP");
+    }
+
+    function syncCloseoutPreview() {
+      const amount = getSelectedAmount();
+      if (closeoutCountInput) {
+        closeoutCountInput.value = baseCount + 1;
+      }
+      if (closeoutAmountInput) {
+        closeoutAmountInput.value = baseAmount + amount;
+      }
+      if (closeoutLocationInput) {
+        closeoutLocationInput.value = locationInput?.value || "";
+      }
+      if (closeoutMemoInput) {
+        closeoutMemoInput.value = commentInput?.value || "";
+      }
     }
 
     function renderMailPreview() {
@@ -338,6 +443,7 @@
           yen(personalCurrent + amount) + "/" + yen(personalTarget) + "円"
         ].join("\n");
       }
+      syncCloseoutPreview();
     }
 
     function syncAmountFieldState() {
@@ -353,6 +459,20 @@
     function closeMailPreview() {
       if (previewCard) {
         previewCard.hidden = true;
+      }
+    }
+
+    function openCloseout() {
+      syncCloseoutPreview();
+      if (closeoutPanel) {
+        closeoutPanel.hidden = false;
+        closeoutPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    function closeCloseout() {
+      if (closeoutPanel) {
+        closeoutPanel.hidden = true;
       }
     }
 
@@ -372,6 +492,18 @@
       });
     });
 
+    closeoutButtons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        openCloseout();
+      });
+    });
+
+    closeCloseoutButtons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        closeCloseout();
+      });
+    });
+
     [amountInput, amountSelect, locationInput, ageInput, genderInput, nationalityInput, commentInput].forEach(function (input) {
       input?.addEventListener("input", renderMailPreview);
       input?.addEventListener("change", renderMailPreview);
@@ -385,6 +517,7 @@
     syncAmountFieldState();
     renderMailPreview();
     closeMailPreview();
+    closeCloseout();
   })();
 </script>
 {% endblock %}
