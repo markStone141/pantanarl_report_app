@@ -917,6 +917,68 @@
   gap: 12px;
 }
 
+.dairymetrics-admin-mobile-status-lists {
+  display: none;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dairymetrics-admin-mobile-status-group {
+  display: grid;
+  gap: 10px;
+}
+
+.dairymetrics-admin-mobile-status-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(18, 128, 88, 0.12);
+  color: #1f6d4c;
+}
+
+.dairymetrics-admin-mobile-status-head.is-closed {
+  background: rgba(47, 91, 173, 0.1);
+  color: #2d568d;
+}
+
+.dairymetrics-admin-mobile-status-list {
+  display: grid;
+  gap: 10px;
+}
+
+.dairymetrics-admin-mobile-status-row {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #d6e4ee;
+  background: linear-gradient(180deg, #fbfdff 0%, #f3f8fc 100%);
+  color: inherit;
+}
+
+.dairymetrics-admin-mobile-status-row.is-closed {
+  background: linear-gradient(180deg, #fbfcff 0%, #f0f4fb 100%);
+}
+
+.dairymetrics-admin-mobile-status-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #415667;
+  font-size: 0.9rem;
+}
+
+.dairymetrics-admin-mobile-status-meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(228, 237, 246, 0.95);
+}
+
 .dairymetrics-admin-activity-card {
   display: grid;
   gap: 10px;
@@ -1723,6 +1785,14 @@
   .dairymetrics-admin-activity-grid,
   .dairymetrics-admin-ranking-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dairymetrics-admin-mobile-status-lists {
+    display: grid;
+  }
+
+  .dairymetrics-admin-activity-grid {
+    display: none;
   }
 
   .dairymetrics-range-form {

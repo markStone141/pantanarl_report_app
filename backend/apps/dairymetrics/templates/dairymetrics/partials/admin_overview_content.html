@@ -68,6 +68,60 @@
       <div class="muted">本日更新された順に表示します。</div>
     </div>
   </div>
+  <div class="dairymetrics-admin-mobile-status-lists">
+    <section class="dairymetrics-admin-mobile-status-group">
+      <div class="dairymetrics-admin-mobile-status-head">
+        <strong>活動中</strong>
+      </div>
+      <div class="dairymetrics-admin-mobile-status-list">
+        {% for row in activity_cards %}
+          {% if not row.is_closed %}
+          <a class="dairymetrics-admin-mobile-status-row" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
+            <div>
+              <div class="dairymetrics-admin-activity-name">{{ row.member.name }}</div>
+              <div class="muted">{{ row.department.code }} / {{ row.updated_at|date:'H:i' }} 更新</div>
+            </div>
+            <div class="dairymetrics-admin-mobile-status-meta">
+              <span>{{ row.count_label }} {{ row.count_value }}</span>
+              <span>{{ row.amount_value|intcomma }}円</span>
+              <span>{{ row.location_name|default:"-" }}</span>
+            </div>
+          </a>
+          {% endif %}
+        {% empty %}
+        {% endfor %}
+        {% if submission_summary.target_count == 0 %}
+        <p class="muted">活動中のメンバーはいません。</p>
+        {% endif %}
+      </div>
+    </section>
+    <section class="dairymetrics-admin-mobile-status-group">
+      <div class="dairymetrics-admin-mobile-status-head is-closed">
+        <strong>活動終了</strong>
+      </div>
+      <div class="dairymetrics-admin-mobile-status-list">
+        {% for row in activity_cards %}
+          {% if row.is_closed %}
+          <a class="dairymetrics-admin-mobile-status-row is-closed" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
+            <div>
+              <div class="dairymetrics-admin-activity-name">{{ row.member.name }}</div>
+              <div class="muted">{{ row.department.code }} / {{ row.updated_at|date:'H:i' }} 更新</div>
+            </div>
+            <div class="dairymetrics-admin-mobile-status-meta">
+              <span>{{ row.count_label }} {{ row.count_value }}</span>
+              <span>{{ row.amount_value|intcomma }}円</span>
+              <span>{{ row.location_name|default:"-" }}</span>
+            </div>
+          </a>
+          {% endif %}
+        {% empty %}
+        {% endfor %}
+        {% if submission_summary.submitted_count == 0 %}
+        <p class="muted">活動終了したメンバーはいません。</p>
+        {% endif %}
+      </div>
+    </section>
+  </div>
   <div class="dairymetrics-admin-activity-grid">
     {% for row in activity_cards %}
     <a class="dairymetrics-admin-activity-card" href="{% url 'dairymetrics_member_dashboard' row.member.id %}">
