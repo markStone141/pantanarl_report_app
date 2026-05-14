@@ -334,6 +334,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "部署全体の日目標を入力")
         self.assertContains(response, "全体目標の対象日")
         self.assertContains(response, "全体目標を保存")
+        self.assertNotContains(response, "決済を1件登録する")
         self.assertNotContains(response, "入力内容を確定")
         self.assertNotContains(response, "<span class=\"muted\">対象</span>", html=True)
 

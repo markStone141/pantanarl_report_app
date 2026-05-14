@@ -159,6 +159,7 @@
     </section>
     {% endif %}
 
+    {% if has_personal_target %}
     <section class="dairymetrics-v2-demo-card dairymetrics-v2-quick-entry">
       <div class="dairymetrics-v2-demo-head">
         <h3>決済を1件登録する</h3>
@@ -241,6 +242,7 @@
         </form>
       </section>
     </section>
+    {% endif %}
 
     <section class="dairymetrics-v2-progress-board">
       {% for card in progress_cards %}
