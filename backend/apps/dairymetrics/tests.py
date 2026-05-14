@@ -303,9 +303,12 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "1,000円")
         self.assertContains(response, "5,000円")
         self.assertContains(response, "直接入力")
+        self.assertContains(response, "10代")
         self.assertContains(response, "70代")
         self.assertContains(response, "80代")
         self.assertContains(response, "90代以上")
+        self.assertContains(response, "学生")
+        self.assertContains(response, "本日の決済一覧を見る")
         self.assertContains(response, "活動終了時の最終実績を確認")
         self.assertNotContains(response, "今日の集計箱")
 

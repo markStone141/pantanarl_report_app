@@ -218,6 +218,12 @@
               {% endfor %}
             </select>
           </div>
+          <div class="dairymetrics-field" id="dairymetrics-v2x-student-wrap" hidden>
+            <label class="dairymetrics-checkbox-label" for="dairymetrics-v2x-student">
+              <input id="dairymetrics-v2x-student" type="checkbox" data-mail-student>
+              学生
+            </label>
+          </div>
           <div class="dairymetrics-field">
             <label for="dairymetrics-v2x-gender">性別</label>
             <select id="dairymetrics-v2x-gender" data-mail-gender>
@@ -328,7 +334,10 @@
           <h3>本日の決済明細イメージ</h3>
           <p class="muted">ここが子明細一覧です。各明細から個別にメール送信へ進めます。</p>
         </div>
-        <div class="dairymetrics-v2-transaction-list">
+        <div class="dairymetrics-v2-transaction-actions">
+          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-transaction-list>本日の決済一覧を見る</button>
+        </div>
+        <div class="dairymetrics-v2-transaction-list" id="dairymetrics-v2-transaction-list" hidden>
           {% for transaction in sample_transactions %}
           <div class="dairymetrics-v2-transaction-item">
             <div class="dairymetrics-v2-transaction-top">
@@ -347,6 +356,9 @@
             </div>
           </div>
           {% endfor %}
+          <div class="dairymetrics-v2-transaction-actions">
+            <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-transaction-list>閉じる</button>
+          </div>
         </div>
       </article>
 
@@ -432,11 +444,13 @@
     const customAmountWrap = document.querySelector("[data-mail-custom-amount-wrap]");
     const locationInput = document.querySelector("[data-mail-location]");
     const ageInput = document.querySelector("[data-mail-age]");
+    const studentWrap = document.getElementById("dairymetrics-v2x-student-wrap");
     const genderInput = document.querySelector("[data-mail-gender]");
     const nationalityInput = document.querySelector("[data-mail-nationality]");
     const commentInput = document.querySelector("[data-mail-comment]");
     const entryPanel = document.getElementById("dairymetrics-v2-entry-panel");
     const departmentTargetPanel = document.getElementById("dairymetrics-v2-department-target-panel");
+    const transactionListPanel = document.getElementById("dairymetrics-v2-transaction-list");
     const closeoutPanel = document.getElementById("dairymetrics-v2-closeout-panel");
     const closeoutCountInput = document.querySelector("[data-closeout-count]");
     const closeoutAmountInput = document.querySelector("[data-closeout-amount]");
@@ -576,6 +590,29 @@
       }
     }
 
+    function openTransactionList() {
+      if (transactionListPanel) {
+        transactionListPanel.hidden = false;
+        transactionListPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    function closeTransactionList() {
+      if (transactionListPanel) {
+        transactionListPanel.hidden = true;
+      }
+    }
+
+    function syncStudentField() {
+      if (!studentWrap || !ageInput) return;
+      const showStudent = ageInput.value === "10代" || ageInput.value === "20代";
+      studentWrap.hidden = !showStudent;
+      const checkbox = studentWrap.querySelector("input[type='checkbox']");
+      if (checkbox && !showStudent) {
+        checkbox.checked = false;
+      }
+    }
+
     document.querySelectorAll("[data-open-mail-preview]").forEach(function (button) {
       button.addEventListener("click", function () {
         renderMailPreview();
@@ -616,6 +653,18 @@
       });
     });
 
+    document.querySelectorAll("[data-open-transaction-list]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        openTransactionList();
+      });
+    });
+
+    document.querySelectorAll("[data-close-transaction-list]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        closeTransactionList();
+      });
+    });
+
     closeoutButtons.forEach(function (button) {
       button.addEventListener("click", function () {
         openCloseout();
@@ -646,6 +695,10 @@
       renderMailPreview();
     });
 
+    ageInput?.addEventListener("change", function () {
+      syncStudentField();
+    });
+
     targetSelects.forEach(function (select) {
       select.addEventListener("change", function () {
         syncTargetFieldState(select);
@@ -654,10 +707,12 @@
     });
 
     syncAmountFieldState();
+    syncStudentField();
     renderMailPreview();
     closeMailPreview();
     closeEntryPanel();
     closeDepartmentTargetPanel();
+    closeTransactionList();
     closeCloseout();
   })();
 </script>

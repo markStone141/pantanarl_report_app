@@ -32,7 +32,7 @@ from .selectors import (
 
 INLINE_ADJUSTMENT_NOTE = "__inline_monthly_adjustment__"
 ENTRY_V2_AGE_BANDS = [
-    {"key": "teens_or_younger", "label": "10代以下"},
+    {"key": "teens", "label": "10代"},
     {"key": "twenties", "label": "20代"},
     {"key": "thirties", "label": "30代"},
     {"key": "forties", "label": "40代"},
