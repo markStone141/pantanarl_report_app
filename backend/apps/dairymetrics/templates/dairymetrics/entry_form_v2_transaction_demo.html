@@ -220,8 +220,8 @@
           </div>
           <div class="dairymetrics-field dairymetrics-field-checkbox" id="dairymetrics-v2x-student-wrap" hidden>
             <div class="dairymetrics-checkbox-row">
-              <input id="dairymetrics-v2x-student" type="checkbox" data-mail-student>
               <label class="dairymetrics-checkbox-label" for="dairymetrics-v2x-student">学生</label>
+              <input id="dairymetrics-v2x-student" type="checkbox" data-mail-student>
             </div>
           </div>
           <div class="dairymetrics-field">
@@ -362,6 +362,34 @@
         </div>
       </article>
 
+      <article class="dairymetrics-v2-demo-card">
+        <div class="dairymetrics-v2-demo-head">
+          <h3>当日送信メール</h3>
+          <p class="muted">その日に全体へ送ったメール履歴も、このページから確認できる想定です。</p>
+        </div>
+        <div class="dairymetrics-v2-transaction-actions">
+          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-sent-mail-list>当日送信メールを見る</button>
+        </div>
+        <div class="dairymetrics-v2-transaction-list" id="dairymetrics-v2-sent-mail-list" hidden>
+          {% for mail in sample_sent_mails %}
+          <div class="dairymetrics-v2-transaction-item">
+            <div class="dairymetrics-v2-transaction-top">
+              <strong>{{ mail.sent_at }}</strong>
+              <span class="status-badge status-badge-active">送信済み</span>
+            </div>
+            <div class="dairymetrics-v2-transaction-main">
+              <span>{{ mail.recipient_group }}</span>
+              <span>{{ mail.subject }}</span>
+            </div>
+            <div class="dairymetrics-subtext">{{ mail.summary }}</div>
+          </div>
+          {% endfor %}
+          <div class="dairymetrics-v2-transaction-actions">
+            <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-sent-mail-list>閉じる</button>
+          </div>
+        </div>
+      </article>
+
     </section>
 
     <section class="dairymetrics-v2-mail-preview-card card" id="dairymetrics-v2-mail-preview" hidden>
@@ -451,6 +479,7 @@
     const entryPanel = document.getElementById("dairymetrics-v2-entry-panel");
     const departmentTargetPanel = document.getElementById("dairymetrics-v2-department-target-panel");
     const transactionListPanel = document.getElementById("dairymetrics-v2-transaction-list");
+    const sentMailListPanel = document.getElementById("dairymetrics-v2-sent-mail-list");
     const closeoutPanel = document.getElementById("dairymetrics-v2-closeout-panel");
     const closeoutCountInput = document.querySelector("[data-closeout-count]");
     const closeoutAmountInput = document.querySelector("[data-closeout-amount]");
@@ -593,6 +622,7 @@
     function openTransactionList() {
       if (transactionListPanel) {
         transactionListPanel.hidden = false;
+        transactionListPanel.style.display = "grid";
         transactionListPanel.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
@@ -600,6 +630,22 @@
     function closeTransactionList() {
       if (transactionListPanel) {
         transactionListPanel.hidden = true;
+        transactionListPanel.style.display = "none";
+      }
+    }
+
+    function openSentMailList() {
+      if (sentMailListPanel) {
+        sentMailListPanel.hidden = false;
+        sentMailListPanel.style.display = "grid";
+        sentMailListPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    function closeSentMailList() {
+      if (sentMailListPanel) {
+        sentMailListPanel.hidden = true;
+        sentMailListPanel.style.display = "none";
       }
     }
 
@@ -607,6 +653,7 @@
       if (!studentWrap || !ageInput) return;
       const showStudent = ageInput.value === "10代" || ageInput.value === "20代";
       studentWrap.hidden = !showStudent;
+      studentWrap.style.display = showStudent ? "flex" : "none";
       const checkbox = studentWrap.querySelector("input[type='checkbox']");
       if (checkbox && !showStudent) {
         checkbox.checked = false;
@@ -665,6 +712,18 @@
       });
     });
 
+    document.querySelectorAll("[data-open-sent-mail-list]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        openSentMailList();
+      });
+    });
+
+    document.querySelectorAll("[data-close-sent-mail-list]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        closeSentMailList();
+      });
+    });
+
     closeoutButtons.forEach(function (button) {
       button.addEventListener("click", function () {
         openCloseout();
@@ -713,6 +772,7 @@
     closeEntryPanel();
     closeDepartmentTargetPanel();
     closeTransactionList();
+    closeSentMailList();
     closeCloseout();
   })();
 </script>

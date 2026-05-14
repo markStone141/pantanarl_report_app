@@ -291,10 +291,25 @@ def _build_entry_v2_transaction_demo_context(*, member, selected_department, ent
             "mail_status": "未送信",
         },
     ]
+    sample_sent_mails = [
+        {
+            "sent_at": "10:08",
+            "subject": f"{entry_date.month}/{entry_date.day}{member.name}です({selected_department_code or 'UN①'})",
+            "recipient_group": "当日共有グループA",
+            "summary": "会員1名 1,000円 / 日目まで 24,000円",
+        },
+        {
+            "sent_at": "10:46",
+            "subject": f"{entry_date.month}/{entry_date.day}{member.name}です({selected_department_code or 'UN①'})",
+            "recipient_group": "当日共有グループB",
+            "summary": "再送: コメント修正版",
+        },
+    ]
     return {
         **base_context,
         "progress_cards": progress_cards,
         "sample_transactions": sample_transactions,
+        "sample_sent_mails": sample_sent_mails,
         "selected_department_name": getattr(selected_department_obj, "name", selected_department_code),
         "demo_mail_subject": f"{entry_date.month}/{entry_date.day}{member.name}です({selected_department_code or 'UN①'})",
         "demo_mail_comment": "早坂さんとの一体化での勝利",
