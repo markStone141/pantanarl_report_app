@@ -231,6 +231,46 @@ def _transaction_mail_status(transaction_obj):
     return "未送信"
 
 
+def _build_v2_department_activity_rows(*, department, entry_date):
+    if not department:
+        return {"active": [], "closed": []}
+
+    rows = []
+    entries = (
+        MemberDailyMetricEntry.objects.filter(
+            department=department,
+            entry_date=entry_date,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+        )
+        .select_related("member", "department")
+        .order_by("-updated_at", "member__name")
+    )
+    for today_entry in entries:
+        count_value = (
+            int(today_entry.cs_count or 0) + int(today_entry.refugee_count or 0)
+            if department.code == "WV"
+            else int(today_entry.result_count or 0)
+        )
+        rows.append(
+            {
+                "member_name": today_entry.member.name,
+                "member_id": today_entry.member_id,
+                "status_label": "活動終了" if today_entry.activity_closed else "活動中",
+                "is_closed": bool(today_entry.activity_closed),
+                "updated_at": timezone.localtime(today_entry.updated_at),
+                "updated_label": timezone.localtime(today_entry.updated_at).strftime("%H:%M"),
+                "department_name": department.name,
+                "count_value": count_value,
+                "amount_value": int(today_entry.support_amount or 0),
+                "location_name": today_entry.location_name or "",
+            }
+        )
+    return {
+        "active": [row for row in rows if not row["is_closed"]],
+        "closed": [row for row in rows if row["is_closed"]],
+    }
+
+
 def _build_transaction_mail_preview(*, member, department_code, transaction_obj, progress_cards):
     personal_card, department_card, period_card, month_card = progress_cards
     subject = (
@@ -434,7 +474,12 @@ def _build_entry_v2_transaction_demo_context(
 
     sent_mail_histories = []
     available_mail_groups = []
+    department_activity_rows = {"active": [], "closed": []}
     if selected_department_obj:
+        department_activity_rows = _build_v2_department_activity_rows(
+            department=selected_department_obj,
+            entry_date=entry_date,
+        )
         available_mail_groups = list(
             MailRecipientGroup.objects.filter(is_active=True)
             .filter(department=selected_department_obj)
@@ -518,6 +563,7 @@ def _build_entry_v2_transaction_demo_context(
         "progress_cards": progress_cards,
         "transactions": transactions,
         "sent_mail_histories": sent_mail_histories,
+        "department_activity_rows": department_activity_rows,
         "selected_department_name": getattr(selected_department_obj, "name", selected_department_code),
         "department_summary": department_summary,
         "entry": existing_entry,

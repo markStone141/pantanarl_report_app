@@ -391,6 +391,72 @@
     <section class="dairymetrics-v2-transaction-layout">
       <article class="dairymetrics-v2-demo-card">
         <div class="dairymetrics-v2-demo-head">
+          <h3>本日のメンバー状況</h3>
+          <p class="muted">同じ部署で今日入力しているメンバーを、活動中と活動終了で分けて見られます。</p>
+        </div>
+        <div class="dairymetrics-v2-activity-groups">
+          <section class="dairymetrics-v2-activity-group">
+            <div class="dairymetrics-v2-activity-group-head">
+              <strong>活動中</strong>
+              <span class="dairymetrics-v2-activity-count">{{ department_activity_rows.active|length }}人</span>
+            </div>
+            {% if department_activity_rows.active %}
+              {% for row in department_activity_rows.active %}
+              <a class="dairymetrics-v2-activity-item" href="{% url 'dairymetrics_member_dashboard' row.member_id %}?department={{ selected_department_code }}&scope=today">
+                <div class="dairymetrics-v2-activity-top">
+                  <strong>{{ row.member_name }}</strong>
+                  <span class="dairymetrics-v2-mail-badge is-unsent">{{ row.status_label }}</span>
+                </div>
+                <div class="dairymetrics-v2-activity-meta">
+                  <span>{{ row.department_name }}</span>
+                  <span>{{ row.updated_label }} 更新</span>
+                </div>
+                <div class="dairymetrics-v2-activity-values">
+                  <span>件数 {{ row.count_value }}</span>
+                  <span>金額 {{ row.amount_value|intcomma }}円</span>
+                </div>
+                <div class="dairymetrics-subtext">{{ row.location_name|default:"現場未入力" }}</div>
+              </a>
+              {% endfor %}
+            {% else %}
+            <p class="muted">まだ活動中メンバーはいません。</p>
+            {% endif %}
+          </section>
+
+          <section class="dairymetrics-v2-activity-group">
+            <div class="dairymetrics-v2-activity-group-head">
+              <strong>活動終了</strong>
+              <span class="dairymetrics-v2-activity-count">{{ department_activity_rows.closed|length }}人</span>
+            </div>
+            {% if department_activity_rows.closed %}
+              {% for row in department_activity_rows.closed %}
+              <a class="dairymetrics-v2-activity-item" href="{% url 'dairymetrics_member_dashboard' row.member_id %}?department={{ selected_department_code }}&scope=today">
+                <div class="dairymetrics-v2-activity-top">
+                  <strong>{{ row.member_name }}</strong>
+                  <span class="dairymetrics-v2-mail-badge is-sent">{{ row.status_label }}</span>
+                </div>
+                <div class="dairymetrics-v2-activity-meta">
+                  <span>{{ row.department_name }}</span>
+                  <span>{{ row.updated_label }} 更新</span>
+                </div>
+                <div class="dairymetrics-v2-activity-values">
+                  <span>件数 {{ row.count_value }}</span>
+                  <span>金額 {{ row.amount_value|intcomma }}円</span>
+                </div>
+                <div class="dairymetrics-subtext">{{ row.location_name|default:"現場未入力" }}</div>
+              </a>
+              {% endfor %}
+            {% else %}
+            <p class="muted">まだ活動終了メンバーはいません。</p>
+            {% endif %}
+          </section>
+        </div>
+      </article>
+    </section>
+
+    <section class="dairymetrics-v2-transaction-layout">
+      <article class="dairymetrics-v2-demo-card">
+        <div class="dairymetrics-v2-demo-head">
           <h3>本日の決済明細</h3>
           <p class="muted">決済ごとの明細一覧です。必要なら明細単位でメール送信プレビューへ進めます。</p>
         </div>

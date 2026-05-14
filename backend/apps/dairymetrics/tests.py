@@ -319,6 +319,67 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "活動終了時の最終実績を確認")
         self.assertNotContains(response, "今日の集計箱")
 
+    def test_entry_v2_transaction_demo_shows_department_member_activity_lists(self):
+        self.department.code = "UN"
+        self.department.name = "UN"
+        self.department.save(update_fields=["code", "name"])
+        entry_date = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+            result_count=1,
+            support_amount=1500,
+            location_name="渋谷駅前",
+            activity_closed=False,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+        )
+        active_user = get_user_model().objects.create_user(username="member_v2_active", password="pass123")
+        active_member = Member.objects.create(name="Member Active V2", user=active_user)
+        MemberDepartment.objects.create(member=active_member, department=self.department)
+        closed_user = get_user_model().objects.create_user(username="member_v2_closed", password="pass123")
+        closed_member = Member.objects.create(name="Member Closed V2", user=closed_user)
+        MemberDepartment.objects.create(member=closed_member, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=active_member,
+            department=self.department,
+            entry_date=entry_date,
+            result_count=2,
+            support_amount=3000,
+            location_name="新宿駅前",
+            activity_closed=False,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=closed_member,
+            department=self.department,
+            entry_date=entry_date,
+            result_count=3,
+            support_amount=4500,
+            location_name="池袋駅前",
+            activity_closed=True,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "本日のメンバー状況")
+        self.assertContains(response, "活動中")
+        self.assertContains(response, "活動終了")
+        self.assertContains(response, "Member Active V2")
+        self.assertContains(response, "Member Closed V2")
+        self.assertContains(response, "新宿駅前")
+        self.assertContains(response, "池袋駅前")
+        self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[active_member.id]))
+        self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[closed_member.id]))
+
     def test_entry_v2_transaction_demo_shows_separate_department_target_setup_when_missing(self):
         self.department.code = "UN"
         self.department.name = "UN"
