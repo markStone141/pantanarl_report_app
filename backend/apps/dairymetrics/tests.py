@@ -337,6 +337,49 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertNotContains(response, "入力内容を確定")
         self.assertNotContains(response, "<span class=\"muted\">対象</span>", html=True)
 
+    def test_entry_v2_transaction_demo_prefills_targets_from_previous_day(self):
+        self.client.force_login(self.user)
+        entry_date = timezone.localdate()
+        previous_date = entry_date - timedelta(days=1)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=previous_date,
+            daily_target_count=4,
+            daily_target_amount=3500,
+        )
+        DepartmentDailyMetricSummary.objects.create(
+            department=self.department,
+            entry_date=previous_date,
+            daily_target_amount=15500,
+            created_by=self.member,
+            updated_by=self.member,
+        )
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="v2-personal-target-count-hidden" value="4"', html=False)
+        self.assertContains(response, 'id="v2-personal-target-amount-hidden" value="3500"', html=False)
+        self.assertContains(response, 'id="v2-dept-target-amount-hidden" value="15500"', html=False)
+
+    def test_entry_v2_transaction_demo_uses_fallback_target_defaults_without_previous_day(self):
+        self.client.force_login(self.user)
+        entry_date = timezone.localdate()
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="v2-personal-target-count-hidden" value="1"', html=False)
+        self.assertContains(response, 'id="v2-personal-target-amount-hidden" value="3000"', html=False)
+        self.assertContains(response, 'id="v2-dept-target-amount-hidden" value="10000"', html=False)
+
     def test_entry_v2_transaction_demo_saves_personal_target_entry(self):
         self.client.force_login(self.user)
         entry_date = timezone.localdate()

@@ -176,6 +176,38 @@ def _build_v2_redirect_url(*, department_code, entry_date, saved="", preview_tx=
     return f"{reverse('dairymetrics_entry_v2_transaction_demo')}?{urlencode(query)}"
 
 
+def _get_previous_personal_targets(*, member, department, entry_date):
+    previous_entry = (
+        MemberDailyMetricEntry.objects.filter(
+            member=member,
+            department=department,
+            entry_date=entry_date - timedelta(days=1),
+        )
+        .only("daily_target_count", "daily_target_amount")
+        .first()
+    )
+    if not previous_entry:
+        return 1, 3000
+    return (
+        int(previous_entry.daily_target_count or 1),
+        int(previous_entry.daily_target_amount or 3000),
+    )
+
+
+def _get_previous_department_target_amount(*, department, entry_date):
+    previous_summary = (
+        DepartmentDailyMetricSummary.objects.filter(
+            department=department,
+            entry_date=entry_date - timedelta(days=1),
+        )
+        .only("daily_target_amount")
+        .first()
+    )
+    if not previous_summary:
+        return 10000
+    return int(previous_summary.daily_target_amount or 10000)
+
+
 def _get_or_create_department_daily_summary(*, department, entry_date, member):
     summary, created = DepartmentDailyMetricSummary.objects.get_or_create(
         department=department,
@@ -279,6 +311,20 @@ def _build_entry_v2_transaction_demo_context(
             department=selected_department_obj,
             entry_date=entry_date,
         ).select_related("department", "created_by", "updated_by").first()
+
+    previous_personal_target_count = 1
+    previous_personal_target_amount = 3000
+    previous_department_target_amount = 10000
+    if selected_department_obj:
+        previous_personal_target_count, previous_personal_target_amount = _get_previous_personal_targets(
+            member=member,
+            department=selected_department_obj,
+            entry_date=entry_date,
+        )
+        previous_department_target_amount = _get_previous_department_target_amount(
+            department=selected_department_obj,
+            entry_date=entry_date,
+        )
 
     personal_target_count = int(getattr(existing_entry, "daily_target_count", 0) or 0)
     personal_target_amount = int(getattr(existing_entry, "daily_target_amount", 0) or 0)
@@ -407,14 +453,14 @@ def _build_entry_v2_transaction_demo_context(
         initial={
             "department": selected_department_obj,
             "entry_date": entry_date,
-            "daily_target_count": personal_target_count or 1,
-            "daily_target_amount": personal_target_amount or 6000,
+            "daily_target_count": personal_target_count or previous_personal_target_count,
+            "daily_target_amount": personal_target_amount or previous_personal_target_amount,
         },
     )
     department_target_form = department_target_form or DairymetricsV2DepartmentTargetForm(
         initial={
             "entry_date": entry_date,
-            "daily_target_amount": department_day_target or 10000,
+            "daily_target_amount": department_day_target or previous_department_target_amount,
         }
     )
     transaction_form = transaction_form or DairymetricsV2TransactionForm(
@@ -444,9 +490,9 @@ def _build_entry_v2_transaction_demo_context(
             progress_cards=progress_cards,
         )
 
-    personal_target_count_value = str(personal_setup_form["daily_target_count"].value() or "1")
-    personal_target_amount_value = str(personal_setup_form["daily_target_amount"].value() or "6000")
-    department_target_amount_value = str(department_target_form["daily_target_amount"].value() or "10000")
+    personal_target_count_value = str(personal_setup_form["daily_target_count"].value() or previous_personal_target_count)
+    personal_target_amount_value = str(personal_setup_form["daily_target_amount"].value() or previous_personal_target_amount)
+    department_target_amount_value = str(department_target_form["daily_target_amount"].value() or previous_department_target_amount)
     transaction_amount_value = str(transaction_form["support_amount"].value() or "1000")
     transaction_age_band_value = transaction_form["age_band"].value() or MemberMetricTransaction.AGE_BAND_SEVENTIES
 
