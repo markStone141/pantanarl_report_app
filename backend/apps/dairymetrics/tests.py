@@ -301,6 +301,9 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "今日の集計箱")
         self.assertContains(response, "13,000")
         self.assertNotContains(response, "活動前の準備")
+        self.assertContains(response, "1,000円")
+        self.assertContains(response, "5,000円")
+        self.assertContains(response, "直接入力")
 
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")

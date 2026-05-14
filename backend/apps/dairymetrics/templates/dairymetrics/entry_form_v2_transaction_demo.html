@@ -4,7 +4,7 @@
 {% block title %}決済登録 v2 サンプル | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=23" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=24" />
 {% endblock %}
 
 {% block content %}
@@ -30,7 +30,7 @@
   <section class="card dairymetrics-form-card dairymetrics-v2-transaction-shell">
     <div class="dairymetrics-v2-intro">
       <h2>活動日のダッシュボードサンプル</h2>
-      <p class="muted">活動前に目標を入れて、活動中は上から決済を登録し、必要なときだけメール本文プレビューへ進む流れを想定しています。</p>
+      <p class="muted">活動前はダッシュボード上で目標を入力し、活動中は上部から決済を登録し、必要なときだけメール本文プレビューへ進む流れを想定しています。</p>
       <div class="note">既存運用には未接続です。今回のサンプルは UI と流れの確認用です。</div>
     </div>
 
@@ -61,20 +61,45 @@
       <div class="dairymetrics-v2-setup-head">
         <div>
           <h3>活動前の準備</h3>
-          <p class="muted">まず個人目標と現場名、必要なら部署全体の目標を入れる前提です。</p>
+          <p class="muted">まず個人目標、全体目標、現場名をここで入力する前提です。</p>
         </div>
         <div class="dairymetrics-v2-setup-actions">
-          {% if not has_personal_target %}
-          <button type="button" class="btn-inline" data-open-setup="personal">目標を入力する</button>
-          {% else %}
+          {% if has_personal_target %}
           <span class="status-badge status-badge-active">個人目標入力済み</span>
           {% endif %}
-          {% if not has_department_target %}
-          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-setup="department">全体目標を入力する</button>
-          {% else %}
+          {% if has_department_target %}
           <span class="status-badge status-badge-active">全体目標入力済み</span>
           {% endif %}
         </div>
+      </div>
+      <div class="dairymetrics-v2-transaction-form">
+        <div class="dairymetrics-field">
+          <label for="dairymetrics-v2x-setup-date">活動日</label>
+          <div class="dairymetrics-date-wrap">
+            <div class="dairymetrics-date-field">
+              <input id="dairymetrics-v2x-setup-date" class="dairymetrics-date-input" type="date" value="{{ entry_date|date:'Y-m-d' }}">
+            </div>
+          </div>
+        </div>
+        <div class="dairymetrics-field">
+          <label for="dairymetrics-v2x-setup-target">個人の目標金額</label>
+          <input id="dairymetrics-v2x-setup-target" type="number" min="0" step="1000" value="{{ progress_cards.0.target_amount }}">
+        </div>
+        <div class="dairymetrics-field">
+          <label for="dairymetrics-v2x-daily-target">今日の全体目標金額</label>
+          <input id="dairymetrics-v2x-daily-target" type="number" min="0" step="1000" value="{{ demo_department_daily_target }}">
+        </div>
+        <div class="dairymetrics-field dairymetrics-field-full">
+          <label for="dairymetrics-v2x-setup-location">現場名</label>
+          <input id="dairymetrics-v2x-setup-location" type="text" value="{{ demo_mail_location }}">
+        </div>
+      </div>
+      <div class="dairymetrics-v2-inline-meta">
+        <span>現在の全体累計 {{ demo_department_daily_total|intcomma }}円</span>
+        <span>最終更新: {{ member.name }} 10:12</span>
+      </div>
+      <div class="dairymetrics-v2-transaction-actions">
+        <button type="button" class="btn-inline dairymetrics-save-btn">入力内容を確定</button>
       </div>
       <div class="dairymetrics-v2-parent-summary">
         <div>
@@ -96,12 +121,27 @@
     <section class="dairymetrics-v2-demo-card dairymetrics-v2-quick-entry">
       <div class="dairymetrics-v2-demo-head">
         <h3>決済を1件登録する</h3>
-        <p class="muted">目標入力済みなら、上からそのまま登録できる想定です。メール本文は必要なときだけ開きます。</p>
+        <p class="muted">目標入力済みなら、ここからそのまま登録する想定です。金額は定型選択を優先し、必要なときだけ直接入力できます。</p>
       </div>
       <div class="dairymetrics-v2-transaction-form">
         <div class="dairymetrics-field">
-          <label for="dairymetrics-v2x-amount">決済金額</label>
-          <input id="dairymetrics-v2x-amount" type="number" min="0" step="1000" value="{{ demo_mail_amount }}" data-mail-amount>
+          <label for="dairymetrics-v2x-amount-select">決済金額</label>
+          <select id="dairymetrics-v2x-amount-select" data-mail-amount-select>
+            <option value="1000" selected>1,000円</option>
+            <option value="1500">1,500円</option>
+            <option value="2000">2,000円</option>
+            <option value="2500">2,500円</option>
+            <option value="3000">3,000円</option>
+            <option value="3500">3,500円</option>
+            <option value="4000">4,000円</option>
+            <option value="4500">4,500円</option>
+            <option value="5000">5,000円</option>
+            <option value="custom">直接入力</option>
+          </select>
+        </div>
+        <div class="dairymetrics-field" data-mail-custom-amount-wrap hidden>
+          <label for="dairymetrics-v2x-amount">直接入力金額</label>
+          <input id="dairymetrics-v2x-amount" type="number" min="0" step="100" value="{{ demo_mail_amount }}" data-mail-amount>
         </div>
         <div class="dairymetrics-field">
           <label for="dairymetrics-v2x-location">場所</label>
@@ -217,59 +257,7 @@
       </article>
     </section>
 
-    <div class="dairymetrics-v2-modal-backdrop" id="dairymetrics-v2-modal-backdrop" hidden></div>
-
-    <section class="dairymetrics-v2-modal card" id="dairymetrics-v2-setup-personal" hidden>
-      <div class="dairymetrics-v2-demo-head">
-        <h3>個人目標を入力</h3>
-        <p class="muted">V1 と同じような感覚で、活動前にモーダルで入力する想定です。</p>
-      </div>
-      <div class="dairymetrics-v2-transaction-form">
-        <div class="dairymetrics-field">
-          <label for="dairymetrics-v2x-setup-date">活動日</label>
-          <div class="dairymetrics-date-wrap">
-            <div class="dairymetrics-date-field">
-              <input id="dairymetrics-v2x-setup-date" class="dairymetrics-date-input" type="date" value="{{ entry_date|date:'Y-m-d' }}">
-            </div>
-          </div>
-        </div>
-        <div class="dairymetrics-field">
-          <label for="dairymetrics-v2x-setup-target">個人の目標金額</label>
-          <input id="dairymetrics-v2x-setup-target" type="number" min="0" step="1000" value="{{ progress_cards.0.target_amount }}">
-        </div>
-        <div class="dairymetrics-field dairymetrics-field-full">
-          <label for="dairymetrics-v2x-setup-location">現場名</label>
-          <input id="dairymetrics-v2x-setup-location" type="text" value="{{ demo_mail_location }}">
-        </div>
-      </div>
-      <div class="dairymetrics-v2-transaction-actions">
-        <button type="button" class="btn-inline" data-close-modal>閉じる</button>
-        <button type="button" class="btn-inline dairymetrics-save-btn">入力内容を確定</button>
-      </div>
-    </section>
-
-    <section class="dairymetrics-v2-modal card" id="dairymetrics-v2-setup-department" hidden>
-      <div class="dairymetrics-v2-demo-head">
-        <h3>全体目標を入力</h3>
-        <p class="muted">誰でも更新できる前提ですが、設定した人は見えるようにします。</p>
-      </div>
-      <div class="dairymetrics-v2-transaction-form">
-        <div class="dairymetrics-field">
-          <label for="dairymetrics-v2x-daily-target">今日の全体目標金額</label>
-          <input id="dairymetrics-v2x-daily-target" type="number" min="0" step="1000" value="{{ demo_department_daily_target }}">
-        </div>
-        <div class="dairymetrics-v2-inline-meta">
-          <span>現在の全体累計 {{ demo_department_daily_total|intcomma }}円</span>
-          <span>最終更新: {{ member.name }} 10:12</span>
-        </div>
-      </div>
-      <div class="dairymetrics-v2-transaction-actions">
-        <button type="button" class="btn-inline" data-close-modal>閉じる</button>
-        <button type="button" class="btn-inline dairymetrics-save-btn">入力内容を確定</button>
-      </div>
-    </section>
-
-    <section class="dairymetrics-v2-modal card dairymetrics-v2-mail-preview-card" id="dairymetrics-v2-mail-preview" hidden>
+    <section class="dairymetrics-v2-mail-preview-card card" id="dairymetrics-v2-mail-preview" hidden>
       <div class="dairymetrics-v2-demo-head">
         <h3>送信本文プレビュー</h3>
         <p class="muted">ダッシュボード本体には置かず、必要なときだけ開く想定です。</p>
@@ -279,7 +267,7 @@
       </div>
       <pre class="dairymetrics-v2-mail-body" data-mail-body></pre>
       <div class="dairymetrics-v2-transaction-actions">
-        <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-modal>戻る</button>
+        <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-mail-preview>戻る</button>
         <button type="button" class="btn-inline">送信確定（未実装）</button>
       </div>
     </section>
@@ -289,12 +277,11 @@
 <script>
   (function () {
     const previewCard = document.getElementById("dairymetrics-v2-mail-preview");
-    const setupPersonalModal = document.getElementById("dairymetrics-v2-setup-personal");
-    const setupDepartmentModal = document.getElementById("dairymetrics-v2-setup-department");
-    const backdrop = document.getElementById("dairymetrics-v2-modal-backdrop");
     const bodyEl = document.querySelector("[data-mail-body]");
     const subjectEl = document.querySelector("[data-mail-subject]");
     const amountInput = document.querySelector("[data-mail-amount]");
+    const amountSelect = document.querySelector("[data-mail-amount-select]");
+    const customAmountWrap = document.querySelector("[data-mail-custom-amount-wrap]");
     const locationInput = document.querySelector("[data-mail-location]");
     const ageInput = document.querySelector("[data-mail-age]");
     const genderInput = document.querySelector("[data-mail-gender]");
@@ -306,12 +293,19 @@
       return number.toLocaleString("ja-JP");
     }
 
+    function getSelectedAmount() {
+      if (amountSelect && amountSelect.value !== "custom") {
+        return Number(amountSelect.value || 0);
+      }
+      return Number(amountInput?.value || 0);
+    }
+
     function remainingText(current, target) {
       return Math.max(Number(target || 0) - Number(current || 0), 0).toLocaleString("ja-JP");
     }
 
     function renderMailPreview() {
-      const amount = Number(amountInput?.value || 0);
+      const amount = getSelectedAmount();
       const age = ageInput?.value || "";
       const gender = genderInput?.value || "";
       const nationality = nationalityInput?.value || "";
@@ -346,54 +340,51 @@
       }
     }
 
-    function closeAllModals() {
-      [previewCard, setupPersonalModal, setupDepartmentModal].forEach(function (modal) {
-        if (modal) modal.hidden = true;
-      });
-      if (backdrop) backdrop.hidden = true;
+    function syncAmountFieldState() {
+      const isCustom = amountSelect && amountSelect.value === "custom";
+      if (customAmountWrap) {
+        customAmountWrap.hidden = !isCustom;
+      }
+      if (amountInput) {
+        amountInput.disabled = !isCustom;
+      }
     }
 
-    function openModal(target) {
-      closeAllModals();
-      if (target) target.hidden = false;
-      if (backdrop) backdrop.hidden = false;
+    function closeMailPreview() {
+      if (previewCard) {
+        previewCard.hidden = true;
+      }
     }
 
     document.querySelectorAll("[data-open-mail-preview]").forEach(function (button) {
       button.addEventListener("click", function () {
         renderMailPreview();
-        openModal(previewCard);
-      });
-    });
-
-    document.querySelectorAll("[data-open-setup]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        const kind = button.getAttribute("data-open-setup");
-        if (kind === "personal") {
-          openModal(setupPersonalModal);
-          return;
+        if (previewCard) {
+          previewCard.hidden = false;
+          previewCard.scrollIntoView({ behavior: "smooth", block: "center" });
         }
-        openModal(setupDepartmentModal);
       });
     });
 
-    document.querySelectorAll("[data-close-modal]").forEach(function (button) {
+    document.querySelectorAll("[data-close-mail-preview]").forEach(function (button) {
       button.addEventListener("click", function () {
-        closeAllModals();
+        closeMailPreview();
       });
     });
 
-    backdrop?.addEventListener("click", function () {
-      closeAllModals();
-    });
-
-    [amountInput, locationInput, ageInput, genderInput, nationalityInput, commentInput].forEach(function (input) {
+    [amountInput, amountSelect, locationInput, ageInput, genderInput, nationalityInput, commentInput].forEach(function (input) {
       input?.addEventListener("input", renderMailPreview);
       input?.addEventListener("change", renderMailPreview);
     });
 
+    amountSelect?.addEventListener("change", function () {
+      syncAmountFieldState();
+      renderMailPreview();
+    });
+
+    syncAmountFieldState();
     renderMailPreview();
-    closeAllModals();
+    closeMailPreview();
   })();
 </script>
 {% endblock %}
