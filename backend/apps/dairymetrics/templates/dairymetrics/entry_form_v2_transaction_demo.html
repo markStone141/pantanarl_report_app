@@ -67,8 +67,48 @@
             </div>
           </div>
           <div class="dairymetrics-field">
-            <label for="dairymetrics-v2x-setup-target">個人の目標金額</label>
-            <input id="dairymetrics-v2x-setup-target" type="number" min="0" step="1000" value="{{ progress_cards.0.target_amount }}">
+            <label for="dairymetrics-v2x-setup-target-count-select">個人の件数目標</label>
+            <select id="dairymetrics-v2x-setup-target-count-select" data-target-select data-target-custom="#dairymetrics-v2x-setup-target-count-wrap">
+              <option value="1" selected>1件</option>
+              <option value="2">2件</option>
+              <option value="3">3件</option>
+              <option value="4">4件</option>
+              <option value="5">5件</option>
+              <option value="custom">直接入力</option>
+            </select>
+          </div>
+          <div class="dairymetrics-field" id="dairymetrics-v2x-setup-target-count-wrap" hidden>
+            <label for="dairymetrics-v2x-setup-target-count">個人の件数目標を直接入力</label>
+            <input id="dairymetrics-v2x-setup-target-count" type="number" min="0" step="1" value="1">
+          </div>
+          <div class="dairymetrics-field">
+            <label for="dairymetrics-v2x-setup-target-amount-select">個人の金額目標</label>
+            <select id="dairymetrics-v2x-setup-target-amount-select" data-target-select data-target-custom="#dairymetrics-v2x-setup-target-amount-wrap">
+              <option value="1000">1,000円</option>
+              <option value="1500">1,500円</option>
+              <option value="2000">2,000円</option>
+              <option value="2500">2,500円</option>
+              <option value="3000">3,000円</option>
+              <option value="3500">3,500円</option>
+              <option value="4000">4,000円</option>
+              <option value="4500">4,500円</option>
+              <option value="5000">5,000円</option>
+              <option value="5500">5,500円</option>
+              <option value="6000" selected>6,000円</option>
+              <option value="6500">6,500円</option>
+              <option value="7000">7,000円</option>
+              <option value="7500">7,500円</option>
+              <option value="8000">8,000円</option>
+              <option value="8500">8,500円</option>
+              <option value="9000">9,000円</option>
+              <option value="9500">9,500円</option>
+              <option value="10000">10,000円</option>
+              <option value="custom">直接入力</option>
+            </select>
+          </div>
+          <div class="dairymetrics-field" id="dairymetrics-v2x-setup-target-amount-wrap" hidden>
+            <label for="dairymetrics-v2x-setup-target-amount">個人の金額目標を直接入力</label>
+            <input id="dairymetrics-v2x-setup-target-amount" type="number" min="0" step="100" value="{{ progress_cards.0.target_amount }}">
           </div>
           <div class="dairymetrics-field dairymetrics-field-full">
             <label for="dairymetrics-v2x-setup-location">現場名</label>
@@ -97,8 +137,48 @@
             </div>
           </div>
           <div class="dairymetrics-field">
-            <label for="dairymetrics-v2x-daily-target">全体目標金額</label>
-            <input id="dairymetrics-v2x-daily-target" type="number" min="0" step="1000" value="{{ demo_department_daily_target }}">
+            <label for="dairymetrics-v2x-daily-target-count-select">全体の件数目標</label>
+            <select id="dairymetrics-v2x-daily-target-count-select" data-target-select data-target-custom="#dairymetrics-v2x-daily-target-count-wrap">
+              <option value="1">1件</option>
+              <option value="2">2件</option>
+              <option value="3">3件</option>
+              <option value="4">4件</option>
+              <option value="5" selected>5件</option>
+              <option value="custom">直接入力</option>
+            </select>
+          </div>
+          <div class="dairymetrics-field" id="dairymetrics-v2x-daily-target-count-wrap" hidden>
+            <label for="dairymetrics-v2x-daily-target-count">全体の件数目標を直接入力</label>
+            <input id="dairymetrics-v2x-daily-target-count" type="number" min="0" step="1" value="5">
+          </div>
+          <div class="dairymetrics-field">
+            <label for="dairymetrics-v2x-daily-target-amount-select">全体目標金額</label>
+            <select id="dairymetrics-v2x-daily-target-amount-select" data-target-select data-target-custom="#dairymetrics-v2x-daily-target-amount-wrap">
+              <option value="1000">1,000円</option>
+              <option value="1500">1,500円</option>
+              <option value="2000">2,000円</option>
+              <option value="2500">2,500円</option>
+              <option value="3000">3,000円</option>
+              <option value="3500">3,500円</option>
+              <option value="4000">4,000円</option>
+              <option value="4500">4,500円</option>
+              <option value="5000">5,000円</option>
+              <option value="5500">5,500円</option>
+              <option value="6000">6,000円</option>
+              <option value="6500">6,500円</option>
+              <option value="7000">7,000円</option>
+              <option value="7500">7,500円</option>
+              <option value="8000">8,000円</option>
+              <option value="8500">8,500円</option>
+              <option value="9000">9,000円</option>
+              <option value="9500">9,500円</option>
+              <option value="10000" selected>10,000円</option>
+              <option value="custom">直接入力</option>
+            </select>
+          </div>
+          <div class="dairymetrics-field" id="dairymetrics-v2x-daily-target-amount-wrap" hidden>
+            <label for="dairymetrics-v2x-daily-target">全体目標金額を直接入力</label>
+            <input id="dairymetrics-v2x-daily-target" type="number" min="0" step="100" value="{{ demo_department_daily_target }}">
           </div>
         </div>
         <div class="dairymetrics-v2-inline-meta">
@@ -218,8 +298,48 @@
               </div>
             </div>
             <div class="dairymetrics-field">
-              <label for="dairymetrics-v2x-inline-target-amount">全体目標金額</label>
-              <input id="dairymetrics-v2x-inline-target-amount" type="number" min="0" step="1000" value="{{ demo_department_daily_target }}">
+              <label for="dairymetrics-v2x-inline-target-count-select">全体の件数目標</label>
+              <select id="dairymetrics-v2x-inline-target-count-select" data-target-select data-target-custom="#dairymetrics-v2x-inline-target-count-wrap">
+                <option value="1">1件</option>
+                <option value="2">2件</option>
+                <option value="3">3件</option>
+                <option value="4">4件</option>
+                <option value="5" selected>5件</option>
+                <option value="custom">直接入力</option>
+              </select>
+            </div>
+            <div class="dairymetrics-field" id="dairymetrics-v2x-inline-target-count-wrap" hidden>
+              <label for="dairymetrics-v2x-inline-target-count">全体の件数目標を直接入力</label>
+              <input id="dairymetrics-v2x-inline-target-count" type="number" min="0" step="1" value="5">
+            </div>
+            <div class="dairymetrics-field">
+              <label for="dairymetrics-v2x-inline-target-amount-select">全体目標金額</label>
+              <select id="dairymetrics-v2x-inline-target-amount-select" data-target-select data-target-custom="#dairymetrics-v2x-inline-target-amount-wrap">
+                <option value="1000">1,000円</option>
+                <option value="1500">1,500円</option>
+                <option value="2000">2,000円</option>
+                <option value="2500">2,500円</option>
+                <option value="3000">3,000円</option>
+                <option value="3500">3,500円</option>
+                <option value="4000">4,000円</option>
+                <option value="4500">4,500円</option>
+                <option value="5000">5,000円</option>
+                <option value="5500">5,500円</option>
+                <option value="6000">6,000円</option>
+                <option value="6500">6,500円</option>
+                <option value="7000">7,000円</option>
+                <option value="7500">7,500円</option>
+                <option value="8000">8,000円</option>
+                <option value="8500">8,500円</option>
+                <option value="9000">9,000円</option>
+                <option value="9500">9,500円</option>
+                <option value="10000" selected>10,000円</option>
+                <option value="custom">直接入力</option>
+              </select>
+            </div>
+            <div class="dairymetrics-field" id="dairymetrics-v2x-inline-target-amount-wrap" hidden>
+              <label for="dairymetrics-v2x-inline-target-amount">全体目標金額を直接入力</label>
+              <input id="dairymetrics-v2x-inline-target-amount" type="number" min="0" step="100" value="{{ demo_department_daily_target }}">
             </div>
           </div>
           <div class="dairymetrics-v2-transaction-actions">
@@ -352,6 +472,7 @@
     const closeoutAmountInput = document.querySelector("[data-closeout-amount]");
     const closeoutButtons = document.querySelectorAll("[data-open-closeout]");
     const closeCloseoutButtons = document.querySelectorAll("[data-close-closeout]");
+    const targetSelects = document.querySelectorAll("[data-target-select]");
     const baseCount = {{ initial_total_count|default:0 }};
     const baseAmount = {{ initial_total_amount|default:0 }};
 
@@ -425,6 +546,18 @@
       }
       if (amountInput) {
         amountInput.disabled = !isCustom;
+      }
+    }
+
+    function syncTargetFieldState(select) {
+      const targetSelector = select?.dataset.targetCustom;
+      if (!targetSelector) return;
+      const wrap = document.querySelector(targetSelector);
+      if (!wrap) return;
+      wrap.hidden = select.value !== "custom";
+      const input = wrap.querySelector("input");
+      if (input) {
+        input.disabled = select.value !== "custom";
       }
     }
 
@@ -541,6 +674,13 @@
     amountSelect?.addEventListener("change", function () {
       syncAmountFieldState();
       renderMailPreview();
+    });
+
+    targetSelects.forEach(function (select) {
+      select.addEventListener("change", function () {
+        syncTargetFieldState(select);
+      });
+      syncTargetFieldState(select);
     });
 
     syncAmountFieldState();
