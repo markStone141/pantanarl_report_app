@@ -280,6 +280,7 @@ def _build_entry_v2_transaction_demo_context(
     closeout_form=None,
     status_message="",
     open_entry_panel=False,
+    open_personal_target_panel=False,
     open_department_target_panel=False,
     open_closeout_panel=False,
     preview_transaction=None,
@@ -515,6 +516,7 @@ def _build_entry_v2_transaction_demo_context(
         "closeout_form": closeout_form,
         "status_message": status_message,
         "open_entry_panel": open_entry_panel,
+        "open_personal_target_panel": open_personal_target_panel,
         "open_department_target_panel": open_department_target_panel,
         "open_closeout_panel": open_closeout_panel,
         "preview_payload": preview_payload,
@@ -1233,6 +1235,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
 
     status_message = ""
     open_entry_panel = False
+    open_personal_target_panel = False
     open_department_target_panel = False
     open_closeout_panel = False
     personal_setup_form = None
@@ -1290,6 +1293,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
             if selected_department_obj:
                 selected_department = selected_department_obj.code
             status_message = "個人の日目標を確認してください。"
+            open_personal_target_panel = True
         elif action == "save_department_target":
             if not selected_department_obj:
                 status_message = "部署を選択してください。"
@@ -1426,6 +1430,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
         closeout_form=closeout_form,
         status_message=status_message,
         open_entry_panel=open_entry_panel,
+        open_personal_target_panel=open_personal_target_panel,
         open_department_target_panel=open_department_target_panel,
         open_closeout_panel=open_closeout_panel,
         preview_transaction=preview_transaction,

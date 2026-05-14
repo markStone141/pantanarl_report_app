@@ -264,6 +264,67 @@
         {% if card.helper_text %}
         <div class="dairymetrics-subtext">{{ card.helper_text }}</div>
         {% endif %}
+        {% if card.label == "個人の日目標" %}
+        <div class="dairymetrics-v2-inline-actions">
+          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-personal-target-edit>修正する</button>
+        </div>
+        <section class="dairymetrics-v2-entry-panel" id="dairymetrics-v2-personal-target-panel" {% if not open_personal_target_panel %}hidden{% endif %}>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save_personal_setup">
+            <div class="dairymetrics-v2-transaction-form">
+              <div class="dairymetrics-field">
+                <label for="v2-inline-personal-department">部署</label>
+                <select id="v2-inline-personal-department" name="department">
+                  {% for department in departments %}
+                  <option value="{{ department.id }}" {% if personal_setup_form.department.value|stringformat:"s" == department.id|stringformat:"s" %}selected{% endif %}>{{ department.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="dairymetrics-field">
+                <label for="v2-inline-personal-date">活動日</label>
+                <div class="dairymetrics-date-wrap">
+                  <div class="dairymetrics-date-field">
+                    <input id="v2-inline-personal-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ personal_entry_date_value }}">
+                  </div>
+                </div>
+              </div>
+              <div class="dairymetrics-field">
+                <label for="v2-inline-personal-count-select">個人の件数目標</label>
+                <select id="v2-inline-personal-count-select" data-target-select data-target-custom="#v2-inline-personal-count-wrap" data-target-hidden="#v2-inline-personal-count-hidden">
+                  {% for count in target_count_options %}
+                  <option value="{{ count }}" {% if personal_target_count_value == count|stringformat:"s" %}selected{% endif %}>{{ count }}件</option>
+                  {% endfor %}
+                  <option value="custom" {% if personal_target_count_value != "1" and personal_target_count_value != "2" and personal_target_count_value != "3" and personal_target_count_value != "4" and personal_target_count_value != "5" %}selected{% endif %}>直接入力</option>
+                </select>
+                <input type="hidden" name="daily_target_count" id="v2-inline-personal-count-hidden" value="{{ personal_target_count_value }}">
+              </div>
+              <div class="dairymetrics-field" id="v2-inline-personal-count-wrap" hidden>
+                <label for="v2-inline-personal-count-custom">個人の件数目標を直接入力</label>
+                <input id="v2-inline-personal-count-custom" type="number" min="0" step="1" value="{{ personal_target_count_value }}">
+              </div>
+              <div class="dairymetrics-field">
+                <label for="v2-inline-personal-amount-select">個人の金額目標</label>
+                <select id="v2-inline-personal-amount-select" data-target-select data-target-custom="#v2-inline-personal-amount-wrap" data-target-hidden="#v2-inline-personal-amount-hidden">
+                  <option value="custom" {% if personal_target_amount_value != "1000" and personal_target_amount_value != "1500" and personal_target_amount_value != "2000" and personal_target_amount_value != "2500" and personal_target_amount_value != "3000" and personal_target_amount_value != "3500" and personal_target_amount_value != "4000" and personal_target_amount_value != "4500" and personal_target_amount_value != "5000" and personal_target_amount_value != "5500" and personal_target_amount_value != "6000" and personal_target_amount_value != "6500" and personal_target_amount_value != "7000" and personal_target_amount_value != "7500" and personal_target_amount_value != "8000" and personal_target_amount_value != "8500" and personal_target_amount_value != "9000" and personal_target_amount_value != "9500" and personal_target_amount_value != "10000" %}selected{% endif %}>直接入力</option>
+                  {% for amount in target_amount_options %}
+                  <option value="{{ amount }}" {% if personal_target_amount_value == amount|stringformat:"s" %}selected{% endif %}>{{ amount|intcomma }}円</option>
+                  {% endfor %}
+                </select>
+                <input type="hidden" name="daily_target_amount" id="v2-inline-personal-amount-hidden" value="{{ personal_target_amount_value }}">
+              </div>
+              <div class="dairymetrics-field" id="v2-inline-personal-amount-wrap" hidden>
+                <label for="v2-inline-personal-amount-custom">個人の金額目標を直接入力</label>
+                <input id="v2-inline-personal-amount-custom" type="number" min="0" step="100" value="{{ personal_target_amount_value }}">
+              </div>
+            </div>
+            <div class="dairymetrics-v2-transaction-actions">
+              <button type="submit" class="btn-inline dairymetrics-save-btn">修正内容を保存</button>
+              <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-personal-target-edit>閉じる</button>
+            </div>
+          </form>
+        </section>
+        {% endif %}
         {% if card.label == "全体の日目標" %}
         <div class="dairymetrics-v2-inline-actions">
           <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-department-target-edit>修正する</button>
@@ -454,6 +515,7 @@
 <script>
   (function () {
     const entryPanel = document.getElementById("dairymetrics-v2-entry-panel");
+    const personalTargetPanel = document.getElementById("dairymetrics-v2-personal-target-panel");
     const departmentTargetPanel = document.getElementById("dairymetrics-v2-department-target-panel");
     const transactionListPanel = document.getElementById("dairymetrics-v2-transaction-list");
     const sentMailListPanel = document.getElementById("dairymetrics-v2-sent-mail-list");
@@ -529,9 +591,19 @@
         openSection(departmentTargetPanel);
       });
     });
+    document.querySelectorAll("[data-open-personal-target-edit]").forEach((button) => {
+      button.addEventListener("click", function () {
+        openSection(personalTargetPanel);
+      });
+    });
     document.querySelectorAll("[data-close-department-target-edit]").forEach((button) => {
       button.addEventListener("click", function () {
         closeSection(departmentTargetPanel);
+      });
+    });
+    document.querySelectorAll("[data-close-personal-target-edit]").forEach((button) => {
+      button.addEventListener("click", function () {
+        closeSection(personalTargetPanel);
       });
     });
     document.querySelectorAll("[data-open-transaction-list]").forEach((button) => {

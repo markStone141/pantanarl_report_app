@@ -297,6 +297,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "全体の日目標")
         self.assertContains(response, "路程目標")
         self.assertContains(response, "月目標")
+        self.assertContains(response, "修正する")
         self.assertContains(response, "決済を1件登録する")
         self.assertContains(response, "送信本文プレビュー")
         self.assertContains(response, "登録してメール送信")
@@ -405,6 +406,36 @@ class DairyMetricsDashboardTests(TestCase):
         entry = MemberDailyMetricEntry.objects.get(member=self.member, department=self.department, entry_date=entry_date)
         self.assertEqual(entry.daily_target_count, 3)
         self.assertEqual(entry.daily_target_amount, 6000)
+
+    def test_entry_v2_transaction_demo_updates_personal_target_from_progress_card(self):
+        self.client.force_login(self.user)
+        entry_date = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+        )
+
+        response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "save_personal_setup",
+                "department": self.department.id,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "daily_target_count": "5",
+                "daily_target_amount": "9000",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=personal_setup",
+        )
+        entry = MemberDailyMetricEntry.objects.get(member=self.member, department=self.department, entry_date=entry_date)
+        self.assertEqual(entry.daily_target_count, 5)
+        self.assertEqual(entry.daily_target_amount, 9000)
 
     def test_entry_v2_transaction_demo_saves_department_daily_target_summary(self):
         self.client.force_login(self.user)
