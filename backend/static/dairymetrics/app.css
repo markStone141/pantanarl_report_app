@@ -2012,10 +2012,14 @@
   flex-wrap: wrap;
 }
 
-.dairymetrics-checkbox-label {
+.dairymetrics-checkbox-row {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+.dairymetrics-checkbox-label {
+  display: inline-block;
   font-size: 0.98rem;
   font-weight: 600;
   color: var(--ink);
@@ -2027,7 +2031,7 @@
   align-items: center;
 }
 
-.dairymetrics-checkbox-label input[type="checkbox"] {
+.dairymetrics-checkbox-row input[type="checkbox"] {
   display: inline-block !important;
   width: 1rem !important;
   max-width: none !important;
