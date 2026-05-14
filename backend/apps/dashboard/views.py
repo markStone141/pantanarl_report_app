@@ -802,6 +802,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
             departments = form.cleaned_data["departments"]
             default_department = form.cleaned_data["default_department"]
             member_name = form.cleaned_data["name"].strip()
+            member_email = (form.cleaned_data.get("email") or "").strip()
             auth_login_id = (form.cleaned_data.get("auth_login_id") or "").strip()
             auth_password = (form.cleaned_data.get("auth_password") or "").strip()
             linked_user = None
@@ -812,6 +813,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
             if not form.errors and edit_member_id and edit_member_id.isdigit():
                 member = get_object_or_404(Member, id=int(edit_member_id))
                 member.name = member_name
+                member.email = member_email
                 member.default_department = default_department
                 linked_user = member.user
                 if auth_password and not auth_login_id and not linked_user:
@@ -840,7 +842,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
                         linked_user.set_password(auth_password)
                         linked_user.save(update_fields=["password"])
                     member.user = linked_user
-                    member.save(update_fields=["name", "user", "default_department"])
+                    member.save(update_fields=["name", "email", "user", "default_department"])
                     status_message = f"{member.name} を更新しました。"
             elif not form.errors:
                 if auth_login_id and not auth_password:
@@ -859,6 +861,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
                             )
                         member = Member.objects.create(
                             name=member_name,
+                            email=member_email,
                             user=linked_user,
                             default_department=default_department,
                         )
@@ -880,6 +883,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
             form = _member_form(
                 initial={
                     "name": edit_member.name,
+                    "email": edit_member.email,
                     "departments": list(edit_member.department_links.values_list("department_id", flat=True)),
                     "default_department": edit_member.default_department_id,
                     "auth_login_id": edit_member.user.username if edit_member.user else "",

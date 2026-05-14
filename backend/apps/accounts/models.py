@@ -35,6 +35,7 @@ class Department(models.Model):
 
 class Member(models.Model):
     name = models.CharField(max_length=64)
+    email = models.EmailField(blank=True)
     is_active = models.BooleanField(default=True)
     default_department = models.ForeignKey(
         Department,

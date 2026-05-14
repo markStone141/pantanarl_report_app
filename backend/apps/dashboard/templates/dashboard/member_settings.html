@@ -37,6 +37,12 @@
         <div class="error-text">{{ form.name.errors|striptags }}</div>
         {% endif %}
 
+        <label for="id_email">{{ form.email.label }}</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+        <div class="error-text">{{ form.email.errors|striptags }}</div>
+        {% endif %}
+
         <label>{{ form.departments.label }}</label>
         <div id="department_choices" class="checkbox-list">
           {% for department in department_choices %}
@@ -100,13 +106,14 @@
       <div class="table-scroll">
       <table class="mobile-card-table">
         <thead>
-          <tr><th>名前</th><th>状態</th><th>ログインID</th><th>所属部署</th><th>メイン部署</th><th>操作</th></tr>
+          <tr><th>名前</th><th>状態</th><th>メール</th><th>ログインID</th><th>所属部署</th><th>メイン部署</th><th>操作</th></tr>
         </thead>
         <tbody>
           {% for member in members %}
           <tr>
             <td>{{ member.name }}</td>
             <td>{% if member.is_active %}有効{% else %}無効{% endif %}</td>
+            <td>{% if member.email %}{{ member.email }}{% else %}-{% endif %}</td>
             <td>{% if member.user %}{{ member.user.username }}{% else %}-{% endif %}</td>
             <td>
               {% for link in member.department_links.all %}

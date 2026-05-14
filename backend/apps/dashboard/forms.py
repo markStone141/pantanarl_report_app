@@ -9,6 +9,11 @@ class MemberRegistrationForm(forms.Form):
         max_length=64,
         widget=forms.TextInput(attrs={"placeholder": "メンバー名"}),
     )
+    email = forms.EmailField(
+        label="メールアドレス",
+        required=False,
+        widget=forms.EmailInput(attrs={"placeholder": "獲得メール送信用アドレス"}),
+    )
     departments = forms.ModelMultipleChoiceField(
         label="所属部署",
         required=False,

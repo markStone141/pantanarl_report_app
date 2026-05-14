@@ -39,6 +39,18 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(Member.objects.filter(name="Test Member").exists())
 
+    def test_register_member_saves_email(self):
+        response = self.client.post(
+            reverse("member_settings"),
+            {
+                "name": "Mail Member",
+                "email": "mail.member@example.com",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        member = Member.objects.get(name="Mail Member")
+        self.assertEqual(member.email, "mail.member@example.com")
+
     def test_edit_member_updates_name(self):
         member = Member.objects.create(name="Old Name", login_id="old", password="")
         response = self.client.post(
@@ -51,6 +63,20 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         member.refresh_from_db()
         self.assertEqual(member.name, "New Name")
+
+    def test_edit_member_updates_email(self):
+        member = Member.objects.create(name="Mail Edit", email="old@example.com")
+        response = self.client.post(
+            reverse("member_settings"),
+            {
+                "edit_member_id": str(member.id),
+                "name": "Mail Edit",
+                "email": "new@example.com",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        member.refresh_from_db()
+        self.assertEqual(member.email, "new@example.com")
 
     def test_delete_member_removes_record(self):
         member = Member.objects.create(name="Delete User", login_id="del_id", password="")
@@ -121,6 +147,12 @@ class MemberSettingsViewTests(TestCase):
         response = self.client.get(reverse("member_settings"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "UN")
+
+    def test_member_list_shows_email(self):
+        member = Member.objects.create(name="Mail Show", email="show@example.com")
+        response = self.client.get(reverse("member_settings"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "show@example.com")
 
     def test_member_settings_paginates_members_by_twenty(self):
         for index in range(21):
