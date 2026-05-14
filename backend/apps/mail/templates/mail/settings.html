@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}メール連携設定 | 管理者ページ{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
+    <div>
+      <strong>メール連携設定</strong>
+      <div class="muted topbar-muted">Gmail連携の設定値とテスト送信先の確認を管理します。</div>
+    </div>
+    <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
+      {% for url_name, label in nav_items %}
+      <a href="{% url url_name %}">{{ label }}</a>
+      {% endfor %}
+      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+  <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+
+  {% if status_message %}
+  <div class="note mt-12">{{ status_message }}</div>
+  {% endif %}
+
+  <section class="grid grid-2 mt-16">
+    <article class="card">
+      <h3>Gmail連携設定</h3>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_settings" />
+
+        <label for="id_sender_email">{{ form.sender_email.label }}</label>
+        {{ form.sender_email }}
+        {% if form.sender_email.errors %}<div class="error-text">{{ form.sender_email.errors|striptags }}</div>{% endif %}
+
+        <label for="id_sender_name">{{ form.sender_name.label }}</label>
+        {{ form.sender_name }}
+        {% if form.sender_name.errors %}<div class="error-text">{{ form.sender_name.errors|striptags }}</div>{% endif %}
+
+        <label for="id_token_uri">{{ form.token_uri.label }}</label>
+        {{ form.token_uri }}
+        {% if form.token_uri.errors %}<div class="error-text">{{ form.token_uri.errors|striptags }}</div>{% endif %}
+
+        <label for="id_client_id">{{ form.client_id.label }}</label>
+        {{ form.client_id }}
+        <div class="muted">現在: {% if setting.client_id %}設定済み{% else %}未設定{% endif %}</div>
+        {% if form.client_id.errors %}<div class="error-text">{{ form.client_id.errors|striptags }}</div>{% endif %}
+
+        <label for="id_client_secret">{{ form.client_secret.label }}</label>
+        {{ form.client_secret }}
+        <div class="muted">現在: {% if setting.client_secret %}設定済み{% else %}未設定{% endif %}</div>
+        {% if form.client_secret.errors %}<div class="error-text">{{ form.client_secret.errors|striptags }}</div>{% endif %}
+
+        <label for="id_refresh_token">{{ form.refresh_token.label }}</label>
+        {{ form.refresh_token }}
+        <div class="muted">現在: {% if setting.refresh_token %}設定済み{% else %}未設定{% endif %}</div>
+        {% if form.refresh_token.errors %}<div class="error-text">{{ form.refresh_token.errors|striptags }}</div>{% endif %}
+
+        <label class="checkbox-label" for="id_is_active">{{ form.is_active }} {{ form.is_active.label }}</label>
+        {% if form.is_active.errors %}<div class="error-text">{{ form.is_active.errors|striptags }}</div>{% endif %}
+
+        <button type="submit" class="mt-12">設定を保存</button>
+      </form>
+    </article>
+
+    <article class="card">
+      <h3>テスト送信先プレビュー</h3>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="test_preview" />
+
+        <label for="id_target_type">{{ test_form.target_type.label }}</label>
+        {{ test_form.target_type }}
+
+        <label for="id_member">{{ test_form.member.label }}</label>
+        {{ test_form.member }}
+        {% if test_form.member.errors %}<div class="error-text">{{ test_form.member.errors|striptags }}</div>{% endif %}
+
+        <label for="id_group">{{ test_form.group.label }}</label>
+        {{ test_form.group }}
+        {% if test_form.group.errors %}<div class="error-text">{{ test_form.group.errors|striptags }}</div>{% endif %}
+
+        <button type="submit" class="mt-12">送信先を確認</button>
+      </form>
+
+      {% if preview_summary %}
+      <div class="note mt-12">{{ preview_summary }}</div>
+      {% endif %}
+      {% if preview_recipients %}
+      <ul class="mt-12">
+        {% for recipient in preview_recipients %}
+        <li>{{ recipient }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </article>
+  </section>
+
+  <section class="card mt-16">
+    <h3>最近のテスト送信履歴</h3>
+    {% if recent_test_histories %}
+    <div class="table-scroll">
+      <table class="mobile-card-table">
+        <thead>
+          <tr><th>活動日</th><th>部署</th><th>件名</th><th>送信先グループ</th><th>状態</th></tr>
+        </thead>
+        <tbody>
+          {% for history in recent_test_histories %}
+          <tr>
+            <td>{{ history.activity_date }}</td>
+            <td>{% if history.department %}{{ history.department.code }}{% else %}-{% endif %}</td>
+            <td>{{ history.subject_snapshot }}</td>
+            <td>{% if history.recipient_group %}{{ history.recipient_group.name }}{% else %}-{% endif %}</td>
+            <td>{{ history.get_status_display }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">まだテスト送信履歴はありません。</p>
+    {% endif %}
+  </section>
+</div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+{% endblock %}

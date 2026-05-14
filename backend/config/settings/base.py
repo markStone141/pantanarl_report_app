@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "apps.testimony",
     "apps.dairymetrics",
     "apps.monthly_guide",
+    "apps.mail",
 ]
 
 MIDDLEWARE = [

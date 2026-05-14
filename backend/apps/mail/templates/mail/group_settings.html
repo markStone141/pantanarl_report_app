@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}メールグループ管理 | 管理者ページ{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
+    <div>
+      <strong>メールグループ管理</strong>
+      <div class="muted topbar-muted">メンバー名ベースで送信先グループを管理します。</div>
+    </div>
+    <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
+      {% for url_name, label in nav_items %}
+      <a href="{% url url_name %}">{{ label }}</a>
+      {% endfor %}
+      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+  <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+
+  {% if status_message %}
+  <div class="note mt-12">{{ status_message }}</div>
+  {% endif %}
+
+  <section class="mt-16">
+    <article class="card">
+      <h3>{% if edit_group %}メールグループ編集{% else %}新規メールグループ追加{% endif %}</h3>
+      <form method="post">
+        {% csrf_token %}
+        {% if edit_group %}
+        <input type="hidden" name="group_id" value="{{ edit_group.id }}" />
+        {% endif %}
+
+        <label for="id_name">{{ form.name.label }}</label>
+        {{ form.name }}
+        {% if form.name.errors %}<div class="error-text">{{ form.name.errors|striptags }}</div>{% endif %}
+
+        <label for="id_department">{{ form.department.label }}</label>
+        {{ form.department }}
+        {% if form.department.errors %}<div class="error-text">{{ form.department.errors|striptags }}</div>{% endif %}
+
+        <label>{{ form.members.label }}</label>
+        <div class="checkbox-list">
+          {% for checkbox in form.members %}
+          <div class="checkbox-row">{{ checkbox.tag }} <label for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label></div>
+          {% empty %}
+          <div class="muted">メールアドレスが登録された有効メンバーがいません。</div>
+          {% endfor %}
+        </div>
+        {% if form.members.errors %}<div class="error-text">{{ form.members.errors|striptags }}</div>{% endif %}
+
+        <label class="checkbox-label" for="id_is_active">{{ form.is_active }} {{ form.is_active.label }}</label>
+        {% if form.is_active.errors %}<div class="error-text">{{ form.is_active.errors|striptags }}</div>{% endif %}
+
+        <button type="submit" class="mt-12">{% if edit_group %}グループを更新{% else %}グループを追加{% endif %}</button>
+        {% if edit_group %}
+        <a href="{% url 'mail_group_settings' %}" class="mt-8">編集をキャンセル</a>
+        {% endif %}
+      </form>
+    </article>
+
+    <article class="card mt-16">
+      <h3>現在のメールグループ</h3>
+      {% if groups %}
+      <div class="table-scroll">
+        <table class="mobile-card-table">
+          <thead>
+            <tr><th>グループ名</th><th>関連部署</th><th>状態</th><th>メンバー</th><th>操作</th></tr>
+          </thead>
+          <tbody>
+            {% for group in groups %}
+            <tr>
+              <td>{{ group.name }}</td>
+              <td>{% if group.department %}{{ group.department.name }} ({{ group.department.code }}){% else %}-{% endif %}</td>
+              <td>{% if group.is_active %}有効{% else %}無効{% endif %}</td>
+              <td>
+                {% for member in group.members.all %}
+                  {{ member.name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                  -
+                {% endfor %}
+              </td>
+              <td><a class="btn-inline" href="{% url 'mail_group_settings' %}?edit={{ group.id }}">編集</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="muted">まだメールグループはありません。</p>
+      {% endif %}
+    </article>
+  </section>
+</div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+{% endblock %}

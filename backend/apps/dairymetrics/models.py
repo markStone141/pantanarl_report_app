@@ -46,6 +46,146 @@ class MemberDailyMetricEntry(models.Model):
     def __str__(self) -> str:
         return f"{self.member.name} {self.department.code} {self.entry_date}"
 
+    @property
+    def has_transactions(self) -> bool:
+        return self.transactions.exists()
+
+    def recalculate_from_transactions(self, *, save: bool = True) -> tuple[int, int]:
+        totals = self.transactions.aggregate(
+            total_count=models.Count("id"),
+            total_amount=models.Sum("support_amount"),
+        )
+        self.result_count = int(totals["total_count"] or 0)
+        self.support_amount = int(totals["total_amount"] or 0)
+        if save:
+            self.save(update_fields=["result_count", "support_amount", "updated_at"])
+        return self.result_count, self.support_amount
+
+
+class DepartmentDailyMetricSummary(models.Model):
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.CASCADE,
+        related_name="daily_metric_summaries",
+    )
+    entry_date = models.DateField(default=timezone.localdate)
+    approach_count = models.PositiveIntegerField(default=0)
+    communication_count = models.PositiveIntegerField(default=0)
+    result_count = models.PositiveIntegerField(default=0)
+    support_amount = models.PositiveIntegerField(default=0)
+    daily_target_count = models.PositiveIntegerField(default=0)
+    daily_target_amount = models.PositiveIntegerField(default=0)
+    created_by = models.ForeignKey(
+        Member,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_department_daily_metric_summaries",
+    )
+    updated_by = models.ForeignKey(
+        Member,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="updated_department_daily_metric_summaries",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-entry_date", "department__code"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["department", "entry_date"],
+                name="unique_department_daily_metric_summary",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.department.code} {self.entry_date}"
+
+    def recalculate_from_entries(self, *, save: bool = True) -> tuple[int, int]:
+        totals = MemberDailyMetricEntry.objects.filter(
+            department=self.department,
+            entry_date=self.entry_date,
+        ).aggregate(
+            total_approach=models.Sum("approach_count"),
+            total_communication=models.Sum("communication_count"),
+            total_count=models.Sum("result_count"),
+            total_amount=models.Sum("support_amount"),
+        )
+        self.approach_count = int(totals["total_approach"] or 0)
+        self.communication_count = int(totals["total_communication"] or 0)
+        self.result_count = int(totals["total_count"] or 0)
+        self.support_amount = int(totals["total_amount"] or 0)
+        if save:
+            self.save(
+                update_fields=[
+                    "approach_count",
+                    "communication_count",
+                    "result_count",
+                    "support_amount",
+                    "updated_at",
+                ]
+            )
+        return self.result_count, self.support_amount
+
+
+class MemberMetricTransaction(models.Model):
+    AGE_BAND_TEENS = "teens"
+    AGE_BAND_TWENTIES = "twenties"
+    AGE_BAND_THIRTIES = "thirties"
+    AGE_BAND_FORTIES = "forties"
+    AGE_BAND_FIFTIES = "fifties"
+    AGE_BAND_SIXTIES = "sixties"
+    AGE_BAND_SEVENTIES = "seventies"
+    AGE_BAND_EIGHTIES = "eighties"
+    AGE_BAND_NINETIES_OR_OLDER = "nineties_or_older"
+    AGE_BAND_CHOICES = [
+        (AGE_BAND_TEENS, "10代"),
+        (AGE_BAND_TWENTIES, "20代"),
+        (AGE_BAND_THIRTIES, "30代"),
+        (AGE_BAND_FORTIES, "40代"),
+        (AGE_BAND_FIFTIES, "50代"),
+        (AGE_BAND_SIXTIES, "60代"),
+        (AGE_BAND_SEVENTIES, "70代"),
+        (AGE_BAND_EIGHTIES, "80代"),
+        (AGE_BAND_NINETIES_OR_OLDER, "90代以上"),
+    ]
+    GENDER_MALE = "male"
+    GENDER_FEMALE = "female"
+    GENDER_CHOICES = [
+        (GENDER_MALE, "男性"),
+        (GENDER_FEMALE, "女性"),
+    ]
+    NATIONALITY_DOMESTIC = "domestic"
+    NATIONALITY_OVERSEAS = "overseas"
+    NATIONALITY_CHOICES = [
+        (NATIONALITY_DOMESTIC, "国内"),
+        (NATIONALITY_OVERSEAS, "海外"),
+    ]
+
+    entry = models.ForeignKey(
+        MemberDailyMetricEntry,
+        on_delete=models.CASCADE,
+        related_name="transactions",
+    )
+    support_amount = models.PositiveIntegerField(default=0)
+    age_band = models.CharField(max_length=32, choices=AGE_BAND_CHOICES)
+    is_student = models.BooleanField(default=False)
+    gender = models.CharField(max_length=16, choices=GENDER_CHOICES)
+    nationality_type = models.CharField(max_length=16, choices=NATIONALITY_CHOICES)
+    location = models.CharField(max_length=128, blank=True)
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.entry} #{self.pk or 'new'}"
+
 
 class MetricAdjustment(models.Model):
     SOURCE_POSTAL = "postal"
