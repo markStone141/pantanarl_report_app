@@ -23,6 +23,92 @@
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
   <section class="card mt-16">
+    <h3>本日の活動状況</h3>
+    <div class="grid grid-2 mt-12">
+      <article class="card">
+        <h4>現在活動中メンバー</h4>
+        {% if dashboard_snapshot.activity_in_progress %}
+        <div class="grid mt-10">
+          {% for row in dashboard_snapshot.activity_in_progress %}
+          <div class="metric-card">
+            <div class="row">
+              <strong>{{ row.member_name }}</strong>
+              <span class="badge">{{ row.department_code }}</span>
+            </div>
+            <div class="muted">{{ row.updated_at }} 更新</div>
+            <div class="mt-8">{{ row.count_text }} / {{ row.amount_text }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="muted">現在活動中のメンバーはいません。</p>
+        {% endif %}
+      </article>
+      <article class="card">
+        <h4>活動終了メンバー</h4>
+        {% if dashboard_snapshot.activity_finished %}
+        <div class="grid mt-10">
+          {% for row in dashboard_snapshot.activity_finished %}
+          <div class="metric-card">
+            <div class="row">
+              <strong>{{ row.member_name }}</strong>
+              <span class="badge">{{ row.department_code }}</span>
+            </div>
+            <div class="muted">{{ row.updated_at }} 更新</div>
+            <div class="mt-8">{{ row.count_text }} / {{ row.amount_text }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="muted">活動終了メンバーはいません。</p>
+        {% endif %}
+      </article>
+    </div>
+  </section>
+
+  <section class="card mt-16">
+    <h3>月目標に対する達成率</h3>
+    {% if dashboard_snapshot.month_progress_cards %}
+    <div class="grid grid-3 mt-12">
+      {% for card in dashboard_snapshot.month_progress_cards %}
+      <article class="metric-card">
+        <div class="row">
+          <strong>{{ card.label }}</strong>
+          <span class="badge">{{ card.rate_text }}</span>
+        </div>
+        <div class="muted mt-6">{{ card.summary_text }}</div>
+        <div class="mt-8">実績 {{ card.actual_amount_text }}</div>
+        <div class="muted">目標 {{ card.target_amount_text }}</div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">対象部署の月目標データがありません。</p>
+    {% endif %}
+  </section>
+
+  <section class="card mt-16">
+    <h3>路程目標に対する達成率</h3>
+    {% if dashboard_snapshot.period_progress_cards %}
+    <div class="grid grid-3 mt-12">
+      {% for card in dashboard_snapshot.period_progress_cards %}
+      <article class="metric-card">
+        <div class="row">
+          <strong>{{ card.label }}</strong>
+          <span class="badge">{{ card.rate_text }}</span>
+        </div>
+        <div class="muted mt-6">{{ card.summary_text }}</div>
+        <div class="mt-8">実績 {{ card.actual_amount_text }}</div>
+        <div class="muted">目標 {{ card.target_amount_text }}</div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">対象部署の路程目標データがありません。</p>
+    {% endif %}
+  </section>
+
+  <section class="card mt-16">
     <h3>絞り込み</h3>
     <form method="get" class="grid grid-2 mt-10">
       <div>

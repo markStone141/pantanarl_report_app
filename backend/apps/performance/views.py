@@ -5,9 +5,19 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import urlencode
+from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, require_roles
+from apps.accounts.models import Department
 from apps.dairymetrics.models import DepartmentDailyMetricSummary, MemberDailyMetricEntry, MetricAdjustment
+from apps.dairymetrics.services.final_actuals import collect_department_final_actual_totals_by_codes
+from apps.targets.models import (
+    DepartmentMonthTarget,
+    DepartmentPeriodTarget,
+    MonthTargetMetricValue,
+    Period,
+    PeriodTargetMetricValue,
+)
 
 from .forms import PerformanceEntryFilterForm, PerformanceMemberDailyMetricEntryForm, PerformanceMetricAdjustmentForm
 
@@ -125,6 +135,171 @@ def _amount_text(entry, adjustment_totals):
     return f"{total_amount:,}円"
 
 
+def _resolve_current_period(today):
+    return (
+        Period.objects.filter(start_date__lte=today, end_date__gte=today)
+        .order_by("-month", "start_date", "id")
+        .first()
+        or Period.objects.order_by("-end_date", "-start_date", "-id").first()
+    )
+
+
+def _resolve_month_target_amounts_by_code(*, departments, target_month):
+    target_codes = [department.code for department in departments]
+    metric_rows = (
+        MonthTargetMetricValue.objects.filter(
+            department__code__in=target_codes,
+            target_month=target_month,
+            metric__code="amount",
+        )
+        .values("department__code", "value")
+    )
+    target_map = {row["department__code"]: int(row["value"] or 0) for row in metric_rows}
+    fallback_rows = (
+        DepartmentMonthTarget.objects.filter(
+            department__code__in=target_codes,
+            target_month=target_month,
+        )
+        .values("department__code", "target_amount")
+    )
+    for row in fallback_rows:
+        target_map.setdefault(row["department__code"], int(row["target_amount"] or 0))
+    return target_map
+
+
+def _resolve_period_target_amounts_by_code(*, departments, period):
+    if not period:
+        return {}
+    target_codes = [department.code for department in departments]
+    metric_rows = (
+        PeriodTargetMetricValue.objects.filter(
+            department__code__in=target_codes,
+            period=period,
+            metric__code="amount",
+        )
+        .values("department__code", "value")
+    )
+    target_map = {row["department__code"]: int(row["value"] or 0) for row in metric_rows}
+    fallback_rows = (
+        DepartmentPeriodTarget.objects.filter(
+            department__code__in=target_codes,
+            period=period,
+        )
+        .values("department__code", "target_amount")
+    )
+    for row in fallback_rows:
+        target_map.setdefault(row["department__code"], int(row["target_amount"] or 0))
+    return target_map
+
+
+def _progress_rate(actual, target):
+    if target <= 0:
+        return None
+    return round((actual / target) * 100, 1)
+
+
+def _build_progress_card(*, label, actual_amount, target_amount, summary_text):
+    rate = _progress_rate(actual_amount, target_amount)
+    return {
+        "label": label,
+        "actual_amount": actual_amount,
+        "actual_amount_text": f"{actual_amount:,}円",
+        "target_amount": target_amount,
+        "target_amount_text": f"{target_amount:,}円",
+        "rate": rate,
+        "rate_text": "-" if rate is None else f"{rate}%",
+        "summary_text": summary_text,
+    }
+
+
+def _build_activity_member_rows(entries):
+    rows = []
+    for entry in entries:
+        rows.append(
+            {
+                "member_name": entry.member.name,
+                "department_code": entry.department.code,
+                "updated_at": timezone.localtime(entry.updated_at).strftime("%H:%M"),
+                "amount_text": f"{int(entry.support_amount or 0):,}円",
+                "count_text": (
+                    f"CS {int(entry.cs_count or 0)} / 難民 {int(entry.refugee_count or 0)}"
+                    if entry.department.code == "WV"
+                    else f"{int(entry.result_count or 0)}件"
+                ),
+            }
+        )
+    return rows
+
+
+def _build_performance_dashboard_snapshot(*, department=None):
+    today = timezone.localdate()
+    active_entries = MemberDailyMetricEntry.objects.select_related("member", "department").filter(entry_date=today)
+    if department:
+        active_entries = active_entries.filter(department=department)
+        departments = [department]
+    else:
+        department_ids = list(active_entries.order_by("department__code").values_list("department_id", flat=True).distinct())
+        departments = list(Department.objects.filter(id__in=department_ids).order_by("code"))
+    active_entries = list(active_entries.order_by("department__code", "member__name"))
+    activity_in_progress = [entry for entry in active_entries if not entry.activity_closed]
+    activity_finished = [entry for entry in active_entries if entry.activity_closed]
+
+    target_month = today.replace(day=1)
+    period = _resolve_current_period(today)
+    target_codes = [department.code for department in departments]
+
+    month_totals_by_code = collect_department_final_actual_totals_by_codes(
+        target_codes=target_codes,
+        start_date=target_month,
+        end_date=today,
+        include_adjustments=True,
+    )
+    period_totals_by_code = collect_department_final_actual_totals_by_codes(
+        target_codes=target_codes,
+        start_date=period.start_date if period else today,
+        end_date=min(period.end_date, today) if period else today,
+        include_adjustments=True,
+    ) if target_codes else {}
+
+    month_target_amounts = _resolve_month_target_amounts_by_code(departments=departments, target_month=target_month)
+    period_target_amounts = _resolve_period_target_amounts_by_code(departments=departments, period=period)
+
+    month_progress_cards = []
+    period_progress_cards = []
+    for current_department in departments:
+        month_totals = month_totals_by_code.get(current_department.code, {})
+        period_totals = period_totals_by_code.get(current_department.code, {})
+        month_progress_cards.append(
+            _build_progress_card(
+                label=current_department.code,
+                actual_amount=int(month_totals.get("support_amount") or 0)
+                + int(month_totals.get("return_postal_amount") or 0)
+                + int(month_totals.get("return_qr_amount") or 0),
+                target_amount=int(month_target_amounts.get(current_department.code) or 0),
+                summary_text=f"{target_month:%Y/%m} の補正込み累計",
+            )
+        )
+        period_progress_cards.append(
+            _build_progress_card(
+                label=current_department.code,
+                actual_amount=int(period_totals.get("support_amount") or 0)
+                + int(period_totals.get("return_postal_amount") or 0)
+                + int(period_totals.get("return_qr_amount") or 0),
+                target_amount=int(period_target_amounts.get(current_department.code) or 0),
+                summary_text=period.name if period else "路程未設定",
+            )
+        )
+
+    return {
+        "today": today,
+        "activity_in_progress": _build_activity_member_rows(activity_in_progress),
+        "activity_finished": _build_activity_member_rows(activity_finished),
+        "month_progress_cards": month_progress_cards,
+        "period_progress_cards": period_progress_cards,
+        "current_period": period,
+    }
+
+
 @require_roles(ROLE_ADMIN)
 def performance_index(request: HttpRequest) -> HttpResponse:
     filter_data = request.GET.copy()
@@ -174,6 +349,8 @@ def performance_index(request: HttpRequest) -> HttpResponse:
 
     current_query = request.GET.copy()
     current_query.pop("page", None)
+    dashboard_department = filter_form.cleaned_data.get("department") if filter_form.is_valid() else None
+    dashboard_snapshot = _build_performance_dashboard_snapshot(department=dashboard_department)
     context = {
         "nav_items": _performance_nav_items(),
         "filter_form": filter_form,
@@ -182,6 +359,7 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         "entry_rows": entry_rows,
         "adjustments_preview": adjustments_preview,
         "current_query_string": current_query.urlencode(),
+        "dashboard_snapshot": dashboard_snapshot,
     }
     return render(request, "performance/index.html", context)
 

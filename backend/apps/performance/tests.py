@@ -1,11 +1,13 @@
-from datetime import date
+from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
 from apps.dairymetrics.models import DepartmentDailyMetricSummary, MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjustment
+from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 
 
 User = get_user_model()
@@ -141,3 +143,75 @@ class PerformanceManagementTests(TestCase):
         self.assertRedirects(response, reverse("performance_adjustments") + "?saved=1")
         adjustment = MetricAdjustment.objects.get(member=self.member, department=self.department, target_date=date(2026, 5, 14))
         self.assertEqual(adjustment.created_by, self.user)
+
+    def test_performance_index_shows_activity_lists_and_progress_with_adjustments(self):
+        today = timezone.localdate()
+        other_member = Member.objects.create(name="Bob", default_department=self.department)
+        active_period = Period.objects.create(
+            month=today.replace(day=1),
+            name="5月第2次路程",
+            status="active",
+            start_date=today - timedelta(days=5),
+            end_date=today + timedelta(days=5),
+        )
+        amount_metric = TargetMetric.objects.create(
+            department=self.department,
+            code="amount",
+            label="金額",
+            unit="円",
+            display_order=1,
+            is_active=True,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.department,
+            target_month=today.replace(day=1),
+            metric=amount_metric,
+            value=10000,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=active_period,
+            department=self.department,
+            metric=amount_metric,
+            value=30000,
+        )
+        active_entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            result_count=1,
+            support_amount=3000,
+            activity_closed=False,
+        )
+        finished_entry = MemberDailyMetricEntry.objects.create(
+            member=other_member,
+            department=self.department,
+            entry_date=today,
+            result_count=1,
+            support_amount=2000,
+            activity_closed=True,
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=today,
+            support_amount=500,
+        )
+        MetricAdjustment.objects.create(
+            member=other_member,
+            department=self.department,
+            target_date=today - timedelta(days=1),
+            support_amount=1500,
+        )
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "現在活動中メンバー")
+        self.assertContains(response, "活動終了メンバー")
+        self.assertContains(response, active_entry.member.name)
+        self.assertContains(response, finished_entry.member.name)
+        self.assertContains(response, "月目標に対する達成率")
+        self.assertContains(response, "路程目標に対する達成率")
+        self.assertContains(response, "70.0%")
+        self.assertContains(response, "23.3%")
+        self.assertContains(response, "7,000円")
