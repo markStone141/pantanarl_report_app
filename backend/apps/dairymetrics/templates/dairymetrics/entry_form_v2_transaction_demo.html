@@ -725,6 +725,14 @@
       section.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
+    function revealSection(section) {
+      if (!section) return;
+      section.hidden = false;
+      if (section === transactionListPanel || section === sentMailListPanel) {
+        section.style.display = "grid";
+      }
+    }
+
     function closeSection(section) {
       if (!section) return;
       section.hidden = true;
@@ -982,7 +990,7 @@
     closeSection(sentMailListPanel);
     const autoOpenMailButton = document.querySelector("[data-auto-open-mail-modal]");
     if (autoOpenMailButton) {
-      openSection(transactionListPanel);
+      revealSection(transactionListPanel);
       openMailModal(autoOpenMailButton);
     }
     if (!{{ open_entry_panel|yesno:"true,false" }}) {
