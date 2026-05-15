@@ -293,7 +293,7 @@ class DairyMetricsDashboardTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "決済登録 v2")
+        self.assertContains(response, "決済登録")
         self.assertContains(response, "全体の日目標")
         self.assertContains(response, "路程目標")
         self.assertContains(response, "月目標")
@@ -304,7 +304,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "登録してメール送信")
         self.assertContains(response, "登録して閉じる")
         self.assertContains(response, "13,000")
-        self.assertContains(response, "活動前の準備")
+        self.assertContains(response, "目標設定")
         self.assertContains(response, "部署全体の日目標を入力")
         self.assertContains(response, "1,000円")
         self.assertContains(response, "5,000円")
@@ -393,7 +393,7 @@ class DairyMetricsDashboardTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "活動前の準備")
+        self.assertContains(response, "目標設定")
         self.assertContains(response, "部署全体の日目標を入力")
         self.assertContains(response, "全体目標の対象日")
         self.assertContains(response, "全体目標を保存")

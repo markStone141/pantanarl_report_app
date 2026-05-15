@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static humanize %}
 
-{% block title %}決済登録 v2 | DairyMetrics{% endblock %}
+{% block title %}決済登録 | DairyMetrics{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=24" />
@@ -11,7 +11,7 @@
 <div class="container">
   <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
     <div>
-      <strong>決済登録 v2</strong>
+      <strong>決済登録</strong>
       <div class="topbar-muted">{{ member.name }}さんでログイン中</div>
     </div>
     <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="Open menu">
@@ -29,7 +29,6 @@
 
   <section class="card dairymetrics-form-card dairymetrics-v2-transaction-shell">
     <div class="dairymetrics-v2-intro">
-      <h2>活動日のダッシュボード</h2>
       {% if status_message %}
       <div class="note">{{ status_message }}</div>
       {% endif %}
@@ -39,8 +38,7 @@
     <section class="dairymetrics-v2-setup-card">
       <div class="dairymetrics-v2-setup-head">
         <div>
-          <h3>活動前の準備</h3>
-          <p class="muted">未入力の目標だけを表示しています。</p>
+          <h3>目標設定</h3>
         </div>
       </div>
 
