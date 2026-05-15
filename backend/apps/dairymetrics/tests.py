@@ -704,6 +704,7 @@ class DairyMetricsDashboardTests(TestCase):
             {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
         )
         self.assertContains(response, "共有A")
+        self.assertContains(response, self.member.name)
         self.assertContains(response, "会員1名 2,000円")
 
     def test_entry_v2_transaction_demo_mock_send_creates_mail_history_and_shows_it(self):
@@ -754,7 +755,9 @@ class DairyMetricsDashboardTests(TestCase):
             {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
         )
         self.assertContains(response, "共有B")
+        self.assertContains(response, self.member.name)
         self.assertContains(response, history.subject_snapshot)
+        self.assertContains(response, history.body_snapshot)
 
     def test_entry_v2_transaction_demo_mock_send_without_mail_group_still_saves_history(self):
         entry_date = timezone.localdate()
@@ -801,6 +804,7 @@ class DairyMetricsDashboardTests(TestCase):
             {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
         )
         self.assertContains(response, "未設定（モック送信）")
+        self.assertContains(response, self.member.name)
         self.assertContains(response, history.subject_snapshot)
 
     def test_comparison_page_shows_ranking_metrics(self):

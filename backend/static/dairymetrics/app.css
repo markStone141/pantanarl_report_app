@@ -2284,6 +2284,12 @@
   overflow-wrap: anywhere;
 }
 
+.dairymetrics-v2-mail-history-detail {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+}
+
 @media (max-width: 900px) {
   .dairymetrics-v2-setup-head,
   .dairymetrics-v2-setup-actions {

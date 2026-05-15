@@ -578,8 +578,10 @@ def _build_entry_v2_transaction_demo_context(
                 {
                     "sent_at": timezone.localtime(history.sent_at).strftime("%H:%M") if history.sent_at else "-",
                     "subject": history.subject_snapshot,
+                    "sender_name": history.sender_member.name if history.sender_member else "送信者未設定",
                     "recipient_group": history.recipient_group.name if history.recipient_group else history.sent_to_snapshot,
                     "summary": summary,
+                    "body": history.body_snapshot,
                 }
             )
 

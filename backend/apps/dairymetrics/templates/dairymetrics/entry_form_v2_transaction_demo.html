@@ -514,13 +514,25 @@
             <div class="dairymetrics-v2-transaction-item">
               <div class="dairymetrics-v2-transaction-top">
                 <strong>{{ mail.sent_at }}</strong>
-                <span class="dairymetrics-v2-mail-badge is-sent">送信済み</span>
+                <span class="dairymetrics-v2-mail-badge is-sent">{{ mail.sender_name }}</span>
               </div>
               <div class="dairymetrics-v2-transaction-main">
                 <span>{{ mail.recipient_group|default:"-" }}</span>
                 <span>{{ mail.subject }}</span>
               </div>
               <div class="dairymetrics-subtext">{{ mail.summary|default:"本文要約なし" }}</div>
+              <div class="dairymetrics-v2-inline-actions">
+                <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-sent-mail-detail>内容を見る</button>
+              </div>
+              <div class="dairymetrics-v2-mail-history-detail" hidden>
+                <div class="dairymetrics-v2-mail-subject">
+                  件名: <strong>{{ mail.subject }}</strong>
+                </div>
+                <pre class="dairymetrics-v2-mail-body">{{ mail.body }}</pre>
+                <div class="dairymetrics-v2-inline-actions">
+                  <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-sent-mail-detail>閉じる</button>
+                </div>
+              </div>
             </div>
             {% endfor %}
           {% else %}
@@ -761,6 +773,23 @@
     document.querySelectorAll("[data-close-sent-mail-list]").forEach((button) => {
       button.addEventListener("click", function () {
         closeSection(sentMailListPanel);
+      });
+    });
+    document.querySelectorAll("[data-open-sent-mail-detail]").forEach((button) => {
+      button.addEventListener("click", function () {
+        const item = button.closest(".dairymetrics-v2-transaction-item");
+        const detail = item ? item.querySelector(".dairymetrics-v2-mail-history-detail") : null;
+        if (detail) {
+          detail.hidden = false;
+        }
+      });
+    });
+    document.querySelectorAll("[data-close-sent-mail-detail]").forEach((button) => {
+      button.addEventListener("click", function () {
+        const detail = button.closest(".dairymetrics-v2-mail-history-detail");
+        if (detail) {
+          detail.hidden = true;
+        }
       });
     });
     document.querySelectorAll("[data-open-closeout]").forEach((button) => {
