@@ -870,6 +870,63 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "修正版本文")
         self.assertNotContains(response, "初回本文")
 
+    def test_entry_v2_transaction_demo_shows_modified_unsent_after_editing_sent_transaction(self):
+        entry_date = timezone.localdate()
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=2000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+            comment="初回",
+        )
+        entry.recalculate_from_transactions()
+        MailSendHistory.objects.create(
+            department=self.department,
+            activity_date=entry_date,
+            sender_member=self.member,
+            transaction=transaction,
+            subject_snapshot="初回件名",
+            body_snapshot="初回本文",
+            status=MailSendHistory.STATUS_SENT,
+            sent_at=timezone.now(),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "save_transaction",
+                "transaction_id": str(transaction.id),
+                "department_code": self.department.code,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "support_amount": "2500",
+                "location": "渋谷駅前",
+                "age_band": MemberMetricTransaction.AGE_BAND_TWENTIES,
+                "gender": MemberMetricTransaction.GENDER_FEMALE,
+                "nationality_type": MemberMetricTransaction.NATIONALITY_DOMESTIC,
+                "comment": "修正後",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=transaction",
+        )
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+        self.assertContains(response, "修正済み未送信")
+
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")
         teammate = Member.objects.create(name="Member Compare", user=teammate_user)

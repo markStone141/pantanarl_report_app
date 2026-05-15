@@ -468,7 +468,7 @@
             <div class="dairymetrics-v2-transaction-item">
               <div class="dairymetrics-v2-transaction-top">
                 <strong>{{ transaction.time_label }}</strong>
-                <span class="dairymetrics-v2-mail-badge {% if transaction.mail_status == '修正再送済み' %}is-resent{% elif transaction.mail_status == '送信済み' %}is-sent{% else %}is-unsent{% endif %}">{{ transaction.mail_status }}</span>
+                <span class="dairymetrics-v2-mail-badge {% if transaction.mail_status == '修正再送済み' %}is-resent{% elif transaction.mail_status == '修正済み未送信' %}is-modified{% elif transaction.mail_status == '送信済み' %}is-sent{% else %}is-unsent{% endif %}">{{ transaction.mail_status }}</span>
               </div>
               <div class="dairymetrics-v2-transaction-main">
                 <span>{{ transaction.amount|intcomma }}円</span>

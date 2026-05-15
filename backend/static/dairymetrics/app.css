@@ -2223,8 +2223,12 @@
   background: #2f9a53;
 }
 
+.dairymetrics-v2-mail-badge.is-modified {
+  background: #c24b2d;
+}
+
 .dairymetrics-v2-mail-badge.is-resent {
-  background: #d9822b;
+  background: #b86a12;
 }
 
 .dairymetrics-v2-mail-send-link {

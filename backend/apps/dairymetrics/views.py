@@ -233,6 +233,8 @@ def _get_or_create_department_daily_summary(*, department, entry_date, member):
 def _transaction_mail_status(transaction_obj):
     latest_history = transaction_obj.mail_send_histories.order_by("-sent_at", "-created_at", "-id").first()
     if latest_history and latest_history.status == MailSendHistory.STATUS_SENT:
+        if latest_history.sent_at and transaction_obj.updated_at and transaction_obj.updated_at > latest_history.sent_at:
+            return "修正済み未送信"
         if latest_history.is_resend:
             return "修正再送済み"
         return "送信済み"
