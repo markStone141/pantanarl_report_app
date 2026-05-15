@@ -2248,15 +2248,15 @@
 }
 
 .dairymetrics-v2-modal-backdrop {
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  inset: 0 0 auto 0;
   background: rgba(9, 24, 41, 0.44);
   backdrop-filter: blur(6px);
   z-index: 300;
 }
 
 .dairymetrics-v2-modal {
-  position: fixed;
+  position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
@@ -2300,9 +2300,6 @@
   }
 
   .dairymetrics-v2-modal {
-    top: 50%;
-    bottom: auto;
-    transform: translate(-50%, -50%);
     width: min(100vw - 18px, 720px);
     max-height: calc(100vh - 24px);
     border-radius: 24px;

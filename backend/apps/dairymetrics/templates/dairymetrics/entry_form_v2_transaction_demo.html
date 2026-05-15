@@ -482,11 +482,12 @@
                   data-open-mail-modal
                   data-preview-transaction-id="{{ transaction.id }}"
                   data-preview-subject="{{ transaction.preview_subject|escapejs }}"
-                  data-preview-body="{{ transaction.preview_body|escapejs }}"
+                  data-preview-body-template="dairymetrics-v2-mail-body-template-{{ transaction.id }}"
                   {% if preview_transaction and preview_transaction.id == transaction.id %}data-auto-open-mail-modal{% endif %}
                 >
                   メール送信
                 </button>
+                <template id="dairymetrics-v2-mail-body-template-{{ transaction.id }}">{{ transaction.preview_body }}</template>
               </div>
             </div>
             {% endfor %}
@@ -684,15 +685,21 @@
 
     function openMailModal(button) {
       if (!mailPreviewModal || !mailPreviewBackdrop || !button) return;
+      const bodyTemplateId = button.dataset.previewBodyTemplate || "";
+      const bodyTemplate = bodyTemplateId ? document.getElementById(bodyTemplateId) : null;
       if (mailPreviewSubject) {
         mailPreviewSubject.textContent = button.dataset.previewSubject || "";
       }
       if (mailPreviewBody) {
-        mailPreviewBody.textContent = button.dataset.previewBody || "";
+        mailPreviewBody.textContent = bodyTemplate ? bodyTemplate.textContent || "" : "";
       }
       if (mailPreviewTransactionId) {
         mailPreviewTransactionId.value = button.dataset.previewTransactionId || "";
       }
+      const viewportCenter = window.scrollY + (window.innerHeight / 2);
+      mailPreviewBackdrop.style.top = "0px";
+      mailPreviewBackdrop.style.height = `${Math.max(document.body.scrollHeight, document.documentElement.scrollHeight)}px`;
+      mailPreviewModal.style.top = `${viewportCenter}px`;
       mailPreviewBackdrop.hidden = false;
       mailPreviewModal.hidden = false;
     }
