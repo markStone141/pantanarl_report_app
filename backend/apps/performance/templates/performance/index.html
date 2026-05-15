@@ -23,6 +23,45 @@
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
   <section class="card mt-16">
+    <h3>現在アクティブなメンバー</h3>
+    {% if dashboard_snapshot.active_member_cards %}
+    <div class="grid grid-2 mt-12">
+      {% for card in dashboard_snapshot.active_member_cards %}
+      <article class="card">
+        <div class="row">
+          <strong>{{ card.member_name }}</strong>
+          <span class="badge">{{ card.department_code }}</span>
+        </div>
+        <div class="muted mt-6">{{ card.updated_at }} 更新</div>
+        <div class="grid grid-3 mt-12">
+          <div class="metric-card">
+            <span class="muted">今月の実績</span>
+            <strong>{{ card.month_amount_text }}</strong>
+            <div class="muted">{{ card.month_count_text }}</div>
+          </div>
+          <div class="metric-card">
+            <span class="muted">今路程の実績</span>
+            <strong>{{ card.period_amount_text }}</strong>
+            <div class="muted">{{ card.period_count_text }}</div>
+          </div>
+          <div class="metric-card">
+            <span class="muted">直近の実績</span>
+            <strong>{{ card.recent_amount_text }}</strong>
+            <div class="muted">{{ card.recent_date_text }} / {{ card.recent_count_text }}</div>
+          </div>
+        </div>
+        <div class="mt-12">
+          <a class="btn-inline" href="{{ card.detail_url }}">今月の日次実績を見る</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">現在アクティブなメンバーはいません。</p>
+    {% endif %}
+  </section>
+
+  <section class="card mt-16">
     <h3>本日の活動状況</h3>
     <div class="grid grid-2 mt-12">
       <article class="card">

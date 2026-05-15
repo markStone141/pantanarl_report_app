@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.db.models import Sum
-from django.http import HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import urlencode
@@ -10,7 +10,10 @@ from django.utils import timezone
 from apps.accounts.auth import ROLE_ADMIN, require_roles
 from apps.accounts.models import Department
 from apps.dairymetrics.models import DepartmentDailyMetricSummary, MemberDailyMetricEntry, MetricAdjustment
-from apps.dairymetrics.services.final_actuals import collect_department_final_actual_totals_by_codes
+from apps.dairymetrics.services.final_actuals import (
+    collect_department_final_actual_totals_by_codes,
+    collect_member_final_actual_totals,
+)
 from apps.targets.models import (
     DepartmentMonthTarget,
     DepartmentPeriodTarget,
@@ -231,6 +234,83 @@ def _build_activity_member_rows(entries):
     return rows
 
 
+def _final_count_text(*, department_code, totals):
+    if department_code == "WV":
+        total_cs = int(totals.get("cs_count") or 0)
+        total_refugee = int(totals.get("refugee_count") or 0)
+        return f"CS {total_cs} / 難民 {total_refugee}"
+    total_count = (
+        int(totals.get("result_count") or 0)
+        + int(totals.get("return_postal_count") or 0)
+        + int(totals.get("return_qr_count") or 0)
+    )
+    return f"{total_count}件"
+
+
+def _final_amount_text(*, totals):
+    total_amount = (
+        int(totals.get("support_amount") or 0)
+        + int(totals.get("return_postal_amount") or 0)
+        + int(totals.get("return_qr_amount") or 0)
+    )
+    return f"{total_amount:,}円"
+
+
+def _build_active_member_cards(*, entries, today, current_period):
+    cards = []
+    entry_keys = [(entry.member_id, entry.department_id, entry.entry_date) for entry in entries]
+    adjustment_totals_map = _build_adjustment_totals_map(entries)
+    month_start = today.replace(day=1)
+
+    for entry in entries:
+        month_totals = collect_member_final_actual_totals(
+            entry.member,
+            entry.department,
+            month_start,
+            today,
+            include_adjustments=True,
+        )
+        period_totals = collect_member_final_actual_totals(
+            entry.member,
+            entry.department,
+            current_period.start_date if current_period else today,
+            min(current_period.end_date, today) if current_period else today,
+            include_adjustments=True,
+        )
+        recent_totals = adjustment_totals_map.get(
+            (entry.member_id, entry.department_id, entry.entry_date),
+            {
+                "result_count": 0,
+                "support_amount": 0,
+                "return_postal_count": 0,
+                "return_postal_amount": 0,
+                "return_qr_count": 0,
+                "return_qr_amount": 0,
+                "cs_count": 0,
+                "refugee_count": 0,
+            },
+        )
+        cards.append(
+            {
+                "member_name": entry.member.name,
+                "department_code": entry.department.code,
+                "updated_at": timezone.localtime(entry.updated_at).strftime("%H:%M"),
+                "month_amount_text": _final_amount_text(totals=month_totals),
+                "month_count_text": _final_count_text(department_code=entry.department.code, totals=month_totals),
+                "period_amount_text": _final_amount_text(totals=period_totals),
+                "period_count_text": _final_count_text(department_code=entry.department.code, totals=period_totals),
+                "recent_date_text": entry.entry_date.strftime("%Y/%m/%d"),
+                "recent_amount_text": _amount_text(entry, recent_totals),
+                "recent_count_text": _count_text(entry, recent_totals),
+                "detail_url": reverse(
+                    "performance_member_detail",
+                    args=[entry.member_id, entry.department_id],
+                ),
+            }
+        )
+    return cards
+
+
 def _build_performance_dashboard_snapshot(*, department=None):
     today = timezone.localdate()
     active_entries = MemberDailyMetricEntry.objects.select_related("member", "department").filter(entry_date=today)
@@ -294,6 +374,11 @@ def _build_performance_dashboard_snapshot(*, department=None):
         "today": today,
         "activity_in_progress": _build_activity_member_rows(activity_in_progress),
         "activity_finished": _build_activity_member_rows(activity_finished),
+        "active_member_cards": _build_active_member_cards(
+            entries=activity_in_progress,
+            today=today,
+            current_period=period,
+        ),
         "month_progress_cards": month_progress_cards,
         "period_progress_cards": period_progress_cards,
         "current_period": period,
@@ -397,6 +482,59 @@ def performance_entry_edit(request: HttpRequest, entry_id: int) -> HttpResponse:
         "status_message": status_message,
     }
     return render(request, "performance/entry_edit.html", context)
+
+
+@require_roles(ROLE_ADMIN)
+def performance_member_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
+    member_entries = MemberDailyMetricEntry.objects.select_related("member", "department").filter(
+        member_id=member_id,
+        department_id=department_id,
+    )
+    latest_entry = member_entries.order_by("-entry_date", "-id").first()
+    if latest_entry is None:
+        raise Http404
+    today = timezone.localdate()
+    month_start = today.replace(day=1)
+    entries = list(
+        member_entries.filter(entry_date__range=(month_start, today)).order_by("-entry_date", "-id")
+    )
+    adjustment_totals_map = _build_adjustment_totals_map(entries)
+    entry_rows = []
+    for entry in entries:
+        adjustment_totals = adjustment_totals_map.get(
+            (entry.member_id, entry.department_id, entry.entry_date),
+            {
+                "result_count": 0,
+                "support_amount": 0,
+                "return_postal_count": 0,
+                "return_postal_amount": 0,
+                "return_qr_count": 0,
+                "return_qr_amount": 0,
+                "cs_count": 0,
+                "refugee_count": 0,
+            },
+        )
+        entry_rows.append(
+            {
+                "entry": entry,
+                "count_text": _count_text(entry, adjustment_totals),
+                "amount_text": _amount_text(entry, adjustment_totals),
+                "adjustment_summary": (
+                    f"戻り 郵送 {adjustment_totals['return_postal_count']} / QR {adjustment_totals['return_qr_count']}"
+                    if adjustment_totals["return_postal_count"] or adjustment_totals["return_qr_count"]
+                    else ""
+                ),
+            }
+        )
+
+    context = {
+        "nav_items": _performance_nav_items(),
+        "member": latest_entry.member,
+        "department": latest_entry.department,
+        "entry_rows": entry_rows,
+        "month_label": month_start.strftime("%Y/%m"),
+    }
+    return render(request, "performance/member_detail.html", context)
 
 
 @require_roles(ROLE_ADMIN)

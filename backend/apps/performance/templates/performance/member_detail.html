@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}メンバー実績詳細 | 実績管理{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
+    <div>
+      <strong>{{ member.name }} の実績詳細</strong>
+      <div class="muted topbar-muted">{{ department.code }} / {{ month_label }} の日次実績一覧</div>
+    </div>
+    <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
+      {% for url_name, label in nav_items %}
+      <a href="{% url url_name %}">{{ label }}</a>
+      {% endfor %}
+      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+  <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+
+  <section class="card mt-16">
+    <div class="row">
+      <h3>今月の日次実績</h3>
+      <a class="btn-inline" href="{% url 'performance_index' %}">一覧へ戻る</a>
+    </div>
+    {% if entry_rows %}
+    <div class="table-scroll">
+      <table class="mobile-card-table">
+        <thead>
+          <tr>
+            <th>日付</th>
+            <th>件数</th>
+            <th>金額</th>
+            <th>AP / CM</th>
+            <th>状態</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in entry_rows %}
+          <tr>
+            <td data-label="日付">{{ row.entry.entry_date|date:"Y/m/d" }}</td>
+            <td data-label="件数">
+              {{ row.count_text }}
+              {% if row.adjustment_summary %}
+              <div class="muted">{{ row.adjustment_summary }}</div>
+              {% endif %}
+            </td>
+            <td data-label="金額">{{ row.amount_text }}</td>
+            <td data-label="AP / CM">{{ row.entry.approach_count }} / {{ row.entry.communication_count }}</td>
+            <td data-label="状態">
+              <span class="badge">{% if row.entry.activity_closed %}活動終了{% else %}活動中{% endif %}</span>
+            </td>
+            <td data-label="操作">
+              <a class="btn-inline" href="{% url 'performance_entry_edit' row.entry.id %}">編集</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">今月の日次実績はありません。</p>
+    {% endif %}
+  </section>
+</div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+{% endblock %}

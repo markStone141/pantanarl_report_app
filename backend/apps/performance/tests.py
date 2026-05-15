@@ -215,3 +215,82 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "70.0%")
         self.assertContains(response, "23.3%")
         self.assertContains(response, "7,000円")
+
+    def test_performance_index_shows_active_member_cards_with_detail_link(self):
+        today = timezone.localdate()
+        active_period = Period.objects.create(
+            month=today.replace(day=1),
+            name="5月第2次路程",
+            status="active",
+            start_date=today - timedelta(days=3),
+            end_date=today + timedelta(days=3),
+        )
+        active_entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            result_count=1,
+            support_amount=3000,
+            activity_closed=False,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today - timedelta(days=1),
+            result_count=2,
+            support_amount=2500,
+            activity_closed=True,
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=today,
+            support_amount=500,
+        )
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "現在アクティブなメンバー")
+        self.assertContains(response, self.member.name)
+        self.assertContains(response, "今月の実績")
+        self.assertContains(response, "今路程の実績")
+        self.assertContains(response, "直近の実績")
+        self.assertContains(response, reverse("performance_member_detail", args=[self.member.id, self.department.id]))
+
+    def test_performance_member_detail_shows_current_month_entries(self):
+        today = timezone.localdate()
+        entry_today = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            result_count=1,
+            support_amount=3000,
+            approach_count=8,
+            communication_count=4,
+        )
+        entry_old = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today - timedelta(days=1),
+            result_count=2,
+            support_amount=2500,
+            approach_count=6,
+            communication_count=3,
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=today,
+            return_postal_count=1,
+            return_postal_amount=900,
+        )
+
+        response = self.client.get(reverse("performance_member_detail", args=[self.member.id, self.department.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.member.name)
+        self.assertContains(response, entry_today.entry_date.strftime("%Y/%m/%d"))
+        self.assertContains(response, entry_old.entry_date.strftime("%Y/%m/%d"))
+        self.assertContains(response, "戻り 郵送 1 / QR 0")
+        self.assertContains(response, "編集")
