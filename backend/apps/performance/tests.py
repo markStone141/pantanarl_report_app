@@ -251,11 +251,30 @@ class PerformanceManagementTests(TestCase):
         response = self.client.get(reverse("performance_index"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "現在アクティブなメンバー")
+        self.assertContains(response, "有効メンバー一覧")
         self.assertContains(response, self.member.name)
         self.assertContains(response, "今月の実績")
         self.assertContains(response, "今路程の実績")
         self.assertContains(response, "直近の実績")
+        self.assertContains(response, reverse("performance_member_detail", args=[self.member.id, self.department.id]))
+
+    def test_performance_index_shows_enabled_member_card_without_today_entry(self):
+        today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today - timedelta(days=2),
+            result_count=2,
+            support_amount=2800,
+            activity_closed=True,
+        )
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "有効メンバー一覧")
+        self.assertContains(response, self.member.name)
+        self.assertContains(response, "2,800円")
         self.assertContains(response, reverse("performance_member_detail", args=[self.member.id, self.department.id]))
 
     def test_performance_member_detail_shows_current_month_entries(self):

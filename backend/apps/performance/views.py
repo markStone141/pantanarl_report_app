@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -8,7 +8,7 @@ from django.utils.http import urlencode
 from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, require_roles
-from apps.accounts.models import Department
+from apps.accounts.models import Department, Member
 from apps.dairymetrics.models import DepartmentDailyMetricSummary, MemberDailyMetricEntry, MetricAdjustment
 from apps.dairymetrics.services.final_actuals import (
     collect_department_final_actual_totals_by_codes,
@@ -256,55 +256,83 @@ def _final_amount_text(*, totals):
     return f"{total_amount:,}円"
 
 
-def _build_active_member_cards(*, entries, today, current_period):
-    cards = []
-    entry_keys = [(entry.member_id, entry.department_id, entry.entry_date) for entry in entries]
-    adjustment_totals_map = _build_adjustment_totals_map(entries)
-    month_start = today.replace(day=1)
+def _resolve_member_card_department(*, member, selected_department=None):
+    if selected_department is not None:
+        return selected_department
+    if member.default_department_id and member.default_department and member.default_department.is_active:
+        return member.default_department
+    return (
+        Department.objects.filter(member_links__member=member, is_active=True)
+        .order_by("code", "id")
+        .first()
+    )
 
-    for entry in entries:
+
+def _build_active_member_cards(*, members, today, current_period, selected_department=None):
+    cards = []
+    month_start = today.replace(day=1)
+    for member in members:
+        department = _resolve_member_card_department(member=member, selected_department=selected_department)
+        if department is None:
+            continue
+        entry = (
+            MemberDailyMetricEntry.objects.select_related("member", "department")
+            .filter(member=member, department=department)
+            .order_by("-entry_date", "-id")
+            .first()
+        )
         month_totals = collect_member_final_actual_totals(
-            entry.member,
-            entry.department,
+            member,
+            department,
             month_start,
             today,
             include_adjustments=True,
         )
         period_totals = collect_member_final_actual_totals(
-            entry.member,
-            entry.department,
+            member,
+            department,
             current_period.start_date if current_period else today,
             min(current_period.end_date, today) if current_period else today,
             include_adjustments=True,
         )
-        recent_totals = adjustment_totals_map.get(
-            (entry.member_id, entry.department_id, entry.entry_date),
-            {
-                "result_count": 0,
-                "support_amount": 0,
-                "return_postal_count": 0,
-                "return_postal_amount": 0,
-                "return_qr_count": 0,
-                "return_qr_amount": 0,
-                "cs_count": 0,
-                "refugee_count": 0,
-            },
-        )
+        if entry is not None:
+            recent_totals = _build_adjustment_totals_map([entry]).get(
+                (entry.member_id, entry.department_id, entry.entry_date),
+                {
+                    "result_count": 0,
+                    "support_amount": 0,
+                    "return_postal_count": 0,
+                    "return_postal_amount": 0,
+                    "return_qr_count": 0,
+                    "return_qr_amount": 0,
+                    "cs_count": 0,
+                    "refugee_count": 0,
+                },
+            )
+            updated_at_text = timezone.localtime(entry.updated_at).strftime("%H:%M")
+            recent_date_text = entry.entry_date.strftime("%Y/%m/%d")
+            recent_amount_text = _amount_text(entry, recent_totals)
+            recent_count_text = _count_text(entry, recent_totals)
+        else:
+            updated_at_text = "実績なし"
+            recent_date_text = "-"
+            recent_amount_text = "-"
+            recent_count_text = "-"
         cards.append(
             {
-                "member_name": entry.member.name,
-                "department_code": entry.department.code,
-                "updated_at": timezone.localtime(entry.updated_at).strftime("%H:%M"),
+                "member_name": member.name,
+                "department_code": department.code,
+                "updated_at": updated_at_text,
                 "month_amount_text": _final_amount_text(totals=month_totals),
-                "month_count_text": _final_count_text(department_code=entry.department.code, totals=month_totals),
+                "month_count_text": _final_count_text(department_code=department.code, totals=month_totals),
                 "period_amount_text": _final_amount_text(totals=period_totals),
-                "period_count_text": _final_count_text(department_code=entry.department.code, totals=period_totals),
-                "recent_date_text": entry.entry_date.strftime("%Y/%m/%d"),
-                "recent_amount_text": _amount_text(entry, recent_totals),
-                "recent_count_text": _count_text(entry, recent_totals),
+                "period_count_text": _final_count_text(department_code=department.code, totals=period_totals),
+                "recent_date_text": recent_date_text,
+                "recent_amount_text": recent_amount_text,
+                "recent_count_text": recent_count_text,
                 "detail_url": reverse(
                     "performance_member_detail",
-                    args=[entry.member_id, entry.department_id],
+                    args=[member.id, department.id],
                 ),
             }
         )
@@ -323,6 +351,22 @@ def _build_performance_dashboard_snapshot(*, department=None):
     active_entries = list(active_entries.order_by("department__code", "member__name"))
     activity_in_progress = [entry for entry in active_entries if not entry.activity_closed]
     activity_finished = [entry for entry in active_entries if entry.activity_closed]
+    if department:
+        active_members = list(
+            Member.objects.active()
+            .filter(department_links__department=department, department_links__department__is_active=True)
+            .select_related("default_department")
+            .distinct()
+            .order_by("name", "id")
+        )
+    else:
+        active_members = list(
+            Member.objects.active()
+            .filter(Q(default_department__is_active=True) | Q(department_links__department__is_active=True))
+            .select_related("default_department")
+            .distinct()
+            .order_by("name", "id")
+        )
 
     target_month = today.replace(day=1)
     period = _resolve_current_period(today)
@@ -375,9 +419,10 @@ def _build_performance_dashboard_snapshot(*, department=None):
         "activity_in_progress": _build_activity_member_rows(activity_in_progress),
         "activity_finished": _build_activity_member_rows(activity_finished),
         "active_member_cards": _build_active_member_cards(
-            entries=activity_in_progress,
+            members=active_members,
             today=today,
             current_period=period,
+            selected_department=department,
         ),
         "month_progress_cards": month_progress_cards,
         "period_progress_cards": period_progress_cards,

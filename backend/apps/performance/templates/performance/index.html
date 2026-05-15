@@ -23,7 +23,7 @@
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
   <section class="card mt-16">
-    <h3>現在アクティブなメンバー</h3>
+    <h3>有効メンバー一覧</h3>
     {% if dashboard_snapshot.active_member_cards %}
     <div class="grid grid-2 mt-12">
       {% for card in dashboard_snapshot.active_member_cards %}
@@ -32,7 +32,13 @@
           <strong>{{ card.member_name }}</strong>
           <span class="badge">{{ card.department_code }}</span>
         </div>
-        <div class="muted mt-6">{{ card.updated_at }} 更新</div>
+        <div class="muted mt-6">
+          {% if card.recent_date_text == "-" %}
+          実績なし
+          {% else %}
+          {{ card.updated_at }} 更新
+          {% endif %}
+        </div>
         <div class="grid grid-3 mt-12">
           <div class="metric-card">
             <span class="muted">今月の実績</span>
@@ -57,7 +63,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <p class="muted">現在アクティブなメンバーはいません。</p>
+    <p class="muted">有効なメンバーはいません。</p>
     {% endif %}
   </section>
 
