@@ -51,19 +51,22 @@ def send_transaction_mail_mock(
             sent_at=timezone.now(),
         )
 
+    resend_subject = subject
+    if not resend_subject.endswith("（再送）"):
+        resend_subject = f"{resend_subject}（再送）"
     history.integration_setting = active_setting
     history.department = transaction.entry.department
     history.activity_date = transaction.entry.entry_date
     history.sender_member = sender_member
     history.transaction = transaction
     history.recipient_group = recipient_group
-    history.subject_snapshot = subject
+    history.subject_snapshot = resend_subject
     history.body_snapshot = body
     history.sent_to_snapshot = recipient_snapshot
     history.provider_message_id = f"mock-{transaction.id}-{timestamp}"
     history.status = MailSendHistory.STATUS_SENT
     history.is_test = False
-    history.is_resend = False
+    history.is_resend = True
     history.sent_at = timezone.now()
     history.save()
     transaction.mail_send_histories.exclude(id=history.id).filter(status=MailSendHistory.STATUS_SENT, is_test=False).delete()
