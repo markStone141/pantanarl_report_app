@@ -500,6 +500,7 @@
                   data-preview-transaction-id="{{ transaction.id }}"
                   data-preview-subject="{{ transaction.preview_subject|escapejs }}"
                   data-preview-body-field="dairymetrics-v2-mail-body-field-{{ transaction.id }}"
+                  data-preview-mode="{% if transaction.has_sent_history %}resend{% else %}send{% endif %}"
                   {% if preview_transaction and preview_transaction.id == transaction.id %}data-auto-open-mail-modal{% endif %}
                 >
                   {% if transaction.has_sent_history %}再送{% else %}メール送信{% endif %}
