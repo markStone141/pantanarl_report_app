@@ -13,28 +13,15 @@ from .models import (
     MemberPeriodMetricTarget,
     MetricAdjustment,
 )
-
-ENTRY_METRIC_FIELDS = [
-    "approach_count",
-    "communication_count",
-    "result_count",
-    "support_amount",
-    "cs_count",
-    "refugee_count",
-]
-
-ADJUSTMENT_METRIC_FIELDS = [
-    "approach_count",
-    "communication_count",
-    "result_count",
-    "support_amount",
-    "return_postal_count",
-    "return_postal_amount",
-    "return_qr_count",
-    "return_qr_amount",
-    "cs_count",
-    "refugee_count",
-]
+from .services.final_actuals import (
+    ADJUSTMENT_METRIC_FIELDS,
+    ENTRY_METRIC_FIELDS,
+    aggregate_adjustment_totals,
+    aggregate_entry_box_totals,
+    collect_member_final_actual_totals,
+    merge_final_actual_totals,
+    zero_final_actual_totals,
+)
 
 RANKING_METRIC_SPECS = [
     {"key": "count_value", "label": "件数", "icon": "fa-check-to-slot"},
@@ -64,18 +51,14 @@ def _default_department_code_for_member(member, departments):
 
 
 def _zero_totals():
-    return {field: 0 for field in {*ENTRY_METRIC_FIELDS, *ADJUSTMENT_METRIC_FIELDS}}
+    return zero_final_actual_totals()
 
 
 def _aggregate_totals(entries, adjustments):
-    totals = _zero_totals()
-    entry_totals = entries.aggregate(**{field: Sum(field) for field in ENTRY_METRIC_FIELDS})
-    adjustment_totals = adjustments.aggregate(**{field: Sum(field) for field in ADJUSTMENT_METRIC_FIELDS})
-    for field in ENTRY_METRIC_FIELDS:
-        totals[field] = int(entry_totals.get(field) or 0)
-    for field in ADJUSTMENT_METRIC_FIELDS:
-        totals[field] = int(totals.get(field) or 0) + int(adjustment_totals.get(field) or 0)
-    return totals
+    return merge_final_actual_totals(
+        aggregate_entry_box_totals(entries),
+        aggregate_adjustment_totals(adjustments),
+    )
 
 
 def _change_rate(current_value, previous_value):
@@ -206,11 +189,13 @@ def _summarize_changes(current, previous, department, *, include_returns=False):
 
 
 def _department_totals(member, department, start_date, end_date, *, include_adjustments=True):
-    entries = MemberDailyMetricEntry.objects.filter(member=member, department=department, entry_date__range=(start_date, end_date))
-    adjustments = MetricAdjustment.objects.none()
-    if include_adjustments:
-        adjustments = MetricAdjustment.objects.filter(member=member, department=department, target_date__range=(start_date, end_date))
-    return _aggregate_totals(entries, adjustments)
+    return collect_member_final_actual_totals(
+        member,
+        department,
+        start_date,
+        end_date,
+        include_adjustments=include_adjustments,
+    )
 
 
 def _target_totals(member, department, start_date, end_date):
