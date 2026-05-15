@@ -854,11 +854,11 @@ class DairyMetricsDashboardTests(TestCase):
             f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=mail_sent",
         )
         histories = list(MailSendHistory.objects.filter(transaction=transaction).order_by("created_at", "id"))
-        self.assertEqual(len(histories), 2)
-        resent_history = histories[-1]
+        self.assertEqual(len(histories), 1)
+        resent_history = histories[0]
         self.assertEqual(resent_history.subject_snapshot, "修正版件名")
         self.assertEqual(resent_history.body_snapshot, "修正版本文")
-        self.assertTrue(resent_history.is_resend)
+        self.assertFalse(resent_history.is_resend)
 
         response = self.client.get(
             reverse("dairymetrics_entry_v2_transaction_demo"),
@@ -867,6 +867,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "修正")
         self.assertContains(response, "再送")
         self.assertContains(response, "修正版本文")
+        self.assertNotContains(response, "初回本文")
 
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")

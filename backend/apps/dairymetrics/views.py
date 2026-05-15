@@ -1570,6 +1570,18 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                 if not preview_transaction:
                     status_message = "送信対象の決済が見つかりません。"
                 else:
+                    existing_history = None
+                    if preview_history_id.isdigit():
+                        existing_history = (
+                            MailSendHistory.objects.filter(
+                                id=int(preview_history_id),
+                                transaction=preview_transaction,
+                                status=MailSendHistory.STATUS_SENT,
+                                is_test=False,
+                            )
+                            .select_related("transaction")
+                            .first()
+                        )
                     recipient_group = _get_default_mail_group(department=selected_department_obj)
                     preview_context = _build_entry_v2_transaction_demo_context(
                         member=member,
@@ -1589,6 +1601,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                         recipient_group=recipient_group,
                         subject=edited_subject or preview_payload["subject"],
                         body=edited_body or preview_payload["body"],
+                        existing_history=existing_history,
                     )
                     return redirect(
                         _build_v2_redirect_url(
