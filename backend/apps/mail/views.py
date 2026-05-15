@@ -14,6 +14,7 @@ def _mail_nav_items():
         ("dashboard_index", "管理者ページ"),
         ("member_settings", "メンバー管理"),
         ("department_settings", "部署管理"),
+        ("performance_index", "実績管理"),
         ("mail_integration_settings", "メール連携設定"),
         ("mail_group_settings", "メールグループ管理"),
         ("mail_history", "メール履歴"),

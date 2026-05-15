@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}補正実績 | 実績管理{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
+    <div>
+      <strong>補正実績</strong>
+      <div class="muted topbar-muted">戻り・増額・郵送などの後追い補正を管理します。</div>
+    </div>
+    <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
+      {% for url_name, label in nav_items %}
+      <a href="{% url url_name %}">{{ label }}</a>
+      {% endfor %}
+      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+  <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+
+  <section class="card mt-16">
+    {% if status_message %}
+    <div class="note mb-10">{{ status_message }}</div>
+    {% endif %}
+    <h3>{% if edit_adjustment %}補正実績を編集{% else %}補正実績を追加{% endif %}</h3>
+    <form method="post" class="grid dairymetrics-entry-grid">
+      {% csrf_token %}
+      {% if edit_adjustment %}
+      <input type="hidden" name="adjustment_id" value="{{ edit_adjustment.id }}">
+      {% endif %}
+      {% for field in form %}
+      <div class="{% if field.name == 'note' %}dairymetrics-field dairymetrics-field-full{% else %}dairymetrics-field{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+        <div class="error-text">{{ field.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      <div class="dairymetrics-field-full dairymetrics-form-actions">
+        <button type="submit">{% if edit_adjustment %}補正実績を更新{% else %}補正実績を保存{% endif %}</button>
+        {% if edit_adjustment %}
+        <a class="btn-inline" href="{% url 'performance_adjustments' %}">編集をキャンセル</a>
+        {% endif %}
+      </div>
+    </form>
+  </section>
+
+  <section class="card mt-16">
+    <h3>補正実績一覧</h3>
+    {% if adjustments %}
+    <div class="table-scroll">
+      <table class="mobile-card-table">
+        <thead>
+          <tr>
+            <th>対象日</th>
+            <th>メンバー</th>
+            <th>部署</th>
+            <th>種別</th>
+            <th>内容</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for adjustment in adjustments %}
+          <tr>
+            <td data-label="対象日">{{ adjustment.target_date|date:"Y/m/d" }}</td>
+            <td data-label="メンバー">{{ adjustment.member.name }}</td>
+            <td data-label="部署">{{ adjustment.department.code }}</td>
+            <td data-label="種別">{{ adjustment.get_source_type_display }}</td>
+            <td data-label="内容">
+              金額 {{ adjustment.support_amount }} / 郵送 {{ adjustment.return_postal_amount }} / QR {{ adjustment.return_qr_amount }}
+              {% if adjustment.note %}
+              <div class="muted">{{ adjustment.note }}</div>
+              {% endif %}
+            </td>
+            <td data-label="操作">
+              <a class="btn-inline" href="{% url 'performance_adjustments' %}?edit={{ adjustment.id }}">編集</a>
+              <form method="post" action="{% url 'performance_adjustment_delete' adjustment.id %}" style="display:inline;" onsubmit="return confirm('この補正実績を削除します。よろしいですか？');">
+                {% csrf_token %}
+                <button class="btn-inline btn-danger" type="submit">削除</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if paginator.num_pages > 1 %}
+    <div class="target-history-pagination">
+      {% if page_obj.has_previous %}
+      <a class="btn-inline" href="?page={{ page_obj.previous_page_number }}">前へ</a>
+      {% endif %}
+      {% for num in paginator.page_range %}
+        {% if num == page_obj.number %}
+        <span class="badge">{{ num }}</span>
+        {% elif num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+        <a class="btn-inline" href="?page={{ num }}">{{ num }}</a>
+        {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
+        <span class="muted">…</span>
+        {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
+        <span class="muted">…</span>
+        {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+      <a class="btn-inline" href="?page={{ page_obj.next_page_number }}">次へ</a>
+      {% endif %}
+      <span class="muted ml-auto">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
+    </div>
+    {% endif %}
+    {% else %}
+    <p class="muted">補正実績はまだありません。</p>
+    {% endif %}
+  </section>
+</div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+{% endblock %}
+

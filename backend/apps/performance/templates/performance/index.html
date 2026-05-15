@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}実績管理 | Report App{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
+    <div>
+      <strong>実績管理</strong>
+      <div class="muted topbar-muted">最終実績の確認と日次実績の編集を行います。</div>
+    </div>
+    <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
+      {% for url_name, label in nav_items %}
+      <a href="{% url url_name %}">{{ label }}</a>
+      {% endfor %}
+      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
+    </nav>
+  </header>
+  <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+
+  <section class="card mt-16">
+    <h3>絞り込み</h3>
+    <form method="get" class="grid grid-2 mt-10">
+      <div>
+        <label for="{{ filter_form.department.id_for_label }}">{{ filter_form.department.label }}</label>
+        {{ filter_form.department }}
+      </div>
+      <div>
+        <label for="{{ filter_form.member.id_for_label }}">{{ filter_form.member.label }}</label>
+        {{ filter_form.member }}
+      </div>
+      <div>
+        <label for="{{ filter_form.date_from.id_for_label }}">{{ filter_form.date_from.label }}</label>
+        {{ filter_form.date_from }}
+      </div>
+      <div>
+        <label for="{{ filter_form.date_to.id_for_label }}">{{ filter_form.date_to.label }}</label>
+        {{ filter_form.date_to }}
+      </div>
+      <div class="dairymetrics-field-full">
+        <button type="submit">この条件で見る</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card mt-16">
+    <div class="row">
+      <h3>個人日次実績</h3>
+      <a class="btn-inline" href="{% url 'performance_adjustments' %}">補正実績を管理</a>
+    </div>
+    {% if entry_rows %}
+    <div class="table-scroll">
+      <table class="mobile-card-table">
+        <thead>
+          <tr>
+            <th>日付</th>
+            <th>メンバー</th>
+            <th>部署</th>
+            <th>件数</th>
+            <th>金額</th>
+            <th>AP / CM</th>
+            <th>状態</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in entry_rows %}
+          <tr>
+            <td data-label="日付">{{ row.entry.entry_date|date:"Y/m/d" }}</td>
+            <td data-label="メンバー">{{ row.entry.member.name }}</td>
+            <td data-label="部署">{{ row.entry.department.code }}</td>
+            <td data-label="件数">
+              {{ row.count_text }}
+              {% if row.adjustment_summary %}
+              <div class="muted">{{ row.adjustment_summary }}</div>
+              {% endif %}
+            </td>
+            <td data-label="金額">{{ row.amount_text }}</td>
+            <td data-label="AP / CM">{{ row.entry.approach_count }} / {{ row.entry.communication_count }}</td>
+            <td data-label="状態">
+              <span class="badge">{% if row.entry.activity_closed %}活動終了{% else %}活動中{% endif %}</span>
+              {% if row.entry.has_transactions %}
+              <div class="muted">決済あり</div>
+              {% endif %}
+            </td>
+            <td data-label="操作">
+              <a class="btn-inline" href="{% url 'performance_entry_edit' row.entry.id %}">編集</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if paginator.num_pages > 1 %}
+    <div class="target-history-pagination">
+      {% if page_obj.has_previous %}
+      <a class="btn-inline" href="?page={{ page_obj.previous_page_number }}{% if current_query_string %}&{{ current_query_string }}{% endif %}">前へ</a>
+      {% endif %}
+      {% for num in paginator.page_range %}
+        {% if num == page_obj.number %}
+        <span class="badge">{{ num }}</span>
+        {% elif num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+        <a class="btn-inline" href="?page={{ num }}{% if current_query_string %}&{{ current_query_string }}{% endif %}">{{ num }}</a>
+        {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
+        <span class="muted">…</span>
+        {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
+        <span class="muted">…</span>
+        {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+      <a class="btn-inline" href="?page={{ page_obj.next_page_number }}{% if current_query_string %}&{{ current_query_string }}{% endif %}">次へ</a>
+      {% endif %}
+      <span class="muted ml-auto">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
+    </div>
+    {% endif %}
+    {% else %}
+    <p class="muted">条件に一致する日次実績がありません。</p>
+    {% endif %}
+  </section>
+
+  <section class="card mt-16">
+    <h3>最近の補正実績</h3>
+    {% if adjustments_preview %}
+    <div class="table-scroll">
+      <table class="mobile-card-table">
+        <thead>
+          <tr>
+            <th>対象日</th>
+            <th>メンバー</th>
+            <th>部署</th>
+            <th>種別</th>
+            <th>金額</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for adjustment in adjustments_preview %}
+          <tr>
+            <td data-label="対象日">{{ adjustment.target_date|date:"Y/m/d" }}</td>
+            <td data-label="メンバー">{{ adjustment.member.name }}</td>
+            <td data-label="部署">{{ adjustment.department.code }}</td>
+            <td data-label="種別">{{ adjustment.get_source_type_display }}</td>
+            <td data-label="金額">{{ adjustment.support_amount|default:0 }} / 郵送 {{ adjustment.return_postal_amount|default:0 }} / QR {{ adjustment.return_qr_amount|default:0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">最近の補正実績はありません。</p>
+    {% endif %}
+  </section>
+</div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+{% endblock %}
