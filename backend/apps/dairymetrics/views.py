@@ -1469,35 +1469,32 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                     status_message = "送信対象の決済が見つかりません。"
                 else:
                     recipient_group = _get_default_mail_group(department=selected_department_obj)
-                    if not recipient_group:
-                        status_message = "送信先グループが設定されていません。"
-                    else:
-                        preview_context = _build_entry_v2_transaction_demo_context(
-                            member=member,
-                            selected_department=selected_department,
-                            entry_date=entry_date,
-                            preview_transaction=preview_transaction,
-                        )
-                        preview_payload = preview_context["preview_payload"] or _build_transaction_mail_preview(
-                            member=member,
+                    preview_context = _build_entry_v2_transaction_demo_context(
+                        member=member,
+                        selected_department=selected_department,
+                        entry_date=entry_date,
+                        preview_transaction=preview_transaction,
+                    )
+                    preview_payload = preview_context["preview_payload"] or _build_transaction_mail_preview(
+                        member=member,
+                        department_code=selected_department,
+                        transaction_obj=preview_transaction,
+                        progress_cards=preview_context["progress_cards"],
+                    )
+                    send_transaction_mail_mock(
+                        sender_member=member,
+                        transaction=preview_transaction,
+                        recipient_group=recipient_group,
+                        subject=preview_payload["subject"],
+                        body=preview_payload["body"],
+                    )
+                    return redirect(
+                        _build_v2_redirect_url(
                             department_code=selected_department,
-                            transaction_obj=preview_transaction,
-                            progress_cards=preview_context["progress_cards"],
+                            entry_date=entry_date,
+                            saved="mail_sent",
                         )
-                        send_transaction_mail_mock(
-                            sender_member=member,
-                            transaction=preview_transaction,
-                            recipient_group=recipient_group,
-                            subject=preview_payload["subject"],
-                            body=preview_payload["body"],
-                        )
-                        return redirect(
-                            _build_v2_redirect_url(
-                                department_code=selected_department,
-                                entry_date=entry_date,
-                                saved="mail_sent",
-                            )
-                        )
+                    )
         elif action == "save_closeout":
             if not selected_department_obj:
                 status_message = "部署を選択してください。"

@@ -5,14 +5,16 @@ from django.utils import timezone
 from .models import MailIntegrationSetting, MailRecipientGroup, MailSendHistory
 
 
-def _build_recipient_snapshot(group: MailRecipientGroup) -> str:
+def _build_recipient_snapshot(group: MailRecipientGroup | None) -> str:
+    if group is None:
+        return "未設定（モック送信）"
     recipients = []
     for member in group.members.exclude(email="").order_by("name"):
         recipients.append(f"{member.name} <{member.email}>")
     return "\n".join(recipients)
 
 
-def send_transaction_mail_mock(*, sender_member, transaction, recipient_group, subject, body) -> MailSendHistory:
+def send_transaction_mail_mock(*, sender_member, transaction, recipient_group=None, subject, body) -> MailSendHistory:
     active_setting = MailIntegrationSetting.objects.filter(is_active=True).order_by("id").first()
     recipient_snapshot = _build_recipient_snapshot(recipient_group)
     is_resend = transaction.mail_send_histories.filter(status=MailSendHistory.STATUS_SENT, is_test=False).exists()

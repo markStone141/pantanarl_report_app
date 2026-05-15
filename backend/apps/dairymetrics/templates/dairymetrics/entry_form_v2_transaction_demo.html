@@ -540,7 +540,7 @@
         {% if default_mail_group %}
         <p class="muted">送信先グループ: {{ default_mail_group.name }}</p>
         {% else %}
-        <p class="muted">送信先グループが未設定です。</p>
+        <p class="muted">送信先グループ未設定のため、今回はモック送信として履歴だけ保存します。</p>
         {% endif %}
       </div>
       <div class="dairymetrics-v2-mail-subject">
@@ -554,7 +554,7 @@
         <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
         <input type="hidden" name="preview_transaction_id" id="dairymetrics-v2-mail-transaction-id" value="">
         <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-mail-modal>閉じる</button>
-        <button type="submit" class="btn-inline dairymetrics-save-btn" {% if not default_mail_group %}disabled{% endif %}>送信</button>
+        <button type="submit" class="btn-inline dairymetrics-save-btn">送信（モック）</button>
       </form>
     </section>
 
