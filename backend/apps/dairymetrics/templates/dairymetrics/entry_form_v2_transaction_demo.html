@@ -498,7 +498,7 @@
                   class="btn-inline dairymetrics-v2-mail-send-link"
                   data-open-mail-modal
                   data-preview-transaction-id="{{ transaction.id }}"
-                  data-preview-subject="{{ transaction.preview_subject|escapejs }}"
+                  data-preview-subject="{% if transaction.has_sent_history %}{{ transaction.resend_preview_subject|escapejs }}{% else %}{{ transaction.preview_subject|escapejs }}{% endif %}"
                   data-preview-body-field="dairymetrics-v2-mail-body-field-{{ transaction.id }}"
                   data-preview-mode="{% if transaction.has_sent_history %}resend{% else %}send{% endif %}"
                   {% if preview_transaction and preview_transaction.id == transaction.id %}data-auto-open-mail-modal{% endif %}

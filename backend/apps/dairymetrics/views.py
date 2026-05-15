@@ -567,6 +567,11 @@ def _build_entry_v2_transaction_demo_context(
                     "mail_status": _transaction_mail_status(tx),
                     "has_sent_history": bool(latest_sent_history),
                     "preview_subject": preview_payload["subject"],
+                    "resend_preview_subject": (
+                        f"{preview_payload['subject']}（再送）"
+                        if latest_sent_history and not preview_payload["subject"].endswith("（再送）")
+                        else preview_payload["subject"]
+                    ),
                     "preview_body": preview_payload["body"],
                     "latest_sent_history_id": latest_sent_history.id if latest_sent_history else "",
                     "latest_sent_subject": latest_sent_history.subject_snapshot if latest_sent_history else "",
