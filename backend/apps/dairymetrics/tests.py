@@ -1573,6 +1573,15 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "6,000/20,000")
         self.assertContains(response, "目標を編集")
 
+    def test_dashboard_navigation_includes_transaction_entry_link(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "決済入力")
+        self.assertContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
+
     def test_dashboard_month_goal_card_uses_dairymetrics_actuals_only(self):
         MemberMonthMetricTarget.objects.create(
             member=self.member,

@@ -33,6 +33,7 @@
       {% endif %}
       {% if not readonly_dashboard %}
       {% if member %}<a href="{% url 'dairymetrics_member_overview' %}">活動状況</a>{% endif %}
+      {% if member %}<a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>{% endif %}
       {% endif %}
       {% if viewer_member %}<a href="{% url 'dairymetrics_member_index' %}">メンバーデータ</a>{% endif %}
       {% if not readonly_dashboard %}

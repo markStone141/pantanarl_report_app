@@ -20,6 +20,7 @@
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
       <a href="{% url 'dairymetrics_member_overview' %}">活動状況</a>
+      <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
       <a href="{% url 'dairymetrics_compare' %}">スコア</a>
       {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>{% endif %}
       <a href="{% url 'report_index' %}">Report App</a>
