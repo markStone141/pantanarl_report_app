@@ -677,7 +677,6 @@ class DairyMetricsDashboardTests(TestCase):
                 "department_code": self.department.code,
                 "entry_date": entry_date.strftime("%Y-%m-%d"),
                 "preview_transaction_id": str(transaction.id),
-                "recipient_group": str(recipient_group.id),
             },
         )
 

@@ -478,7 +478,17 @@
               </div>
               <div class="dairymetrics-subtext">{{ transaction.comment|default:"コメントなし" }}</div>
               <div class="dairymetrics-v2-inline-actions">
-                <a class="btn-inline dairymetrics-v2-mail-send-link" href="{% url 'dairymetrics_entry_v2_transaction_demo' %}?department={{ selected_department_code }}&date={{ entry_date|date:'Y-m-d' }}&preview_tx={{ transaction.id }}">メール送信</a>
+                <button
+                  type="button"
+                  class="btn-inline dairymetrics-v2-mail-send-link"
+                  data-open-mail-modal
+                  data-preview-transaction-id="{{ transaction.id }}"
+                  data-preview-subject="{{ transaction.preview_subject|escapejs }}"
+                  data-preview-body="{{ transaction.preview_body|escapejs }}"
+                  {% if preview_transaction and preview_transaction.id == transaction.id %}data-auto-open-mail-modal{% endif %}
+                >
+                  メール送信
+                </button>
               </div>
             </div>
             {% endfor %}
@@ -524,37 +534,29 @@
       </article>
     </section>
 
-    <section class="dairymetrics-v2-mail-preview-card card" id="dairymetrics-v2-mail-preview" {% if not preview_payload %}hidden{% endif %}>
+    <div class="dairymetrics-v2-modal-backdrop" id="dairymetrics-v2-mail-backdrop" hidden></div>
+    <section class="dairymetrics-v2-mail-preview-card card dairymetrics-v2-modal" id="dairymetrics-v2-mail-preview" hidden>
       <div class="dairymetrics-v2-demo-head">
         <h3>送信本文プレビュー</h3>
+        {% if default_mail_group %}
+        <p class="muted">送信先グループ: {{ default_mail_group.name }}</p>
+        {% else %}
+        <p class="muted">送信先グループが未設定です。</p>
+        {% endif %}
       </div>
-      {% if preview_payload %}
       <div class="dairymetrics-v2-mail-subject">
-        件名: <strong>{{ preview_payload.subject }}</strong>
+        件名: <strong id="dairymetrics-v2-mail-subject-text"></strong>
       </div>
-      <pre class="dairymetrics-v2-mail-body">{{ preview_payload.body }}</pre>
+      <pre class="dairymetrics-v2-mail-body" id="dairymetrics-v2-mail-body-text"></pre>
       <form method="post" class="dairymetrics-v2-transaction-actions">
         {% csrf_token %}
         <input type="hidden" name="action" value="send_transaction_mock">
         <input type="hidden" name="department_code" value="{{ selected_department_code }}">
         <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
-        <input type="hidden" name="preview_transaction_id" value="{{ preview_transaction.id }}">
-        <div class="dairymetrics-field dairymetrics-field-full">
-          <label for="v2-mail-recipient-group">送信先グループ</label>
-          <select id="v2-mail-recipient-group" name="recipient_group">
-            <option value="">グループを選択</option>
-            {% for group in available_mail_groups %}
-            <option value="{{ group.id }}" {% if selected_mail_group_id == group.id|stringformat:"s" %}selected{% endif %}>{{ group.name }}</option>
-            {% endfor %}
-          </select>
-          {% if not available_mail_groups %}
-          <div class="muted">先にメールグループ管理で送信先グループを作成してください。</div>
-          {% endif %}
-        </div>
-        <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}?department={{ selected_department_code }}&date={{ entry_date|date:'Y-m-d' }}" class="btn-inline dairymetrics-secondary-btn">戻る</a>
-        <button type="submit" class="btn-inline dairymetrics-save-btn" {% if not available_mail_groups %}disabled{% endif %}>送信確定</button>
+        <input type="hidden" name="preview_transaction_id" id="dairymetrics-v2-mail-transaction-id" value="">
+        <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-mail-modal>閉じる</button>
+        <button type="submit" class="btn-inline dairymetrics-save-btn" {% if not default_mail_group %}disabled{% endif %}>送信</button>
       </form>
-      {% endif %}
     </section>
 
     <section class="dairymetrics-v2-demo-card dairymetrics-v2-closeout-card">
@@ -621,6 +623,11 @@
     const transactionListPanel = document.getElementById("dairymetrics-v2-transaction-list");
     const sentMailListPanel = document.getElementById("dairymetrics-v2-sent-mail-list");
     const closeoutPanel = document.getElementById("dairymetrics-v2-closeout-panel");
+    const mailPreviewModal = document.getElementById("dairymetrics-v2-mail-preview");
+    const mailPreviewBackdrop = document.getElementById("dairymetrics-v2-mail-backdrop");
+    const mailPreviewSubject = document.getElementById("dairymetrics-v2-mail-subject-text");
+    const mailPreviewBody = document.getElementById("dairymetrics-v2-mail-body-text");
+    const mailPreviewTransactionId = document.getElementById("dairymetrics-v2-mail-transaction-id");
     const targetSelects = document.querySelectorAll("[data-target-select]");
     const ageSelect = document.querySelector("[data-student-age]");
     const studentWrap = document.getElementById("v2-student-wrap");
@@ -674,6 +681,30 @@
       section.hidden = true;
       if (section === transactionListPanel || section === sentMailListPanel) {
         section.style.display = "none";
+      }
+    }
+
+    function openMailModal(button) {
+      if (!mailPreviewModal || !mailPreviewBackdrop || !button) return;
+      if (mailPreviewSubject) {
+        mailPreviewSubject.textContent = button.dataset.previewSubject || "";
+      }
+      if (mailPreviewBody) {
+        mailPreviewBody.textContent = button.dataset.previewBody || "";
+      }
+      if (mailPreviewTransactionId) {
+        mailPreviewTransactionId.value = button.dataset.previewTransactionId || "";
+      }
+      mailPreviewBackdrop.hidden = false;
+      mailPreviewModal.hidden = false;
+    }
+
+    function closeMailModal() {
+      if (mailPreviewBackdrop) {
+        mailPreviewBackdrop.hidden = true;
+      }
+      if (mailPreviewModal) {
+        mailPreviewModal.hidden = true;
       }
     }
 
@@ -737,6 +768,17 @@
         closeSection(closeoutPanel);
       });
     });
+    document.querySelectorAll("[data-open-mail-modal]").forEach((button) => {
+      button.addEventListener("click", function () {
+        openMailModal(button);
+      });
+    });
+    document.querySelectorAll("[data-close-mail-modal]").forEach((button) => {
+      button.addEventListener("click", function () {
+        closeMailModal();
+      });
+    });
+    mailPreviewBackdrop?.addEventListener("click", closeMailModal);
 
     document.querySelectorAll("[data-clear-on-focus]").forEach(function (input) {
       input.addEventListener("focus", function () {
@@ -757,6 +799,11 @@
     syncStudentField();
     closeSection(transactionListPanel);
     closeSection(sentMailListPanel);
+    const autoOpenMailButton = document.querySelector("[data-auto-open-mail-modal]");
+    if (autoOpenMailButton) {
+      openSection(transactionListPanel);
+      openMailModal(autoOpenMailButton);
+    }
   })();
 </script>
 {% endblock %}

@@ -271,6 +271,29 @@ def _build_v2_department_activity_rows(*, department, entry_date):
     }
 
 
+def _get_default_mail_group(*, department):
+    if not department:
+        return None
+    group = (
+        MailRecipientGroup.objects.filter(
+            is_active=True,
+            department=department,
+        )
+        .order_by("name", "id")
+        .first()
+    )
+    if group:
+        return group
+    return (
+        MailRecipientGroup.objects.filter(
+            is_active=True,
+            department__isnull=True,
+        )
+        .order_by("name", "id")
+        .first()
+    )
+
+
 def _build_transaction_mail_preview(*, member, department_code, transaction_obj, progress_cards):
     personal_card, department_card, period_card, month_card = progress_cards
     subject = (
@@ -456,8 +479,16 @@ def _build_entry_v2_transaction_demo_context(
     ]
 
     transactions = []
+    default_mail_group = None
     if existing_entry:
+        default_mail_group = _get_default_mail_group(department=selected_department_obj)
         for tx in existing_entry.transactions.all():
+            preview_payload = _build_transaction_mail_preview(
+                member=member,
+                department_code=selected_department_code,
+                transaction_obj=tx,
+                progress_cards=progress_cards,
+            )
             transactions.append(
                 {
                     "id": tx.id,
@@ -469,6 +500,8 @@ def _build_entry_v2_transaction_demo_context(
                     "location": tx.location,
                     "comment": tx.comment,
                     "mail_status": _transaction_mail_status(tx),
+                    "preview_subject": preview_payload["subject"],
+                    "preview_body": preview_payload["body"],
                 }
             )
 
@@ -581,6 +614,7 @@ def _build_entry_v2_transaction_demo_context(
         "open_closeout_panel": open_closeout_panel,
         "preview_payload": preview_payload,
         "preview_transaction": preview_transaction,
+        "default_mail_group": default_mail_group,
         "available_mail_groups": available_mail_groups,
         "target_count_options": ENTRY_V2_TARGET_COUNT_OPTIONS,
         "target_amount_options": ENTRY_V2_TARGET_AMOUNT_OPTIONS,
@@ -1305,8 +1339,6 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
     department_target_form = None
     transaction_form = None
     closeout_form = None
-    selected_mail_group_id = (request.POST.get("recipient_group") or request.GET.get("recipient_group") or "").strip()
-
     if request.method == "POST":
         action = (request.POST.get("action") or "").strip()
         selected_department = raw_department_code
@@ -1436,12 +1468,9 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                 if not preview_transaction:
                     status_message = "送信対象の決済が見つかりません。"
                 else:
-                    recipient_group = MailRecipientGroup.objects.filter(
-                        id=request.POST.get("recipient_group"),
-                        is_active=True,
-                    ).first()
+                    recipient_group = _get_default_mail_group(department=selected_department_obj)
                     if not recipient_group:
-                        status_message = "送信先グループを選択してください。"
+                        status_message = "送信先グループが設定されていません。"
                     else:
                         preview_context = _build_entry_v2_transaction_demo_context(
                             member=member,
@@ -1553,7 +1582,6 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
         open_closeout_panel=open_closeout_panel,
         preview_transaction=preview_transaction,
     )
-    context["selected_mail_group_id"] = selected_mail_group_id
     return render(request, "dairymetrics/entry_form_v2_transaction_demo.html", context)
 
 
