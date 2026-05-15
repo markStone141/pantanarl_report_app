@@ -823,8 +823,12 @@
       if (!mailPreviewModal || !mailPreviewBackdrop || !button) return;
       const bodyFieldId = button.dataset.previewBodyField || "";
       const bodyField = bodyFieldId ? document.getElementById(bodyFieldId) : null;
+      let previewSubject = button.dataset.previewSubject || "";
+      if (button.dataset.previewMode === "resend" && !previewSubject.endsWith("（再送）")) {
+        previewSubject = `${previewSubject}（再送）`;
+      }
       if (mailPreviewSubjectInput) {
-        mailPreviewSubjectInput.value = button.dataset.previewSubject || "";
+        mailPreviewSubjectInput.value = previewSubject;
       }
       if (mailPreviewBodyInput) {
         mailPreviewBodyInput.value = bodyField ? bodyField.value || "" : "";
