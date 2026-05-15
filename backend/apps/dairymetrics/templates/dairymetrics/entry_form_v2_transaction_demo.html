@@ -172,6 +172,7 @@
       <section class="dairymetrics-v2-entry-panel" id="dairymetrics-v2-entry-panel" {% if not open_entry_panel %}hidden{% endif %}>
         <form method="post">
           {% csrf_token %}
+          <input type="hidden" name="transaction_id" id="v2-transaction-id" value="">
           <input type="hidden" name="department_code" value="{{ selected_department_code }}">
           <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
           <div class="dairymetrics-v2-transaction-form">
@@ -236,8 +237,8 @@
           </div>
 
           <div class="dairymetrics-v2-transaction-actions">
-            <button type="submit" name="action" value="save_transaction_preview" class="btn-inline dairymetrics-save-btn">登録してメール送信</button>
-            <button type="submit" name="action" value="save_transaction" class="btn-inline">登録して閉じる</button>
+            <button type="submit" name="action" value="save_transaction_preview" class="btn-inline dairymetrics-save-btn" id="v2-transaction-preview-button">登録してメール送信</button>
+            <button type="submit" name="action" value="save_transaction" class="btn-inline" id="v2-transaction-save-button">登録して閉じる</button>
             <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-entry-panel>閉じる</button>
           </div>
         </form>
@@ -478,6 +479,22 @@
               <div class="dairymetrics-v2-inline-actions">
                 <button
                   type="button"
+                  class="btn-inline dairymetrics-secondary-btn"
+                  data-edit-transaction
+                  data-transaction-id="{{ transaction.id }}"
+                  data-transaction-amount="{{ transaction.amount_value }}"
+                  data-transaction-location="{{ transaction.location|escapejs }}"
+                  data-transaction-age="{{ transaction.age_band_value }}"
+                  data-transaction-student="{% if transaction.is_student %}1{% else %}0{% endif %}"
+                  data-transaction-gender="{{ transaction.gender_value }}"
+                  data-transaction-nationality="{{ transaction.nationality_value }}"
+                  data-transaction-comment="{{ transaction.comment|escapejs }}"
+                  data-transaction-has-sent="{% if transaction.has_sent_history %}1{% else %}0{% endif %}"
+                >
+                  修正
+                </button>
+                <button
+                  type="button"
                   class="btn-inline dairymetrics-v2-mail-send-link"
                   data-open-mail-modal
                   data-preview-transaction-id="{{ transaction.id }}"
@@ -485,23 +502,8 @@
                   data-preview-body-field="dairymetrics-v2-mail-body-field-{{ transaction.id }}"
                   {% if preview_transaction and preview_transaction.id == transaction.id %}data-auto-open-mail-modal{% endif %}
                 >
-                  メール送信
+                  {% if transaction.has_sent_history %}再送{% else %}メール送信{% endif %}
                 </button>
-                {% if transaction.latest_sent_history_id %}
-                <button
-                  type="button"
-                  class="btn-inline dairymetrics-secondary-btn"
-                  data-open-mail-modal
-                  data-preview-transaction-id="{{ transaction.id }}"
-                  data-preview-history-id="{{ transaction.latest_sent_history_id }}"
-                  data-preview-subject="{{ transaction.latest_sent_subject|escapejs }}"
-                  data-preview-body-field="dairymetrics-v2-latest-mail-body-field-{{ transaction.id }}"
-                  data-preview-mode="resend"
-                >
-                  修正して再送信
-                </button>
-                <textarea id="dairymetrics-v2-latest-mail-body-field-{{ transaction.id }}" hidden readonly>{{ transaction.latest_sent_body }}</textarea>
-                {% endif %}
                 <textarea id="dairymetrics-v2-mail-body-field-{{ transaction.id }}" hidden readonly>{{ transaction.preview_body }}</textarea>
               </div>
             </div>
@@ -657,6 +659,18 @@
     const closeoutPanel = document.getElementById("dairymetrics-v2-closeout-panel");
     const mailPreviewModal = document.getElementById("dairymetrics-v2-mail-preview");
     const mailPreviewBackdrop = document.getElementById("dairymetrics-v2-mail-backdrop");
+    const transactionIdInput = document.getElementById("v2-transaction-id");
+    const transactionAmountSelect = document.getElementById("v2-transaction-amount-select");
+    const transactionAmountHidden = document.getElementById("v2-transaction-amount-hidden");
+    const transactionAmountCustom = document.getElementById("v2-transaction-amount-custom");
+    const transactionLocationInput = document.getElementById("v2-transaction-location");
+    const transactionAgeSelect = document.getElementById("v2-transaction-age");
+    const transactionStudentInput = document.getElementById("v2-transaction-student");
+    const transactionGenderSelect = document.getElementById("v2-transaction-gender");
+    const transactionNationalitySelect = document.getElementById("v2-transaction-nationality");
+    const transactionCommentInput = document.getElementById("v2-transaction-comment");
+    const transactionPreviewButton = document.getElementById("v2-transaction-preview-button");
+    const transactionSaveButton = document.getElementById("v2-transaction-save-button");
     const mailPreviewSubjectInput = document.getElementById("dairymetrics-v2-mail-subject-input");
     const mailPreviewBodyInput = document.getElementById("dairymetrics-v2-mail-body-input");
     const mailPreviewTransactionId = document.getElementById("dairymetrics-v2-mail-transaction-id");
@@ -718,6 +732,93 @@
       }
     }
 
+    function resetTransactionForm() {
+      if (transactionIdInput) {
+        transactionIdInput.value = "";
+      }
+      if (transactionAmountSelect) {
+        transactionAmountSelect.value = "3000";
+      }
+      if (transactionAmountHidden) {
+        transactionAmountHidden.value = "3000";
+      }
+      if (transactionAmountCustom) {
+        transactionAmountCustom.value = "";
+      }
+      if (transactionLocationInput) {
+        transactionLocationInput.value = "{{ current_location_name|escapejs }}";
+      }
+      if (transactionAgeSelect) {
+        transactionAgeSelect.value = "{{ transaction_age_band_value|escapejs }}";
+      }
+      if (transactionStudentInput) {
+        transactionStudentInput.checked = false;
+      }
+      if (transactionGenderSelect) {
+        transactionGenderSelect.value = "{{ transaction_form.gender.value|default:'female'|escapejs }}";
+      }
+      if (transactionNationalitySelect) {
+        transactionNationalitySelect.value = "{{ transaction_form.nationality_type.value|default:'domestic'|escapejs }}";
+      }
+      if (transactionCommentInput) {
+        transactionCommentInput.value = "";
+      }
+      if (transactionPreviewButton) {
+        transactionPreviewButton.textContent = "登録してメール送信";
+      }
+      if (transactionSaveButton) {
+        transactionSaveButton.textContent = "登録して閉じる";
+      }
+      syncTargetFieldState(transactionAmountSelect);
+      syncStudentField();
+    }
+
+    function openTransactionEdit(button) {
+      if (!button) return;
+      openSection(entryPanel);
+      if (transactionIdInput) {
+        transactionIdInput.value = button.dataset.transactionId || "";
+      }
+      const amountValue = button.dataset.transactionAmount || "3000";
+      if (transactionAmountSelect) {
+        const hasPreset = Array.from(transactionAmountSelect.options).some((option) => option.value === amountValue);
+        transactionAmountSelect.value = hasPreset ? amountValue : "custom";
+      }
+      if (transactionAmountHidden) {
+        transactionAmountHidden.value = amountValue;
+      }
+      if (transactionAmountCustom) {
+        transactionAmountCustom.value = amountValue;
+      }
+      if (transactionLocationInput) {
+        transactionLocationInput.value = button.dataset.transactionLocation || "";
+      }
+      if (transactionAgeSelect) {
+        transactionAgeSelect.value = button.dataset.transactionAge || "{{ transaction_age_band_value|escapejs }}";
+      }
+      if (transactionStudentInput) {
+        transactionStudentInput.checked = button.dataset.transactionStudent === "1";
+      }
+      if (transactionGenderSelect) {
+        transactionGenderSelect.value = button.dataset.transactionGender || "{{ transaction_form.gender.value|default:'female'|escapejs }}";
+      }
+      if (transactionNationalitySelect) {
+        transactionNationalitySelect.value = button.dataset.transactionNationality || "{{ transaction_form.nationality_type.value|default:'domestic'|escapejs }}";
+      }
+      if (transactionCommentInput) {
+        transactionCommentInput.value = button.dataset.transactionComment || "";
+      }
+      if (transactionPreviewButton) {
+        transactionPreviewButton.textContent = button.dataset.transactionHasSent === "1" ? "修正して再送" : "修正してメール送信";
+      }
+      if (transactionSaveButton) {
+        transactionSaveButton.textContent = "修正して閉じる";
+      }
+      syncTargetFieldState(transactionAmountSelect);
+      syncStudentField();
+      entryPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
     function openMailModal(button) {
       if (!mailPreviewModal || !mailPreviewBackdrop || !button) return;
       const bodyFieldId = button.dataset.previewBodyField || "";
@@ -762,6 +863,7 @@
 
     document.querySelectorAll("[data-open-entry-panel]").forEach((button) => {
       button.addEventListener("click", function () {
+        resetTransactionForm();
         openSection(entryPanel);
       });
     });
@@ -842,6 +944,11 @@
         openMailModal(button);
       });
     });
+    document.querySelectorAll("[data-edit-transaction]").forEach((button) => {
+      button.addEventListener("click", function () {
+        openTransactionEdit(button);
+      });
+    });
     document.querySelectorAll("[data-close-mail-modal]").forEach((button) => {
       button.addEventListener("click", function () {
         closeMailModal();
@@ -872,6 +979,9 @@
     if (autoOpenMailButton) {
       openSection(transactionListPanel);
       openMailModal(autoOpenMailButton);
+    }
+    if (!{{ open_entry_panel|yesno:"true,false" }}) {
+      resetTransactionForm();
     }
   })();
 </script>

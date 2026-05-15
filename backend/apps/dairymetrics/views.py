@@ -552,12 +552,18 @@ def _build_entry_v2_transaction_demo_context(
                     "id": tx.id,
                     "time_label": timezone.localtime(tx.created_at).strftime("%H:%M"),
                     "amount": tx.support_amount,
+                    "amount_value": tx.support_amount,
                     "age_band": tx.get_age_band_display(),
+                    "age_band_value": tx.age_band,
+                    "is_student": tx.is_student,
                     "gender": tx.get_gender_display(),
+                    "gender_value": tx.gender,
                     "nationality": tx.get_nationality_type_display(),
+                    "nationality_value": tx.nationality_type,
                     "location": tx.location,
                     "comment": tx.comment,
                     "mail_status": _transaction_mail_status(tx),
+                    "has_sent_history": bool(latest_sent_history),
                     "preview_subject": preview_payload["subject"],
                     "preview_body": preview_payload["body"],
                     "latest_sent_history_id": latest_sent_history.id if latest_sent_history else "",
@@ -1486,7 +1492,20 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
             if not selected_department_obj:
                 status_message = "部署を選択してください。"
             else:
-                transaction_form = DairymetricsV2TransactionForm(request.POST)
+                transaction_id = (request.POST.get("transaction_id") or "").strip()
+                transaction_instance = None
+                if transaction_id.isdigit():
+                    transaction_instance = (
+                        MemberMetricTransaction.objects.filter(
+                            id=int(transaction_id),
+                            entry__member=member,
+                            entry__department=selected_department_obj,
+                            entry__entry_date=entry_date,
+                        )
+                        .select_related("entry")
+                        .first()
+                    )
+                transaction_form = DairymetricsV2TransactionForm(request.POST, instance=transaction_instance)
                 if transaction_form.is_valid():
                     entry, _ = MemberDailyMetricEntry.objects.get_or_create(
                         member=member,

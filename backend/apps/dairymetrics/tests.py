@@ -864,7 +864,8 @@ class DairyMetricsDashboardTests(TestCase):
             reverse("dairymetrics_entry_v2_transaction_demo"),
             {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
         )
-        self.assertContains(response, "修正して再送信")
+        self.assertContains(response, "修正")
+        self.assertContains(response, "再送")
         self.assertContains(response, "修正版本文")
 
     def test_comparison_page_shows_ranking_metrics(self):
