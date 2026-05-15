@@ -15,7 +15,13 @@ from django.utils.dateparse import parse_date
 from apps.accounts.models import Department, Member
 from apps.mail.models import MailRecipientGroup, MailSendHistory
 from apps.mail.services import send_transaction_mail_mock
-from apps.targets.models import DepartmentMonthTarget, DepartmentPeriodTarget, Period
+from apps.targets.models import (
+    DepartmentMonthTarget,
+    DepartmentPeriodTarget,
+    MonthTargetMetricValue,
+    Period,
+    PeriodTargetMetricValue,
+)
 
 from .auth import get_member_profile, require_dairymetrics_admin, require_dairymetrics_member
 from .forms import (
@@ -294,6 +300,46 @@ def _get_default_mail_group(*, department):
     )
 
 
+def _get_period_target_amount(*, period, department):
+    metric_value = (
+        PeriodTargetMetricValue.objects.filter(
+            period=period,
+            department=department,
+            metric__is_active=True,
+            metric__code="amount",
+        )
+        .select_related("metric")
+        .first()
+    )
+    if metric_value:
+        return int(metric_value.value or 0), True
+    legacy_target = DepartmentPeriodTarget.objects.filter(
+        period=period,
+        department=department,
+    ).first()
+    return int(getattr(legacy_target, "target_amount", 0) or 0), bool(legacy_target)
+
+
+def _get_month_target_amount(*, target_month, department):
+    metric_value = (
+        MonthTargetMetricValue.objects.filter(
+            target_month=target_month,
+            department=department,
+            metric__is_active=True,
+            metric__code="amount",
+        )
+        .select_related("metric")
+        .first()
+    )
+    if metric_value:
+        return int(metric_value.value or 0), True
+    legacy_target = DepartmentMonthTarget.objects.filter(
+        department=department,
+        target_month=target_month,
+    ).first()
+    return int(getattr(legacy_target, "target_amount", 0) or 0), bool(legacy_target)
+
+
 def _build_transaction_mail_preview(*, member, department_code, transaction_obj, progress_cards):
     personal_card, department_card, period_card, month_card = progress_cards
     subject = (
@@ -410,11 +456,10 @@ def _build_entry_v2_transaction_demo_context(
     period_target_source = ""
     if active_period and selected_department_obj:
         period_label = active_period.name
-        period_target = DepartmentPeriodTarget.objects.filter(
+        period_target_amount, has_period_target = _get_period_target_amount(
             period=active_period,
             department=selected_department_obj,
-        ).first()
-        period_target_amount = int(getattr(period_target, "target_amount", 0) or 0)
+        )
         period_total_amount = int(
             MemberDailyMetricEntry.objects.filter(
                 department=selected_department_obj,
@@ -423,7 +468,7 @@ def _build_entry_v2_transaction_demo_context(
             ).aggregate(total=Sum("support_amount"))["total"]
             or 0
         )
-        if period_target:
+        if has_period_target:
             period_target_source = f"{selected_department_obj.code} の保存済み路程目標"
 
     month_target_amount = 0
@@ -431,11 +476,10 @@ def _build_entry_v2_transaction_demo_context(
     month_target_source = ""
     month_label = entry_date.strftime("%Y年%m月")
     if selected_department_obj:
-        month_target = DepartmentMonthTarget.objects.filter(
+        month_target_amount, has_month_target = _get_month_target_amount(
             department=selected_department_obj,
             target_month=entry_date.replace(day=1),
-        ).first()
-        month_target_amount = int(getattr(month_target, "target_amount", 0) or 0)
+        )
         month_total_amount = int(
             MemberDailyMetricEntry.objects.filter(
                 department=selected_department_obj,
@@ -444,7 +488,7 @@ def _build_entry_v2_transaction_demo_context(
             ).aggregate(total=Sum("support_amount"))["total"]
             or 0
         )
-        if month_target:
+        if has_month_target:
             month_target_source = f"{selected_department_obj.code} の保存済み月目標"
 
     progress_cards = [

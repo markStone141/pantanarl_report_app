@@ -8,7 +8,15 @@ from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
 from apps.mail.models import MailSendHistory, MailRecipientGroup
-from apps.targets.models import DepartmentMonthTarget, DepartmentPeriodTarget, Period, TARGET_STATUS_ACTIVE
+from apps.targets.models import (
+    DepartmentMonthTarget,
+    DepartmentPeriodTarget,
+    MonthTargetMetricValue,
+    Period,
+    PeriodTargetMetricValue,
+    TARGET_STATUS_ACTIVE,
+    TargetMetric,
+)
 
 from .forms import MemberDailyMetricEntryForm
 from .models import (
@@ -318,6 +326,58 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "当日送信メールを見る")
         self.assertContains(response, "活動終了時の最終実績を確認")
         self.assertNotContains(response, "今日の集計箱")
+
+    def test_entry_v2_transaction_demo_reads_period_and_month_targets_from_metric_values(self):
+        self.department.code = "UN"
+        self.department.name = "UN"
+        self.department.save(update_fields=["code", "name"])
+        entry_date = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            result_count=2,
+            support_amount=8000,
+            daily_target_amount=12000,
+        )
+        period = Period.objects.create(
+            month=entry_date.replace(day=1),
+            name="2026年5月 第2次路程",
+            status=TARGET_STATUS_ACTIVE,
+            start_date=entry_date - timedelta(days=2),
+            end_date=entry_date + timedelta(days=3),
+        )
+        amount_metric = TargetMetric.objects.create(
+            department=self.department,
+            code="amount",
+            label="金額",
+            unit="円",
+            display_order=1,
+            is_active=True,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=period,
+            department=self.department,
+            metric=amount_metric,
+            value=30000,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.department,
+            target_month=entry_date.replace(day=1),
+            metric=amount_metric,
+            value=120000,
+            status=TARGET_STATUS_ACTIVE,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "30,000")
+        self.assertContains(response, "120,000")
 
     def test_entry_v2_transaction_demo_shows_department_member_activity_lists(self):
         self.department.code = "UN"
