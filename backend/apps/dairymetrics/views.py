@@ -1525,13 +1525,6 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                     transaction_obj = transaction_form.save(commit=False)
                     transaction_obj.entry = entry
                     transaction_obj.save()
-                    entry.recalculate_from_transactions()
-                    summary = _get_or_create_department_daily_summary(
-                        department=selected_department_obj,
-                        entry_date=entry_date,
-                        member=member,
-                    )
-                    summary.recalculate_from_entries()
                     return redirect(
                         _build_v2_redirect_url(
                             department_code=selected_department,

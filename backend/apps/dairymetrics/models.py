@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member
@@ -57,6 +57,13 @@ class MemberDailyMetricEntry(models.Model):
         )
         self.result_count = int(totals["total_count"] or 0)
         self.support_amount = int(totals["total_amount"] or 0)
+        if save:
+            self.save(update_fields=["result_count", "support_amount", "updated_at"])
+        return self.result_count, self.support_amount
+
+    def apply_transaction_delta(self, *, count_delta: int = 0, amount_delta: int = 0, save: bool = True) -> tuple[int, int]:
+        self.result_count = max(int(self.result_count or 0) + int(count_delta or 0), 0)
+        self.support_amount = max(int(self.support_amount or 0) + int(amount_delta or 0), 0)
         if save:
             self.save(update_fields=["result_count", "support_amount", "updated_at"])
         return self.result_count, self.support_amount
@@ -130,6 +137,40 @@ class DepartmentDailyMetricSummary(models.Model):
             )
         return self.result_count, self.support_amount
 
+    @classmethod
+    def get_or_create_for_entry(cls, *, entry):
+        summary, created = cls.objects.get_or_create(
+            department=entry.department,
+            entry_date=entry.entry_date,
+            defaults={
+                "created_by": entry.member,
+                "updated_by": entry.member,
+            },
+        )
+        if not created and summary.updated_by_id is None:
+            summary.updated_by = entry.member
+            summary.save(update_fields=["updated_by", "updated_at"])
+        return summary
+
+    def apply_transaction_delta(
+        self,
+        *,
+        count_delta: int = 0,
+        amount_delta: int = 0,
+        updated_by=None,
+        save: bool = True,
+    ) -> tuple[int, int]:
+        self.result_count = max(int(self.result_count or 0) + int(count_delta or 0), 0)
+        self.support_amount = max(int(self.support_amount or 0) + int(amount_delta or 0), 0)
+        if updated_by is not None:
+            self.updated_by = updated_by
+        if save:
+            update_fields = ["result_count", "support_amount", "updated_at"]
+            if updated_by is not None:
+                update_fields.append("updated_by")
+            self.save(update_fields=update_fields)
+        return self.result_count, self.support_amount
+
 
 class MemberMetricTransaction(models.Model):
     AGE_BAND_TEENS = "teens"
@@ -185,6 +226,49 @@ class MemberMetricTransaction(models.Model):
 
     def __str__(self) -> str:
         return f"{self.entry} #{self.pk or 'new'}"
+
+    @staticmethod
+    def _apply_entry_delta(*, entry, count_delta, amount_delta):
+        entry.apply_transaction_delta(count_delta=count_delta, amount_delta=amount_delta)
+        summary = DepartmentDailyMetricSummary.get_or_create_for_entry(entry=entry)
+        summary.apply_transaction_delta(
+            count_delta=count_delta,
+            amount_delta=amount_delta,
+            updated_by=entry.member,
+        )
+
+    def save(self, *args, **kwargs):
+        old_entry_id = None
+        old_support_amount = 0
+        if self.pk:
+            previous = type(self).objects.filter(pk=self.pk).select_related("entry", "entry__member", "entry__department").first()
+            if previous:
+                old_entry_id = previous.entry_id
+                old_support_amount = int(previous.support_amount or 0)
+
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            new_support_amount = int(self.support_amount or 0)
+            if old_entry_id is None:
+                self._apply_entry_delta(entry=self.entry, count_delta=1, amount_delta=new_support_amount)
+                return
+
+            if old_entry_id == self.entry_id:
+                amount_delta = new_support_amount - old_support_amount
+                if amount_delta:
+                    self._apply_entry_delta(entry=self.entry, count_delta=0, amount_delta=amount_delta)
+                return
+
+            old_entry = MemberDailyMetricEntry.objects.select_related("member", "department").get(pk=old_entry_id)
+            self._apply_entry_delta(entry=old_entry, count_delta=-1, amount_delta=-old_support_amount)
+            self._apply_entry_delta(entry=self.entry, count_delta=1, amount_delta=new_support_amount)
+
+    def delete(self, *args, **kwargs):
+        entry = self.entry
+        support_amount = int(self.support_amount or 0)
+        with transaction.atomic():
+            super().delete(*args, **kwargs)
+            self._apply_entry_delta(entry=entry, count_delta=-1, amount_delta=-support_amount)
 
 
 class MetricAdjustment(models.Model):
