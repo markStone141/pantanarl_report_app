@@ -487,6 +487,21 @@
                 >
                   メール送信
                 </button>
+                {% if transaction.latest_sent_history_id %}
+                <button
+                  type="button"
+                  class="btn-inline dairymetrics-secondary-btn"
+                  data-open-mail-modal
+                  data-preview-transaction-id="{{ transaction.id }}"
+                  data-preview-history-id="{{ transaction.latest_sent_history_id }}"
+                  data-preview-subject="{{ transaction.latest_sent_subject|escapejs }}"
+                  data-preview-body-field="dairymetrics-v2-latest-mail-body-field-{{ transaction.id }}"
+                  data-preview-mode="resend"
+                >
+                  修正して再送信
+                </button>
+                <textarea id="dairymetrics-v2-latest-mail-body-field-{{ transaction.id }}" hidden readonly>{{ transaction.latest_sent_body }}</textarea>
+                {% endif %}
                 <textarea id="dairymetrics-v2-mail-body-field-{{ transaction.id }}" hidden readonly>{{ transaction.preview_body }}</textarea>
               </div>
             </div>
@@ -512,22 +527,21 @@
           {% if sent_mail_histories %}
             {% for mail in sent_mail_histories %}
             <div class="dairymetrics-v2-transaction-item">
-              <div class="dairymetrics-v2-transaction-top">
-                <strong>{{ mail.sent_at }}</strong>
-                <span class="dairymetrics-v2-mail-badge is-sent">{{ mail.sender_name }}</span>
-              </div>
-              <div class="dairymetrics-v2-transaction-main">
-                <span>{{ mail.recipient_group|default:"-" }}</span>
-                <span>{{ mail.subject }}</span>
-              </div>
-              <div class="dairymetrics-subtext">{{ mail.summary|default:"本文要約なし" }}</div>
-              <div class="dairymetrics-v2-inline-actions">
-                <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-sent-mail-detail>内容を見る</button>
+              <div class="dairymetrics-v2-transaction-main dairymetrics-v2-mail-history-main">
+                <span><strong>{{ mail.sent_at }}</strong></span>
+                <span>{{ mail.sender_name }}</span>
+                <span>{{ mail.amount|intcomma }}円</span>
+                <span>
+                  <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-sent-mail-detail>内容</button>
+                </span>
               </div>
               <div class="dairymetrics-v2-mail-history-detail" hidden>
                 <div class="dairymetrics-v2-mail-subject">
                   件名: <strong>{{ mail.subject }}</strong>
                 </div>
+                {% if mail.is_resend %}
+                <div class="dairymetrics-subtext">このメールは再送履歴です。</div>
+                {% endif %}
                 <pre class="dairymetrics-v2-mail-body">{{ mail.body }}</pre>
                 <div class="dairymetrics-v2-inline-actions">
                   <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-sent-mail-detail>閉じる</button>
@@ -555,18 +569,25 @@
         <p class="muted">送信先グループ未設定のため、今回はモック送信として履歴だけ保存します。</p>
         {% endif %}
       </div>
-      <div class="dairymetrics-v2-mail-subject">
-        件名: <strong id="dairymetrics-v2-mail-subject-text"></strong>
-      </div>
-      <pre class="dairymetrics-v2-mail-body" id="dairymetrics-v2-mail-body-text"></pre>
-      <form method="post" class="dairymetrics-v2-transaction-actions">
+      <form method="post" class="dairymetrics-v2-mail-form" id="dairymetrics-v2-mail-form">
         {% csrf_token %}
+        <div class="dairymetrics-field">
+          <label for="dairymetrics-v2-mail-subject-input">件名</label>
+          <input id="dairymetrics-v2-mail-subject-input" type="text" name="preview_subject" value="">
+        </div>
+        <div class="dairymetrics-field">
+          <label for="dairymetrics-v2-mail-body-input">本文</label>
+          <textarea id="dairymetrics-v2-mail-body-input" class="dairymetrics-v2-mail-body-textarea" rows="10" name="preview_body"></textarea>
+        </div>
+        <div class="dairymetrics-v2-transaction-actions">
         <input type="hidden" name="action" value="send_transaction_mock">
         <input type="hidden" name="department_code" value="{{ selected_department_code }}">
         <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
         <input type="hidden" name="preview_transaction_id" id="dairymetrics-v2-mail-transaction-id" value="">
+        <input type="hidden" name="preview_history_id" id="dairymetrics-v2-mail-history-id" value="">
         <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-mail-modal>閉じる</button>
-        <button type="submit" class="btn-inline dairymetrics-save-btn">送信（モック）</button>
+        <button type="submit" class="btn-inline dairymetrics-save-btn" id="dairymetrics-v2-mail-submit-button">送信（モック）</button>
+        </div>
       </form>
     </section>
 
@@ -636,9 +657,11 @@
     const closeoutPanel = document.getElementById("dairymetrics-v2-closeout-panel");
     const mailPreviewModal = document.getElementById("dairymetrics-v2-mail-preview");
     const mailPreviewBackdrop = document.getElementById("dairymetrics-v2-mail-backdrop");
-    const mailPreviewSubject = document.getElementById("dairymetrics-v2-mail-subject-text");
-    const mailPreviewBody = document.getElementById("dairymetrics-v2-mail-body-text");
+    const mailPreviewSubjectInput = document.getElementById("dairymetrics-v2-mail-subject-input");
+    const mailPreviewBodyInput = document.getElementById("dairymetrics-v2-mail-body-input");
     const mailPreviewTransactionId = document.getElementById("dairymetrics-v2-mail-transaction-id");
+    const mailPreviewHistoryId = document.getElementById("dairymetrics-v2-mail-history-id");
+    const mailPreviewSubmitButton = document.getElementById("dairymetrics-v2-mail-submit-button");
     const targetSelects = document.querySelectorAll("[data-target-select]");
     const ageSelect = document.querySelector("[data-student-age]");
     const studentWrap = document.getElementById("v2-student-wrap");
@@ -699,14 +722,20 @@
       if (!mailPreviewModal || !mailPreviewBackdrop || !button) return;
       const bodyFieldId = button.dataset.previewBodyField || "";
       const bodyField = bodyFieldId ? document.getElementById(bodyFieldId) : null;
-      if (mailPreviewSubject) {
-        mailPreviewSubject.textContent = button.dataset.previewSubject || "";
+      if (mailPreviewSubjectInput) {
+        mailPreviewSubjectInput.value = button.dataset.previewSubject || "";
       }
-      if (mailPreviewBody) {
-        mailPreviewBody.textContent = bodyField ? bodyField.value || "" : "";
+      if (mailPreviewBodyInput) {
+        mailPreviewBodyInput.value = bodyField ? bodyField.value || "" : "";
       }
       if (mailPreviewTransactionId) {
         mailPreviewTransactionId.value = button.dataset.previewTransactionId || "";
+      }
+      if (mailPreviewHistoryId) {
+        mailPreviewHistoryId.value = button.dataset.previewHistoryId || "";
+      }
+      if (mailPreviewSubmitButton) {
+        mailPreviewSubmitButton.textContent = button.dataset.previewMode === "resend" ? "再送信（モック）" : "送信（モック）";
       }
       const viewportCenter = window.scrollY + (window.innerHeight / 2);
       mailPreviewBackdrop.style.top = "0px";
@@ -722,6 +751,12 @@
       }
       if (mailPreviewModal) {
         mailPreviewModal.hidden = true;
+      }
+      if (mailPreviewTransactionId) {
+        mailPreviewTransactionId.value = "";
+      }
+      if (mailPreviewHistoryId) {
+        mailPreviewHistoryId.value = "";
       }
     }
 

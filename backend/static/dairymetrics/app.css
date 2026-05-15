@@ -2247,6 +2247,11 @@
   gap: 14px;
 }
 
+.dairymetrics-v2-mail-form {
+  display: grid;
+  gap: 14px;
+}
+
 .dairymetrics-v2-modal-backdrop {
   position: absolute;
   inset: 0 0 auto 0;
@@ -2272,6 +2277,13 @@
   color: var(--ink-strong);
 }
 
+.dairymetrics-v2-mail-body-textarea {
+  min-height: 220px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.7;
+}
+
 .dairymetrics-v2-mail-body {
   margin: 0;
   padding: 18px;
@@ -2288,6 +2300,16 @@
   display: grid;
   gap: 12px;
   margin-top: 4px;
+}
+
+.dairymetrics-v2-mail-history-main {
+  display: grid;
+  grid-template-columns: 56px minmax(72px, 92px) minmax(74px, 92px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.dairymetrics-v2-mail-history-main span:last-child {
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 900px) {
@@ -2309,5 +2331,15 @@
     width: min(100vw - 18px, 720px);
     max-height: calc(100vh - 24px);
     border-radius: 24px;
+  }
+
+  .dairymetrics-v2-mail-history-main {
+    grid-template-columns: 48px 1fr;
+    gap: 8px 12px;
+  }
+
+  .dairymetrics-v2-mail-history-main span:nth-child(3),
+  .dairymetrics-v2-mail-history-main span:nth-child(4) {
+    grid-column: 2;
   }
 }

@@ -703,8 +703,8 @@ class DairyMetricsDashboardTests(TestCase):
             reverse("dairymetrics_entry_v2_transaction_demo"),
             {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
         )
-        self.assertContains(response, "共有A")
         self.assertContains(response, self.member.name)
+        self.assertContains(response, "2,000円")
         self.assertContains(response, "会員1名 2,000円")
 
     def test_entry_v2_transaction_demo_mock_send_creates_mail_history_and_shows_it(self):
@@ -754,9 +754,8 @@ class DairyMetricsDashboardTests(TestCase):
             reverse("dairymetrics_entry_v2_transaction_demo"),
             {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
         )
-        self.assertContains(response, "共有B")
         self.assertContains(response, self.member.name)
-        self.assertContains(response, history.subject_snapshot)
+        self.assertContains(response, "1,500円")
         self.assertContains(response, history.body_snapshot)
 
     def test_entry_v2_transaction_demo_mock_send_without_mail_group_still_saves_history(self):
@@ -803,9 +802,70 @@ class DairyMetricsDashboardTests(TestCase):
             reverse("dairymetrics_entry_v2_transaction_demo"),
             {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
         )
-        self.assertContains(response, "未設定（モック送信）")
         self.assertContains(response, self.member.name)
-        self.assertContains(response, history.subject_snapshot)
+        self.assertContains(response, "3,000円")
+        self.assertContains(response, history.body_snapshot)
+
+    def test_entry_v2_transaction_demo_can_edit_and_resend_sent_mail(self):
+        entry_date = timezone.localdate()
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=2500,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+            comment="初回送信",
+        )
+        entry.recalculate_from_transactions()
+        first_history = MailSendHistory.objects.create(
+            department=self.department,
+            activity_date=entry_date,
+            sender_member=self.member,
+            transaction=transaction,
+            subject_snapshot="初回件名",
+            body_snapshot="初回本文",
+            status=MailSendHistory.STATUS_SENT,
+            sent_at=timezone.now(),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "send_transaction_mock",
+                "department_code": self.department.code,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "preview_history_id": str(first_history.id),
+                "preview_subject": "修正版件名",
+                "preview_body": "修正版本文",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=mail_sent",
+        )
+        histories = list(MailSendHistory.objects.filter(transaction=transaction).order_by("created_at", "id"))
+        self.assertEqual(len(histories), 2)
+        resent_history = histories[-1]
+        self.assertEqual(resent_history.subject_snapshot, "修正版件名")
+        self.assertEqual(resent_history.body_snapshot, "修正版本文")
+        self.assertTrue(resent_history.is_resend)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+        self.assertContains(response, "修正して再送信")
+        self.assertContains(response, "修正版本文")
 
     def test_comparison_page_shows_ranking_metrics(self):
         teammate_user = get_user_model().objects.create_user(username="member2c", password="pass123")

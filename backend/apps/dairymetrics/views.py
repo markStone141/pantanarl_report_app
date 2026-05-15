@@ -379,6 +379,16 @@ def _build_transaction_mail_preview(*, member, department_code, transaction_obj,
     }
 
 
+def _first_non_empty_line(text):
+    if not text:
+        return ""
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped:
+            return stripped
+    return ""
+
+
 def _build_entry_v2_transaction_demo_context(
     *,
     member,
@@ -527,6 +537,10 @@ def _build_entry_v2_transaction_demo_context(
     if existing_entry:
         default_mail_group = _get_default_mail_group(department=selected_department_obj)
         for tx in existing_entry.transactions.all():
+            latest_sent_history = tx.mail_send_histories.filter(
+                status=MailSendHistory.STATUS_SENT,
+                is_test=False,
+            ).order_by("-sent_at", "-created_at", "-id").first()
             preview_payload = _build_transaction_mail_preview(
                 member=member,
                 department_code=selected_department_code,
@@ -546,6 +560,9 @@ def _build_entry_v2_transaction_demo_context(
                     "mail_status": _transaction_mail_status(tx),
                     "preview_subject": preview_payload["subject"],
                     "preview_body": preview_payload["body"],
+                    "latest_sent_history_id": latest_sent_history.id if latest_sent_history else "",
+                    "latest_sent_subject": latest_sent_history.subject_snapshot if latest_sent_history else "",
+                    "latest_sent_body": latest_sent_history.body_snapshot if latest_sent_history else "",
                 }
             )
 
@@ -571,17 +588,18 @@ def _build_entry_v2_transaction_demo_context(
             activity_date=entry_date,
             status=MailSendHistory.STATUS_SENT,
             is_test=False,
-        ).select_related("recipient_group")
+        ).select_related("recipient_group", "transaction", "sender_member")
         for history in sent_mail_qs:
-            summary = history.body_snapshot.splitlines()[0] if history.body_snapshot else ""
             sent_mail_histories.append(
                 {
+                    "id": history.id,
                     "sent_at": timezone.localtime(history.sent_at).strftime("%H:%M") if history.sent_at else "-",
                     "subject": history.subject_snapshot,
                     "sender_name": history.sender_member.name if history.sender_member else "送信者未設定",
-                    "recipient_group": history.recipient_group.name if history.recipient_group else history.sent_to_snapshot,
-                    "summary": summary,
                     "body": history.body_snapshot,
+                    "amount": int(history.transaction.support_amount or 0) if history.transaction else 0,
+                    "transaction_id": history.transaction_id or "",
+                    "is_resend": history.is_resend,
                 }
             )
 
@@ -1498,19 +1516,38 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                 open_entry_panel = True
         elif action == "send_transaction_mock":
             preview_tx_id = (request.POST.get("preview_transaction_id") or "").strip()
-            if not selected_department_obj or not preview_tx_id.isdigit():
+            preview_history_id = (request.POST.get("preview_history_id") or "").strip()
+            edited_subject = (request.POST.get("preview_subject") or "").strip()
+            edited_body = (request.POST.get("preview_body") or "").strip()
+            if not selected_department_obj:
                 status_message = "送信対象の決済を確認してください。"
             else:
-                preview_transaction = (
-                    MemberMetricTransaction.objects.filter(
-                        id=int(preview_tx_id),
-                        entry__member=member,
-                        entry__department=selected_department_obj,
-                        entry__entry_date=entry_date,
+                preview_transaction = None
+                if preview_tx_id.isdigit():
+                    preview_transaction = (
+                        MemberMetricTransaction.objects.filter(
+                            id=int(preview_tx_id),
+                            entry__member=member,
+                            entry__department=selected_department_obj,
+                            entry__entry_date=entry_date,
+                        )
+                        .select_related("entry", "entry__department")
+                        .first()
                     )
-                    .select_related("entry", "entry__department")
-                    .first()
-                )
+                elif preview_history_id.isdigit():
+                    history_obj = (
+                        MailSendHistory.objects.filter(
+                            id=int(preview_history_id),
+                            department=selected_department_obj,
+                            activity_date=entry_date,
+                            status=MailSendHistory.STATUS_SENT,
+                            is_test=False,
+                        )
+                        .select_related("transaction", "transaction__entry", "transaction__entry__department")
+                        .first()
+                    )
+                    if history_obj:
+                        preview_transaction = history_obj.transaction
                 if not preview_transaction:
                     status_message = "送信対象の決済が見つかりません。"
                 else:
@@ -1531,8 +1568,8 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                         sender_member=member,
                         transaction=preview_transaction,
                         recipient_group=recipient_group,
-                        subject=preview_payload["subject"],
-                        body=preview_payload["body"],
+                        subject=edited_subject or preview_payload["subject"],
+                        body=edited_body or preview_payload["body"],
                     )
                     return redirect(
                         _build_v2_redirect_url(
