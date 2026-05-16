@@ -32,15 +32,41 @@
       {% if edit_adjustment %}
       <input type="hidden" name="adjustment_id" value="{{ edit_adjustment.id }}">
       {% endif %}
-      {% for field in form %}
-      <div class="{% if field.name == 'note' %}dairymetrics-field dairymetrics-field-full{% else %}dairymetrics-field{% endif %}">
-        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {{ field }}
-        {% if field.errors %}
-        <div class="error-text">{{ field.errors|striptags }}</div>
+      <div class="dairymetrics-field">
+        <label for="{{ form.department.id_for_label }}">{{ form.department.label }}</label>
+        {{ form.department }}
+        {% if form.department.errors %}
+        <div class="error-text">{{ form.department.errors|striptags }}</div>
         {% endif %}
       </div>
-      {% endfor %}
+      <div class="dairymetrics-field">
+        <label for="{{ form.member.id_for_label }}">{{ form.member.label }}</label>
+        {{ form.member }}
+        {% if form.member.errors %}
+        <div class="error-text">{{ form.member.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="dairymetrics-field">
+        <label for="{{ form.target_date.id_for_label }}">{{ form.target_date.label }}</label>
+        {{ form.target_date }}
+        {% if form.target_date.errors %}
+        <div class="error-text">{{ form.target_date.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="dairymetrics-field">
+        <label for="{{ form.source_type.id_for_label }}">{{ form.source_type.label }}</label>
+        {{ form.source_type }}
+        {% if form.source_type.errors %}
+        <div class="error-text">{{ form.source_type.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="dairymetrics-field">
+        <label for="{{ form.amount.id_for_label }}">{{ form.amount.label }}</label>
+        {{ form.amount }}
+        {% if form.amount.errors %}
+        <div class="error-text">{{ form.amount.errors|striptags }}</div>
+        {% endif %}
+      </div>
       <div class="dairymetrics-field-full dairymetrics-form-actions">
         <button type="submit">{% if edit_adjustment %}補正実績を更新{% else %}補正実績を保存{% endif %}</button>
         {% if edit_adjustment %}
@@ -73,9 +99,12 @@
             <td data-label="部署">{{ adjustment.department.code }}</td>
             <td data-label="種別">{{ adjustment.get_source_type_display }}</td>
             <td data-label="内容">
-              金額 {{ adjustment.support_amount }} / 郵送 {{ adjustment.return_postal_amount }} / QR {{ adjustment.return_qr_amount }}
-              {% if adjustment.note %}
-              <div class="muted">{{ adjustment.note }}</div>
+              {% if adjustment.source_type == "postal" %}
+              {{ adjustment.return_postal_amount }}円
+              {% elif adjustment.source_type == "qr" %}
+              {{ adjustment.return_qr_amount }}円
+              {% else %}
+              {{ adjustment.support_amount }}円
               {% endif %}
             </td>
             <td data-label="操作">
@@ -117,5 +146,47 @@
     {% endif %}
   </section>
 </div>
+{{ member_options|json_script:"performance-adjustment-member-options" }}
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+<script>
+  (function () {
+    const departmentSelect = document.getElementById("{{ form.department.id_for_label }}");
+    const memberSelect = document.getElementById("{{ form.member.id_for_label }}");
+    const dataNode = document.getElementById("performance-adjustment-member-options");
+    if (!departmentSelect || !memberSelect || !dataNode) {
+      return;
+    }
+    let memberOptions = {};
+    try {
+      memberOptions = JSON.parse(dataNode.textContent || "{}");
+    } catch (error) {
+      return;
+    }
+    const initialMemberValue = memberSelect.value;
+
+    function renderMembers(selectedDepartmentId) {
+      const options = memberOptions[selectedDepartmentId] || [];
+      memberSelect.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = options.length ? "メンバーを選択" : "部署を先に選択";
+      memberSelect.appendChild(placeholder);
+      options.forEach(function (item) {
+        const option = document.createElement("option");
+        option.value = String(item.id);
+        option.textContent = item.name;
+        memberSelect.appendChild(option);
+      });
+      const preserved = options.some(function (item) { return String(item.id) === String(initialMemberValue); });
+      if (preserved) {
+        memberSelect.value = initialMemberValue;
+      }
+    }
+
+    departmentSelect.addEventListener("change", function () {
+      renderMembers(departmentSelect.value);
+    });
+    renderMembers(departmentSelect.value);
+  })();
+</script>
 {% endblock %}

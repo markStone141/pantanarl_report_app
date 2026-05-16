@@ -1079,6 +1079,20 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
 
     paginator = Paginator(adjustments_queryset, 20)
     page_obj = paginator.get_page(request.GET.get("page") or 1)
+    member_options = {}
+    for member in (
+        Member.objects.active()
+        .filter(department_links__department__is_active=True)
+        .prefetch_related("department_links__department")
+        .order_by("name", "id")
+        .distinct()
+    ):
+        for link in member.department_links.all():
+            if link.department_id is None or not link.department.is_active:
+                continue
+            member_options.setdefault(str(link.department_id), []).append(
+                {"id": member.id, "name": member.name}
+            )
     context = {
         "nav_items": _performance_nav_items(),
         "filter_form": filter_form,
@@ -1088,6 +1102,7 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
         "page_obj": page_obj,
         "paginator": paginator,
         "adjustments": page_obj.object_list,
+        "member_options": member_options,
     }
     return render(request, "performance/adjustments.html", context)
 

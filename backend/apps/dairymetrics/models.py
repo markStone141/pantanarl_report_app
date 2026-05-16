@@ -273,10 +273,12 @@ class MemberMetricTransaction(models.Model):
 
 class MetricAdjustment(models.Model):
     SOURCE_POSTAL = "postal"
+    SOURCE_QR = "qr"
     SOURCE_INCREASE = "increase"
     SOURCE_OTHER = "other"
     SOURCE_CHOICES = [
         (SOURCE_POSTAL, "郵送"),
+        (SOURCE_QR, "QR"),
         (SOURCE_INCREASE, "増額"),
         (SOURCE_OTHER, "その他"),
     ]

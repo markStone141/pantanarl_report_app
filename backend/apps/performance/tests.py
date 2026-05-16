@@ -133,27 +133,21 @@ class PerformanceManagementTests(TestCase):
         response = self.client.post(
             reverse("performance_adjustments"),
             {
-                "member": self.member.id,
                 "department": self.department.id,
+                "member": self.member.id,
                 "target_date": "2026-05-14",
-                "source_type": MetricAdjustment.SOURCE_OTHER,
-                "approach_count": 0,
-                "communication_count": 0,
-                "result_count": 1,
-                "support_amount": 1200,
-                "return_postal_count": 0,
-                "return_postal_amount": 0,
-                "return_qr_count": 0,
-                "return_qr_amount": 0,
-                "cs_count": 0,
-                "refugee_count": 0,
-                "note": "後追い登録",
+                "source_type": MetricAdjustment.SOURCE_QR,
+                "amount": 1200,
             },
         )
 
         self.assertRedirects(response, reverse("performance_adjustments") + "?saved=1")
         adjustment = MetricAdjustment.objects.get(member=self.member, department=self.department, target_date=date(2026, 5, 14))
         self.assertEqual(adjustment.created_by, self.user)
+        self.assertEqual(adjustment.source_type, MetricAdjustment.SOURCE_QR)
+        self.assertEqual(adjustment.return_qr_count, 1)
+        self.assertEqual(adjustment.return_qr_amount, 1200)
+        self.assertEqual(adjustment.support_amount, 0)
 
     def test_performance_index_shows_activity_lists_and_progress_with_adjustments(self):
         today = timezone.localdate()
