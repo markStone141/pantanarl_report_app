@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
@@ -9,7 +11,13 @@ from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, require_roles
 from apps.accounts.models import Department, Member
-from apps.dairymetrics.models import DepartmentDailyMetricSummary, MemberDailyMetricEntry, MetricAdjustment
+from apps.dairymetrics.models import (
+    DepartmentDailyMetricSummary,
+    MemberDailyMetricEntry,
+    MemberMonthMetricTarget,
+    MemberPeriodMetricTarget,
+    MetricAdjustment,
+)
 from apps.dairymetrics.services.final_actuals import (
     collect_department_final_actual_totals_by_codes,
     collect_member_final_actual_totals,
@@ -215,6 +223,16 @@ def _build_progress_card(*, label, actual_amount, target_amount, summary_text):
     }
 
 
+def _build_member_target_progress(*, label, actual_amount, target_amount):
+    rate = _progress_rate(actual_amount, target_amount)
+    return {
+        "label": label,
+        "actual_amount_text": f"{actual_amount:,}円",
+        "target_amount_text": f"{target_amount:,}円",
+        "rate_text": "-" if rate is None else f"{rate}%",
+    }
+
+
 def _build_activity_member_rows(entries):
     rows = []
     for entry in entries:
@@ -295,6 +313,30 @@ def _build_active_member_cards(*, members, today, current_period, selected_depar
             min(current_period.end_date, today) if current_period else today,
             include_adjustments=True,
         )
+        month_target = MemberMonthMetricTarget.objects.filter(
+            member=member,
+            department=department,
+            target_month=month_start,
+        ).first()
+        period_target = (
+            MemberPeriodMetricTarget.objects.filter(
+                member=member,
+                department=department,
+                period=current_period,
+            ).first()
+            if current_period
+            else None
+        )
+        month_actual_amount = (
+            int(month_totals.get("support_amount") or 0)
+            + int(month_totals.get("return_postal_amount") or 0)
+            + int(month_totals.get("return_qr_amount") or 0)
+        )
+        period_actual_amount = (
+            int(period_totals.get("support_amount") or 0)
+            + int(period_totals.get("return_postal_amount") or 0)
+            + int(period_totals.get("return_qr_amount") or 0)
+        )
         if entry is not None:
             recent_totals = _build_adjustment_totals_map([entry]).get(
                 (entry.member_id, entry.department_id, entry.entry_date),
@@ -313,11 +355,13 @@ def _build_active_member_cards(*, members, today, current_period, selected_depar
             recent_date_text = entry.entry_date.strftime("%Y/%m/%d")
             recent_amount_text = _amount_text(entry, recent_totals)
             recent_count_text = _count_text(entry, recent_totals)
+            recent_sort_date = entry.entry_date
         else:
             updated_at_text = "実績なし"
             recent_date_text = "-"
             recent_amount_text = "-"
             recent_count_text = "-"
+            recent_sort_date = None
         cards.append(
             {
                 "member_name": member.name,
@@ -325,17 +369,36 @@ def _build_active_member_cards(*, members, today, current_period, selected_depar
                 "updated_at": updated_at_text,
                 "month_amount_text": _final_amount_text(totals=month_totals),
                 "month_count_text": _final_count_text(department_code=department.code, totals=month_totals),
+                "month_target_progress": _build_member_target_progress(
+                    label="月目標達成率",
+                    actual_amount=month_actual_amount,
+                    target_amount=int(month_target.target_amount if month_target else 0),
+                ),
                 "period_amount_text": _final_amount_text(totals=period_totals),
                 "period_count_text": _final_count_text(department_code=department.code, totals=period_totals),
+                "period_target_progress": _build_member_target_progress(
+                    label="路程目標達成率",
+                    actual_amount=period_actual_amount,
+                    target_amount=int(period_target.target_amount if period_target else 0),
+                ),
                 "recent_date_text": recent_date_text,
                 "recent_amount_text": recent_amount_text,
                 "recent_count_text": recent_count_text,
+                "recent_sort_date": recent_sort_date,
                 "detail_url": reverse(
                     "performance_member_detail",
                     args=[member.id, department.id],
                 ),
             }
         )
+    cards.sort(
+        key=lambda card: (
+            card["recent_sort_date"] is not None,
+            card["recent_sort_date"] or date.min,
+            card["member_name"],
+        ),
+        reverse=True,
+    )
     return cards
 
 

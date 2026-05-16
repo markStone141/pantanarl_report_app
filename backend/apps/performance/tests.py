@@ -6,7 +6,14 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
-from apps.dairymetrics.models import DepartmentDailyMetricSummary, MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjustment
+from apps.dairymetrics.models import (
+    DepartmentDailyMetricSummary,
+    MemberDailyMetricEntry,
+    MemberMetricTransaction,
+    MemberMonthMetricTarget,
+    MemberPeriodMetricTarget,
+    MetricAdjustment,
+)
 from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 
 
@@ -47,7 +54,7 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "実績管理")
         self.assertContains(response, "4件")
         self.assertContains(response, "4,300円")
-        self.assertContains(response, "戻り 郵送 1 / QR 0")
+        self.assertContains(response, "有効メンバー一覧")
 
     def test_performance_entry_edit_updates_daily_entry_and_department_summary(self):
         entry = MemberDailyMetricEntry.objects.create(
@@ -247,6 +254,18 @@ class PerformanceManagementTests(TestCase):
             target_date=today,
             support_amount=500,
         )
+        MemberMonthMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            target_month=today.replace(day=1),
+            target_amount=10000,
+        )
+        MemberPeriodMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            period=active_period,
+            target_amount=20000,
+        )
 
         response = self.client.get(reverse("performance_index"))
 
@@ -256,6 +275,10 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "今月の実績")
         self.assertContains(response, "今路程の実績")
         self.assertContains(response, "直近の実績")
+        self.assertContains(response, "月目標達成率")
+        self.assertContains(response, "路程目標達成率")
+        self.assertContains(response, "60.0%")
+        self.assertContains(response, "30.0%")
         self.assertContains(response, reverse("performance_member_detail", args=[self.member.id, self.department.id]))
 
     def test_performance_index_shows_enabled_member_card_without_today_entry(self):
@@ -276,6 +299,31 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, self.member.name)
         self.assertContains(response, "2,800円")
         self.assertContains(response, reverse("performance_member_detail", args=[self.member.id, self.department.id]))
+
+    def test_performance_index_orders_enabled_member_cards_by_recent_entry_desc(self):
+        today = timezone.localdate()
+        newer_member = Member.objects.create(name="Newer", default_department=self.department)
+        older_member = Member.objects.create(name="Older", default_department=self.department)
+        MemberDepartment.objects.create(member=newer_member, department=self.department)
+        MemberDepartment.objects.create(member=older_member, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=older_member,
+            department=self.department,
+            entry_date=today - timedelta(days=3),
+            support_amount=1000,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=newer_member,
+            department=self.department,
+            entry_date=today - timedelta(days=1),
+            support_amount=2000,
+        )
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        self.assertLess(content.index("Newer"), content.index("Older"))
 
     def test_performance_member_detail_shows_current_month_entries(self):
         today = timezone.localdate()
