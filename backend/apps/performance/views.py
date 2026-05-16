@@ -11,9 +11,11 @@ from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, require_roles
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.dairymetrics.forms import MemberScopeTargetForm
 from apps.dairymetrics.models import (
     DepartmentDailyMetricSummary,
     MemberDailyMetricEntry,
+    MemberMetricTransaction,
     MemberMonthMetricTarget,
     MemberPeriodMetricTarget,
     MetricAdjustment,
@@ -505,13 +507,27 @@ def _build_performance_dashboard_snapshot(*, department=None):
     }
 
 
-def _build_member_dashboard_entry_rows(*, member, department, today):
-    month_start = today.replace(day=1)
-    member_entries = MemberDailyMetricEntry.objects.select_related("member", "department").filter(
+def _parse_selected_month(value, *, default):
+    if not value:
+        return default.replace(day=1)
+    try:
+        return date.fromisoformat(f"{value}-01")
+    except ValueError:
+        return default.replace(day=1)
+
+
+def _month_end(month_start):
+    if month_start.month == 12:
+        return date(month_start.year + 1, 1, 1) - timezone.timedelta(days=1)
+    return date(month_start.year, month_start.month + 1, 1) - timezone.timedelta(days=1)
+
+
+def _build_member_dashboard_entry_rows(*, member, department, month_start, month_end):
+    member_entries = MemberDailyMetricEntry.objects.select_related("member", "department").prefetch_related("transactions").filter(
         member=member,
         department=department,
     )
-    entries = list(member_entries.filter(entry_date__range=(month_start, today)).order_by("-entry_date", "-id"))
+    entries = list(member_entries.filter(entry_date__range=(month_start, month_end)).order_by("-entry_date", "-id"))
     adjustment_totals_map = _build_adjustment_totals_map(entries)
     entry_rows = []
     for entry in entries:
@@ -533,6 +549,7 @@ def _build_member_dashboard_entry_rows(*, member, department, today):
                 "entry": entry,
                 "count_text": _count_text(entry, adjustment_totals),
                 "amount_text": _amount_text(entry, adjustment_totals),
+                "transactions": list(entry.transactions.all().order_by("created_at", "id")),
                 "adjustment_summary": (
                     f"戻り 郵送 {adjustment_totals['return_postal_count']} / QR {adjustment_totals['return_qr_count']}"
                     if adjustment_totals["return_postal_count"] or adjustment_totals["return_qr_count"]
@@ -540,19 +557,33 @@ def _build_member_dashboard_entry_rows(*, member, department, today):
                 ),
             }
         )
-    return entry_rows, month_start
+    return entry_rows
 
 
-def _build_member_dashboard_context(*, member, department, is_admin=False):
+def _build_member_dashboard_context(*, request, member, department, is_admin=False):
     today = timezone.localdate()
+    selected_month = _parse_selected_month(request.GET.get("month"), default=today)
+    selected_month_end = min(_month_end(selected_month), today)
     current_period = _resolve_current_period(today)
-    entry_rows, month_start = _build_member_dashboard_entry_rows(member=member, department=department, today=today)
+    entry_rows = _build_member_dashboard_entry_rows(
+        member=member,
+        department=department,
+        month_start=selected_month,
+        month_end=selected_month_end,
+    )
+    adjustment_rows = list(
+        MetricAdjustment.objects.filter(
+            member=member,
+            department=department,
+            target_date__range=(selected_month, selected_month_end),
+        ).order_by("-target_date", "-created_at")
+    )
 
     member_month_totals = collect_member_final_actual_totals(
         member,
         department,
-        month_start,
-        today,
+        selected_month,
+        selected_month_end,
         include_adjustments=True,
     )
     member_period_totals = collect_member_final_actual_totals(
@@ -564,8 +595,8 @@ def _build_member_dashboard_context(*, member, department, is_admin=False):
     )
     department_month_totals = collect_department_final_actual_totals(
         department,
-        month_start,
-        today,
+        selected_month,
+        selected_month_end,
         include_adjustments=True,
     )
     department_period_totals = collect_department_final_actual_totals(
@@ -577,7 +608,7 @@ def _build_member_dashboard_context(*, member, department, is_admin=False):
     member_month_target = MemberMonthMetricTarget.objects.filter(
         member=member,
         department=department,
-        target_month=month_start,
+        target_month=selected_month,
     ).first()
     member_period_target = (
         MemberPeriodMetricTarget.objects.filter(
@@ -589,7 +620,7 @@ def _build_member_dashboard_context(*, member, department, is_admin=False):
         else None
     )
     department_month_target_amount = int(
-        _resolve_month_target_amounts_by_code(departments=[department], target_month=month_start).get(department.code) or 0
+        _resolve_month_target_amounts_by_code(departments=[department], target_month=selected_month).get(department.code) or 0
     )
     department_period_target_amount = int(
         _resolve_period_target_amounts_by_code(departments=[department], period=current_period).get(department.code) or 0
@@ -599,16 +630,18 @@ def _build_member_dashboard_context(*, member, department, is_admin=False):
         "nav_items": _performance_member_nav_items(is_admin=is_admin),
         "member": member,
         "department": department,
-        "month_label": month_start.strftime("%Y/%m"),
+        "month_label": selected_month.strftime("%Y/%m"),
         "period_label": current_period.name if current_period else "路程未設定",
+        "selected_month": selected_month,
         "entry_rows": entry_rows,
+        "adjustment_rows": adjustment_rows,
         "department_month_progress": _build_progress_card(
             label="全体の月目標",
             actual_amount=int(department_month_totals.get("support_amount") or 0)
             + int(department_month_totals.get("return_postal_amount") or 0)
             + int(department_month_totals.get("return_qr_amount") or 0),
             target_amount=department_month_target_amount,
-            summary_text=f"{department.code} 全体の今月進捗",
+            summary_text=f"{department.code} 全体の{selected_month:%Y/%m}進捗",
         ),
         "department_period_progress": _build_progress_card(
             label="全体の路程目標",
@@ -624,7 +657,7 @@ def _build_member_dashboard_context(*, member, department, is_admin=False):
             + int(member_month_totals.get("return_postal_amount") or 0)
             + int(member_month_totals.get("return_qr_amount") or 0),
             target_amount=int(member_month_target.target_amount if member_month_target else 0),
-            summary_text=f"{member.name} さんの今月進捗",
+            summary_text=f"{member.name} さんの{selected_month:%Y/%m}進捗",
         ),
         "member_period_progress": _build_progress_card(
             label="個人の路程目標",
@@ -634,6 +667,18 @@ def _build_member_dashboard_context(*, member, department, is_admin=False):
             target_amount=int(member_period_target.target_amount if member_period_target else 0),
             summary_text=f"{member.name} さんの現在路程進捗",
         ),
+        "month_target_form": MemberScopeTargetForm(
+            member=member,
+            scope="month",
+            department=department,
+            target_month=selected_month,
+        ),
+        "period_target_form": MemberScopeTargetForm(
+            member=member,
+            scope="period",
+            department=department,
+            period=current_period,
+        ) if current_period else None,
         "is_admin_view": is_admin,
     }
 
@@ -743,7 +788,35 @@ def performance_member_detail(request: HttpRequest, member_id: int, department_i
     department = get_object_or_404(Department, pk=department_id, is_active=True)
     if not MemberDepartment.objects.filter(member=member, department=department).exists() and member.default_department_id != department.id:
         raise Http404
-    context = _build_member_dashboard_context(member=member, department=department, is_admin=True)
+    if request.method == "POST":
+        selected_month = _parse_selected_month(request.GET.get("month"), default=timezone.localdate())
+        current_period = _resolve_current_period(timezone.localdate())
+        action = request.POST.get("action")
+        if action == "save_month_target":
+            form = MemberScopeTargetForm(
+                request.POST,
+                member=member,
+                scope="month",
+                department=department,
+                target_month=selected_month,
+            )
+            if form.is_valid():
+                form.save()
+                query = f"?month={selected_month:%Y-%m}&saved=target"
+                return redirect(f"{reverse('performance_member_detail', args=[member.id, department.id])}{query}")
+        if action == "save_period_target" and current_period:
+            form = MemberScopeTargetForm(
+                request.POST,
+                member=member,
+                scope="period",
+                department=department,
+                period=current_period,
+            )
+            if form.is_valid():
+                form.save()
+                query = f"?month={selected_month:%Y-%m}&saved=target"
+                return redirect(f"{reverse('performance_member_detail', args=[member.id, department.id])}{query}")
+    context = _build_member_dashboard_context(request=request, member=member, department=department, is_admin=True)
     return render(request, "performance/member_detail.html", context)
 
 
@@ -757,7 +830,33 @@ def performance_member_dashboard(request: HttpRequest) -> HttpResponse:
     department = _resolve_member_card_department(member=member)
     if department is None:
         raise Http404
-    context = _build_member_dashboard_context(member=member, department=department, is_admin=False)
+    if request.method == "POST":
+        selected_month = _parse_selected_month(request.GET.get("month"), default=timezone.localdate())
+        current_period = _resolve_current_period(timezone.localdate())
+        action = request.POST.get("action")
+        if action == "save_month_target":
+            form = MemberScopeTargetForm(
+                request.POST,
+                member=member,
+                scope="month",
+                department=department,
+                target_month=selected_month,
+            )
+            if form.is_valid():
+                form.save()
+                return redirect(f"{reverse('performance_member_dashboard')}?month={selected_month:%Y-%m}&saved=target")
+        if action == "save_period_target" and current_period:
+            form = MemberScopeTargetForm(
+                request.POST,
+                member=member,
+                scope="period",
+                department=department,
+                period=current_period,
+            )
+            if form.is_valid():
+                form.save()
+                return redirect(f"{reverse('performance_member_dashboard')}?month={selected_month:%Y-%m}&saved=target")
+    context = _build_member_dashboard_context(request=request, member=member, department=department, is_admin=False)
     return render(request, "performance/member_detail.html", context)
 
 

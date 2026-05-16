@@ -65,12 +65,63 @@
   </section>
 
   <section class="card mt-16">
+    <h3>個人目標設定</h3>
+    <div class="grid grid-2 mt-12">
+      <article class="card">
+        <h4>月目標</h4>
+        <form method="post" class="grid mt-10">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save_month_target" />
+          {% for field in month_target_form %}
+          <div>
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+          </div>
+          {% endfor %}
+          <div>
+            <button type="submit">月目標を保存</button>
+          </div>
+        </form>
+      </article>
+      <article class="card">
+        <h4>路程目標</h4>
+        {% if period_target_form %}
+        <form method="post" class="grid mt-10">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save_period_target" />
+          {% for field in period_target_form %}
+          <div>
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+          </div>
+          {% endfor %}
+          <div>
+            <button type="submit">路程目標を保存</button>
+          </div>
+        </form>
+        {% else %}
+        <p class="muted">現在の路程が未設定です。</p>
+        {% endif %}
+      </article>
+    </div>
+  </section>
+
+  <section class="card mt-16">
     <div class="row">
-      <h3>今月の日次実績</h3>
+      <h3>{{ month_label }} の日次実績</h3>
       {% if is_admin_view %}
       <a class="btn-inline" href="{% url 'performance_index' %}">一覧へ戻る</a>
       {% endif %}
     </div>
+    <form method="get" class="grid mt-12">
+      <div>
+        <label for="performance-month-select">表示月</label>
+        <input id="performance-month-select" type="month" name="month" value="{{ selected_month|date:'Y-m' }}">
+      </div>
+      <div>
+        <button type="submit">この月を表示</button>
+      </div>
+    </form>
     {% if entry_rows %}
     <div class="table-scroll">
       <table class="mobile-card-table">
@@ -81,7 +132,7 @@
             <th>金額</th>
             <th>AP / CM</th>
             <th>状態</th>
-            <th>操作</th>
+            <th>詳細</th>
           </tr>
         </thead>
         <tbody>
@@ -99,8 +150,33 @@
             <td data-label="状態">
               <span class="badge">{% if row.entry.activity_closed %}活動終了{% else %}活動中{% endif %}</span>
             </td>
-            <td data-label="操作">
-              <a class="btn-inline" href="{% url 'performance_entry_edit' row.entry.id %}">編集</a>
+            <td data-label="詳細">
+              <details>
+                <summary>決済一覧</summary>
+                {% if row.transactions %}
+                <div class="grid mt-10">
+                  {% for tx in row.transactions %}
+                  <div class="metric-card">
+                    <div class="row">
+                      <strong>{{ tx.support_amount|floatformat:0 }}円</strong>
+                      <span class="muted">{{ tx.location|default:"場所未設定" }}</span>
+                    </div>
+                    <div class="muted mt-6">{{ tx.get_age_band_display }} / {{ tx.get_gender_display }} / {{ tx.get_nationality_type_display }}</div>
+                    {% if tx.comment %}
+                    <div class="mt-8">{{ tx.comment }}</div>
+                    {% endif %}
+                  </div>
+                  {% endfor %}
+                </div>
+                {% else %}
+                <p class="muted mt-10">決済明細はありません。</p>
+                {% endif %}
+                {% if is_admin_view %}
+                <div class="mt-10">
+                  <a class="btn-inline" href="{% url 'performance_entry_edit' row.entry.id %}">日次実績を編集</a>
+                </div>
+                {% endif %}
+              </details>
             </td>
           </tr>
           {% endfor %}
@@ -109,6 +185,49 @@
     </div>
     {% else %}
     <p class="muted">今月の日次実績はありません。</p>
+    {% endif %}
+  </section>
+
+  <section class="card mt-16">
+    <h3>{{ month_label }} の補正実績</h3>
+    {% if adjustment_rows %}
+    <div class="table-scroll">
+      <table class="mobile-card-table">
+        <thead>
+          <tr>
+            <th>対象日</th>
+            <th>種別</th>
+            <th>件数</th>
+            <th>金額</th>
+            <th>メモ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for adjustment in adjustment_rows %}
+          <tr>
+            <td data-label="対象日">{{ adjustment.target_date|date:"Y/m/d" }}</td>
+            <td data-label="種別">{{ adjustment.get_source_type_display }}</td>
+            <td data-label="件数">
+              {% if department.code == "WV" %}
+              CS {{ adjustment.cs_count }} / 難民 {{ adjustment.refugee_count }}
+              {% else %}
+              {{ adjustment.result_count }}件
+              {% endif %}
+            </td>
+            <td data-label="金額">
+              {{ adjustment.support_amount|default:0 }}円
+              {% if adjustment.return_postal_amount or adjustment.return_qr_amount %}
+              <div class="muted">郵送 {{ adjustment.return_postal_amount|default:0 }} / QR {{ adjustment.return_qr_amount|default:0 }}</div>
+              {% endif %}
+            </td>
+            <td data-label="メモ">{{ adjustment.note|default:"-" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">この月の補正実績はありません。</p>
     {% endif %}
   </section>
 </div>

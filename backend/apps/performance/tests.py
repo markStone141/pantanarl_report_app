@@ -352,6 +352,15 @@ class PerformanceManagementTests(TestCase):
             approach_count=6,
             communication_count=3,
         )
+        MemberMetricTransaction.objects.create(
+            entry=entry_today,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷",
+            comment="初回決済",
+        )
         MetricAdjustment.objects.create(
             member=self.member,
             department=self.department,
@@ -382,6 +391,12 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "個人の路程目標")
         self.assertContains(response, entry_today.entry_date.strftime("%Y/%m/%d"))
         self.assertContains(response, entry_old.entry_date.strftime("%Y/%m/%d"))
+        self.assertContains(response, "決済一覧")
+        self.assertContains(response, "初回決済")
+        self.assertContains(response, "渋谷")
+        self.assertContains(response, "月目標を保存")
+        self.assertContains(response, "路程目標を保存")
+        self.assertContains(response, "補正実績")
         self.assertContains(response, "戻り 郵送 1 / QR 0")
         self.assertContains(response, "編集")
 
@@ -403,3 +418,28 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f"{self.member.name} の実績ダッシュボード")
         self.assertContains(response, "個人の月目標")
+
+    def test_performance_member_detail_can_save_month_target(self):
+        today = timezone.localdate()
+
+        response = self.client.post(
+            f"{reverse('performance_member_detail', args=[self.member.id, self.department.id])}?month={today:%Y-%m}",
+            {
+                "action": "save_month_target",
+                "department": self.department.id,
+                "target_count": 3,
+                "target_amount": 12000,
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('performance_member_detail', args=[self.member.id, self.department.id])}?month={today:%Y-%m}&saved=target",
+        )
+        target = MemberMonthMetricTarget.objects.get(
+            member=self.member,
+            department=self.department,
+            target_month=today.replace(day=1),
+        )
+        self.assertEqual(target.target_count, 3)
+        self.assertEqual(target.target_amount, 12000)
