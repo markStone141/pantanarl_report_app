@@ -9,8 +9,8 @@ from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils import timezone
 
-from apps.accounts.auth import ROLE_ADMIN, require_roles
-from apps.accounts.models import Department, Member
+from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, require_roles
+from apps.accounts.models import Department, Member, MemberDepartment
 from apps.dairymetrics.models import (
     DepartmentDailyMetricSummary,
     MemberDailyMetricEntry,
@@ -19,6 +19,7 @@ from apps.dairymetrics.models import (
     MetricAdjustment,
 )
 from apps.dairymetrics.services.final_actuals import (
+    collect_department_final_actual_totals,
     collect_department_final_actual_totals_by_codes,
     collect_member_final_actual_totals,
 )
@@ -45,6 +46,17 @@ def _performance_nav_items():
         ("performance_adjustments", "補正実績"),
         ("mail_integration_settings", "メール連携"),
         ("mail_group_settings", "メールグループ"),
+    ]
+
+
+def _performance_member_nav_items(*, is_admin=False):
+    if is_admin:
+        return [
+            ("performance_index", "実績管理"),
+            ("performance_adjustments", "補正実績"),
+        ]
+    return [
+        ("performance_member_dashboard", "実績ダッシュボード"),
     ]
 
 
@@ -493,6 +505,139 @@ def _build_performance_dashboard_snapshot(*, department=None):
     }
 
 
+def _build_member_dashboard_entry_rows(*, member, department, today):
+    month_start = today.replace(day=1)
+    member_entries = MemberDailyMetricEntry.objects.select_related("member", "department").filter(
+        member=member,
+        department=department,
+    )
+    entries = list(member_entries.filter(entry_date__range=(month_start, today)).order_by("-entry_date", "-id"))
+    adjustment_totals_map = _build_adjustment_totals_map(entries)
+    entry_rows = []
+    for entry in entries:
+        adjustment_totals = adjustment_totals_map.get(
+            (entry.member_id, entry.department_id, entry.entry_date),
+            {
+                "result_count": 0,
+                "support_amount": 0,
+                "return_postal_count": 0,
+                "return_postal_amount": 0,
+                "return_qr_count": 0,
+                "return_qr_amount": 0,
+                "cs_count": 0,
+                "refugee_count": 0,
+            },
+        )
+        entry_rows.append(
+            {
+                "entry": entry,
+                "count_text": _count_text(entry, adjustment_totals),
+                "amount_text": _amount_text(entry, adjustment_totals),
+                "adjustment_summary": (
+                    f"戻り 郵送 {adjustment_totals['return_postal_count']} / QR {adjustment_totals['return_qr_count']}"
+                    if adjustment_totals["return_postal_count"] or adjustment_totals["return_qr_count"]
+                    else ""
+                ),
+            }
+        )
+    return entry_rows, month_start
+
+
+def _build_member_dashboard_context(*, member, department, is_admin=False):
+    today = timezone.localdate()
+    current_period = _resolve_current_period(today)
+    entry_rows, month_start = _build_member_dashboard_entry_rows(member=member, department=department, today=today)
+
+    member_month_totals = collect_member_final_actual_totals(
+        member,
+        department,
+        month_start,
+        today,
+        include_adjustments=True,
+    )
+    member_period_totals = collect_member_final_actual_totals(
+        member,
+        department,
+        current_period.start_date if current_period else today,
+        min(current_period.end_date, today) if current_period else today,
+        include_adjustments=True,
+    )
+    department_month_totals = collect_department_final_actual_totals(
+        department,
+        month_start,
+        today,
+        include_adjustments=True,
+    )
+    department_period_totals = collect_department_final_actual_totals(
+        department,
+        current_period.start_date if current_period else today,
+        min(current_period.end_date, today) if current_period else today,
+        include_adjustments=True,
+    )
+    member_month_target = MemberMonthMetricTarget.objects.filter(
+        member=member,
+        department=department,
+        target_month=month_start,
+    ).first()
+    member_period_target = (
+        MemberPeriodMetricTarget.objects.filter(
+            member=member,
+            department=department,
+            period=current_period,
+        ).first()
+        if current_period
+        else None
+    )
+    department_month_target_amount = int(
+        _resolve_month_target_amounts_by_code(departments=[department], target_month=month_start).get(department.code) or 0
+    )
+    department_period_target_amount = int(
+        _resolve_period_target_amounts_by_code(departments=[department], period=current_period).get(department.code) or 0
+    )
+
+    return {
+        "nav_items": _performance_member_nav_items(is_admin=is_admin),
+        "member": member,
+        "department": department,
+        "month_label": month_start.strftime("%Y/%m"),
+        "period_label": current_period.name if current_period else "路程未設定",
+        "entry_rows": entry_rows,
+        "department_month_progress": _build_progress_card(
+            label="全体の月目標",
+            actual_amount=int(department_month_totals.get("support_amount") or 0)
+            + int(department_month_totals.get("return_postal_amount") or 0)
+            + int(department_month_totals.get("return_qr_amount") or 0),
+            target_amount=department_month_target_amount,
+            summary_text=f"{department.code} 全体の今月進捗",
+        ),
+        "department_period_progress": _build_progress_card(
+            label="全体の路程目標",
+            actual_amount=int(department_period_totals.get("support_amount") or 0)
+            + int(department_period_totals.get("return_postal_amount") or 0)
+            + int(department_period_totals.get("return_qr_amount") or 0),
+            target_amount=department_period_target_amount,
+            summary_text=f"{department.code} 全体の現在路程進捗",
+        ),
+        "member_month_progress": _build_progress_card(
+            label="個人の月目標",
+            actual_amount=int(member_month_totals.get("support_amount") or 0)
+            + int(member_month_totals.get("return_postal_amount") or 0)
+            + int(member_month_totals.get("return_qr_amount") or 0),
+            target_amount=int(member_month_target.target_amount if member_month_target else 0),
+            summary_text=f"{member.name} さんの今月進捗",
+        ),
+        "member_period_progress": _build_progress_card(
+            label="個人の路程目標",
+            actual_amount=int(member_period_totals.get("support_amount") or 0)
+            + int(member_period_totals.get("return_postal_amount") or 0)
+            + int(member_period_totals.get("return_qr_amount") or 0),
+            target_amount=int(member_period_target.target_amount if member_period_target else 0),
+            summary_text=f"{member.name} さんの現在路程進捗",
+        ),
+        "is_admin_view": is_admin,
+    }
+
+
 @require_roles(ROLE_ADMIN)
 def performance_index(request: HttpRequest) -> HttpResponse:
     filter_data = request.GET.copy()
@@ -594,54 +739,25 @@ def performance_entry_edit(request: HttpRequest, entry_id: int) -> HttpResponse:
 
 @require_roles(ROLE_ADMIN)
 def performance_member_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
-    member_entries = MemberDailyMetricEntry.objects.select_related("member", "department").filter(
-        member_id=member_id,
-        department_id=department_id,
-    )
-    latest_entry = member_entries.order_by("-entry_date", "-id").first()
-    if latest_entry is None:
+    member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
+    department = get_object_or_404(Department, pk=department_id, is_active=True)
+    if not MemberDepartment.objects.filter(member=member, department=department).exists() and member.default_department_id != department.id:
         raise Http404
-    today = timezone.localdate()
-    month_start = today.replace(day=1)
-    entries = list(
-        member_entries.filter(entry_date__range=(month_start, today)).order_by("-entry_date", "-id")
-    )
-    adjustment_totals_map = _build_adjustment_totals_map(entries)
-    entry_rows = []
-    for entry in entries:
-        adjustment_totals = adjustment_totals_map.get(
-            (entry.member_id, entry.department_id, entry.entry_date),
-            {
-                "result_count": 0,
-                "support_amount": 0,
-                "return_postal_count": 0,
-                "return_postal_amount": 0,
-                "return_qr_count": 0,
-                "return_qr_amount": 0,
-                "cs_count": 0,
-                "refugee_count": 0,
-            },
-        )
-        entry_rows.append(
-            {
-                "entry": entry,
-                "count_text": _count_text(entry, adjustment_totals),
-                "amount_text": _amount_text(entry, adjustment_totals),
-                "adjustment_summary": (
-                    f"戻り 郵送 {adjustment_totals['return_postal_count']} / QR {adjustment_totals['return_qr_count']}"
-                    if adjustment_totals["return_postal_count"] or adjustment_totals["return_qr_count"]
-                    else ""
-                ),
-            }
-        )
+    context = _build_member_dashboard_context(member=member, department=department, is_admin=True)
+    return render(request, "performance/member_detail.html", context)
 
-    context = {
-        "nav_items": _performance_nav_items(),
-        "member": latest_entry.member,
-        "department": latest_entry.department,
-        "entry_rows": entry_rows,
-        "month_label": month_start.strftime("%Y/%m"),
-    }
+
+@require_roles(ROLE_ADMIN, ROLE_REPORT)
+def performance_member_dashboard(request: HttpRequest) -> HttpResponse:
+    if request.user.is_staff or request.user.is_superuser:
+        return redirect("performance_index")
+    member = getattr(request.user, "member_profile", None)
+    if member is None:
+        raise Http404
+    department = _resolve_member_card_department(member=member)
+    if department is None:
+        raise Http404
+    context = _build_member_dashboard_context(member=member, department=department, is_admin=False)
     return render(request, "performance/member_detail.html", context)
 
 

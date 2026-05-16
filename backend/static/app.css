@@ -204,6 +204,12 @@ a {
   -webkit-backdrop-filter: blur(18px) saturate(135%);
 }
 
+.performance-member-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
 .card h2,
 .card h3 {
   margin: 0 0 8px;

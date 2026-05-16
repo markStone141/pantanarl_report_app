@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}メンバー実績詳細 | 実績管理{% endblock %}
+{% block title %}メンバー実績ダッシュボード | 実績管理{% endblock %}
 
 {% block content %}
 <div class="container">
   <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
     <div>
-      <strong>{{ member.name }} の実績詳細</strong>
-      <div class="muted topbar-muted">{{ department.code }} / {{ month_label }} の日次実績一覧</div>
+      <strong>{{ member.name }} の実績ダッシュボード</strong>
+      <div class="muted topbar-muted">{{ department.code }} / 月・路程目標の進捗確認</div>
     </div>
     <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
       <i class="fa-solid fa-bars" aria-hidden="true"></i>
@@ -23,9 +23,53 @@
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
   <section class="card mt-16">
+    <h3>進捗サマリー</h3>
+    <div class="grid grid-2 mt-12">
+      <article class="metric-card">
+        <div class="row">
+          <strong>{{ department_month_progress.label }}</strong>
+          <span class="badge">{{ department_month_progress.rate_text }}</span>
+        </div>
+        <div class="muted mt-6">{{ department_month_progress.summary_text }}</div>
+        <div class="mt-8">実績 {{ department_month_progress.actual_amount_text }}</div>
+        <div class="muted">目標 {{ department_month_progress.target_amount_text }}</div>
+      </article>
+      <article class="metric-card">
+        <div class="row">
+          <strong>{{ department_period_progress.label }}</strong>
+          <span class="badge">{{ department_period_progress.rate_text }}</span>
+        </div>
+        <div class="muted mt-6">{{ department_period_progress.summary_text }}</div>
+        <div class="mt-8">実績 {{ department_period_progress.actual_amount_text }}</div>
+        <div class="muted">目標 {{ department_period_progress.target_amount_text }}</div>
+      </article>
+      <article class="metric-card">
+        <div class="row">
+          <strong>{{ member_month_progress.label }}</strong>
+          <span class="badge">{{ member_month_progress.rate_text }}</span>
+        </div>
+        <div class="muted mt-6">{{ member_month_progress.summary_text }}</div>
+        <div class="mt-8">実績 {{ member_month_progress.actual_amount_text }}</div>
+        <div class="muted">目標 {{ member_month_progress.target_amount_text }}</div>
+      </article>
+      <article class="metric-card">
+        <div class="row">
+          <strong>{{ member_period_progress.label }}</strong>
+          <span class="badge">{{ member_period_progress.rate_text }}</span>
+        </div>
+        <div class="muted mt-6">{{ member_period_progress.summary_text }}</div>
+        <div class="mt-8">実績 {{ member_period_progress.actual_amount_text }}</div>
+        <div class="muted">目標 {{ member_period_progress.target_amount_text }}</div>
+      </article>
+    </div>
+  </section>
+
+  <section class="card mt-16">
     <div class="row">
       <h3>今月の日次実績</h3>
+      {% if is_admin_view %}
       <a class="btn-inline" href="{% url 'performance_index' %}">一覧へ戻る</a>
+      {% endif %}
     </div>
     {% if entry_rows %}
     <div class="table-scroll">

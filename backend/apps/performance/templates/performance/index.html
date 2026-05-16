@@ -27,7 +27,7 @@
     {% if dashboard_snapshot.active_member_cards %}
     <div class="grid grid-2 mt-12">
       {% for card in dashboard_snapshot.active_member_cards %}
-      <article class="card">
+      <a class="card performance-member-card-link" href="{{ card.detail_url }}">
         <div class="row">
           <strong>{{ card.member_name }}</strong>
           <span class="badge">{{ card.department_code }}</span>
@@ -68,10 +68,7 @@
             <div class="muted">{{ card.period_target_progress.actual_amount_text }} / {{ card.period_target_progress.target_amount_text }}</div>
           </div>
         </div>
-        <div class="mt-12">
-          <a class="btn-inline" href="{{ card.detail_url }}">今月の日次実績を見る</a>
-        </div>
-      </article>
+      </a>
       {% endfor %}
     </div>
     {% else %}

@@ -327,6 +327,13 @@ class PerformanceManagementTests(TestCase):
 
     def test_performance_member_detail_shows_current_month_entries(self):
         today = timezone.localdate()
+        active_period = Period.objects.create(
+            month=today.replace(day=1),
+            name="5月第2次路程",
+            status="active",
+            start_date=today - timedelta(days=3),
+            end_date=today + timedelta(days=3),
+        )
         entry_today = MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=self.department,
@@ -352,12 +359,47 @@ class PerformanceManagementTests(TestCase):
             return_postal_count=1,
             return_postal_amount=900,
         )
+        MemberMonthMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            target_month=today.replace(day=1),
+            target_amount=10000,
+        )
+        MemberPeriodMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            period=active_period,
+            target_amount=20000,
+        )
 
         response = self.client.get(reverse("performance_member_detail", args=[self.member.id, self.department.id]))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.member.name)
+        self.assertContains(response, f"{self.member.name} の実績ダッシュボード")
+        self.assertContains(response, "全体の月目標")
+        self.assertContains(response, "全体の路程目標")
+        self.assertContains(response, "個人の月目標")
+        self.assertContains(response, "個人の路程目標")
         self.assertContains(response, entry_today.entry_date.strftime("%Y/%m/%d"))
         self.assertContains(response, entry_old.entry_date.strftime("%Y/%m/%d"))
         self.assertContains(response, "戻り 郵送 1 / QR 0")
         self.assertContains(response, "編集")
+
+    def test_performance_member_dashboard_uses_logged_in_member_profile(self):
+        self.client.logout()
+        report_user = User.objects.create_user(username="perf-member", password="pass1234", is_staff=False)
+        self.member.user = report_user
+        self.member.save(update_fields=["user"])
+        MemberMonthMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            target_month=timezone.localdate().replace(day=1),
+            target_amount=9000,
+        )
+        self.client.force_login(report_user)
+
+        response = self.client.get(reverse("performance_member_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"{self.member.name} の実績ダッシュボード")
+        self.assertContains(response, "個人の月目標")
