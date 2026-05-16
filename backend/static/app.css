@@ -64,7 +64,8 @@ a {
   -webkit-backdrop-filter: blur(24px) saturate(155%);
 }
 
-.topbar-muted {
+.topbar-muted,
+.topbar .muted.topbar-muted {
   color: rgba(239, 247, 255, 0.86);
 }
 
