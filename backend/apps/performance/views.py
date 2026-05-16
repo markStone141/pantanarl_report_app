@@ -564,7 +564,7 @@ def _build_member_activity_trend(*, member, department):
     latest_entries = list(
         MemberDailyMetricEntry.objects.select_related("department")
         .filter(member=member, department=department)
-        .order_by("-entry_date", "-id")[:30]
+        .order_by("-entry_date", "-id")[:120]
     )
     if not latest_entries:
         return {
@@ -573,6 +573,7 @@ def _build_member_activity_trend(*, member, department):
             "counts": [],
             "has_data": False,
             "count_label": "件数",
+            "default_visible_count": 0,
         }
     latest_entries.reverse()
     adjustment_totals_map = _build_adjustment_totals_map(latest_entries)
@@ -620,6 +621,7 @@ def _build_member_activity_trend(*, member, department):
         "counts": counts,
         "has_data": True,
         "count_label": "件数" if department.code != "WV" else "件数相当",
+        "default_visible_count": min(30, len(labels)),
     }
 
 

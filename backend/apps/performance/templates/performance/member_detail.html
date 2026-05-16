@@ -37,6 +37,11 @@
         {{ activity_trend.count_label }}
       </span>
     </div>
+    <div class="performance-trend-controls mt-12">
+      <button type="button" id="performance-trend-decrease" class="btn-inline">-10</button>
+      <span id="performance-trend-visible-count" class="muted"></span>
+      <button type="button" id="performance-trend-increase" class="btn-inline">+10</button>
+    </div>
     <div class="performance-chart-card mt-12">
       <canvas id="performance-activity-trend-chart" aria-label="直近30稼働の実績推移"></canvas>
     </div>

@@ -248,6 +248,17 @@ a {
   min-height: 280px;
 }
 
+.performance-trend-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.performance-trend-controls .btn-inline[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .card h2,
 .card h3 {
   margin: 0 0 8px;

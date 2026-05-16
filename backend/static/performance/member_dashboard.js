@@ -1,6 +1,9 @@
 (function () {
   const dataNode = document.getElementById("performance-activity-trend-data");
   const canvas = document.getElementById("performance-activity-trend-chart");
+  const decreaseButton = document.getElementById("performance-trend-decrease");
+  const increaseButton = document.getElementById("performance-trend-increase");
+  const visibleCountNode = document.getElementById("performance-trend-visible-count");
   if (!dataNode || !canvas) {
     return;
   }
@@ -20,18 +23,28 @@
     return;
   }
 
+  const allLabels = trendData.labels.slice();
+  const allAmounts = trendData.amounts.slice();
+  const allCounts = trendData.counts.slice();
+  const minVisibleCount = Math.min(10, allLabels.length);
+  let visibleCount = Math.min(trendData.default_visible_count || 30, allLabels.length);
+
   const amountGradient = context.createLinearGradient(0, 0, 0, 240);
   amountGradient.addColorStop(0, "rgba(39, 123, 211, 0.92)");
   amountGradient.addColorStop(1, "rgba(39, 123, 211, 0.28)");
 
-  new window.Chart(context, {
+  function sliceLatest(values) {
+    return values.slice(Math.max(0, values.length - visibleCount));
+  }
+
+  const chart = new window.Chart(context, {
     data: {
-      labels: trendData.labels,
+      labels: sliceLatest(allLabels),
       datasets: [
         {
           type: "bar",
           label: "金額",
-          data: trendData.amounts,
+          data: sliceLatest(allAmounts),
           yAxisID: "yAmount",
           backgroundColor: amountGradient,
           borderColor: "#277bd3",
@@ -43,7 +56,7 @@
         {
           type: "line",
           label: trendData.count_label || "件数",
-          data: trendData.counts,
+          data: sliceLatest(allCounts),
           yAxisID: "yCount",
           borderColor: "#ef7d32",
           backgroundColor: "#ef7d32",
@@ -114,4 +127,38 @@
       },
     },
   });
+
+  function syncControls() {
+    if (visibleCountNode) {
+      visibleCountNode.textContent = visibleCount + "稼働表示";
+    }
+    if (decreaseButton) {
+      decreaseButton.disabled = visibleCount <= minVisibleCount;
+    }
+    if (increaseButton) {
+      increaseButton.disabled = visibleCount >= allLabels.length;
+    }
+  }
+
+  function updateVisibleRange(nextVisibleCount) {
+    visibleCount = Math.max(minVisibleCount, Math.min(nextVisibleCount, allLabels.length));
+    chart.data.labels = sliceLatest(allLabels);
+    chart.data.datasets[0].data = sliceLatest(allAmounts);
+    chart.data.datasets[1].data = sliceLatest(allCounts);
+    chart.update();
+    syncControls();
+  }
+
+  if (decreaseButton) {
+    decreaseButton.addEventListener("click", function () {
+      updateVisibleRange(visibleCount - 10);
+    });
+  }
+  if (increaseButton) {
+    increaseButton.addEventListener("click", function () {
+      updateVisibleRange(visibleCount + 10);
+    });
+  }
+
+  syncControls();
 })();
