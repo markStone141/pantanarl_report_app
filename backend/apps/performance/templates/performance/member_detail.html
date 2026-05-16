@@ -23,53 +23,6 @@
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
   <section class="card mt-16">
-    <h3>直近30稼働の実績推移</h3>
-    <p class="muted">1稼働 = 実績が登録された1日です。金額は棒、件数は折れ線で表示しています。</p>
-    {% if activity_trend_items %}
-    <div class="performance-trend-legend mt-12">
-      <span class="performance-trend-legend-item">
-        <span class="performance-trend-legend-swatch performance-trend-legend-swatch-bar"></span>
-        金額
-      </span>
-      <span class="performance-trend-legend-item">
-        <span class="performance-trend-legend-swatch performance-trend-legend-swatch-line"></span>
-        件数
-      </span>
-    </div>
-    <div class="performance-trend-chart-shell mt-12">
-      <svg class="performance-trend-chart" viewBox="0 0 320 190" role="img" aria-label="直近30稼働の実績推移">
-        <line x1="16" y1="158" x2="304" y2="158" class="performance-trend-axis"></line>
-        {% for item in activity_trend_items %}
-        <rect
-          x="{{ item.bar_x }}"
-          y="{{ item.bar_y }}"
-          width="{{ item.bar_width }}"
-          height="{{ item.bar_height }}"
-          rx="4"
-          class="performance-trend-bar"
-        >
-          <title>{{ item.date_text }} / {{ item.amount_text }} / {{ item.count_text }}</title>
-        </rect>
-        {% endfor %}
-        <path d="{{ activity_trend_path }}" class="performance-trend-line"></path>
-        {% for item in activity_trend_items %}
-        <circle cx="{{ item.point_x }}" cy="{{ item.point_y }}" r="3.5" class="performance-trend-point">
-          <title>{{ item.date_text }} / {{ item.amount_text }} / {{ item.count_text }}</title>
-        </circle>
-        {% endfor %}
-      </svg>
-      <div class="performance-trend-labels">
-        {% for item in activity_trend_items %}
-        <span class="{% if item.show_tick_label %}is-visible{% endif %}">{{ item.date_text }}</span>
-        {% endfor %}
-      </div>
-    </div>
-    {% else %}
-    <p class="muted mt-12">表示できる稼働実績はまだありません。</p>
-    {% endif %}
-  </section>
-
-  <section class="card mt-16">
     <h3>進捗サマリー</h3>
     <div class="grid grid-2 mt-12">
       <article class="metric-card">
