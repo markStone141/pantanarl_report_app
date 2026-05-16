@@ -385,6 +385,9 @@ class PerformanceManagementTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f"{self.member.name} の実績ダッシュボード")
+        self.assertContains(response, "直近30稼働の実績推移")
+        self.assertContains(response, "performance-activity-trend-chart")
+        self.assertContains(response, entry_today.entry_date.strftime("%m/%d"))
         self.assertContains(response, "全体の月目標")
         self.assertContains(response, "全体の路程目標")
         self.assertContains(response, "個人の月目標")

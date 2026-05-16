@@ -23,6 +23,29 @@
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
   <section class="card mt-16">
+    <h3>直近30稼働の実績推移</h3>
+    <p class="muted">1稼働 = 実績が登録された1日です。金額は棒、{{ activity_trend.count_label }}は折れ線で表示します。</p>
+    {% if activity_trend.has_data %}
+    {{ activity_trend|json_script:"performance-activity-trend-data" }}
+    <div class="performance-trend-legend mt-12">
+      <span class="performance-trend-legend-item">
+        <span class="performance-trend-legend-swatch performance-trend-legend-swatch-bar"></span>
+        金額
+      </span>
+      <span class="performance-trend-legend-item">
+        <span class="performance-trend-legend-swatch performance-trend-legend-swatch-line"></span>
+        {{ activity_trend.count_label }}
+      </span>
+    </div>
+    <div class="performance-chart-card mt-12">
+      <canvas id="performance-activity-trend-chart" aria-label="直近30稼働の実績推移"></canvas>
+    </div>
+    {% else %}
+    <p class="muted mt-12">表示できる稼働実績はまだありません。</p>
+    {% endif %}
+  </section>
+
+  <section class="card mt-16">
     <h3>進捗サマリー</h3>
     <div class="grid grid-2 mt-12">
       <article class="metric-card">
@@ -231,5 +254,7 @@
     {% endif %}
   </section>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{% static 'performance/member_dashboard.js' %}?v=1"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 {% endblock %}

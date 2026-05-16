@@ -210,6 +210,44 @@ a {
   text-decoration: none;
 }
 
+.performance-trend-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+}
+
+.performance-trend-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.performance-trend-legend-swatch {
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.performance-trend-legend-swatch-bar {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #3aa0ff, #1f76d1);
+}
+
+.performance-trend-legend-swatch-line {
+  width: 18px;
+  height: 0;
+  border-top: 3px solid #ef7d32;
+}
+
+.performance-chart-card {
+  position: relative;
+  min-height: 280px;
+}
+
 .card h2,
 .card h3 {
   margin: 0 0 8px;

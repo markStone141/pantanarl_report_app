@@ -560,6 +560,69 @@ def _build_member_dashboard_entry_rows(*, member, department, month_start, month
     return entry_rows
 
 
+def _build_member_activity_trend(*, member, department):
+    latest_entries = list(
+        MemberDailyMetricEntry.objects.select_related("department")
+        .filter(member=member, department=department)
+        .order_by("-entry_date", "-id")[:30]
+    )
+    if not latest_entries:
+        return {
+            "labels": [],
+            "amounts": [],
+            "counts": [],
+            "has_data": False,
+            "count_label": "件数",
+        }
+    latest_entries.reverse()
+    adjustment_totals_map = _build_adjustment_totals_map(latest_entries)
+    labels = []
+    amounts = []
+    counts = []
+    for entry in latest_entries:
+        adjustment_totals = adjustment_totals_map.get(
+            (entry.member_id, entry.department_id, entry.entry_date),
+            {
+                "result_count": 0,
+                "support_amount": 0,
+                "return_postal_count": 0,
+                "return_postal_amount": 0,
+                "return_qr_count": 0,
+                "return_qr_amount": 0,
+                "cs_count": 0,
+                "refugee_count": 0,
+            },
+        )
+        labels.append(entry.entry_date.strftime("%m/%d"))
+        amounts.append(
+            int(entry.support_amount or 0)
+            + int(adjustment_totals["support_amount"])
+            + int(adjustment_totals["return_postal_amount"])
+            + int(adjustment_totals["return_qr_amount"])
+        )
+        if department.code == "WV":
+            counts.append(
+                int(entry.cs_count or 0)
+                + int(entry.refugee_count or 0)
+                + int(adjustment_totals["cs_count"])
+                + int(adjustment_totals["refugee_count"])
+            )
+        else:
+            counts.append(
+                int(entry.result_count or 0)
+                + int(adjustment_totals["result_count"])
+                + int(adjustment_totals["return_postal_count"])
+                + int(adjustment_totals["return_qr_count"])
+            )
+    return {
+        "labels": labels,
+        "amounts": amounts,
+        "counts": counts,
+        "has_data": True,
+        "count_label": "件数" if department.code != "WV" else "件数相当",
+    }
+
+
 def _build_member_dashboard_context(*, request, member, department, is_admin=False):
     today = timezone.localdate()
     selected_month = _parse_selected_month(request.GET.get("month"), default=today)
@@ -578,6 +641,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
             target_date__range=(selected_month, selected_month_end),
         ).order_by("-target_date", "-created_at")
     )
+    activity_trend = _build_member_activity_trend(member=member, department=department)
 
     member_month_totals = collect_member_final_actual_totals(
         member,
@@ -635,6 +699,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "selected_month": selected_month,
         "entry_rows": entry_rows,
         "adjustment_rows": adjustment_rows,
+        "activity_trend": activity_trend,
         "department_month_progress": _build_progress_card(
             label="全体の月目標",
             actual_amount=int(department_month_totals.get("support_amount") or 0)
