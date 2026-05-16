@@ -493,6 +493,7 @@ def _build_performance_dashboard_snapshot(*, department=None):
 
     return {
         "today": today,
+        "overall_activity_trend": _build_overall_activity_trend(department=department),
         "activity_in_progress": _build_activity_member_rows(activity_in_progress),
         "activity_finished": _build_activity_member_rows(activity_finished),
         "active_member_cards": _build_active_member_cards(
@@ -621,6 +622,95 @@ def _build_member_activity_trend(*, member, department):
         "counts": counts,
         "has_data": True,
         "count_label": "件数" if department.code != "WV" else "件数相当",
+        "default_visible_count": min(30, len(labels)),
+    }
+
+
+def _build_overall_activity_trend(*, department=None):
+    entry_queryset = MemberDailyMetricEntry.objects.all()
+    adjustment_queryset = MetricAdjustment.objects.all()
+    if department is not None:
+        entry_queryset = entry_queryset.filter(department=department)
+        adjustment_queryset = adjustment_queryset.filter(department=department)
+
+    latest_dates = list(entry_queryset.order_by("-entry_date").values_list("entry_date", flat=True).distinct()[:120])
+    if not latest_dates:
+        return {
+            "labels": [],
+            "amounts": [],
+            "counts": [],
+            "has_data": False,
+            "count_label": "件数",
+            "default_visible_count": 0,
+        }
+    latest_dates.reverse()
+
+    entry_totals = {
+        row["entry_date"]: row
+        for row in entry_queryset.filter(entry_date__in=latest_dates)
+        .values("entry_date")
+        .annotate(
+            result_count_total=Sum("result_count"),
+            support_amount_total=Sum("support_amount"),
+            cs_count_total=Sum("cs_count"),
+            refugee_count_total=Sum("refugee_count"),
+        )
+    }
+    adjustment_totals = {
+        row["target_date"]: row
+        for row in adjustment_queryset.filter(target_date__in=latest_dates)
+        .values("target_date")
+        .annotate(
+            result_count_total=Sum("result_count"),
+            support_amount_total=Sum("support_amount"),
+            return_postal_count_total=Sum("return_postal_count"),
+            return_postal_amount_total=Sum("return_postal_amount"),
+            return_qr_count_total=Sum("return_qr_count"),
+            return_qr_amount_total=Sum("return_qr_amount"),
+            cs_count_total=Sum("cs_count"),
+            refugee_count_total=Sum("refugee_count"),
+        )
+    }
+
+    labels = []
+    amounts = []
+    counts = []
+    use_equivalent_count = department is None or department.code == "WV"
+    for activity_date in latest_dates:
+        entry_row = entry_totals.get(activity_date, {})
+        adjustment_row = adjustment_totals.get(activity_date, {})
+        labels.append(activity_date.strftime("%m/%d"))
+        amounts.append(
+            int(entry_row.get("support_amount_total") or 0)
+            + int(adjustment_row.get("support_amount_total") or 0)
+            + int(adjustment_row.get("return_postal_amount_total") or 0)
+            + int(adjustment_row.get("return_qr_amount_total") or 0)
+        )
+        if use_equivalent_count:
+            counts.append(
+                int(entry_row.get("result_count_total") or 0)
+                + int(entry_row.get("cs_count_total") or 0)
+                + int(entry_row.get("refugee_count_total") or 0)
+                + int(adjustment_row.get("result_count_total") or 0)
+                + int(adjustment_row.get("return_postal_count_total") or 0)
+                + int(adjustment_row.get("return_qr_count_total") or 0)
+                + int(adjustment_row.get("cs_count_total") or 0)
+                + int(adjustment_row.get("refugee_count_total") or 0)
+            )
+        else:
+            counts.append(
+                int(entry_row.get("result_count_total") or 0)
+                + int(adjustment_row.get("result_count_total") or 0)
+                + int(adjustment_row.get("return_postal_count_total") or 0)
+                + int(adjustment_row.get("return_qr_count_total") or 0)
+            )
+
+    return {
+        "labels": labels,
+        "amounts": amounts,
+        "counts": counts,
+        "has_data": True,
+        "count_label": "件数相当" if use_equivalent_count else "件数",
         "default_visible_count": min(30, len(labels)),
     }
 

@@ -55,6 +55,9 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "4件")
         self.assertContains(response, "4,300円")
         self.assertContains(response, "有効メンバー一覧")
+        self.assertContains(response, "直近30稼働の全体実績推移")
+        self.assertContains(response, "performance-activity-trend-chart")
+        self.assertContains(response, entry.entry_date.strftime("%m/%d"))
 
     def test_performance_entry_edit_updates_daily_entry_and_department_summary(self):
         entry = MemberDailyMetricEntry.objects.create(
