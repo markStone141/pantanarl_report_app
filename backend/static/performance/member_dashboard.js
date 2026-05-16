@@ -7,6 +7,7 @@
   const modeAmountButton = document.getElementById("performance-trend-mode-amount");
   const modeRateButton = document.getElementById("performance-trend-mode-rate");
   const summaryNode = document.getElementById("performance-trend-summary");
+  const lineLabelNode = document.getElementById("performance-trend-line-label");
   if (!dataNode || !canvas) {
     return;
   }
@@ -167,6 +168,9 @@
       modeRateButton.classList.toggle("is-active", currentMode === "rate");
     }
     if (currentMode === "rate") {
+      if (lineLabelNode) {
+        lineLabelNode.textContent = "達成率（%）";
+      }
       chart.data.datasets = [
         {
           type: "line",
@@ -198,6 +202,9 @@
         },
       };
     } else {
+      if (lineLabelNode) {
+        lineLabelNode.textContent = trendData.count_label || "件数";
+      }
       chart.data.datasets = [
         {
           type: "bar",
