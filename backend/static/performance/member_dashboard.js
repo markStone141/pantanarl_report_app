@@ -4,6 +4,9 @@
   const decreaseButton = document.getElementById("performance-trend-decrease");
   const increaseButton = document.getElementById("performance-trend-increase");
   const visibleCountNode = document.getElementById("performance-trend-visible-count");
+  const modeAmountButton = document.getElementById("performance-trend-mode-amount");
+  const modeRateButton = document.getElementById("performance-trend-mode-rate");
+  const summaryNode = document.getElementById("performance-trend-summary");
   if (!dataNode || !canvas) {
     return;
   }
@@ -26,8 +29,11 @@
   const allLabels = trendData.labels.slice();
   const allAmounts = trendData.amounts.slice();
   const allCounts = trendData.counts.slice();
+  const allTargetAmounts = (trendData.target_amounts || []).slice();
+  const allRateValues = (trendData.rate_values || []).slice();
   const minVisibleCount = Math.min(10, allLabels.length);
   let visibleCount = Math.min(trendData.default_visible_count || 30, allLabels.length);
+  let currentMode = "amount";
 
   const amountGradient = context.createLinearGradient(0, 0, 0, 240);
   amountGradient.addColorStop(0, "rgba(39, 123, 211, 0.92)");
@@ -128,6 +134,104 @@
     },
   });
 
+  function sumValues(values) {
+    return values.reduce(function (total, value) {
+      return total + Number(value || 0);
+    }, 0);
+  }
+
+  function updateSummary() {
+    if (!summaryNode) {
+      return;
+    }
+    if (currentMode === "rate") {
+      const visibleAmounts = sliceLatest(allAmounts);
+      const visibleTargets = sliceLatest(allTargetAmounts);
+      summaryNode.textContent =
+        "可視範囲の実績合計 " +
+        sumValues(visibleAmounts).toLocaleString("ja-JP") +
+        "円 / 目標合計 " +
+        sumValues(visibleTargets).toLocaleString("ja-JP") +
+        "円";
+      return;
+    }
+    summaryNode.textContent = "";
+  }
+
+  function setMode(nextMode) {
+    currentMode = nextMode;
+    if (modeAmountButton) {
+      modeAmountButton.classList.toggle("is-active", currentMode === "amount");
+    }
+    if (modeRateButton) {
+      modeRateButton.classList.toggle("is-active", currentMode === "rate");
+    }
+    if (currentMode === "rate") {
+      chart.data.datasets = [
+        {
+          type: "line",
+          label: "日目達成率",
+          data: sliceLatest(allRateValues),
+          yAxisID: "yRate",
+          borderColor: "#ef7d32",
+          backgroundColor: "#ef7d32",
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 4,
+          tension: 0.28,
+          spanGaps: false,
+        },
+      ];
+      chart.options.scales.yAmount.display = false;
+      chart.options.scales.yCount.display = false;
+      chart.options.scales.yRate = {
+        position: "left",
+        beginAtZero: true,
+        grid: {
+          color: "rgba(215, 227, 236, 0.9)",
+        },
+        ticks: {
+          color: "#ef7d32",
+          callback(value) {
+            return Number(value).toLocaleString("ja-JP") + "%";
+          },
+        },
+      };
+    } else {
+      chart.data.datasets = [
+        {
+          type: "bar",
+          label: "金額",
+          data: sliceLatest(allAmounts),
+          yAxisID: "yAmount",
+          backgroundColor: amountGradient,
+          borderColor: "#277bd3",
+          borderWidth: 1,
+          borderRadius: 6,
+          barPercentage: 0.72,
+          categoryPercentage: 0.82,
+        },
+        {
+          type: "line",
+          label: trendData.count_label || "件数",
+          data: sliceLatest(allCounts),
+          yAxisID: "yCount",
+          borderColor: "#ef7d32",
+          backgroundColor: "#ef7d32",
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 4,
+          tension: 0.28,
+        },
+      ];
+      chart.options.scales.yAmount.display = true;
+      chart.options.scales.yCount.display = true;
+      delete chart.options.scales.yRate;
+    }
+    chart.update();
+    updateSummary();
+  }
+
   function syncControls() {
     if (visibleCountNode) {
       visibleCountNode.textContent = visibleCount + "稼働表示";
@@ -143,9 +247,7 @@
   function updateVisibleRange(nextVisibleCount) {
     visibleCount = Math.max(minVisibleCount, Math.min(nextVisibleCount, allLabels.length));
     chart.data.labels = sliceLatest(allLabels);
-    chart.data.datasets[0].data = sliceLatest(allAmounts);
-    chart.data.datasets[1].data = sliceLatest(allCounts);
-    chart.update();
+    setMode(currentMode);
     syncControls();
   }
 
@@ -159,6 +261,17 @@
       updateVisibleRange(visibleCount + 10);
     });
   }
+  if (modeAmountButton) {
+    modeAmountButton.addEventListener("click", function () {
+      setMode("amount");
+    });
+  }
+  if (modeRateButton) {
+    modeRateButton.addEventListener("click", function () {
+      setMode("rate");
+    });
+  }
 
   syncControls();
+  updateSummary();
 })();

@@ -581,6 +581,8 @@ def _build_member_activity_trend(*, member, department):
     labels = []
     amounts = []
     counts = []
+    target_amounts = []
+    rate_values = []
     for entry in latest_entries:
         adjustment_totals = adjustment_totals_map.get(
             (entry.member_id, entry.department_id, entry.entry_date),
@@ -596,12 +598,13 @@ def _build_member_activity_trend(*, member, department):
             },
         )
         labels.append(entry.entry_date.strftime("%m/%d"))
-        amounts.append(
+        amount_value = (
             int(entry.support_amount or 0)
             + int(adjustment_totals["support_amount"])
             + int(adjustment_totals["return_postal_amount"])
             + int(adjustment_totals["return_qr_amount"])
         )
+        amounts.append(amount_value)
         if department.code == "WV":
             counts.append(
                 int(entry.cs_count or 0)
@@ -616,10 +619,15 @@ def _build_member_activity_trend(*, member, department):
                 + int(adjustment_totals["return_postal_count"])
                 + int(adjustment_totals["return_qr_count"])
             )
+        target_amount = int(entry.daily_target_amount or 0)
+        target_amounts.append(target_amount)
+        rate_values.append(round((amount_value / target_amount) * 100, 1) if target_amount > 0 else None)
     return {
         "labels": labels,
         "amounts": amounts,
         "counts": counts,
+        "target_amounts": target_amounts,
+        "rate_values": rate_values,
         "has_data": True,
         "count_label": "件数" if department.code != "WV" else "件数相当",
         "default_visible_count": min(30, len(labels)),

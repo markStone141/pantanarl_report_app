@@ -392,6 +392,7 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "performance-activity-trend-chart")
         self.assertContains(response, "-10")
         self.assertContains(response, "+10")
+        self.assertContains(response, "日目達成率")
         self.assertContains(response, entry_today.entry_date.strftime("%m/%d"))
         self.assertContains(response, "全体の月目標")
         self.assertContains(response, "全体の路程目標")

@@ -254,6 +254,18 @@ a {
   gap: 12px;
 }
 
+.performance-trend-mode-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.performance-trend-mode-switch .btn-inline.is-active {
+  background: #1f76d1;
+  color: #fff;
+  border-color: #1f76d1;
+}
+
 .performance-trend-controls .btn-inline[disabled] {
   opacity: 0.45;
   cursor: default;
