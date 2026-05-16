@@ -560,6 +560,76 @@ def _build_member_dashboard_entry_rows(*, member, department, month_start, month
     return entry_rows
 
 
+def _build_member_activity_trend(*, member, department):
+    latest_entries = list(
+        MemberDailyMetricEntry.objects.select_related("department")
+        .filter(member=member, department=department)
+        .order_by("-entry_date", "-id")[:30]
+    )
+    if not latest_entries:
+        return []
+    latest_entries.reverse()
+    adjustment_totals_map = _build_adjustment_totals_map(latest_entries)
+    items = []
+    max_amount = 0
+    max_count = 0
+    for index, entry in enumerate(latest_entries, start=1):
+        adjustment_totals = adjustment_totals_map.get(
+            (entry.member_id, entry.department_id, entry.entry_date),
+            {
+                "result_count": 0,
+                "support_amount": 0,
+                "return_postal_count": 0,
+                "return_postal_amount": 0,
+                "return_qr_count": 0,
+                "return_qr_amount": 0,
+                "cs_count": 0,
+                "refugee_count": 0,
+            },
+        )
+        amount_value = (
+            int(entry.support_amount or 0)
+            + int(adjustment_totals["support_amount"])
+            + int(adjustment_totals["return_postal_amount"])
+            + int(adjustment_totals["return_qr_amount"])
+        )
+        if department.code == "WV":
+            count_value = int(entry.cs_count or 0) + int(entry.refugee_count or 0) + int(adjustment_totals["cs_count"]) + int(adjustment_totals["refugee_count"])
+        else:
+            count_value = int(entry.result_count or 0) + int(adjustment_totals["result_count"]) + int(adjustment_totals["return_postal_count"]) + int(adjustment_totals["return_qr_count"])
+        max_amount = max(max_amount, amount_value)
+        max_count = max(max_count, count_value)
+        items.append(
+            {
+                "label": f"{index}稼働前",
+                "date_text": entry.entry_date.strftime("%m/%d"),
+                "amount_value": amount_value,
+                "count_value": count_value,
+                "amount_text": f"{amount_value:,}円",
+                "count_text": f"{count_value}件" if department.code != "WV" else f"{count_value}件相当",
+            }
+        )
+    max_amount = max_amount or 1
+    max_count = max_count or 1
+    total_items = len(items)
+    chart_left = 20
+    chart_width = 280
+    chart_baseline = 158
+    tick_step = max(1, total_items // 6)
+    for index, item in enumerate(items):
+        item["bar_height"] = max(12, round((item["amount_value"] / max_amount) * 140)) if item["amount_value"] > 0 else 12
+        x = chart_left if total_items == 1 else round(chart_left + ((chart_width / (total_items - 1)) * index), 2)
+        y = round(chart_baseline - ((item["count_value"] / max_count) * 128), 2)
+        bar_width = 12 if total_items <= 20 else 8
+        item["point_x"] = x
+        item["point_y"] = y
+        item["bar_width"] = bar_width
+        item["bar_x"] = round(x - (bar_width / 2), 2)
+        item["bar_y"] = chart_baseline - item["bar_height"]
+        item["show_tick_label"] = index % tick_step == 0 or index == total_items - 1
+    return items
+
+
 def _build_member_dashboard_context(*, request, member, department, is_admin=False):
     today = timezone.localdate()
     selected_month = _parse_selected_month(request.GET.get("month"), default=today)
@@ -577,6 +647,11 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
             department=department,
             target_date__range=(selected_month, selected_month_end),
         ).order_by("-target_date", "-created_at")
+    )
+    activity_trend_items = _build_member_activity_trend(member=member, department=department)
+    activity_trend_path = " ".join(
+        f"{'M' if index == 0 else 'L'} {item['point_x']} {item['point_y']}"
+        for index, item in enumerate(activity_trend_items)
     )
 
     member_month_totals = collect_member_final_actual_totals(
@@ -635,6 +710,8 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "selected_month": selected_month,
         "entry_rows": entry_rows,
         "adjustment_rows": adjustment_rows,
+        "activity_trend_items": activity_trend_items,
+        "activity_trend_path": activity_trend_path,
         "department_month_progress": _build_progress_card(
             label="全体の月目標",
             actual_amount=int(department_month_totals.get("support_amount") or 0)
