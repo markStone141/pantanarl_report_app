@@ -647,6 +647,8 @@ def _build_overall_activity_trend(*, department=None):
             "labels": [],
             "amounts": [],
             "counts": [],
+            "target_amounts": [],
+            "rate_values": [],
             "has_data": False,
             "count_label": "件数",
             "default_visible_count": 0,
@@ -679,21 +681,33 @@ def _build_overall_activity_trend(*, department=None):
             refugee_count_total=Sum("refugee_count"),
         )
     }
+    summary_queryset = DepartmentDailyMetricSummary.objects.filter(entry_date__in=latest_dates)
+    if department is not None:
+        summary_queryset = summary_queryset.filter(department=department)
+    daily_target_totals = {
+        row["entry_date"]: int(row["daily_target_amount_total"] or 0)
+        for row in summary_queryset
+        .values("entry_date")
+        .annotate(daily_target_amount_total=Sum("daily_target_amount"))
+    }
 
     labels = []
     amounts = []
     counts = []
+    target_amounts = []
+    rate_values = []
     use_equivalent_count = department is None or department.code == "WV"
     for activity_date in latest_dates:
         entry_row = entry_totals.get(activity_date, {})
         adjustment_row = adjustment_totals.get(activity_date, {})
         labels.append(activity_date.strftime("%m/%d"))
-        amounts.append(
+        amount_value = (
             int(entry_row.get("support_amount_total") or 0)
             + int(adjustment_row.get("support_amount_total") or 0)
             + int(adjustment_row.get("return_postal_amount_total") or 0)
             + int(adjustment_row.get("return_qr_amount_total") or 0)
         )
+        amounts.append(amount_value)
         if use_equivalent_count:
             counts.append(
                 int(entry_row.get("result_count_total") or 0)
@@ -712,11 +726,16 @@ def _build_overall_activity_trend(*, department=None):
                 + int(adjustment_row.get("return_postal_count_total") or 0)
                 + int(adjustment_row.get("return_qr_count_total") or 0)
             )
+        target_amount = int(daily_target_totals.get(activity_date) or 0)
+        target_amounts.append(target_amount)
+        rate_values.append(round((amount_value / target_amount) * 100, 1) if target_amount > 0 else None)
 
     return {
         "labels": labels,
         "amounts": amounts,
         "counts": counts,
+        "target_amounts": target_amounts,
+        "rate_values": rate_values,
         "has_data": True,
         "count_label": "件数相当" if use_equivalent_count else "件数",
         "default_visible_count": min(30, len(labels)),
