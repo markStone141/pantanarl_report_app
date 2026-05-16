@@ -6,7 +6,6 @@
   const visibleCountNode = document.getElementById("performance-trend-visible-count");
   const modeAmountButton = document.getElementById("performance-trend-mode-amount");
   const modeRateButton = document.getElementById("performance-trend-mode-rate");
-  const summaryNode = document.getElementById("performance-trend-summary");
   const lineLabelNode = document.getElementById("performance-trend-line-label");
   if (!dataNode || !canvas) {
     return;
@@ -88,6 +87,20 @@
         tooltip: {
           callbacks: {
             label(tooltipItem) {
+              if (currentMode === "rate") {
+                const index = tooltipItem.dataIndex;
+                const visibleAmounts = sliceLatest(allAmounts);
+                const visibleTargets = sliceLatest(allTargetAmounts);
+                const visibleRates = sliceLatest(allRateValues);
+                const actualAmount = Number(visibleAmounts[index] || 0).toLocaleString("ja-JP");
+                const targetAmount = Number(visibleTargets[index] || 0).toLocaleString("ja-JP");
+                const rateValue = visibleRates[index];
+                return [
+                  "実績金額 " + actualAmount + "円",
+                  "目標金額 " + targetAmount + "円",
+                  "達成率 " + (rateValue == null ? "-" : Number(rateValue).toLocaleString("ja-JP") + "%"),
+                ];
+              }
               if (tooltipItem.dataset.type === "bar") {
                 return "金額 " + Number(tooltipItem.raw || 0).toLocaleString("ja-JP") + "円";
               }
@@ -134,30 +147,6 @@
       },
     },
   });
-
-  function sumValues(values) {
-    return values.reduce(function (total, value) {
-      return total + Number(value || 0);
-    }, 0);
-  }
-
-  function updateSummary() {
-    if (!summaryNode) {
-      return;
-    }
-    if (currentMode === "rate") {
-      const visibleAmounts = sliceLatest(allAmounts);
-      const visibleTargets = sliceLatest(allTargetAmounts);
-      summaryNode.textContent =
-        "可視範囲の実績合計 " +
-        sumValues(visibleAmounts).toLocaleString("ja-JP") +
-        "円 / 目標合計 " +
-        sumValues(visibleTargets).toLocaleString("ja-JP") +
-        "円";
-      return;
-    }
-    summaryNode.textContent = "";
-  }
 
   function setMode(nextMode) {
     currentMode = nextMode;
@@ -236,7 +225,6 @@
       delete chart.options.scales.yRate;
     }
     chart.update();
-    updateSummary();
   }
 
   function syncControls() {
@@ -280,5 +268,4 @@
   }
 
   syncControls();
-  updateSummary();
 })();
