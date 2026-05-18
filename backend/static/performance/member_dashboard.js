@@ -52,7 +52,7 @@
   const primaryLabelNode = document.getElementById("performance-trend-primary-label");
   const lineLabelNode = document.getElementById("performance-trend-line-label");
   const secondaryLegendNode = document.getElementById("performance-trend-secondary-legend");
-  const secondaryLineLabelNode = document.getElementById("performance-trend-secondary-line-label");
+  const secondarySwatchNode = document.getElementById("performance-trend-secondary-swatch");
   if (!dataNode || !canvas) {
     return;
   }
@@ -118,7 +118,10 @@
         lineLabelNode.textContent = trendData.count_label || "件数";
       }
       if (secondaryLegendNode) {
-        secondaryLegendNode.hidden = true;
+        secondaryLegendNode.hidden = false;
+      }
+      if (secondarySwatchNode) {
+        secondarySwatchNode.className = "performance-trend-legend-swatch performance-trend-legend-swatch-line";
       }
       return;
     }
@@ -129,11 +132,14 @@
       if (primaryLegendNode) {
         primaryLegendNode.hidden = true;
       }
+      if (secondaryLegendNode) {
+        secondaryLegendNode.hidden = false;
+      }
+      if (secondarySwatchNode) {
+        secondarySwatchNode.className = "performance-trend-legend-swatch performance-trend-legend-swatch-line";
+      }
       if (lineLabelNode) {
         lineLabelNode.textContent = "達成率（%）";
-      }
-      if (secondaryLegendNode) {
-        secondaryLegendNode.hidden = true;
       }
       return;
     }
@@ -150,13 +156,13 @@
       primaryLabelNode.textContent = "アプローチ数";
     }
     if (lineLabelNode) {
-      lineLabelNode.textContent = "アプローチ数";
-    }
-    if (secondaryLineLabelNode) {
-      secondaryLineLabelNode.textContent = "コミュニケーション数";
+      lineLabelNode.textContent = "コミュニケーション数";
     }
     if (secondaryLegendNode) {
       secondaryLegendNode.hidden = false;
+    }
+    if (secondarySwatchNode) {
+      secondarySwatchNode.className = "performance-trend-legend-swatch performance-trend-legend-swatch-line-secondary";
     }
   }
 
