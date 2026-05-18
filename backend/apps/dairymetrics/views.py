@@ -1420,7 +1420,7 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
         return redirect("dairymetrics_dashboard")
 
     today = timezone.localdate()
-    requested_scope = (request.GET.get("scope") or "recent").strip()
+    requested_scope = (request.GET.get("scope") or "month").strip()
     requested_month = _parse_month_input(request.GET.get("month") or "")
     requested_period = None
     raw_period_id = (request.GET.get("period_id") or "").strip()
