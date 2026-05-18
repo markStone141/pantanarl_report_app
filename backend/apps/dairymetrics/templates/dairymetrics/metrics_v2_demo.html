@@ -42,16 +42,14 @@
     </div>
     <form method="get" class="grid mt-12 metrics-v2-filter-grid">
       <div>
-        <label for="metrics-v2-department">部署</label>
-        <select id="metrics-v2-department" name="department">
+        <select id="metrics-v2-department" name="department" aria-label="部署">
           {% for department in departments %}
           <option value="{{ department.code }}" {% if department.code == selected_department.code %}selected{% endif %}>{{ department.name }}</option>
           {% endfor %}
         </select>
       </div>
       <div>
-        <label for="metrics-v2-scope">集計期間</label>
-        <select id="metrics-v2-scope" name="scope" data-metrics-v2-scope>
+        <select id="metrics-v2-scope" name="scope" data-metrics-v2-scope aria-label="集計期間">
           <option value="recent" {% if scope_value == "recent" %}selected{% endif %}>過去30日間</option>
           <option value="month" {% if scope_value == "month" %}selected{% endif %}>月</option>
           <option value="period" {% if scope_value == "period" %}selected{% endif %}>路程</option>
