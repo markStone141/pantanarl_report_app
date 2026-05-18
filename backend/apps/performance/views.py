@@ -1,4 +1,5 @@
-from datetime import date
+from dataclasses import dataclass
+from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
@@ -39,12 +40,23 @@ from .forms import PerformanceEntryFilterForm, PerformanceMemberDailyMetricEntry
 User = get_user_model()
 
 
+@dataclass(frozen=True)
+class PerformanceHistoryScope:
+    scope: str
+    label: str
+    start_date: date
+    end_date: date
+    month_start: date | None = None
+    period: Period | None = None
+
+
 def _performance_nav_items():
     return [
         ("dashboard_index", "管理者ページ"),
         ("member_settings", "メンバー管理"),
         ("department_settings", "部署管理"),
         ("performance_index", "実績管理"),
+        ("performance_history", "実績閲覧"),
         ("performance_adjustments", "補正実績"),
         ("mail_integration_settings", "メール連携"),
         ("mail_group_settings", "メールグループ"),
@@ -287,6 +299,119 @@ def _build_activity_member_rows(entries):
     return rows
 
 
+def _build_scoped_member_cards(*, members, selected_department, scope):
+    cards = []
+    scope_metric_label = {
+        "month": "月累計",
+        "period": "路程累計",
+        "range": "期間累計",
+    }.get(scope.scope, "累計")
+    for member in members:
+        department = _resolve_member_card_department(member=member, selected_department=selected_department)
+        if department is None:
+            continue
+        scoped_totals = collect_member_final_actual_totals(
+            member,
+            department,
+            scope.start_date,
+            scope.end_date,
+            include_adjustments=True,
+        )
+        scoped_entries = list(
+            MemberDailyMetricEntry.objects.filter(
+                member=member,
+                department=department,
+                entry_date__range=(scope.start_date, scope.end_date),
+            )
+            .select_related("member", "department")
+            .order_by("-entry_date", "-id")[:3]
+        )
+        latest_adjustment_totals = _build_adjustment_totals_map(scoped_entries)
+        latest_final_counts = []
+        for latest_entry in scoped_entries:
+            latest_totals = latest_adjustment_totals.get(
+                (latest_entry.member_id, latest_entry.department_id, latest_entry.entry_date),
+                {
+                    "result_count": 0,
+                    "support_amount": 0,
+                    "return_postal_count": 0,
+                    "return_postal_amount": 0,
+                    "return_qr_count": 0,
+                    "return_qr_amount": 0,
+                    "cs_count": 0,
+                    "refugee_count": 0,
+                },
+            )
+            latest_final_counts.append(
+                _final_count_value(
+                    department_code=department.code,
+                    totals={
+                        "result_count": int(latest_entry.result_count or 0) + int(latest_totals["result_count"]),
+                        "return_postal_count": int(latest_totals["return_postal_count"]),
+                        "return_qr_count": int(latest_totals["return_qr_count"]),
+                        "cs_count": int(latest_entry.cs_count or 0) + int(latest_totals["cs_count"]),
+                        "refugee_count": int(latest_entry.refugee_count or 0) + int(latest_totals["refugee_count"]),
+                    },
+                )
+            )
+        zero_streak_warning = len(latest_final_counts) == 3 and all(count == 0 for count in latest_final_counts)
+        active_streak_good = len(latest_final_counts) == 3 and all(count >= 1 for count in latest_final_counts)
+        if scoped_entries:
+            latest_entry = scoped_entries[0]
+            latest_totals = latest_adjustment_totals.get(
+                (latest_entry.member_id, latest_entry.department_id, latest_entry.entry_date),
+                {
+                    "result_count": 0,
+                    "support_amount": 0,
+                    "return_postal_count": 0,
+                    "return_postal_amount": 0,
+                    "return_qr_count": 0,
+                    "return_qr_amount": 0,
+                    "cs_count": 0,
+                    "refugee_count": 0,
+                },
+            )
+            updated_at_text = timezone.localtime(latest_entry.updated_at).strftime("%H:%M")
+            recent_date_text = latest_entry.entry_date.strftime("%Y/%m/%d")
+            recent_amount_text = _amount_text(latest_entry, latest_totals)
+            recent_count_text = _count_text(latest_entry, latest_totals)
+            recent_sort_date = latest_entry.entry_date
+        else:
+            updated_at_text = "実績なし"
+            recent_date_text = "-"
+            recent_amount_text = "-"
+            recent_count_text = "-"
+            recent_sort_date = None
+        cards.append(
+            {
+                "member_name": member.name,
+                "department_code": department.code,
+                "updated_at": updated_at_text,
+                "scope_label": scope_metric_label,
+                "scope_amount_text": _final_amount_text(totals=scoped_totals),
+                "scope_count_text": _final_count_text(department_code=department.code, totals=scoped_totals),
+                "recent_date_text": recent_date_text,
+                "recent_amount_text": recent_amount_text,
+                "recent_count_text": recent_count_text,
+                "recent_sort_date": recent_sort_date,
+                "zero_streak_warning": zero_streak_warning,
+                "zero_streak_text": "3稼働連続0件" if zero_streak_warning else "",
+                "active_streak_good": active_streak_good,
+                "active_streak_text": "3稼働連続1件以上" if active_streak_good else "",
+                "detail_url": reverse("performance_member_detail", args=[member.id, department.id]),
+            }
+        )
+    cards.sort(
+        key=lambda card: (
+            card["recent_sort_date"] is not None,
+            card["recent_sort_date"] or date.min,
+            card["member_name"],
+        ),
+        reverse=True,
+    )
+    return cards
+
+
 def _final_count_text(*, department_code, totals):
     if department_code == "WV":
         total_cs = int(totals.get("cs_count") or 0)
@@ -335,6 +460,45 @@ def _resolve_default_dashboard_department():
     return (
         Department.objects.filter(is_active=True, code="UN").first()
         or Department.objects.filter(is_active=True).order_by("code", "id").first()
+    )
+
+
+def _parse_selected_date(value):
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _resolve_performance_history_scope(*, today, scope_value, requested_month=None, requested_period=None, requested_start=None, requested_end=None):
+    if scope_value == "period" and requested_period is not None:
+        return PerformanceHistoryScope(
+            scope="period",
+            label=requested_period.name,
+            start_date=requested_period.start_date,
+            end_date=min(requested_period.end_date, today),
+            period=requested_period,
+        )
+    if scope_value == "range":
+        start_date = requested_start or (today - timedelta(days=29))
+        end_date = requested_end or today
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+        return PerformanceHistoryScope(
+            scope="range",
+            label=f"{start_date:%Y/%m/%d} - {end_date:%Y/%m/%d}",
+            start_date=start_date,
+            end_date=end_date,
+        )
+    month_start = requested_month or today.replace(day=1)
+    return PerformanceHistoryScope(
+        scope="month",
+        label=month_start.strftime("%Y/%m"),
+        start_date=month_start,
+        end_date=min(_month_end(month_start), today),
+        month_start=month_start,
     )
 
 
@@ -550,6 +714,79 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
     }
 
 
+def _build_performance_history_snapshot(*, department, scope):
+    target_codes = [department.code]
+    scoped_totals_by_code = collect_department_final_actual_totals_by_codes(
+        target_codes=target_codes,
+        start_date=scope.start_date,
+        end_date=scope.end_date,
+        include_adjustments=True,
+    )
+    scoped_totals = scoped_totals_by_code.get(department.code, {})
+    month_progress_cards = []
+    period_progress_cards = []
+    if scope.scope == "month" and scope.month_start:
+        month_target_amount = int(
+            _resolve_month_target_amounts_by_code(
+                departments=[department],
+                target_month=scope.month_start,
+            ).get(department.code)
+            or 0
+        )
+        month_progress_cards.append(
+            _build_progress_card(
+                label=department.code,
+                actual_amount=int(scoped_totals.get("support_amount") or 0)
+                + int(scoped_totals.get("return_postal_amount") or 0)
+                + int(scoped_totals.get("return_qr_amount") or 0),
+                target_amount=month_target_amount,
+                summary_text=f"{scope.month_start:%Y/%m} の補正込み累計",
+            )
+        )
+    if scope.scope == "period" and scope.period:
+        period_target_amount = int(
+            _resolve_period_target_amounts_by_code(
+                departments=[department],
+                period=scope.period,
+            ).get(department.code)
+            or 0
+        )
+        period_progress_cards.append(
+            _build_progress_card(
+                label=department.code,
+                actual_amount=int(scoped_totals.get("support_amount") or 0)
+                + int(scoped_totals.get("return_postal_amount") or 0)
+                + int(scoped_totals.get("return_qr_amount") or 0),
+                target_amount=period_target_amount,
+                summary_text=scope.period.name,
+            )
+        )
+
+    active_members = list(
+        Member.objects.active()
+        .filter(department_links__department=department, department_links__department__is_active=True)
+        .select_related("default_department")
+        .distinct()
+        .order_by("name", "id")
+    )
+
+    return {
+        "scope": scope,
+        "overall_activity_trend": _build_overall_activity_trend(
+            department=department,
+            start_date=scope.start_date,
+            end_date=scope.end_date,
+        ),
+        "active_member_cards": _build_scoped_member_cards(
+            members=active_members,
+            selected_department=department,
+            scope=scope,
+        ),
+        "month_progress_cards": month_progress_cards,
+        "period_progress_cards": period_progress_cards,
+    }
+
+
 def _parse_selected_month(value, *, default):
     if not value:
         return default.replace(day=1)
@@ -682,14 +919,19 @@ def _build_member_activity_trend(*, member, department):
     }
 
 
-def _build_overall_activity_trend(*, department=None):
+def _build_overall_activity_trend(*, department=None, start_date=None, end_date=None):
     entry_queryset = MemberDailyMetricEntry.objects.all()
     adjustment_queryset = MetricAdjustment.objects.all()
     if department is not None:
         entry_queryset = entry_queryset.filter(department=department)
         adjustment_queryset = adjustment_queryset.filter(department=department)
-
-    latest_dates = list(entry_queryset.order_by("-entry_date").values_list("entry_date", flat=True).distinct()[:120])
+    if start_date is not None and end_date is not None:
+        entry_queryset = entry_queryset.filter(entry_date__range=(start_date, end_date))
+        adjustment_queryset = adjustment_queryset.filter(target_date__range=(start_date, end_date))
+        latest_dates = list(entry_queryset.order_by("entry_date").values_list("entry_date", flat=True).distinct())
+    else:
+        latest_dates = list(entry_queryset.order_by("-entry_date").values_list("entry_date", flat=True).distinct()[:120])
+        latest_dates.reverse()
     if not latest_dates:
         return {
             "labels": [],
@@ -703,8 +945,6 @@ def _build_overall_activity_trend(*, department=None):
             "count_label": "件数",
             "default_visible_count": 0,
         }
-    latest_dates.reverse()
-
     entry_totals = {
         row["entry_date"]: row
         for row in entry_queryset.filter(entry_date__in=latest_dates)
@@ -1003,22 +1243,9 @@ def performance_index(request: HttpRequest) -> HttpResponse:
 
     current_query = request.GET.copy()
     current_query.pop("page", None)
-    dashboard_scope = request.GET.get("dashboard_scope") or "month"
-    if dashboard_scope not in {"month", "period", "range"}:
-        dashboard_scope = "month"
-    department_id = request.GET.get("dashboard_department")
-    dashboard_department = None
-    if department_id:
-        dashboard_department = Department.objects.filter(pk=department_id, is_active=True).first()
-    if dashboard_department is None:
-        dashboard_department = _resolve_default_dashboard_department()
-    dashboard_month = _parse_selected_month(request.GET.get("dashboard_month"), default=timezone.localdate())
-    dashboard_period = None
-    dashboard_period_id = request.GET.get("dashboard_period")
-    if dashboard_period_id:
-        dashboard_period = Period.objects.filter(pk=dashboard_period_id).first()
-    if dashboard_period is None:
-        dashboard_period = _resolve_current_period(timezone.localdate())
+    dashboard_department = _resolve_default_dashboard_department()
+    dashboard_month = timezone.localdate().replace(day=1)
+    dashboard_period = _resolve_current_period(timezone.localdate())
     dashboard_start = request.GET.get("dashboard_start") or ""
     dashboard_end = request.GET.get("dashboard_end") or ""
     dashboard_snapshot = _build_performance_dashboard_snapshot(
@@ -1040,11 +1267,59 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         "dashboard_month": dashboard_month,
         "dashboard_period": dashboard_period,
         "dashboard_periods": Period.objects.order_by("-end_date", "-start_date", "-id")[:24],
-        "dashboard_scope": dashboard_scope,
+        "dashboard_scope": "month",
         "dashboard_start": dashboard_start,
         "dashboard_end": dashboard_end,
     }
     return render(request, "performance/index.html", context)
+
+
+@require_roles(ROLE_ADMIN)
+def performance_history(request: HttpRequest) -> HttpResponse:
+    today = timezone.localdate()
+    dashboard_scope = request.GET.get("dashboard_scope") or "month"
+    if dashboard_scope not in {"month", "period", "range"}:
+        dashboard_scope = "month"
+    department_id = request.GET.get("dashboard_department")
+    dashboard_department = None
+    if department_id:
+        dashboard_department = Department.objects.filter(pk=department_id, is_active=True).first()
+    if dashboard_department is None:
+        dashboard_department = _resolve_default_dashboard_department()
+    dashboard_month = _parse_selected_month(request.GET.get("dashboard_month"), default=today)
+    dashboard_period = None
+    dashboard_period_id = request.GET.get("dashboard_period")
+    if dashboard_period_id:
+        dashboard_period = Period.objects.filter(pk=dashboard_period_id).first()
+    if dashboard_period is None:
+        dashboard_period = _resolve_current_period(today)
+    dashboard_start = request.GET.get("dashboard_start") or ""
+    dashboard_end = request.GET.get("dashboard_end") or ""
+    scope = _resolve_performance_history_scope(
+        today=today,
+        scope_value=dashboard_scope,
+        requested_month=dashboard_month,
+        requested_period=dashboard_period,
+        requested_start=_parse_selected_date(dashboard_start),
+        requested_end=_parse_selected_date(dashboard_end),
+    )
+    history_snapshot = _build_performance_history_snapshot(
+        department=dashboard_department,
+        scope=scope,
+    )
+    context = {
+        "nav_items": _performance_nav_items(),
+        "dashboard_departments": Department.objects.filter(is_active=True).order_by("code", "id"),
+        "dashboard_department": dashboard_department,
+        "dashboard_month": dashboard_month,
+        "dashboard_period": dashboard_period,
+        "dashboard_periods": Period.objects.order_by("-end_date", "-start_date", "-id")[:24],
+        "dashboard_scope": dashboard_scope,
+        "dashboard_start": dashboard_start,
+        "dashboard_end": dashboard_end,
+        "history_snapshot": history_snapshot,
+    }
+    return render(request, "performance/history.html", context)
 
 
 @require_roles(ROLE_ADMIN)

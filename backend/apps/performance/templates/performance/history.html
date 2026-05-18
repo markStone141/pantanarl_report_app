@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}実績管理 | Report App{% endblock %}
+{% block title %}実績閲覧 | Report App{% endblock %}
 
 {% block content %}
 <div class="container">
   <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
     <div>
-      <strong>実績管理</strong>
-      <div class="muted topbar-muted">最終実績の確認と日次実績の編集を行います。</div>
+      <strong>実績閲覧</strong>
+      <div class="muted topbar-muted">月・路程・期間指定で実績を振り返ります。</div>
     </div>
     <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
       <i class="fa-solid fa-bars" aria-hidden="true"></i>
@@ -24,54 +24,55 @@
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
   <section class="card mt-16">
-    <h3>本日の活動状況</h3>
-    <div class="grid grid-2 mt-12">
-      <article class="card">
-        <h4>現在活動中メンバー</h4>
-        {% if dashboard_snapshot.activity_in_progress %}
-        <div class="grid mt-10">
-          {% for row in dashboard_snapshot.activity_in_progress %}
-          <div class="metric-card">
-            <div class="row">
-              <strong>{{ row.member_name }}</strong>
-              <span class="badge">{{ row.department_code }}</span>
-            </div>
-            <div class="muted">{{ row.updated_at }} 更新</div>
-            <div class="mt-8">{{ row.count_text }} / {{ row.amount_text }}</div>
-          </div>
-          {% endfor %}
-        </div>
-        {% else %}
-        <p class="muted">現在活動中のメンバーはいません。</p>
-        {% endif %}
-      </article>
-      <article class="card">
-        <h4>活動終了メンバー</h4>
-        {% if dashboard_snapshot.activity_finished %}
-        <div class="grid mt-10">
-          {% for row in dashboard_snapshot.activity_finished %}
-          <div class="metric-card">
-            <div class="row">
-              <strong>{{ row.member_name }}</strong>
-              <span class="badge">{{ row.department_code }}</span>
-            </div>
-            <div class="muted">{{ row.updated_at }} 更新</div>
-            <div class="mt-8">{{ row.count_text }} / {{ row.amount_text }}</div>
-          </div>
-          {% endfor %}
-        </div>
-        {% else %}
-        <p class="muted">活動終了メンバーはいません。</p>
-        {% endif %}
-      </article>
+    <div class="row">
+      <div>
+        <h2>集計条件</h2>
+        <div class="muted">月・路程・期間を切り替えて振り返りできます。</div>
+      </div>
     </div>
+    <form method="get" class="grid mt-12 metrics-v2-filter-grid">
+      <div>
+        <select id="performance-history-department" name="dashboard_department" aria-label="部署">
+          {% for department_option in dashboard_departments %}
+          <option value="{{ department_option.id }}"{% if dashboard_department and department_option.id == dashboard_department.id %} selected{% endif %}>{{ department_option.code }}{% if department_option.name and department_option.name != department_option.code %} ({{ department_option.name }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <select id="performance-history-scope" name="dashboard_scope" data-performance-scope aria-label="集計期間">
+          <option value="month"{% if dashboard_scope == 'month' %} selected{% endif %}>月</option>
+          <option value="period"{% if dashboard_scope == 'period' %} selected{% endif %}>路程</option>
+          <option value="range"{% if dashboard_scope == 'range' %} selected{% endif %}>期間指定</option>
+        </select>
+      </div>
+      <div data-performance-scope-field="month"{% if dashboard_scope != 'month' %} hidden{% endif %}>
+        <input id="performance-history-month" type="month" name="dashboard_month" value="{{ dashboard_month|date:'Y-m' }}" aria-label="月">
+      </div>
+      <div data-performance-scope-field="period"{% if dashboard_scope != 'period' %} hidden{% endif %}>
+        <select id="performance-history-period" name="dashboard_period" aria-label="路程">
+          {% for period_option in dashboard_periods %}
+          <option value="{{ period_option.id }}"{% if dashboard_period and period_option.id == dashboard_period.id %} selected{% endif %}>{{ period_option.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div data-performance-scope-field="range"{% if dashboard_scope != 'range' %} hidden{% endif %}>
+        <input type="date" name="dashboard_start" value="{{ dashboard_start }}" aria-label="開始日">
+      </div>
+      <div data-performance-scope-field="range"{% if dashboard_scope != 'range' %} hidden{% endif %}>
+        <input type="date" name="dashboard_end" value="{{ dashboard_end }}" aria-label="終了日">
+      </div>
+      <div>
+        <button type="submit">表示</button>
+      </div>
+    </form>
   </section>
 
+  {% if dashboard_scope == 'month' %}
   <section class="card mt-16">
     <h3>月目標達成率</h3>
-    {% if dashboard_snapshot.month_progress_cards %}
+    {% if history_snapshot.month_progress_cards %}
     <div class="grid grid-2 mt-12">
-      {% for card in dashboard_snapshot.month_progress_cards %}
+      {% for card in history_snapshot.month_progress_cards %}
       <article class="card performance-progress-card">
         <div class="row">
           <strong>{{ card.label }}</strong>
@@ -102,11 +103,12 @@
     <p class="muted mt-12">対象部署の月目標データがありません。</p>
     {% endif %}
   </section>
+  {% elif dashboard_scope == 'period' %}
   <section class="card mt-16">
     <h3>路程目標達成率</h3>
-    {% if dashboard_snapshot.period_progress_cards %}
+    {% if history_snapshot.period_progress_cards %}
     <div class="grid grid-2 mt-12">
-      {% for card in dashboard_snapshot.period_progress_cards %}
+      {% for card in history_snapshot.period_progress_cards %}
       <article class="card performance-progress-card">
         <div class="row">
           <strong>{{ card.label }}</strong>
@@ -137,12 +139,13 @@
     <p class="muted mt-12">対象部署の路程目標データがありません。</p>
     {% endif %}
   </section>
+  {% endif %}
 
   <section class="card mt-16">
-    <h3>直近稼働の全体実績推移</h3>
-    <p id="performance-trend-description" class="muted">1稼働 = 実績が登録された1日です。金額は棒、{{ dashboard_snapshot.overall_activity_trend.count_label }}は折れ線で表示します。</p>
-    {% if dashboard_snapshot.overall_activity_trend.has_data %}
-    {{ dashboard_snapshot.overall_activity_trend|json_script:"performance-activity-trend-data" }}
+    <h3>{{ history_snapshot.scope.label }} の全体実績推移</h3>
+    <p id="performance-trend-description" class="muted">1稼働 = 実績が登録された1日です。金額は棒、{{ history_snapshot.overall_activity_trend.count_label }}は折れ線で表示します。</p>
+    {% if history_snapshot.overall_activity_trend.has_data %}
+    {{ history_snapshot.overall_activity_trend|json_script:"performance-activity-trend-data" }}
     <div class="performance-trend-legend mt-12">
       <span id="performance-trend-primary-legend" class="performance-trend-legend-item">
         <span id="performance-trend-primary-swatch" class="performance-trend-legend-swatch performance-trend-legend-swatch-bar"></span>
@@ -150,7 +153,7 @@
       </span>
       <span id="performance-trend-secondary-legend" class="performance-trend-legend-item">
         <span id="performance-trend-secondary-swatch" class="performance-trend-legend-swatch performance-trend-legend-swatch-line"></span>
-        <span id="performance-trend-line-label">{{ dashboard_snapshot.overall_activity_trend.count_label }}</span>
+        <span id="performance-trend-line-label">{{ history_snapshot.overall_activity_trend.count_label }}</span>
       </span>
     </div>
     <div class="performance-trend-controls mt-12">
@@ -164,18 +167,18 @@
       <button type="button" id="performance-trend-mode-activity" class="btn-inline">AP/CM</button>
     </div>
     <div class="performance-chart-card mt-12">
-      <canvas id="performance-activity-trend-chart" aria-label="直近稼働の全体実績推移"></canvas>
+      <canvas id="performance-activity-trend-chart" aria-label="{{ history_snapshot.scope.label }} の全体実績推移"></canvas>
     </div>
     {% else %}
-    <p class="muted mt-12">表示できる稼働実績はまだありません。</p>
+    <p class="muted mt-12">表示できる実績はまだありません。</p>
     {% endif %}
   </section>
 
   <section class="card mt-16">
-    <h3>有効メンバー一覧</h3>
-    {% if dashboard_snapshot.active_member_cards %}
+    <h3>{{ history_snapshot.scope.label }} のメンバー実績</h3>
+    {% if history_snapshot.active_member_cards %}
     <div class="grid grid-2 mt-12">
-      {% for card in dashboard_snapshot.active_member_cards %}
+      {% for card in history_snapshot.active_member_cards %}
       <a class="card performance-member-card-link{% if card.zero_streak_warning %} performance-member-card-link-warning{% elif card.active_streak_good %} performance-member-card-link-positive{% endif %}" href="{{ card.detail_url }}">
         <div class="row performance-member-card-head">
           <div>
@@ -195,16 +198,11 @@
           {{ card.updated_at }} 更新
           {% endif %}
         </div>
-        <div class="grid grid-3 mt-10 performance-member-card-grid">
+        <div class="grid grid-2 mt-10 performance-member-card-grid">
           <div class="metric-card performance-member-card-metric">
-            <span class="muted">今月累計</span>
-            <strong>{{ card.month_amount_text }}</strong>
-            <div class="muted">{{ card.month_count_text }}</div>
-          </div>
-          <div class="metric-card performance-member-card-metric">
-            <span class="muted">路程累計</span>
-            <strong>{{ card.period_amount_text }}</strong>
-            <div class="muted">{{ card.period_count_text }}</div>
+            <span class="muted">{{ card.scope_label }}</span>
+            <strong>{{ card.scope_amount_text }}</strong>
+            <div class="muted">{{ card.scope_count_text }}</div>
           </div>
           <div class="metric-card performance-member-card-metric">
             <span class="muted">直近の実績</span>
@@ -216,7 +214,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <p class="muted">有効なメンバーはいません。</p>
+    <p class="muted">表示できるメンバー実績はありません。</p>
     {% endif %}
   </section>
 
@@ -224,4 +222,21 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="{% static 'performance/member_dashboard.js' %}?v=6"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+<script>
+  (function () {
+    const scopeSelect = document.querySelector("[data-performance-scope]");
+    if (!scopeSelect) return;
+    const panels = document.querySelectorAll("[data-performance-scope-field]");
+
+    function syncScope() {
+      const nextScope = scopeSelect.value;
+      panels.forEach(function (panel) {
+        panel.hidden = panel.dataset.performanceScopeField !== nextScope;
+      });
+    }
+
+    scopeSelect.addEventListener("change", syncScope);
+    syncScope();
+  })();
+</script>
 {% endblock %}

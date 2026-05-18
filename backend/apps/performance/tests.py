@@ -66,9 +66,9 @@ class PerformanceManagementTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["dashboard_department"].code, "UN")
-        self.assertContains(response, '<option value="%s" selected>UN</option>' % self.department.id, html=True)
+        self.assertContains(response, "月目標達成率")
 
-    def test_performance_index_uses_selected_month_and_period_for_progress_cards(self):
+    def test_performance_history_uses_selected_month_and_period_for_progress_cards(self):
         today = timezone.localdate()
         selected_month = date(today.year, 4, 1)
         selected_period = Period.objects.create(
@@ -107,7 +107,7 @@ class PerformanceManagementTests(TestCase):
         )
 
         response = self.client.get(
-            reverse("performance_index"),
+            reverse("performance_history"),
             {
                 "dashboard_scope": "period",
                 "dashboard_department": str(self.department.id),
@@ -119,6 +119,7 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "4月第2次路程")
         self.assertContains(response, "28,000円")
+        self.assertContains(response, "実績閲覧")
 
     def test_performance_entry_edit_updates_daily_entry_and_department_summary(self):
         entry = MemberDailyMetricEntry.objects.create(
