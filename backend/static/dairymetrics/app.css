@@ -2441,7 +2441,48 @@
 }
 
 .metrics-v2-chart-frame-distribution {
-  height: 260px;
+  height: 300px;
+}
+
+.metrics-v2-distribution-list {
+  display: grid;
+  gap: 8px;
+}
+
+.metrics-v2-distribution-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.metrics-v2-distribution-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.metrics-v2-distribution-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.metrics-v2-distribution-swatch-0 { background: #1d7dfa; }
+.metrics-v2-distribution-swatch-1 { background: #7bc4ff; }
+.metrics-v2-distribution-swatch-2 { background: #56d4a7; }
+.metrics-v2-distribution-swatch-3 { background: #f59e0b; }
+.metrics-v2-distribution-swatch-4 { background: #ef4444; }
+.metrics-v2-distribution-swatch-5 { background: #8b5cf6; }
+.metrics-v2-distribution-swatch-6 { background: #14b8a6; }
+.metrics-v2-distribution-swatch-7 { background: #94a3b8; }
+.metrics-v2-distribution-swatch-8 { background: #f97316; }
+
+.metrics-v2-distribution-chart-empty {
+  color: #94a3b8;
 }
 
 @media (max-width: 900px) {
@@ -2455,5 +2496,11 @@
   .metrics-v2-chart-frame-ranking,
   .metrics-v2-chart-frame-distribution {
     height: 260px;
+  }
+
+  .metrics-v2-distribution-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
   }
 }

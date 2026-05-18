@@ -209,6 +209,17 @@
             data-chart-values="{{ card.counts|join:',' }}"
           ></canvas>
         </div>
+        <div class="metrics-v2-distribution-list mt-12">
+          {% for row in card.rows %}
+          <div class="metrics-v2-distribution-row">
+            <span class="metrics-v2-distribution-label">
+              <span class="metrics-v2-distribution-swatch metrics-v2-distribution-swatch-{{ forloop.counter0 }}"></span>
+              {{ row.label }}
+            </span>
+            <span class="muted">{{ row.count_text }} / {{ row.percent_text }}</span>
+          </div>
+          {% endfor %}
+        </div>
       </article>
       {% endfor %}
     </div>
@@ -235,6 +246,6 @@
   </section>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=4"></script>
+<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=5"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 {% endblock %}

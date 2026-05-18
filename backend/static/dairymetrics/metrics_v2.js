@@ -31,6 +31,45 @@
 
   const defaultPalette = ["#1d7dfa", "#7bc4ff", "#56d4a7", "#f59e0b", "#ef4444", "#8b5cf6", "#14b8a6", "#94a3b8", "#f97316"];
 
+  const distributionLabelPlugin = {
+    id: "distributionLabelPlugin",
+    afterDatasetsDraw(chart) {
+      const dataset = chart.data.datasets[0];
+      const meta = chart.getDatasetMeta(0);
+      if (!dataset || !meta || !meta.data) {
+        return;
+      }
+      const total = dataset.data.reduce(function (sum, value) {
+        return sum + Number(value || 0);
+      }, 0);
+      if (!total) {
+        return;
+      }
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "700 11px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      meta.data.forEach(function (arc, index) {
+        const rawValue = Number(dataset.data[index] || 0);
+        if (!rawValue) {
+          return;
+        }
+        const percent = (rawValue / total) * 100;
+        if (percent < 4) {
+          return;
+        }
+        const angle = (arc.startAngle + arc.endAngle) / 2;
+        const radius = (arc.innerRadius + arc.outerRadius) / 2;
+        const x = arc.x + Math.cos(angle) * radius;
+        const y = arc.y + Math.sin(angle) * radius;
+        ctx.fillText(percent.toFixed(1) + "%", x, y);
+      });
+      ctx.restore();
+    },
+  };
+
   function createDoughnutChart(canvas, labels, values, options) {
     if (!canvas) {
       return;
@@ -98,7 +137,36 @@
     const values = (canvas.dataset.chartValues || "")
       .split(",")
       .map(function (value) { return Number(value || 0); });
-    createDoughnutChart(canvas, labels, values, { legendDisplay: true, tooltipEnabled: true });
+    if (!values.some(function (value) { return value > 0; })) {
+      return;
+    }
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return;
+    }
+    new window.Chart(context, {
+      type: "doughnut",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            data: values,
+            backgroundColor: defaultPalette.slice(0, values.length),
+            borderWidth: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "48%",
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: true },
+        },
+      },
+      plugins: [distributionLabelPlugin],
+    });
   });
 
   function buildComboChart(canvasId, chartPayload) {

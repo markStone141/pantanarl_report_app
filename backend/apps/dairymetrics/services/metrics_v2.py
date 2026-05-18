@@ -312,6 +312,17 @@ def _build_distribution_cards(*, transaction_queryset):
             for index, key in enumerate(ordered_keys)
         ]
         total = sum(count_values)
+        rows = []
+        for index, label in enumerate(labels):
+            count_value = count_values[index]
+            percentage = round((count_value / total) * 100, 1) if total > 0 else 0
+            rows.append(
+                {
+                    "label": label,
+                    "count_text": f"{count_value:,}件",
+                    "percent_text": f"{percentage:.1f}%",
+                }
+            )
         return {
             "title": title,
             "labels": labels,
@@ -319,6 +330,7 @@ def _build_distribution_cards(*, transaction_queryset):
             "total_text": f"{total:,}件",
             "has_data": total > 0,
             "avg_amounts": avg_amount_values,
+            "rows": rows,
         }
 
     cards = [
