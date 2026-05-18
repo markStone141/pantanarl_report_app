@@ -25,28 +25,27 @@
 
   <section class="card mt-16">
     <form method="get" class="grid performance-dashboard-filter-grid">
-      <input type="hidden" id="performance-dashboard-scope" name="dashboard_scope" value="{{ dashboard_scope }}">
-      <div class="performance-scope-switch">
-        <button type="button" class="btn-inline{% if dashboard_scope == 'month' %} is-active{% endif %}" data-dashboard-scope="month">月</button>
-        <button type="button" class="btn-inline{% if dashboard_scope == 'period' %} is-active{% endif %}" data-dashboard-scope="period">路程</button>
-        <button type="button" class="btn-inline{% if dashboard_scope == 'range' %} is-active{% endif %}" data-dashboard-scope="range">期間指定</button>
-      </div>
       <select id="performance-dashboard-department" name="dashboard_department" aria-label="部署">
         {% for department_option in dashboard_departments %}
         <option value="{{ department_option.id }}"{% if dashboard_department and department_option.id == dashboard_department.id %} selected{% endif %}>{{ department_option.code }}{% if department_option.name and department_option.name != department_option.code %} ({{ department_option.name }}){% endif %}</option>
         {% endfor %}
       </select>
-      <div data-dashboard-scope-panel="month"{% if dashboard_scope != 'month' %} hidden{% endif %}>
+      <select id="performance-dashboard-scope" name="dashboard_scope" data-performance-scope aria-label="集計期間">
+        <option value="month"{% if dashboard_scope == 'month' %} selected{% endif %}>月</option>
+        <option value="period"{% if dashboard_scope == 'period' %} selected{% endif %}>路程</option>
+        <option value="range"{% if dashboard_scope == 'range' %} selected{% endif %}>期間指定</option>
+      </select>
+      <div data-performance-scope-field="month"{% if dashboard_scope != 'month' %} hidden{% endif %}>
         <input id="performance-dashboard-month" type="month" name="dashboard_month" value="{{ dashboard_month|date:'Y-m' }}" aria-label="月">
       </div>
-      <div data-dashboard-scope-panel="period"{% if dashboard_scope != 'period' %} hidden{% endif %}>
+      <div data-performance-scope-field="period"{% if dashboard_scope != 'period' %} hidden{% endif %}>
         <select id="performance-dashboard-period" name="dashboard_period" aria-label="路程">
           {% for period_option in dashboard_periods %}
           <option value="{{ period_option.id }}"{% if dashboard_period and period_option.id == dashboard_period.id %} selected{% endif %}>{{ period_option.name }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="performance-dashboard-range-fields" data-dashboard-scope-panel="range"{% if dashboard_scope != 'range' %} hidden{% endif %}>
+      <div class="performance-dashboard-range-fields" data-performance-scope-field="range"{% if dashboard_scope != 'range' %} hidden{% endif %}>
         <input type="date" name="dashboard_start" value="{{ dashboard_start }}" aria-label="開始日">
         <input type="date" name="dashboard_end" value="{{ dashboard_end }}" aria-label="終了日">
       </div>
@@ -262,28 +261,19 @@
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 <script>
   (function () {
-    const scopeInput = document.getElementById("performance-dashboard-scope");
-    if (!scopeInput) return;
-    const buttons = document.querySelectorAll("[data-dashboard-scope]");
-    const panels = document.querySelectorAll("[data-dashboard-scope-panel]");
+    const scopeSelect = document.querySelector("[data-performance-scope]");
+    if (!scopeSelect) return;
+    const panels = document.querySelectorAll("[data-performance-scope-field]");
 
-    function syncScope(nextScope) {
-      scopeInput.value = nextScope;
-      buttons.forEach(function (button) {
-        button.classList.toggle("is-active", button.dataset.dashboardScope === nextScope);
-      });
+    function syncScope() {
+      const nextScope = scopeSelect.value;
       panels.forEach(function (panel) {
-        panel.hidden = panel.dataset.dashboardScopePanel !== nextScope;
+        panel.hidden = panel.dataset.performanceScopeField !== nextScope;
       });
     }
 
-    buttons.forEach(function (button) {
-      button.addEventListener("click", function () {
-        syncScope(button.dataset.dashboardScope);
-      });
-    });
-
-    syncScope(scopeInput.value || "month");
+    scopeSelect.addEventListener("change", syncScope);
+    syncScope();
   })();
 </script>
 {% endblock %}
