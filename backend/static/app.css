@@ -232,6 +232,10 @@ a {
   gap: 12px;
 }
 
+.metrics-v2-filter-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
 .performance-scope-switch {
   display: flex;
   flex-wrap: wrap;

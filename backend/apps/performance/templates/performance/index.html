@@ -24,17 +24,27 @@
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
   <section class="card mt-16">
-    <form method="get" class="grid performance-dashboard-filter-grid">
-      <select id="performance-dashboard-department" name="dashboard_department" aria-label="部署">
-        {% for department_option in dashboard_departments %}
-        <option value="{{ department_option.id }}"{% if dashboard_department and department_option.id == dashboard_department.id %} selected{% endif %}>{{ department_option.code }}{% if department_option.name and department_option.name != department_option.code %} ({{ department_option.name }}){% endif %}</option>
-        {% endfor %}
-      </select>
-      <select id="performance-dashboard-scope" name="dashboard_scope" data-performance-scope aria-label="集計期間">
-        <option value="month"{% if dashboard_scope == 'month' %} selected{% endif %}>月</option>
-        <option value="period"{% if dashboard_scope == 'period' %} selected{% endif %}>路程</option>
-        <option value="range"{% if dashboard_scope == 'range' %} selected{% endif %}>期間指定</option>
-      </select>
+    <div class="row">
+      <div>
+        <h2>集計条件</h2>
+        <div class="muted">月・路程・期間を切り替えて振り返りできます。</div>
+      </div>
+    </div>
+    <form method="get" class="grid mt-12 metrics-v2-filter-grid">
+      <div>
+        <select id="performance-dashboard-department" name="dashboard_department" aria-label="部署">
+          {% for department_option in dashboard_departments %}
+          <option value="{{ department_option.id }}"{% if dashboard_department and department_option.id == dashboard_department.id %} selected{% endif %}>{{ department_option.code }}{% if department_option.name and department_option.name != department_option.code %} ({{ department_option.name }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <select id="performance-dashboard-scope" name="dashboard_scope" data-performance-scope aria-label="集計期間">
+          <option value="month"{% if dashboard_scope == 'month' %} selected{% endif %}>月</option>
+          <option value="period"{% if dashboard_scope == 'period' %} selected{% endif %}>路程</option>
+          <option value="range"{% if dashboard_scope == 'range' %} selected{% endif %}>期間指定</option>
+        </select>
+      </div>
       <div data-performance-scope-field="month"{% if dashboard_scope != 'month' %} hidden{% endif %}>
         <input id="performance-dashboard-month" type="month" name="dashboard_month" value="{{ dashboard_month|date:'Y-m' }}" aria-label="月">
       </div>
@@ -45,8 +55,10 @@
           {% endfor %}
         </select>
       </div>
-      <div class="performance-dashboard-range-fields" data-performance-scope-field="range"{% if dashboard_scope != 'range' %} hidden{% endif %}>
+      <div data-performance-scope-field="range"{% if dashboard_scope != 'range' %} hidden{% endif %}>
         <input type="date" name="dashboard_start" value="{{ dashboard_start }}" aria-label="開始日">
+      </div>
+      <div data-performance-scope-field="range"{% if dashboard_scope != 'range' %} hidden{% endif %}>
         <input type="date" name="dashboard_end" value="{{ dashboard_end }}" aria-label="終了日">
       </div>
       <div>
