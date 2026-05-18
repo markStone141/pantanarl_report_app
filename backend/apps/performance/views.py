@@ -254,7 +254,7 @@ def _build_contribution_summary(*, member_actual_amount, department_actual_amoun
     return {
         "rate": rate,
         "rate_text": f"{rate}%",
-        "detail_text": f"（自分の実績 {member_amount:,}円）/（全体の実績 {department_amount:,}円）",
+        "detail_text": f"{member_amount:,}円 / {department_amount:,}円",
     }
 
 
