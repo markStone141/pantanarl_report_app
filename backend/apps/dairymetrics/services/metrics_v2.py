@@ -262,11 +262,11 @@ def _build_summary_cards(*, title_prefix: str, department_code: str, totals: dic
             },
         ],
         "averages": [
-            {"label": "1稼働あたり AP", "value": _format_number(_safe_average(approach_count, active_days))},
-            {"label": "1稼働あたり CM", "value": _format_number(_safe_average(communication_count, active_days))},
-            {"label": "1稼働あたり 件数", "value": _format_number(_safe_average(decision_count, active_days))},
-            {"label": "1稼働あたり 金額", "value": _format_number(_safe_average(support_amount, active_days), "円")},
-            {"label": "1決済あたり 平均金額", "value": _format_number(_safe_average(support_amount, decision_count), "円")},
+            {"label": "1稼働あたりの平均AP", "value": _format_number(_safe_average(approach_count, active_days))},
+            {"label": "1稼働あたりの平均CM", "value": _format_number(_safe_average(communication_count, active_days))},
+            {"label": "1稼働あたりの平均件数", "value": _format_number(_safe_average(decision_count, active_days))},
+            {"label": "1稼働あたりの平均金額", "value": _format_number(_safe_average(support_amount, active_days), "円")},
+            {"label": "1決済あたりの平均金額", "value": _format_number(_safe_average(support_amount, decision_count), "円")},
             {"label": "目標進捗", "value": _format_percentage(_percentage(support_amount, target_amount))},
         ],
         "totals": {
