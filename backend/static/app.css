@@ -1263,6 +1263,9 @@ th {
 
 .performance-progress-donut-value {
   position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
   font-weight: 800;
   font-size: 1.05rem;
   color: var(--ink);

@@ -6,6 +6,8 @@
       if (!context) {
         return;
       }
+      canvas.width = 132;
+      canvas.height = 132;
       const rawRate = canvas.dataset.rate;
       const numericRate = rawRate === "" ? null : Number(rawRate);
       const boundedRate = numericRate == null || Number.isNaN(numericRate) ? 0 : Math.max(0, Math.min(numericRate, 100));
@@ -22,8 +24,8 @@
           ],
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
+          responsive: false,
+          maintainAspectRatio: true,
           cutout: "68%",
           animation: false,
           events: [],
