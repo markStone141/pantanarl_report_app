@@ -2351,3 +2351,68 @@
     grid-column: 2;
   }
 }
+
+.metrics-v2-filter-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.metrics-v2-summary-grid,
+.metrics-v2-history-grid,
+.metrics-v2-distribution-grid {
+  gap: 16px;
+}
+
+.metrics-v2-summary-card {
+  display: grid;
+  gap: 8px;
+}
+
+.metrics-v2-rate-card {
+  display: grid;
+  gap: 10px;
+}
+
+.metrics-v2-mini-donut {
+  position: relative;
+  min-height: 160px;
+}
+
+.metrics-v2-history-chart,
+.metrics-v2-ranking-chart {
+  width: 100%;
+  min-height: 320px;
+}
+
+.metrics-v2-ranking-chart {
+  min-height: 420px;
+}
+
+.metrics-v2-ranking-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.metrics-v2-ranking-row {
+  text-decoration: none;
+  color: inherit;
+}
+
+.metrics-v2-distribution-chart {
+  width: 100%;
+  min-height: 260px;
+}
+
+@media (max-width: 900px) {
+  .metrics-v2-summary-grid,
+  .metrics-v2-history-grid,
+  .metrics-v2-distribution-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-v2-history-chart,
+  .metrics-v2-ranking-chart,
+  .metrics-v2-distribution-chart {
+    min-height: 260px;
+  }
+}

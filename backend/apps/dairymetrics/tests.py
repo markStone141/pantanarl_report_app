@@ -3448,3 +3448,143 @@ class DairyMetricsAdminTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'name="compare_month" value="2026-02"', html=False)
+
+
+class DairyMetricsV2DemoTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(username="metrics_member", password="pass123")
+        self.admin = user_model.objects.create_user(username="metrics_admin", password="pass123", is_staff=True)
+        self.member = Member.objects.create(name="石井", user=self.user)
+        self.teammate = Member.objects.create(name="片山")
+        self.department = Department.objects.create(code="UN", name="UN")
+        MemberDepartment.objects.create(member=self.member, department=self.department)
+        MemberDepartment.objects.create(member=self.teammate, department=self.department)
+        self.amount_metric = TargetMetric.objects.create(
+            department=self.department,
+            code="amount",
+            label="金額",
+            unit="円",
+            display_order=1,
+        )
+        today = timezone.localdate()
+        self.period = Period.objects.create(
+            month=today.replace(day=1),
+            name="第1次路程",
+            status=TARGET_STATUS_ACTIVE,
+            start_date=today - timedelta(days=14),
+            end_date=today + timedelta(days=7),
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.department,
+            target_month=today.replace(day=1),
+            metric=self.amount_metric,
+            value=50000,
+        )
+        PeriodTargetMetricValue.objects.create(
+            department=self.department,
+            period=self.period,
+            metric=self.amount_metric,
+            value=30000,
+        )
+        MemberMonthMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            target_month=today.replace(day=1),
+            target_amount=20000,
+            target_count=10,
+        )
+        MemberPeriodMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            period=self.period,
+            target_amount=15000,
+            target_count=8,
+        )
+        entry_one = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today - timedelta(days=2),
+            approach_count=12,
+            communication_count=6,
+            result_count=2,
+            support_amount=6000,
+            daily_target_amount=5000,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=entry_one,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_OVERSEAS,
+            location="渋谷",
+            comment="A",
+        )
+        MemberMetricTransaction.objects.create(
+            entry=entry_one,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_THIRTIES,
+            gender=MemberMetricTransaction.GENDER_MALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷",
+            comment="B",
+        )
+        entry_two = MemberDailyMetricEntry.objects.create(
+            member=self.teammate,
+            department=self.department,
+            entry_date=today - timedelta(days=1),
+            approach_count=8,
+            communication_count=4,
+            result_count=1,
+            support_amount=2000,
+            daily_target_amount=4000,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=entry_two,
+            support_amount=2000,
+            age_band=MemberMetricTransaction.AGE_BAND_FORTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="新宿",
+            comment="C",
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=today - timedelta(days=1),
+            source_type=MetricAdjustment.SOURCE_INCREASE,
+            result_count=1,
+            support_amount=1000,
+        )
+        MetricAdjustment.objects.create(
+            member=self.teammate,
+            department=self.department,
+            target_date=today - timedelta(days=1),
+            source_type=MetricAdjustment.SOURCE_QR,
+            return_qr_count=1,
+            return_qr_amount=500,
+        )
+
+    def test_metrics_v2_demo_requires_login(self):
+        response = self.client.get(reverse("dairymetrics_metrics_v2_demo"))
+        self.assertRedirects(response, reverse("dairymetrics_login"))
+
+    def test_metrics_v2_demo_renders_member_sections(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_metrics_v2_demo"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Metrics V2")
+        self.assertContains(response, "集計条件")
+        self.assertContains(response, "月ごとの比較・推移")
+        self.assertContains(response, "路程ごとの比較・推移")
+        self.assertContains(response, "ランキングモード")
+        self.assertContains(response, "年代別決済比率")
+        self.assertContains(response, "metrics-v2-dashboard-data")
+
+    def test_metrics_v2_demo_renders_admin_overall_mode(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("dairymetrics_metrics_v2_demo"), {"department": self.department.code, "scope": "period", "period_id": self.period.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "UN の全体分析デモ")
+        self.assertContains(response, "ランキングモード")
+        self.assertContains(response, "属性別の平均金額")

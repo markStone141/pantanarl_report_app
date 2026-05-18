@@ -1,5 +1,5 @@
 import json
-from datetime import timedelta
+from datetime import date, timedelta
 from urllib.parse import urlencode
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
@@ -35,6 +35,7 @@ from .forms import (
     MetricAdjustmentForm,
 )
 from .models import DepartmentDailyMetricSummary, MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjustment
+from .services.metrics_v2 import build_metrics_v2_dashboard_payload, resolve_metrics_v2_scope
 from .selectors import (
     build_admin_daily_overview,
     build_admin_ranking_overview,
@@ -101,6 +102,29 @@ def _build_entry_form(*, member, data=None, department_code="", entry_date=None)
 
 def _member_departments(member):
     return Department.objects.filter(is_active=True, member_links__member=member).distinct().order_by("code")
+
+
+def _resolve_metrics_v2_department(*, request, member):
+    requested_code = (request.GET.get("department") or "").strip()
+    if request.user.is_staff:
+        departments = list(Department.objects.filter(is_active=True).order_by("code"))
+    else:
+        departments = list(_member_departments(member))
+    selected_department = None
+    if requested_code:
+        selected_department = next((department for department in departments if department.code == requested_code), None)
+    if not selected_department and member and member.default_department_id:
+        selected_department = next((department for department in departments if department.id == member.default_department_id), None)
+    if not selected_department and departments:
+        selected_department = departments[0]
+    return departments, selected_department
+
+
+def _parse_month_input(raw_value: str) -> date | None:
+    raw_value = (raw_value or "").strip()
+    if len(raw_value) != 7:
+        return None
+    return parse_date(f"{raw_value}-01")
 
 
 def _default_entry_department_code(*, member, departments, selected_department):
@@ -1386,6 +1410,57 @@ def entry_form_v2_demo(request: HttpRequest) -> HttpResponse:
         entry_date=entry_date,
     )
     return render(request, "dairymetrics/entry_form_v2_demo.html", context)
+
+
+@require_dairymetrics_member
+def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
+    viewer_member = get_member_profile(request.user)
+    departments, selected_department = _resolve_metrics_v2_department(request=request, member=viewer_member)
+    if not selected_department:
+        return redirect("dairymetrics_dashboard")
+
+    today = timezone.localdate()
+    requested_scope = (request.GET.get("scope") or "recent").strip()
+    requested_month = _parse_month_input(request.GET.get("month") or "")
+    requested_period = None
+    raw_period_id = (request.GET.get("period_id") or "").strip()
+    if raw_period_id.isdigit():
+        requested_period = Period.objects.filter(pk=int(raw_period_id)).first()
+    requested_start_date = parse_date((request.GET.get("start_date") or "").strip())
+    requested_end_date = parse_date((request.GET.get("end_date") or "").strip())
+
+    scope = resolve_metrics_v2_scope(
+        today=today,
+        scope=requested_scope,
+        requested_month=requested_month,
+        requested_period=requested_period,
+        requested_start_date=requested_start_date,
+        requested_end_date=requested_end_date,
+    )
+    payload = build_metrics_v2_dashboard_payload(
+        department=selected_department,
+        scope=scope,
+        member=None if request.user.is_staff else viewer_member,
+    )
+    payload_json = {**payload, "scope": {"scope": scope.scope, "label": scope.label}}
+    available_periods = list(Period.objects.order_by("-end_date", "-start_date", "-id")[:18])
+
+    context = {
+        "is_admin": request.user.is_staff,
+        "member": viewer_member,
+        "selected_department": selected_department,
+        "departments": departments,
+        "scope": scope,
+        "scope_value": scope.scope,
+        "month_value": (scope.month_start or today.replace(day=1)).strftime("%Y-%m"),
+        "start_date_value": scope.start_date.strftime("%Y-%m-%d"),
+        "end_date_value": scope.end_date.strftime("%Y-%m-%d"),
+        "period_options": available_periods,
+        "selected_period_id": scope.period.id if scope.period else "",
+        "metrics_v2_payload": payload,
+        "metrics_v2_payload_json": payload_json,
+    }
+    return render(request, "dairymetrics/metrics_v2_demo.html", context)
 
 
 @require_dairymetrics_member

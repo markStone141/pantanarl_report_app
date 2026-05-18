@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Metrics V2 | DairyMetrics{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=25" />
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
+    <div>
+      <strong>Metrics V2</strong>
+      <div class="topbar-muted">
+        {% if is_admin %}
+        {{ selected_department.name }} の全体分析デモ
+        {% else %}
+        {{ member.name }}さん / {{ selected_department.name }} の分析デモ
+        {% endif %}
+      </div>
+    </div>
+    <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="Open menu">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
+      <a href="{% url 'dairymetrics_dashboard' %}">ダッシュボード</a>
+      <a href="{% url 'dairymetrics_compare' %}">現行 Metrics</a>
+      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">Metrics V2</a>
+      <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
+      <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
+    </nav>
+    <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+  </header>
+
+  <section class="card mt-16">
+    <div class="row">
+      <div>
+        <h2>集計条件</h2>
+        <div class="muted">月・路程・期間を切り替えて振り返りできます。</div>
+      </div>
+    </div>
+    <form method="get" class="grid mt-12 metrics-v2-filter-grid">
+      <div>
+        <label for="metrics-v2-department">部署</label>
+        <select id="metrics-v2-department" name="department">
+          {% for department in departments %}
+          <option value="{{ department.code }}" {% if department.code == selected_department.code %}selected{% endif %}>{{ department.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="metrics-v2-scope">集計期間</label>
+        <select id="metrics-v2-scope" name="scope" data-metrics-v2-scope>
+          <option value="recent" {% if scope_value == "recent" %}selected{% endif %}>過去30日間</option>
+          <option value="month" {% if scope_value == "month" %}selected{% endif %}>月</option>
+          <option value="period" {% if scope_value == "period" %}selected{% endif %}>路程</option>
+          <option value="custom" {% if scope_value == "custom" %}selected{% endif %}>期間指定</option>
+        </select>
+      </div>
+      <div data-metrics-v2-scope-field="month">
+        <label for="metrics-v2-month">対象月</label>
+        <input id="metrics-v2-month" type="month" name="month" value="{{ month_value }}">
+      </div>
+      <div data-metrics-v2-scope-field="period">
+        <label for="metrics-v2-period">対象路程</label>
+        <select id="metrics-v2-period" name="period_id">
+          <option value="">選択してください</option>
+          {% for period in period_options %}
+          <option value="{{ period.id }}" {% if period.id == selected_period_id %}selected{% endif %}>{{ period.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div data-metrics-v2-scope-field="custom">
+        <label for="metrics-v2-start-date">開始日</label>
+        <input id="metrics-v2-start-date" type="date" name="start_date" value="{{ start_date_value }}">
+      </div>
+      <div data-metrics-v2-scope-field="custom">
+        <label for="metrics-v2-end-date">終了日</label>
+        <input id="metrics-v2-end-date" type="date" name="end_date" value="{{ end_date_value }}">
+      </div>
+      <div>
+        <button type="submit">表示</button>
+      </div>
+    </form>
+  </section>
+
+  {{ metrics_v2_payload_json|json_script:"metrics-v2-dashboard-data" }}
+
+  <section class="mt-16">
+    <div class="grid grid-2 metrics-v2-summary-grid">
+      <article class="card metrics-v2-summary-card">
+        <div class="row">
+          <strong>全体の指標</strong>
+          <span class="badge">{{ metrics_v2_payload.scope.label }}</span>
+        </div>
+        <div class="grid grid-2 mt-12">
+          {% for rate in metrics_v2_payload.overall_summary.rates %}
+          <div class="metric-card metrics-v2-rate-card">
+            <div class="row">
+              <strong>{{ rate.label }}</strong>
+              <span>{{ rate.value }}</span>
+            </div>
+            <div class="metrics-v2-mini-donut">
+              <canvas class="metrics-v2-donut-chart" data-chart-values="{{ rate.chart_data|join:',' }}"></canvas>
+            </div>
+            <div class="muted">{{ rate.helper }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="grid grid-2 mt-12">
+          {% for item in metrics_v2_payload.overall_summary.averages %}
+          <div class="metric-card">
+            <div class="muted">{{ item.label }}</div>
+            <strong>{{ item.value }}</strong>
+          </div>
+          {% endfor %}
+        </div>
+      </article>
+
+      {% if metrics_v2_payload.personal_summary %}
+      <article class="card metrics-v2-summary-card">
+        <div class="row">
+          <strong>自分の指標</strong>
+          <span class="badge">{{ metrics_v2_payload.scope.label }}</span>
+        </div>
+        <div class="grid grid-2 mt-12">
+          {% for rate in metrics_v2_payload.personal_summary.rates %}
+          <div class="metric-card metrics-v2-rate-card">
+            <div class="row">
+              <strong>{{ rate.label }}</strong>
+              <span>{{ rate.value }}</span>
+            </div>
+            <div class="metrics-v2-mini-donut">
+              <canvas class="metrics-v2-donut-chart" data-chart-values="{{ rate.chart_data|join:',' }}"></canvas>
+            </div>
+            <div class="muted">{{ rate.helper }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="grid grid-2 mt-12">
+          {% for item in metrics_v2_payload.personal_summary.averages %}
+          <div class="metric-card">
+            <div class="muted">{{ item.label }}</div>
+            <strong>{{ item.value }}</strong>
+          </div>
+          {% endfor %}
+        </div>
+      </article>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="mt-16 grid grid-2 metrics-v2-history-grid">
+    <article class="card">
+      <div class="row">
+        <strong>月ごとの比較・推移</strong>
+      </div>
+      <div class="muted mt-6">直近6か月の金額と件数です。</div>
+      <canvas id="metrics-v2-month-history-chart" class="metrics-v2-history-chart mt-12" aria-label="月ごとの比較・推移"></canvas>
+    </article>
+    <article class="card">
+      <div class="row">
+        <strong>路程ごとの比較・推移</strong>
+      </div>
+      <div class="muted mt-6">直近6路程の金額と件数です。</div>
+      <canvas id="metrics-v2-period-history-chart" class="metrics-v2-history-chart mt-12" aria-label="路程ごとの比較・推移"></canvas>
+    </article>
+  </section>
+
+  <section class="card mt-16">
+    <div class="row">
+      <div>
+        <h3>ランキングモード</h3>
+        <div class="muted">他メンバーとの比較を客観的に確認できます。</div>
+      </div>
+    </div>
+    <div class="metrics-v2-ranking-switch mt-12">
+      {% for option in metrics_v2_payload.ranking.options %}
+      <button type="button" class="btn-inline{% if option.key == metrics_v2_payload.ranking.default_metric %} is-active{% endif %}" data-metrics-v2-ranking-button data-metric-key="{{ option.key }}">{{ option.label }}</button>
+      {% endfor %}
+    </div>
+    <canvas id="metrics-v2-ranking-chart" class="metrics-v2-ranking-chart mt-12" aria-label="ランキング"></canvas>
+    <div id="metrics-v2-ranking-list" class="grid mt-12"></div>
+  </section>
+
+  <section class="mt-16">
+    <div class="grid grid-3 metrics-v2-distribution-grid">
+      {% for card in metrics_v2_payload.distribution_cards %}
+      <article class="card">
+        <div class="row">
+          <strong>{{ card.title }}</strong>
+          <span class="badge">{{ card.total_text }}</span>
+        </div>
+        <canvas
+          class="metrics-v2-distribution-chart mt-12"
+          aria-label="{{ card.title }}"
+          data-chart-labels="{{ card.labels|join:'|' }}"
+          data-chart-values="{{ card.counts|join:',' }}"
+        ></canvas>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="card mt-16">
+    <div class="row">
+      <div>
+        <h3>属性別の平均金額</h3>
+        <div class="muted">年代・男女・国籍で平均金額の差を確認できます。</div>
+      </div>
+    </div>
+    <div class="metrics-v2-ranking-switch mt-12">
+      <button type="button" class="btn-inline is-active" data-metrics-v2-amount-mode="age">年代</button>
+      <button type="button" class="btn-inline" data-metrics-v2-amount-mode="gender">男女</button>
+      <button type="button" class="btn-inline" data-metrics-v2-amount-mode="nationality">国籍</button>
+    </div>
+    <canvas id="metrics-v2-average-amount-chart" class="metrics-v2-history-chart mt-12" aria-label="属性別の平均金額"></canvas>
+  </section>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=1"></script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+{% endblock %}

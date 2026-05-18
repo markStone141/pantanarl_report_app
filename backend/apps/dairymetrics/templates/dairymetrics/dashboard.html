@@ -34,11 +34,13 @@
       {% if not readonly_dashboard %}
       {% if member %}<a href="{% url 'dairymetrics_member_overview' %}">活動状況</a>{% endif %}
       {% if member %}<a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>{% endif %}
+      {% if member %}<a href="{% url 'dairymetrics_metrics_v2_demo' %}">Metrics V2</a>{% endif %}
       {% endif %}
       {% if viewer_member %}<a href="{% url 'dairymetrics_member_index' %}">メンバーデータ</a>{% endif %}
       {% if not readonly_dashboard %}
       {% if member %}<a href="{% url 'dairymetrics_compare' %}">スコア</a>{% endif %}
       {% endif %}
+      {% if is_admin %}<a href="{% url 'dairymetrics_metrics_v2_demo' %}">Metrics V2</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_admin_monthly_overview' %}">月次集計</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dairymetrics_adjustment_create' %}">戻り登録</a>{% endif %}
