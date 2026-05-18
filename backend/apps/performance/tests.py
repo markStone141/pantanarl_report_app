@@ -60,6 +60,67 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "日目達成率")
         self.assertContains(response, entry.entry_date.strftime("%m/%d"))
 
+    def test_performance_index_defaults_dashboard_department_to_un(self):
+        other_department = Department.objects.create(code="WV", name="WV", is_active=True)
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["dashboard_department"].code, "UN")
+        self.assertContains(response, '<option value="%s" selected>UN</option>' % self.department.id, html=True)
+
+    def test_performance_index_uses_selected_month_and_period_for_progress_cards(self):
+        today = timezone.localdate()
+        selected_month = date(today.year, 4, 1)
+        selected_period = Period.objects.create(
+            month=selected_month,
+            name="4月第2次路程",
+            status="closed",
+            start_date=selected_month,
+            end_date=selected_month + timedelta(days=6),
+        )
+        amount_metric = TargetMetric.objects.create(
+            department=self.department,
+            code="amount",
+            label="金額",
+            unit="円",
+            display_order=1,
+            is_active=True,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.department,
+            target_month=selected_month,
+            metric=amount_metric,
+            value=12000,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=selected_period,
+            department=self.department,
+            metric=amount_metric,
+            value=28000,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=selected_month + timedelta(days=1),
+            result_count=1,
+            support_amount=4500,
+        )
+
+        response = self.client.get(
+            reverse("performance_index"),
+            {
+                "dashboard_department": str(self.department.id),
+                "dashboard_month": selected_month.strftime("%Y-%m"),
+                "dashboard_period": str(selected_period.id),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "2026/04 の補正込み累計")
+        self.assertContains(response, "4月第2次路程")
+        self.assertContains(response, "12,000円")
+        self.assertContains(response, "28,000円")
+
     def test_performance_entry_edit_updates_daily_entry_and_department_summary(self):
         entry = MemberDailyMetricEntry.objects.create(
             member=self.member,

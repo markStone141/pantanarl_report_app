@@ -331,9 +331,15 @@ def _resolve_member_card_department(*, member, selected_department=None):
     )
 
 
-def _build_active_member_cards(*, members, today, current_period, selected_department=None):
+def _resolve_default_dashboard_department():
+    return (
+        Department.objects.filter(is_active=True, code="UN").first()
+        or Department.objects.filter(is_active=True).order_by("code", "id").first()
+    )
+
+
+def _build_active_member_cards(*, members, today, target_month, target_period, selected_department=None):
     cards = []
-    month_start = today.replace(day=1)
     for member in members:
         department = _resolve_member_card_department(member=member, selected_department=selected_department)
         if department is None:
@@ -347,15 +353,15 @@ def _build_active_member_cards(*, members, today, current_period, selected_depar
         month_totals = collect_member_final_actual_totals(
             member,
             department,
-            month_start,
+            target_month,
             today,
             include_adjustments=True,
         )
         period_totals = collect_member_final_actual_totals(
             member,
             department,
-            current_period.start_date if current_period else today,
-            min(current_period.end_date, today) if current_period else today,
+            target_period.start_date if target_period else today,
+            min(target_period.end_date, today) if target_period else today,
             include_adjustments=True,
         )
         latest_entries = list(
@@ -451,8 +457,10 @@ def _build_active_member_cards(*, members, today, current_period, selected_depar
     return cards
 
 
-def _build_performance_dashboard_snapshot(*, department=None):
+def _build_performance_dashboard_snapshot(*, department=None, target_month=None, period=None):
     today = timezone.localdate()
+    target_month = target_month or today.replace(day=1)
+    period = period or _resolve_current_period(today)
     active_entries = MemberDailyMetricEntry.objects.select_related("member", "department").filter(entry_date=today)
     if department:
         active_entries = active_entries.filter(department=department)
@@ -480,8 +488,6 @@ def _build_performance_dashboard_snapshot(*, department=None):
             .order_by("name", "id")
         )
 
-    target_month = today.replace(day=1)
-    period = _resolve_current_period(today)
     target_codes = [department.code for department in departments]
 
     month_totals_by_code = collect_department_final_actual_totals_by_codes(
@@ -534,7 +540,8 @@ def _build_performance_dashboard_snapshot(*, department=None):
         "active_member_cards": _build_active_member_cards(
             members=active_members,
             today=today,
-            current_period=period,
+            target_month=target_month,
+            target_period=period,
             selected_department=department,
         ),
         "month_progress_cards": month_progress_cards,
@@ -996,8 +1003,24 @@ def performance_index(request: HttpRequest) -> HttpResponse:
 
     current_query = request.GET.copy()
     current_query.pop("page", None)
-    dashboard_department = filter_form.cleaned_data.get("department") if filter_form.is_valid() else None
-    dashboard_snapshot = _build_performance_dashboard_snapshot(department=dashboard_department)
+    department_id = request.GET.get("dashboard_department")
+    dashboard_department = None
+    if department_id:
+        dashboard_department = Department.objects.filter(pk=department_id, is_active=True).first()
+    if dashboard_department is None:
+        dashboard_department = _resolve_default_dashboard_department()
+    dashboard_month = _parse_selected_month(request.GET.get("dashboard_month"), default=timezone.localdate())
+    dashboard_period = None
+    dashboard_period_id = request.GET.get("dashboard_period")
+    if dashboard_period_id:
+        dashboard_period = Period.objects.filter(pk=dashboard_period_id).first()
+    if dashboard_period is None:
+        dashboard_period = _resolve_current_period(timezone.localdate())
+    dashboard_snapshot = _build_performance_dashboard_snapshot(
+        department=dashboard_department,
+        target_month=dashboard_month,
+        period=dashboard_period,
+    )
     context = {
         "nav_items": _performance_nav_items(),
         "filter_form": filter_form,
@@ -1007,6 +1030,11 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         "adjustments_preview": adjustments_preview,
         "current_query_string": current_query.urlencode(),
         "dashboard_snapshot": dashboard_snapshot,
+        "dashboard_departments": Department.objects.filter(is_active=True).order_by("code", "id"),
+        "dashboard_department": dashboard_department,
+        "dashboard_month": dashboard_month,
+        "dashboard_period": dashboard_period,
+        "dashboard_periods": Period.objects.order_by("-end_date", "-start_date", "-id")[:24],
     }
     return render(request, "performance/index.html", context)
 

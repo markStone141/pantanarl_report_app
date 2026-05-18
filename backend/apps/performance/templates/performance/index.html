@@ -24,6 +24,34 @@
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
   <section class="card mt-16">
+    <form method="get" class="grid grid-3 performance-dashboard-filter-grid">
+      <div>
+        <label for="performance-dashboard-department">部署</label>
+        <select id="performance-dashboard-department" name="dashboard_department">
+          {% for department_option in dashboard_departments %}
+          <option value="{{ department_option.id }}"{% if dashboard_department and department_option.id == dashboard_department.id %} selected{% endif %}>{{ department_option.code }}{% if department_option.name and department_option.name != department_option.code %} ({{ department_option.name }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="performance-dashboard-month">月</label>
+        <input id="performance-dashboard-month" type="month" name="dashboard_month" value="{{ dashboard_month|date:'Y-m' }}">
+      </div>
+      <div>
+        <label for="performance-dashboard-period">路程</label>
+        <select id="performance-dashboard-period" name="dashboard_period">
+          {% for period_option in dashboard_periods %}
+          <option value="{{ period_option.id }}"{% if dashboard_period and period_option.id == dashboard_period.id %} selected{% endif %}>{{ period_option.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <button type="submit">表示</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card mt-16">
     <h3>本日の活動状況</h3>
     <div class="grid grid-2 mt-12">
       <article class="card">
