@@ -50,15 +50,18 @@
       </div>
       <div>
         <select id="metrics-v2-scope" name="scope" data-metrics-v2-scope aria-label="集計期間">
+          <option value="recent" {% if scope_value == "recent" %}selected{% endif %}>過去30日間</option>
           <option value="month" {% if scope_value == "month" %}selected{% endif %}>月</option>
           <option value="period" {% if scope_value == "period" %}selected{% endif %}>路程</option>
-          <option value="range" {% if scope_value == "range" %}selected{% endif %}>期間指定</option>
+          <option value="custom" {% if scope_value == "custom" %}selected{% endif %}>期間指定</option>
         </select>
       </div>
       <div data-metrics-v2-scope-field="month">
+        <label for="metrics-v2-month">対象月</label>
         <input id="metrics-v2-month" type="month" name="month" value="{{ month_value }}">
       </div>
       <div data-metrics-v2-scope-field="period">
+        <label for="metrics-v2-period">対象路程</label>
         <select id="metrics-v2-period" name="period_id">
           <option value="">選択してください</option>
           {% for period in period_options %}
@@ -66,10 +69,12 @@
           {% endfor %}
         </select>
       </div>
-      <div data-metrics-v2-scope-field="range">
+      <div data-metrics-v2-scope-field="custom">
+        <label for="metrics-v2-start-date">開始日</label>
         <input id="metrics-v2-start-date" type="date" name="start_date" value="{{ start_date_value }}">
       </div>
-      <div data-metrics-v2-scope-field="range">
+      <div data-metrics-v2-scope-field="custom">
+        <label for="metrics-v2-end-date">終了日</label>
         <input id="metrics-v2-end-date" type="date" name="end_date" value="{{ end_date_value }}">
       </div>
       <div>

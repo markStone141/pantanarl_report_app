@@ -129,25 +129,22 @@ def resolve_metrics_v2_scope(
             end_date=requested_period.end_date,
             period=requested_period,
         )
-    if scope in {"range", "custom"}:
+    if scope == "custom":
         start_date = requested_start_date or (today - timedelta(days=29))
         end_date = requested_end_date or today
         if start_date > end_date:
             start_date, end_date = end_date, start_date
         return MetricsV2Scope(
-            scope="range",
+            scope="custom",
             label=f"{start_date.strftime('%Y/%m/%d')} - {end_date.strftime('%Y/%m/%d')}",
             start_date=start_date,
             end_date=end_date,
         )
-    month_start = requested_month or today.replace(day=1)
-    month_end = month_start.replace(day=monthrange(month_start.year, month_start.month)[1])
     return MetricsV2Scope(
-        scope="month",
-        label=month_start.strftime("%Y/%m"),
-        start_date=month_start,
-        end_date=month_end,
-        month_start=month_start,
+        scope="recent",
+        label="過去30日間",
+        start_date=today - timedelta(days=29),
+        end_date=today,
     )
 
 
