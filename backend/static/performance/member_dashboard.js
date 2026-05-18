@@ -1,4 +1,41 @@
 (function () {
+  const donutCanvases = document.querySelectorAll(".performance-progress-donut-chart");
+  if (typeof window.Chart !== "undefined" && donutCanvases.length) {
+    donutCanvases.forEach(function (canvas) {
+      const context = canvas.getContext("2d");
+      if (!context) {
+        return;
+      }
+      const rawRate = canvas.dataset.rate;
+      const numericRate = rawRate === "" ? null : Number(rawRate);
+      const boundedRate = numericRate == null || Number.isNaN(numericRate) ? 0 : Math.max(0, Math.min(numericRate, 100));
+      new window.Chart(context, {
+        type: "doughnut",
+        data: {
+          datasets: [
+            {
+              data: boundedRate > 0 ? [boundedRate, 100 - boundedRate] : [0, 100],
+              backgroundColor: ["#0a84ff", "#dbe7f5"],
+              borderWidth: 0,
+              hoverOffset: 0,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "68%",
+          animation: false,
+          events: [],
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false },
+          },
+        },
+      });
+    });
+  }
+
   const dataNode = document.getElementById("performance-activity-trend-data");
   const canvas = document.getElementById("performance-activity-trend-chart");
   const decreaseButton = document.getElementById("performance-trend-decrease");

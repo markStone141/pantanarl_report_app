@@ -63,7 +63,13 @@
         </div>
         <div class="muted mt-6">{{ department_month_progress.summary_text }}</div>
         <div class="performance-progress-visual mt-12">
-          <div class="performance-progress-donut" style="--progress-angle: {{ department_month_progress.progress_angle }}deg;">
+          <div class="performance-progress-donut">
+            <canvas
+              class="performance-progress-donut-chart"
+              aria-label="{{ department_month_progress.label }}"
+              data-rate="{{ department_month_progress.rate|default:'' }}"
+              data-rate-text="{{ department_month_progress.rate_text }}"
+            ></canvas>
             <div class="performance-progress-donut-value">{{ department_month_progress.rate_text }}</div>
           </div>
         </div>
@@ -80,7 +86,13 @@
         </div>
         <div class="muted mt-6">{{ department_period_progress.summary_text }}</div>
         <div class="performance-progress-visual mt-12">
-          <div class="performance-progress-donut" style="--progress-angle: {{ department_period_progress.progress_angle }}deg;">
+          <div class="performance-progress-donut">
+            <canvas
+              class="performance-progress-donut-chart"
+              aria-label="{{ department_period_progress.label }}"
+              data-rate="{{ department_period_progress.rate|default:'' }}"
+              data-rate-text="{{ department_period_progress.rate_text }}"
+            ></canvas>
             <div class="performance-progress-donut-value">{{ department_period_progress.rate_text }}</div>
           </div>
         </div>
@@ -97,7 +109,13 @@
         </div>
         <div class="muted mt-6">{{ member_month_progress.summary_text }}</div>
         <div class="performance-progress-visual mt-12">
-          <div class="performance-progress-donut" style="--progress-angle: {{ member_month_progress.progress_angle }}deg;">
+          <div class="performance-progress-donut">
+            <canvas
+              class="performance-progress-donut-chart"
+              aria-label="{{ member_month_progress.label }}"
+              data-rate="{{ member_month_progress.rate|default:'' }}"
+              data-rate-text="{{ member_month_progress.rate_text }}"
+            ></canvas>
             <div class="performance-progress-donut-value">{{ member_month_progress.rate_text }}</div>
           </div>
         </div>
@@ -138,7 +156,13 @@
         </div>
         <div class="muted mt-6">{{ member_period_progress.summary_text }}</div>
         <div class="performance-progress-visual mt-12">
-          <div class="performance-progress-donut" style="--progress-angle: {{ member_period_progress.progress_angle }}deg;">
+          <div class="performance-progress-donut">
+            <canvas
+              class="performance-progress-donut-chart"
+              aria-label="{{ member_period_progress.label }}"
+              data-rate="{{ member_period_progress.rate|default:'' }}"
+              data-rate-text="{{ member_period_progress.rate_text }}"
+            ></canvas>
             <div class="performance-progress-donut-value">{{ member_period_progress.rate_text }}</div>
           </div>
         </div>
