@@ -65,11 +65,6 @@
               {% endfor %}
             </select>
           </div>
-          <div class="dairymetrics-member-filter-row" role="tablist" aria-label="部署で絞り込み">
-            {% for department in member_filter_departments %}
-            <button type="button" class="dairymetrics-toggle-btn{% if department.code == member_filter_default_code %} is-active{% endif %}" data-member-filter-toggle data-member-filter-value="{{ department.code }}" aria-pressed="{% if department.code == member_filter_default_code %}true{% else %}false{% endif %}">{{ department.name }}</button>
-            {% endfor %}
-          </div>
           <select id="dairymetrics-member-select" data-member-switch>
             {% for row in member_rows %}
             <option
@@ -81,6 +76,11 @@
             </option>
             {% endfor %}
           </select>
+          <div class="dairymetrics-member-filter-row" role="tablist" aria-label="部署で絞り込み">
+            {% for department in member_filter_departments %}
+            <button type="button" class="dairymetrics-toggle-btn{% if department.code == member_filter_default_code %} is-active{% endif %}" data-member-filter-toggle data-member-filter-value="{{ department.code }}" aria-pressed="{% if department.code == member_filter_default_code %}true{% else %}false{% endif %}">{{ department.name }}</button>
+            {% endfor %}
+          </div>
         </div>
       </div>
     </article>
