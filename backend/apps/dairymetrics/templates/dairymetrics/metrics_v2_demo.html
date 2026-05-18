@@ -102,7 +102,8 @@
               <span>{{ rate.value }}</span>
             </div>
             <div class="metrics-v2-mini-donut">
-              <canvas class="metrics-v2-donut-chart" data-chart-values="{{ rate.chart_data|join:',' }}"></canvas>
+              <canvas class="metrics-v2-donut-chart" data-chart-values="{{ rate.chart_data|join:',' }}" width="132" height="132"></canvas>
+              <div class="metrics-v2-mini-donut-value">{{ rate.value }}</div>
             </div>
             <div class="muted">{{ rate.helper }}</div>
           </div>
@@ -132,7 +133,8 @@
               <span>{{ rate.value }}</span>
             </div>
             <div class="metrics-v2-mini-donut">
-              <canvas class="metrics-v2-donut-chart" data-chart-values="{{ rate.chart_data|join:',' }}"></canvas>
+              <canvas class="metrics-v2-donut-chart" data-chart-values="{{ rate.chart_data|join:',' }}" width="132" height="132"></canvas>
+              <div class="metrics-v2-mini-donut-value">{{ rate.value }}</div>
             </div>
             <div class="muted">{{ rate.helper }}</div>
           </div>
@@ -157,14 +159,18 @@
         <strong>月ごとの比較・推移</strong>
       </div>
       <div class="muted mt-6">直近6か月の金額と件数です。</div>
-      <canvas id="metrics-v2-month-history-chart" class="metrics-v2-history-chart mt-12" aria-label="月ごとの比較・推移"></canvas>
+      <div class="metrics-v2-chart-frame mt-12">
+        <canvas id="metrics-v2-month-history-chart" class="metrics-v2-history-chart" aria-label="月ごとの比較・推移"></canvas>
+      </div>
     </article>
     <article class="card">
       <div class="row">
         <strong>路程ごとの比較・推移</strong>
       </div>
       <div class="muted mt-6">直近6路程の金額と件数です。</div>
-      <canvas id="metrics-v2-period-history-chart" class="metrics-v2-history-chart mt-12" aria-label="路程ごとの比較・推移"></canvas>
+      <div class="metrics-v2-chart-frame mt-12">
+        <canvas id="metrics-v2-period-history-chart" class="metrics-v2-history-chart" aria-label="路程ごとの比較・推移"></canvas>
+      </div>
     </article>
   </section>
 
@@ -180,7 +186,9 @@
       <button type="button" class="btn-inline{% if option.key == metrics_v2_payload.ranking.default_metric %} is-active{% endif %}" data-metrics-v2-ranking-button data-metric-key="{{ option.key }}">{{ option.label }}</button>
       {% endfor %}
     </div>
-    <canvas id="metrics-v2-ranking-chart" class="metrics-v2-ranking-chart mt-12" aria-label="ランキング"></canvas>
+    <div class="metrics-v2-chart-frame metrics-v2-chart-frame-ranking mt-12">
+      <canvas id="metrics-v2-ranking-chart" class="metrics-v2-ranking-chart" aria-label="ランキング"></canvas>
+    </div>
     <div id="metrics-v2-ranking-list" class="grid mt-12"></div>
   </section>
 
@@ -192,12 +200,14 @@
           <strong>{{ card.title }}</strong>
           <span class="badge">{{ card.total_text }}</span>
         </div>
-        <canvas
-          class="metrics-v2-distribution-chart mt-12"
-          aria-label="{{ card.title }}"
-          data-chart-labels="{{ card.labels|join:'|' }}"
-          data-chart-values="{{ card.counts|join:',' }}"
-        ></canvas>
+        <div class="metrics-v2-chart-frame metrics-v2-chart-frame-distribution mt-12">
+          <canvas
+            class="metrics-v2-distribution-chart"
+            aria-label="{{ card.title }}"
+            data-chart-labels="{{ card.labels|join:'|' }}"
+            data-chart-values="{{ card.counts|join:',' }}"
+          ></canvas>
+        </div>
       </article>
       {% endfor %}
     </div>
@@ -215,10 +225,12 @@
       <button type="button" class="btn-inline" data-metrics-v2-amount-mode="gender">男女</button>
       <button type="button" class="btn-inline" data-metrics-v2-amount-mode="nationality">国籍</button>
     </div>
-    <canvas id="metrics-v2-average-amount-chart" class="metrics-v2-history-chart mt-12" aria-label="属性別の平均金額"></canvas>
+    <div class="metrics-v2-chart-frame mt-12">
+      <canvas id="metrics-v2-average-amount-chart" class="metrics-v2-history-chart" aria-label="属性別の平均金額"></canvas>
+    </div>
   </section>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=1"></script>
+<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=2"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 {% endblock %}

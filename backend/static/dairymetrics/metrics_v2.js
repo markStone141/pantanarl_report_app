@@ -31,7 +31,7 @@
 
   const defaultPalette = ["#1d7dfa", "#7bc4ff", "#56d4a7", "#f59e0b", "#ef4444", "#8b5cf6", "#14b8a6", "#94a3b8", "#f97316"];
 
-  function createDoughnutChart(canvas, labels, values) {
+  function createDoughnutChart(canvas, labels, values, options) {
     if (!canvas) {
       return;
     }
@@ -39,6 +39,7 @@
     if (!context) {
       return;
     }
+    const chartOptions = options || {};
     new window.Chart(context, {
       type: "doughnut",
       data: {
@@ -52,18 +53,36 @@
         ],
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: chartOptions.responsive !== false,
+        maintainAspectRatio: chartOptions.maintainAspectRatio !== false,
         cutout: "66%",
         plugins: {
           legend: {
+            display: chartOptions.legendDisplay !== false,
             position: "bottom",
             labels: {
               boxWidth: 10,
             },
           },
+          tooltip: {
+            enabled: chartOptions.tooltipEnabled !== false,
+          },
         },
       },
+    });
+  }
+
+  function createRateDoughnutChart(canvas, values) {
+    if (!canvas) {
+      return;
+    }
+    canvas.width = 132;
+    canvas.height = 132;
+    createDoughnutChart(canvas, ["比率", "残り"], values, {
+      legendDisplay: false,
+      tooltipEnabled: false,
+      responsive: false,
+      maintainAspectRatio: true,
     });
   }
 
@@ -71,7 +90,7 @@
     const values = (canvas.dataset.chartValues || "")
       .split(",")
       .map(function (value) { return Number(value || 0); });
-    createDoughnutChart(canvas, ["達成", "残り"], values);
+    createRateDoughnutChart(canvas, values);
   });
 
   document.querySelectorAll(".metrics-v2-distribution-chart").forEach(function (canvas) {
@@ -79,7 +98,7 @@
     const values = (canvas.dataset.chartValues || "")
       .split(",")
       .map(function (value) { return Number(value || 0); });
-    createDoughnutChart(canvas, labels, values);
+    createDoughnutChart(canvas, labels, values, { legendDisplay: true, tooltipEnabled: true });
   });
 
   function buildComboChart(canvasId, chartPayload) {

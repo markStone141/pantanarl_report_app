@@ -2374,17 +2374,46 @@
 
 .metrics-v2-mini-donut {
   position: relative;
-  min-height: 160px;
+  width: 132px;
+  height: 132px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+}
+
+.metrics-v2-mini-donut canvas {
+  width: 132px !important;
+  height: 132px !important;
+}
+
+.metrics-v2-mini-donut-value {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 1.02rem;
+  color: #223448;
+  pointer-events: none;
+}
+
+.metrics-v2-chart-frame {
+  position: relative;
+  height: 320px;
+}
+
+.metrics-v2-chart-frame canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .metrics-v2-history-chart,
 .metrics-v2-ranking-chart {
   width: 100%;
-  min-height: 320px;
 }
 
-.metrics-v2-ranking-chart {
-  min-height: 420px;
+.metrics-v2-chart-frame-ranking {
+  height: 420px;
 }
 
 .metrics-v2-ranking-switch {
@@ -2400,7 +2429,10 @@
 
 .metrics-v2-distribution-chart {
   width: 100%;
-  min-height: 260px;
+}
+
+.metrics-v2-chart-frame-distribution {
+  height: 260px;
 }
 
 @media (max-width: 900px) {
@@ -2410,9 +2442,9 @@
     grid-template-columns: 1fr;
   }
 
-  .metrics-v2-history-chart,
-  .metrics-v2-ranking-chart,
-  .metrics-v2-distribution-chart {
-    min-height: 260px;
+  .metrics-v2-chart-frame,
+  .metrics-v2-chart-frame-ranking,
+  .metrics-v2-chart-frame-distribution {
+    height: 260px;
   }
 }
