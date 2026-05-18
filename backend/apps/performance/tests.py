@@ -304,6 +304,9 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "70.0%")
         self.assertContains(response, "7,000円")
         self.assertContains(response, "補正 2,000円")
+        self.assertContains(response, "通常実績")
+        self.assertContains(response, "補正実績")
+        self.assertContains(response, "残り")
         self.assertContains(response, 'data-chart-values="5000,2000,3000"', html=False)
 
     def test_performance_index_shows_active_member_cards_with_detail_link(self):

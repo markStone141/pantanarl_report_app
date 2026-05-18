@@ -1370,6 +1370,40 @@ th {
   text-align: center;
 }
 
+.performance-progress-legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.performance-progress-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.performance-progress-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.performance-progress-legend-swatch-base {
+  background: #0a84ff;
+}
+
+.performance-progress-legend-swatch-adjustment {
+  background: #f59e0b;
+}
+
+.performance-progress-legend-swatch-remaining {
+  background: #dbe7f5;
+}
+
 .performance-target-config-card .row {
   align-items: center;
   gap: 12px;

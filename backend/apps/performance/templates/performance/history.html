@@ -85,6 +85,7 @@
               aria-label="{{ card.label }} 月目標達成率"
               data-rate="{{ card.rate|default:'' }}"
               data-rate-text="{{ card.rate_text }}"
+              data-chart-values="{{ card.chart_values|join:',' }}"
               width="132"
               height="132"
               style="width: 132px; height: 132px; display: block;"
@@ -92,8 +93,24 @@
             <div class="performance-progress-donut-value">{{ card.rate_text }}</div>
           </div>
         </div>
+        <div class="performance-progress-legend mt-12">
+          <span class="performance-progress-legend-item">
+            <span class="performance-progress-legend-swatch performance-progress-legend-swatch-base"></span>
+            通常実績
+          </span>
+          <span class="performance-progress-legend-item">
+            <span class="performance-progress-legend-swatch performance-progress-legend-swatch-adjustment"></span>
+            補正実績
+          </span>
+          <span class="performance-progress-legend-item">
+            <span class="performance-progress-legend-swatch performance-progress-legend-swatch-remaining"></span>
+            残り
+          </span>
+        </div>
         <div class="performance-progress-stats mt-12">
           <div>実績 {{ card.actual_amount_text }}</div>
+          <div class="muted">通常 {{ card.base_actual_amount_text }}</div>
+          <div class="muted">補正 {{ card.adjustment_amount_text }}</div>
           <div class="muted">目標 {{ card.target_amount_text }}</div>
         </div>
       </article>
@@ -121,6 +138,7 @@
               aria-label="{{ card.label }} 路程目標達成率"
               data-rate="{{ card.rate|default:'' }}"
               data-rate-text="{{ card.rate_text }}"
+              data-chart-values="{{ card.chart_values|join:',' }}"
               width="132"
               height="132"
               style="width: 132px; height: 132px; display: block;"
@@ -128,8 +146,24 @@
             <div class="performance-progress-donut-value">{{ card.rate_text }}</div>
           </div>
         </div>
+        <div class="performance-progress-legend mt-12">
+          <span class="performance-progress-legend-item">
+            <span class="performance-progress-legend-swatch performance-progress-legend-swatch-base"></span>
+            通常実績
+          </span>
+          <span class="performance-progress-legend-item">
+            <span class="performance-progress-legend-swatch performance-progress-legend-swatch-adjustment"></span>
+            補正実績
+          </span>
+          <span class="performance-progress-legend-item">
+            <span class="performance-progress-legend-swatch performance-progress-legend-swatch-remaining"></span>
+            残り
+          </span>
+        </div>
         <div class="performance-progress-stats mt-12">
           <div>実績 {{ card.actual_amount_text }}</div>
+          <div class="muted">通常 {{ card.base_actual_amount_text }}</div>
+          <div class="muted">補正 {{ card.adjustment_amount_text }}</div>
           <div class="muted">目標 {{ card.target_amount_text }}</div>
         </div>
       </article>
