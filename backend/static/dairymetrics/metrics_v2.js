@@ -197,9 +197,20 @@
         ],
       },
       options: {
-        indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
+        scales: {
+          x: {
+            ticks: {
+              autoSkip: false,
+              maxRotation: 45,
+              minRotation: 45,
+            },
+          },
+          y: {
+            beginAtZero: true,
+          },
+        },
         plugins: {
           legend: {
             display: false,
