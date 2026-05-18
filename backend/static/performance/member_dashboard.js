@@ -46,6 +46,10 @@
   const modeAmountButton = document.getElementById("performance-trend-mode-amount");
   const modeRateButton = document.getElementById("performance-trend-mode-rate");
   const modeActivityButton = document.getElementById("performance-trend-mode-activity");
+  const descriptionNode = document.getElementById("performance-trend-description");
+  const primaryLegendNode = document.getElementById("performance-trend-primary-legend");
+  const primarySwatchNode = document.getElementById("performance-trend-primary-swatch");
+  const primaryLabelNode = document.getElementById("performance-trend-primary-label");
   const lineLabelNode = document.getElementById("performance-trend-line-label");
   const secondaryLegendNode = document.getElementById("performance-trend-secondary-legend");
   const secondaryLineLabelNode = document.getElementById("performance-trend-secondary-line-label");
@@ -98,6 +102,18 @@
       modeActivityButton.classList.toggle("is-active", currentMode === "activity");
     }
     if (currentMode === "amount") {
+      if (descriptionNode) {
+        descriptionNode.textContent = "1稼働 = 実績が登録された1日です。金額は棒、" + (trendData.count_label || "件数") + "は折れ線で表示します。";
+      }
+      if (primaryLegendNode) {
+        primaryLegendNode.hidden = false;
+      }
+      if (primarySwatchNode) {
+        primarySwatchNode.className = "performance-trend-legend-swatch performance-trend-legend-swatch-bar";
+      }
+      if (primaryLabelNode) {
+        primaryLabelNode.textContent = "金額";
+      }
       if (lineLabelNode) {
         lineLabelNode.textContent = trendData.count_label || "件数";
       }
@@ -107,6 +123,12 @@
       return;
     }
     if (currentMode === "rate") {
+      if (descriptionNode) {
+        descriptionNode.textContent = "1稼働 = 実績が登録された1日です。各稼働日の目標金額に対する達成率を折れ線で表示します。";
+      }
+      if (primaryLegendNode) {
+        primaryLegendNode.hidden = true;
+      }
       if (lineLabelNode) {
         lineLabelNode.textContent = "達成率（%）";
       }
@@ -114,6 +136,18 @@
         secondaryLegendNode.hidden = true;
       }
       return;
+    }
+    if (descriptionNode) {
+      descriptionNode.textContent = "1稼働 = 実績が登録された1日です。アプローチ数とコミュニケーション数を折れ線で表示します。";
+    }
+    if (primaryLegendNode) {
+      primaryLegendNode.hidden = false;
+    }
+    if (primarySwatchNode) {
+      primarySwatchNode.className = "performance-trend-legend-swatch performance-trend-legend-swatch-line";
+    }
+    if (primaryLabelNode) {
+      primaryLabelNode.textContent = "アプローチ数";
     }
     if (lineLabelNode) {
       lineLabelNode.textContent = "アプローチ数";
@@ -183,6 +217,9 @@
                   "目標金額 " + targetAmount + "円",
                   "達成率 " + (rateValue == null ? "-" : Number(rateValue).toLocaleString("ja-JP") + "%"),
                 ];
+              }
+              if (currentMode === "activity") {
+                return (tooltipItem.dataset.label || "") + " " + Number(tooltipItem.raw || 0).toLocaleString("ja-JP");
               }
               if (tooltipItem.dataset.type === "bar") {
                 return "金額 " + Number(tooltipItem.raw || 0).toLocaleString("ja-JP") + "円";

@@ -24,13 +24,13 @@
 
   <section class="card mt-16">
     <h3>直近稼働の実績推移</h3>
-    <p class="muted">1稼働 = 実績が登録された1日です。金額は棒、{{ activity_trend.count_label }}は折れ線で表示します。</p>
+    <p id="performance-trend-description" class="muted">1稼働 = 実績が登録された1日です。金額は棒、{{ activity_trend.count_label }}は折れ線で表示します。</p>
     {% if activity_trend.has_data %}
     {{ activity_trend|json_script:"performance-activity-trend-data" }}
     <div class="performance-trend-legend mt-12">
-      <span class="performance-trend-legend-item">
-        <span class="performance-trend-legend-swatch performance-trend-legend-swatch-bar"></span>
-        金額
+      <span id="performance-trend-primary-legend" class="performance-trend-legend-item">
+        <span id="performance-trend-primary-swatch" class="performance-trend-legend-swatch performance-trend-legend-swatch-bar"></span>
+        <span id="performance-trend-primary-label">金額</span>
       </span>
       <span class="performance-trend-legend-item">
         <span class="performance-trend-legend-swatch performance-trend-legend-swatch-line"></span>

@@ -250,6 +250,10 @@ a {
   border-top: 3px solid #14b8a6;
 }
 
+.performance-trend-legend-swatch-hidden {
+  display: none;
+}
+
 .performance-chart-card {
   position: relative;
   min-height: 280px;
