@@ -45,7 +45,7 @@
 .dairymetrics-member-select-wrap {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 220px;
-  align-items: center;
+  align-items: start;
   justify-content: flex-start;
   gap: 12px;
   min-width: 0;
@@ -65,27 +65,31 @@
 
 .dairymetrics-member-filter-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   margin-top: 0;
-  align-items: center;
+  align-items: stretch;
+  height: 42px;
   min-width: 0;
 }
 
 .dairymetrics-member-filter-row .dairymetrics-toggle-btn {
-  min-height: 42px;
+  height: 42px;
   padding: 0 10px;
   font-size: 0.78rem;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 }
 
 .dairymetrics-member-select-wrap select {
-  min-height: 42px;
+  height: 42px;
   width: 220px;
-  align-self: center;
+  min-width: 0;
+  align-self: start;
+  box-sizing: border-box;
 }
 
 .dairymetrics-scope-tabbar {
