@@ -225,14 +225,18 @@ def _progress_rate(actual, target):
 
 def _build_progress_card(*, label, actual_amount, target_amount, summary_text):
     rate = _progress_rate(actual_amount, target_amount)
+    fill_rate = 0 if rate is None else max(0, min(rate, 100))
+    remaining_amount = max(int(target_amount or 0) - int(actual_amount or 0), 0)
     return {
         "label": label,
         "actual_amount": actual_amount,
         "actual_amount_text": f"{actual_amount:,}円",
         "target_amount": target_amount,
         "target_amount_text": f"{target_amount:,}円",
+        "remaining_amount_text": f"{remaining_amount:,}円",
         "rate": rate,
         "rate_text": "-" if rate is None else f"{rate}%",
+        "progress_angle": round(fill_rate * 3.6, 1),
         "summary_text": summary_text,
     }
 

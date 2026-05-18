@@ -1208,7 +1208,7 @@ th {
     z-index: 120;
   }
 
-  .report-filter-backdrop:not([hidden]) {
+.report-filter-backdrop:not([hidden]) {
     display: block;
   }
 
@@ -1240,4 +1240,50 @@ th {
   .modal-body {
     padding: 10px 12px;
   }
+}
+
+.performance-progress-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.performance-progress-visual {
+  display: flex;
+  justify-content: center;
+}
+
+.performance-progress-donut {
+  --progress-angle: 0deg;
+  position: relative;
+  width: 132px;
+  height: 132px;
+  border-radius: 999px;
+  background: conic-gradient(var(--brand) 0deg var(--progress-angle), #dbe7f5 var(--progress-angle) 360deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1px rgba(15, 33, 62, 0.06);
+}
+
+.performance-progress-donut::before {
+  content: "";
+  width: 86px;
+  height: 86px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(15, 33, 62, 0.05);
+}
+
+.performance-progress-donut-value {
+  position: absolute;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
+.performance-progress-stats {
+  display: grid;
+  gap: 4px;
+  text-align: center;
 }

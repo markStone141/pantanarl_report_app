@@ -54,65 +54,69 @@
     {% endif %}
   </section>
 
-  <section class="card mt-16">
-    <h3>進捗サマリー</h3>
-    <div class="grid grid-2 mt-12">
-      <article class="metric-card">
+  <section class="mt-16">
+    <div class="grid grid-2">
+      <article class="card performance-progress-card">
         <div class="row">
           <strong>{{ department_month_progress.label }}</strong>
           <span class="badge">{{ department_month_progress.rate_text }}</span>
         </div>
         <div class="muted mt-6">{{ department_month_progress.summary_text }}</div>
-        <div class="mt-8">実績 {{ department_month_progress.actual_amount_text }}</div>
-        <div class="muted">目標 {{ department_month_progress.target_amount_text }}</div>
+        <div class="performance-progress-visual mt-12">
+          <div class="performance-progress-donut" style="--progress-angle: {{ department_month_progress.progress_angle }}deg;">
+            <div class="performance-progress-donut-value">{{ department_month_progress.rate_text }}</div>
+          </div>
+        </div>
+        <div class="performance-progress-stats mt-12">
+          <div>実績 {{ department_month_progress.actual_amount_text }}</div>
+          <div class="muted">目標 {{ department_month_progress.target_amount_text }}</div>
+          <div class="muted">残り {{ department_month_progress.remaining_amount_text }}</div>
+        </div>
       </article>
-      <article class="metric-card">
+      <article class="card performance-progress-card">
         <div class="row">
           <strong>{{ department_period_progress.label }}</strong>
           <span class="badge">{{ department_period_progress.rate_text }}</span>
         </div>
         <div class="muted mt-6">{{ department_period_progress.summary_text }}</div>
-        <div class="mt-8">実績 {{ department_period_progress.actual_amount_text }}</div>
-        <div class="muted">目標 {{ department_period_progress.target_amount_text }}</div>
+        <div class="performance-progress-visual mt-12">
+          <div class="performance-progress-donut" style="--progress-angle: {{ department_period_progress.progress_angle }}deg;">
+            <div class="performance-progress-donut-value">{{ department_period_progress.rate_text }}</div>
+          </div>
+        </div>
+        <div class="performance-progress-stats mt-12">
+          <div>実績 {{ department_period_progress.actual_amount_text }}</div>
+          <div class="muted">目標 {{ department_period_progress.target_amount_text }}</div>
+          <div class="muted">残り {{ department_period_progress.remaining_amount_text }}</div>
+        </div>
       </article>
-      <article class="metric-card">
+      <article class="card performance-progress-card">
         <div class="row">
           <strong>{{ member_month_progress.label }}</strong>
           <span class="badge">{{ member_month_progress.rate_text }}</span>
         </div>
         <div class="muted mt-6">{{ member_month_progress.summary_text }}</div>
-        <div class="mt-8">実績 {{ member_month_progress.actual_amount_text }}</div>
-        <div class="muted">目標 {{ member_month_progress.target_amount_text }}</div>
-      </article>
-      <article class="metric-card">
-        <div class="row">
-          <strong>{{ member_period_progress.label }}</strong>
-          <span class="badge">{{ member_period_progress.rate_text }}</span>
+        <div class="performance-progress-visual mt-12">
+          <div class="performance-progress-donut" style="--progress-angle: {{ member_month_progress.progress_angle }}deg;">
+            <div class="performance-progress-donut-value">{{ member_month_progress.rate_text }}</div>
+          </div>
         </div>
-        <div class="muted mt-6">{{ member_period_progress.summary_text }}</div>
-        <div class="mt-8">実績 {{ member_period_progress.actual_amount_text }}</div>
-        <div class="muted">目標 {{ member_period_progress.target_amount_text }}</div>
-      </article>
-    </div>
-  </section>
-
-  <section class="card mt-16">
-    <h3>個人目標設定</h3>
-    <div class="grid grid-2 mt-12">
-      <article class="card">
-        <h4>月目標</h4>
+        <div class="performance-progress-stats mt-12">
+          <div>実績 {{ member_month_progress.actual_amount_text }}</div>
+          <div class="muted">目標 {{ member_month_progress.target_amount_text }}</div>
+          <div class="muted">残り {{ member_month_progress.remaining_amount_text }}</div>
+        </div>
         {% if member_month_target and not edit_month_target %}
-        <div class="metric-card mt-10">
+        <div class="metric-card mt-12">
           <div class="row">
             <strong>設定済み</strong>
             <a class="btn-inline" href="?month={{ selected_month|date:'Y-m' }}&edit_month_target=1">修正</a>
           </div>
-          <div class="muted mt-6">{{ selected_month|date:"Y/m" }} の個人月目標</div>
           <div class="mt-8">件数 {{ member_month_target.target_count }}件</div>
           <div class="muted">金額 {{ member_month_target.target_amount|floatformat:0 }}円</div>
         </div>
         {% else %}
-        <form method="post" class="grid mt-10">
+        <form method="post" class="grid mt-12">
           {% csrf_token %}
           <input type="hidden" name="action" value="save_month_target" />
           {% for field in month_target_form %}
@@ -127,20 +131,33 @@
         </form>
         {% endif %}
       </article>
-      <article class="card">
-        <h4>路程目標</h4>
+      <article class="card performance-progress-card">
+        <div class="row">
+          <strong>{{ member_period_progress.label }}</strong>
+          <span class="badge">{{ member_period_progress.rate_text }}</span>
+        </div>
+        <div class="muted mt-6">{{ member_period_progress.summary_text }}</div>
+        <div class="performance-progress-visual mt-12">
+          <div class="performance-progress-donut" style="--progress-angle: {{ member_period_progress.progress_angle }}deg;">
+            <div class="performance-progress-donut-value">{{ member_period_progress.rate_text }}</div>
+          </div>
+        </div>
+        <div class="performance-progress-stats mt-12">
+          <div>実績 {{ member_period_progress.actual_amount_text }}</div>
+          <div class="muted">目標 {{ member_period_progress.target_amount_text }}</div>
+          <div class="muted">残り {{ member_period_progress.remaining_amount_text }}</div>
+        </div>
         {% if member_period_target and not edit_period_target %}
-        <div class="metric-card mt-10">
+        <div class="metric-card mt-12">
           <div class="row">
             <strong>設定済み</strong>
             <a class="btn-inline" href="?month={{ selected_month|date:'Y-m' }}&edit_period_target=1">修正</a>
           </div>
-          <div class="muted mt-6">{{ period_label }} の個人路程目標</div>
           <div class="mt-8">件数 {{ member_period_target.target_count }}件</div>
           <div class="muted">金額 {{ member_period_target.target_amount|floatformat:0 }}円</div>
         </div>
         {% elif period_target_form %}
-        <form method="post" class="grid mt-10">
+        <form method="post" class="grid mt-12">
           {% csrf_token %}
           <input type="hidden" name="action" value="save_period_target" />
           {% for field in period_target_form %}
@@ -154,7 +171,7 @@
           </div>
         </form>
         {% else %}
-        <p class="muted">現在の路程が未設定です。</p>
+        <p class="muted mt-12">現在の路程が未設定です。</p>
         {% endif %}
       </article>
     </div>
