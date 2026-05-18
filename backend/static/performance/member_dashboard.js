@@ -150,7 +150,7 @@
       primaryLegendNode.hidden = false;
     }
     if (primarySwatchNode) {
-      primarySwatchNode.className = "performance-trend-legend-swatch performance-trend-legend-swatch-line";
+      primarySwatchNode.className = "performance-trend-legend-swatch performance-trend-legend-swatch-line-primary";
     }
     if (primaryLabelNode) {
       primaryLabelNode.textContent = "アプローチ数";
