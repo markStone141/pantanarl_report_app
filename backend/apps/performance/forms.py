@@ -71,6 +71,7 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
             "member",
             "target_date",
             "source_type",
+            "location_name",
         ]
         widgets = {
             "target_date": forms.DateInput(attrs={"type": "date", "class": "dairymetrics-native-date dairymetrics-date-input"}),
@@ -92,9 +93,11 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
         self.fields["member"].empty_label = "メンバーを選択"
         self.fields["department"].empty_label = "部署を選択"
         self.fields["target_date"].label = "対象日"
+        self.fields["location_name"].label = "現場"
+        self.fields["location_name"].required = False
         self.fields["target_date"].initial = self.initial.get("target_date") or timezone.localdate()
         self.fields["amount"].widget.attrs.update({"inputmode": "numeric", "min": "0"})
-        self.order_fields(["department", "member", "target_date", "source_type", "amount_choice", "amount"])
+        self.order_fields(["department", "member", "target_date", "source_type", "location_name", "amount_choice", "amount"])
         if self.instance and self.instance.pk:
             initial_amount = self._resolve_instance_amount(self.instance)
             self.fields["amount"].initial = initial_amount

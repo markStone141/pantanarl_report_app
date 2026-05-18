@@ -295,6 +295,7 @@ class MetricAdjustment(models.Model):
     return_postal_amount = models.PositiveIntegerField(default=0)
     return_qr_count = models.PositiveIntegerField(default=0)
     return_qr_amount = models.PositiveIntegerField(default=0)
+    location_name = models.CharField(max_length=120, blank=True)
     cs_count = models.PositiveIntegerField(default=0)
     refugee_count = models.PositiveIntegerField(default=0)
     note = models.TextField(blank=True)

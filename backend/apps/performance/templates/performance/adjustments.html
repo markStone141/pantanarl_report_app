@@ -61,6 +61,13 @@
         {% endif %}
       </div>
       <div class="dairymetrics-field">
+        <label for="{{ form.location_name.id_for_label }}">{{ form.location_name.label }}</label>
+        {{ form.location_name }}
+        {% if form.location_name.errors %}
+        <div class="error-text">{{ form.location_name.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="dairymetrics-field">
         <label for="{{ form.amount_choice.id_for_label }}">{{ form.amount_choice.label }}</label>
         {{ form.amount_choice }}
         {% if form.amount_choice.errors %}
@@ -106,6 +113,9 @@
             <td data-label="部署">{{ adjustment.department.code }}</td>
             <td data-label="種別">{{ adjustment.get_source_type_display }}</td>
             <td data-label="内容">
+              {% if adjustment.location_name %}
+              <div>{{ adjustment.location_name }}</div>
+              {% endif %}
               {% if adjustment.source_type == "postal" %}
               {{ adjustment.return_postal_amount }}円
               {% elif adjustment.source_type == "qr" %}
