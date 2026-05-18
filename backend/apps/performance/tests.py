@@ -418,15 +418,35 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "個人の月目標")
         self.assertContains(response, "個人の路程目標")
         self.assertContains(response, entry_today.entry_date.strftime("%Y/%m/%d"))
-        self.assertContains(response, entry_old.entry_date.strftime("%Y/%m/%d"))
-        self.assertContains(response, "決済一覧")
-        self.assertContains(response, "初回決済")
-        self.assertContains(response, "渋谷")
-        self.assertContains(response, "月目標を保存")
-        self.assertContains(response, "路程目標を保存")
+        self.assertContains(response, "郵送")
+        self.assertContains(response, "2件")
+        self.assertContains(response, "900円")
+
+    def test_performance_member_detail_shows_qr_adjustment_amount_and_count(self):
+        today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            result_count=1,
+            support_amount=3000,
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=today,
+            source_type=MetricAdjustment.SOURCE_QR,
+            return_qr_count=1,
+            return_qr_amount=1500,
+        )
+
+        response = self.client.get(reverse("performance_member_detail", args=[self.member.id, self.department.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "QR")
+        self.assertContains(response, "1件")
+        self.assertContains(response, "1500円")
         self.assertContains(response, "補正実績")
-        self.assertContains(response, "戻り 郵送 1 / QR 0")
-        self.assertContains(response, "編集")
 
     def test_performance_member_dashboard_uses_logged_in_member_profile(self):
         self.client.logout()

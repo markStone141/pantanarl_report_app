@@ -242,14 +242,21 @@
             <td data-label="件数">
               {% if department.code == "WV" %}
               CS {{ adjustment.cs_count }} / 難民 {{ adjustment.refugee_count }}
+              {% elif adjustment.source_type == "postal" %}
+              {{ adjustment.return_postal_count }}件
+              {% elif adjustment.source_type == "qr" %}
+              {{ adjustment.return_qr_count }}件
               {% else %}
               {{ adjustment.result_count }}件
               {% endif %}
             </td>
             <td data-label="金額">
+              {% if adjustment.source_type == "postal" %}
+              {{ adjustment.return_postal_amount|default:0 }}円
+              {% elif adjustment.source_type == "qr" %}
+              {{ adjustment.return_qr_amount|default:0 }}円
+              {% else %}
               {{ adjustment.support_amount|default:0 }}円
-              {% if adjustment.return_postal_amount or adjustment.return_qr_amount %}
-              <div class="muted">郵送 {{ adjustment.return_postal_amount|default:0 }} / QR {{ adjustment.return_qr_amount|default:0 }}</div>
               {% endif %}
             </td>
             <td data-label="メモ">{{ adjustment.note|default:"-" }}</td>
