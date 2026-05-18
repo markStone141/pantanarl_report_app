@@ -1259,7 +1259,7 @@ th {
   width: 132px;
   height: 132px;
   border-radius: 999px;
-  background: conic-gradient(var(--brand) 0deg var(--progress-angle), #dbe7f5 var(--progress-angle) 360deg);
+  background: conic-gradient(var(--brand) 0deg, var(--brand) var(--progress-angle), #dbe7f5 var(--progress-angle), #dbe7f5 360deg);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -109,7 +109,7 @@
         {% if member_month_target and not edit_month_target %}
         <div class="metric-card mt-12">
           <div class="row">
-            <strong>設定済み</strong>
+            <strong>月目標</strong>
             <a class="btn-inline" href="?month={{ selected_month|date:'Y-m' }}&edit_month_target=1">修正</a>
           </div>
           <div class="mt-8">件数 {{ member_month_target.target_count }}件</div>
@@ -150,7 +150,7 @@
         {% if member_period_target and not edit_period_target %}
         <div class="metric-card mt-12">
           <div class="row">
-            <strong>設定済み</strong>
+            <strong>路程目標</strong>
             <a class="btn-inline" href="?month={{ selected_month|date:'Y-m' }}&edit_period_target=1">修正</a>
           </div>
           <div class="mt-8">件数 {{ member_period_target.target_count }}件</div>

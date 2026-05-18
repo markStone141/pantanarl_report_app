@@ -417,7 +417,7 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "全体の路程目標")
         self.assertContains(response, "個人の月目標")
         self.assertContains(response, "個人の路程目標")
-        self.assertContains(response, "設定済み")
+        self.assertContains(response, "月目標")
         self.assertContains(response, "修正")
         self.assertContains(response, entry_today.entry_date.strftime("%Y/%m/%d"))
         self.assertContains(response, "郵送")
