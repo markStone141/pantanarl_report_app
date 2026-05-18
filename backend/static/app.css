@@ -1294,3 +1294,26 @@ th {
   gap: 4px;
   text-align: center;
 }
+
+.performance-target-config-card .row {
+  align-items: center;
+  gap: 12px;
+}
+
+.performance-target-config-values {
+  display: grid;
+  gap: 4px;
+}
+
+.performance-target-edit-btn {
+  padding: 6px 14px;
+  border: 1px solid rgba(39, 123, 211, 0.2);
+  background: linear-gradient(180deg, rgba(39, 123, 211, 0.12), rgba(39, 123, 211, 0.04));
+  color: #1f5fa8;
+  box-shadow: none;
+}
+
+.performance-target-edit-btn:hover {
+  filter: none;
+  background: linear-gradient(180deg, rgba(39, 123, 211, 0.18), rgba(39, 123, 211, 0.08));
+}

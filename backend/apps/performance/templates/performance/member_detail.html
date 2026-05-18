@@ -149,13 +149,14 @@
           <div class="muted">残り {{ member_month_progress.remaining_amount_text }}</div>
         </div>
         {% if member_month_target and not edit_month_target %}
-        <div class="metric-card mt-12">
+        <div class="metric-card mt-12 performance-target-config-card">
           <div class="row">
-            <strong>月目標</strong>
-            <a class="btn-inline" href="?month={{ selected_month|date:'Y-m' }}&edit_month_target=1">修正</a>
+            <div class="performance-target-config-values">
+              <div>件数 {{ member_month_target.target_count }}件</div>
+              <div class="muted">金額 {{ member_month_target.target_amount|floatformat:0 }}円</div>
+            </div>
+            <a class="btn-inline performance-target-edit-btn" href="?month={{ selected_month|date:'Y-m' }}&edit_month_target=1">修正</a>
           </div>
-          <div class="mt-8">件数 {{ member_month_target.target_count }}件</div>
-          <div class="muted">金額 {{ member_month_target.target_amount|floatformat:0 }}円</div>
         </div>
         {% else %}
         <form method="post" class="grid mt-12">
@@ -199,13 +200,14 @@
           <div class="muted">残り {{ member_period_progress.remaining_amount_text }}</div>
         </div>
         {% if member_period_target and not edit_period_target %}
-        <div class="metric-card mt-12">
+        <div class="metric-card mt-12 performance-target-config-card">
           <div class="row">
-            <strong>路程目標</strong>
-            <a class="btn-inline" href="?month={{ selected_month|date:'Y-m' }}&edit_period_target=1">修正</a>
+            <div class="performance-target-config-values">
+              <div>件数 {{ member_period_target.target_count }}件</div>
+              <div class="muted">金額 {{ member_period_target.target_amount|floatformat:0 }}円</div>
+            </div>
+            <a class="btn-inline performance-target-edit-btn" href="?month={{ selected_month|date:'Y-m' }}&edit_period_target=1">修正</a>
           </div>
-          <div class="mt-8">件数 {{ member_period_target.target_count }}件</div>
-          <div class="muted">金額 {{ member_period_target.target_amount|floatformat:0 }}円</div>
         </div>
         {% elif period_target_form %}
         <form method="post" class="grid mt-12">
