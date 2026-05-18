@@ -57,8 +57,12 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
         (MetricAdjustment.SOURCE_QR, "QR"),
         (MetricAdjustment.SOURCE_INCREASE, "増額"),
     ]
+    AMOUNT_DIRECT = "direct"
+    AMOUNT_CHOICES = [(str(value), f"{value:,}円") for value in range(500, 5001, 500)]
+    AMOUNT_SELECT_CHOICES = [(AMOUNT_DIRECT, "直接入力")] + AMOUNT_CHOICES
 
-    amount = forms.IntegerField(label="金額", min_value=0, initial=0)
+    amount_choice = forms.ChoiceField(label="金額", choices=AMOUNT_SELECT_CHOICES, initial="500")
+    amount = forms.IntegerField(label="金額を直接入力", min_value=0, required=False)
 
     class Meta:
         model = MetricAdjustment
@@ -75,6 +79,8 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["department"].queryset = Department.objects.filter(is_active=True).order_by("code")
+        self.fields["department"].label = "部署"
+        self.fields["member"].label = "メンバー"
         self.fields["source_type"] = forms.ChoiceField(label="種別", choices=self.SOURCE_CHOICES)
         selected_department = self._resolve_department()
         member_queryset = Member.objects.active().filter(department_links__department__is_active=True).distinct()
@@ -87,13 +93,21 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
         self.fields["department"].empty_label = "部署を選択"
         self.fields["target_date"].label = "対象日"
         self.fields["target_date"].initial = self.initial.get("target_date") or timezone.localdate()
-        self.order_fields(["department", "member", "target_date", "source_type", "amount"])
+        self.fields["amount"].widget.attrs.update({"inputmode": "numeric", "min": "0"})
+        self.order_fields(["department", "member", "target_date", "source_type", "amount_choice", "amount"])
         if self.instance and self.instance.pk:
-            self.fields["amount"].initial = self._resolve_instance_amount(self.instance)
+            initial_amount = self._resolve_instance_amount(self.instance)
+            self.fields["amount"].initial = initial_amount
+            if str(initial_amount) in {choice[0] for choice in self.AMOUNT_CHOICES}:
+                self.fields["amount_choice"].initial = str(initial_amount)
+            else:
+                self.fields["amount_choice"].initial = self.AMOUNT_DIRECT
             if self.instance.source_type in {choice[0] for choice in self.SOURCE_CHOICES}:
                 self.fields["source_type"].initial = self.instance.source_type
             else:
                 self.fields["source_type"].initial = MetricAdjustment.SOURCE_INCREASE
+        elif not self.is_bound:
+            self.fields["amount_choice"].initial = "500"
 
     def _resolve_department(self):
         if self.is_bound:
@@ -115,9 +129,24 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
             return int(instance.return_qr_amount or 0)
         return int(instance.support_amount or 0)
 
+    def clean(self):
+        cleaned_data = super().clean()
+        amount_choice = cleaned_data.get("amount_choice")
+        direct_amount = cleaned_data.get("amount")
+        if amount_choice == self.AMOUNT_DIRECT:
+            if direct_amount is None:
+                self.add_error("amount", "直接入力の金額を入れてください。")
+            else:
+                cleaned_data["resolved_amount"] = int(direct_amount)
+        elif amount_choice:
+            cleaned_data["resolved_amount"] = int(amount_choice)
+        else:
+            self.add_error("amount_choice", "金額を選択してください。")
+        return cleaned_data
+
     def save(self, commit=True):
         adjustment = super().save(commit=False)
-        amount = int(self.cleaned_data.get("amount") or 0)
+        amount = int(self.cleaned_data.get("resolved_amount") or 0)
         source_type = self.cleaned_data["source_type"]
         adjustment.source_type = source_type
         adjustment.approach_count = 0
@@ -138,6 +167,7 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
             adjustment.return_qr_count = 1 if amount > 0 else 0
             adjustment.return_qr_amount = amount
         else:
+            adjustment.result_count = 1 if amount > 0 else 0
             adjustment.support_amount = amount
         if commit:
             adjustment.save()

@@ -61,6 +61,13 @@
         {% endif %}
       </div>
       <div class="dairymetrics-field">
+        <label for="{{ form.amount_choice.id_for_label }}">{{ form.amount_choice.label }}</label>
+        {{ form.amount_choice }}
+        {% if form.amount_choice.errors %}
+        <div class="error-text">{{ form.amount_choice.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="dairymetrics-field" id="performance-adjustment-direct-amount-field">
         <label for="{{ form.amount.id_for_label }}">{{ form.amount.label }}</label>
         {{ form.amount }}
         {% if form.amount.errors %}
@@ -152,6 +159,9 @@
   (function () {
     const departmentSelect = document.getElementById("{{ form.department.id_for_label }}");
     const memberSelect = document.getElementById("{{ form.member.id_for_label }}");
+    const amountChoiceSelect = document.getElementById("{{ form.amount_choice.id_for_label }}");
+    const directAmountField = document.getElementById("performance-adjustment-direct-amount-field");
+    const directAmountInput = document.getElementById("{{ form.amount.id_for_label }}");
     const dataNode = document.getElementById("performance-adjustment-member-options");
     if (!departmentSelect || !memberSelect || !dataNode) {
       return;
@@ -187,6 +197,22 @@
       renderMembers(departmentSelect.value);
     });
     renderMembers(departmentSelect.value);
+
+    function toggleDirectAmount() {
+      if (!amountChoiceSelect || !directAmountField) {
+        return;
+      }
+      const showDirect = amountChoiceSelect.value === "direct";
+      directAmountField.hidden = !showDirect;
+      if (!showDirect && directAmountInput) {
+        directAmountInput.value = "";
+      }
+    }
+
+    if (amountChoiceSelect) {
+      amountChoiceSelect.addEventListener("change", toggleDirectAmount);
+      toggleDirectAmount();
+    }
   })();
 </script>
 {% endblock %}

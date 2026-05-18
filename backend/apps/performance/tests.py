@@ -137,7 +137,8 @@ class PerformanceManagementTests(TestCase):
                 "member": self.member.id,
                 "target_date": "2026-05-14",
                 "source_type": MetricAdjustment.SOURCE_QR,
-                "amount": 1200,
+                "amount_choice": "1500",
+                "amount": "",
             },
         )
 
@@ -146,8 +147,27 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(adjustment.created_by, self.user)
         self.assertEqual(adjustment.source_type, MetricAdjustment.SOURCE_QR)
         self.assertEqual(adjustment.return_qr_count, 1)
-        self.assertEqual(adjustment.return_qr_amount, 1200)
+        self.assertEqual(adjustment.return_qr_amount, 1500)
         self.assertEqual(adjustment.support_amount, 0)
+
+    def test_performance_adjustment_create_increase_counts_as_one(self):
+        response = self.client.post(
+            reverse("performance_adjustments"),
+            {
+                "department": self.department.id,
+                "member": self.member.id,
+                "target_date": "2026-05-15",
+                "source_type": MetricAdjustment.SOURCE_INCREASE,
+                "amount_choice": "direct",
+                "amount": "6200",
+            },
+        )
+
+        self.assertRedirects(response, reverse("performance_adjustments") + "?saved=1")
+        adjustment = MetricAdjustment.objects.get(member=self.member, department=self.department, target_date=date(2026, 5, 15))
+        self.assertEqual(adjustment.source_type, MetricAdjustment.SOURCE_INCREASE)
+        self.assertEqual(adjustment.result_count, 1)
+        self.assertEqual(adjustment.support_amount, 6200)
 
     def test_performance_index_shows_activity_lists_and_progress_with_adjustments(self):
         today = timezone.localdate()
