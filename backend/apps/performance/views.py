@@ -808,6 +808,8 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
     department_period_target_amount = int(
         _resolve_period_target_amounts_by_code(departments=[department], period=current_period).get(department.code) or 0
     )
+    edit_month_target = request.GET.get("edit_month_target") == "1"
+    edit_period_target = request.GET.get("edit_period_target") == "1"
 
     return {
         "nav_items": _performance_member_nav_items(is_admin=is_admin),
@@ -857,12 +859,16 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
             department=department,
             target_month=selected_month,
         ),
+        "member_month_target": member_month_target,
         "period_target_form": MemberScopeTargetForm(
             member=member,
             scope="period",
             department=department,
             period=current_period,
         ) if current_period else None,
+        "member_period_target": member_period_target,
+        "edit_month_target": edit_month_target,
+        "edit_period_target": edit_period_target,
         "is_admin_view": is_admin,
     }
 

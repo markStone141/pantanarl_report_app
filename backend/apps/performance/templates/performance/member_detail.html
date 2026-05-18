@@ -101,6 +101,17 @@
     <div class="grid grid-2 mt-12">
       <article class="card">
         <h4>月目標</h4>
+        {% if member_month_target and not edit_month_target %}
+        <div class="metric-card mt-10">
+          <div class="row">
+            <strong>設定済み</strong>
+            <a class="btn-inline" href="?month={{ selected_month|date:'Y-m' }}&edit_month_target=1">修正</a>
+          </div>
+          <div class="muted mt-6">{{ selected_month|date:"Y/m" }} の個人月目標</div>
+          <div class="mt-8">件数 {{ member_month_target.target_count }}件</div>
+          <div class="muted">金額 {{ member_month_target.target_amount|floatformat:0 }}円</div>
+        </div>
+        {% else %}
         <form method="post" class="grid mt-10">
           {% csrf_token %}
           <input type="hidden" name="action" value="save_month_target" />
@@ -114,10 +125,21 @@
             <button type="submit">月目標を保存</button>
           </div>
         </form>
+        {% endif %}
       </article>
       <article class="card">
         <h4>路程目標</h4>
-        {% if period_target_form %}
+        {% if member_period_target and not edit_period_target %}
+        <div class="metric-card mt-10">
+          <div class="row">
+            <strong>設定済み</strong>
+            <a class="btn-inline" href="?month={{ selected_month|date:'Y-m' }}&edit_period_target=1">修正</a>
+          </div>
+          <div class="muted mt-6">{{ period_label }} の個人路程目標</div>
+          <div class="mt-8">件数 {{ member_period_target.target_count }}件</div>
+          <div class="muted">金額 {{ member_period_target.target_amount|floatformat:0 }}円</div>
+        </div>
+        {% elif period_target_form %}
         <form method="post" class="grid mt-10">
           {% csrf_token %}
           <input type="hidden" name="action" value="save_period_target" />
@@ -231,7 +253,6 @@
             <th>種別</th>
             <th>件数</th>
             <th>金額</th>
-            <th>メモ</th>
           </tr>
         </thead>
         <tbody>
@@ -259,7 +280,6 @@
               {{ adjustment.support_amount|default:0 }}円
               {% endif %}
             </td>
-            <td data-label="メモ">{{ adjustment.note|default:"-" }}</td>
           </tr>
           {% endfor %}
         </tbody>

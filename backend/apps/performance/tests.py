@@ -417,10 +417,13 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "全体の路程目標")
         self.assertContains(response, "個人の月目標")
         self.assertContains(response, "個人の路程目標")
+        self.assertContains(response, "設定済み")
+        self.assertContains(response, "修正")
         self.assertContains(response, entry_today.entry_date.strftime("%Y/%m/%d"))
         self.assertContains(response, "郵送")
         self.assertContains(response, "2件")
         self.assertContains(response, "900円")
+        self.assertNotContains(response, "<th>メモ</th>", html=False)
 
     def test_performance_member_detail_shows_qr_adjustment_amount_and_count(self):
         today = timezone.localdate()
@@ -447,6 +450,23 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "1件")
         self.assertContains(response, "1500円")
         self.assertContains(response, "補正実績")
+
+    def test_performance_member_detail_shows_target_forms_when_edit_requested(self):
+        today = timezone.localdate()
+        MemberMonthMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            target_month=today.replace(day=1),
+            target_amount=10000,
+        )
+
+        response = self.client.get(
+            reverse("performance_member_detail", args=[self.member.id, self.department.id]),
+            {"month": today.strftime("%Y-%m"), "edit_month_target": "1"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "月目標を保存")
 
     def test_performance_member_dashboard_uses_logged_in_member_profile(self):
         self.client.logout()
