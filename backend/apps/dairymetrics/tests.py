@@ -3588,3 +3588,17 @@ class DairyMetricsV2DemoTests(TestCase):
         self.assertContains(response, "UN の全体分析デモ")
         self.assertContains(response, "ランキングモード")
         self.assertContains(response, "属性別の平均金額")
+
+    def test_metrics_v2_demo_defaults_admin_department_to_un(self):
+        other_department = Department.objects.create(code="WV", name="WV")
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("dairymetrics_metrics_v2_demo"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_department"].code, "UN")
+        self.assertContains(
+            response,
+            f'<option value="{self.department.code}" selected>{self.department.name}</option>',
+            html=True,
+        )

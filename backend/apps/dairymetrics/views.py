@@ -113,6 +113,8 @@ def _resolve_metrics_v2_department(*, request, member):
     selected_department = None
     if requested_code:
         selected_department = next((department for department in departments if department.code == requested_code), None)
+    if not selected_department:
+        selected_department = next((department for department in departments if department.code == "UN"), None)
     if not selected_department and member and member.default_department_id:
         selected_department = next((department for department in departments if department.id == member.default_department_id), None)
     if not selected_department and departments:
