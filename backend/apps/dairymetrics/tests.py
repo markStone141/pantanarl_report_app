@@ -1867,7 +1867,7 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertNotContains(response, ">STYLE1<", html=False)
         self.assertContains(response, 'data-member-filter-select', html=False)
 
-    def test_member_index_defaults_filter_to_viewer_department(self):
+    def test_member_index_defaults_filter_to_un_when_available(self):
         un_department = Department.objects.create(code="UN", name="UN")
         un_member = Member.objects.create(name="UN Member")
         MemberDepartment.objects.create(member=un_member, department=un_department)
@@ -1876,8 +1876,8 @@ class DairyMetricsDashboardTests(TestCase):
         response = self.client.get(reverse("dairymetrics_member_index"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'data-member-filter-value="WV" aria-pressed="true"', html=False)
-        self.assertContains(response, '<option value="WV" selected>WV</option>', html=False)
+        self.assertContains(response, 'data-member-filter-value="UN" aria-pressed="true"', html=False)
+        self.assertContains(response, '<option value="UN" selected>UN</option>', html=False)
 
     def test_member_dashboard_ajax_switches_selected_member(self):
         inactive_member = Member.objects.create(name="Inactive Member", is_active=False)
