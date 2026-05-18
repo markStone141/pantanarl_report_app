@@ -391,6 +391,7 @@ def _build_active_member_cards(*, members, today, current_period, selected_depar
                 )
             )
         zero_streak_warning = len(latest_final_counts) == 3 and all(count == 0 for count in latest_final_counts)
+        active_streak_good = len(latest_final_counts) == 3 and all(count >= 1 for count in latest_final_counts)
         if entry is not None:
             recent_totals = _build_adjustment_totals_map([entry]).get(
                 (entry.member_id, entry.department_id, entry.entry_date),
@@ -431,6 +432,8 @@ def _build_active_member_cards(*, members, today, current_period, selected_depar
                 "recent_sort_date": recent_sort_date,
                 "zero_streak_warning": zero_streak_warning,
                 "zero_streak_text": "3稼働連続0件" if zero_streak_warning else "",
+                "active_streak_good": active_streak_good,
+                "active_streak_text": "3稼働連続1件以上" if active_streak_good else "",
                 "detail_url": reverse(
                     "performance_member_detail",
                     args=[member.id, department.id],

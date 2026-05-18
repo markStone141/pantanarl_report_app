@@ -105,7 +105,7 @@
     {% if dashboard_snapshot.active_member_cards %}
     <div class="grid grid-2 mt-12">
       {% for card in dashboard_snapshot.active_member_cards %}
-      <a class="card performance-member-card-link{% if card.zero_streak_warning %} performance-member-card-link-warning{% endif %}" href="{{ card.detail_url }}">
+      <a class="card performance-member-card-link{% if card.zero_streak_warning %} performance-member-card-link-warning{% elif card.active_streak_good %} performance-member-card-link-positive{% endif %}" href="{{ card.detail_url }}">
         <div class="row performance-member-card-head">
           <div>
             <strong>{{ card.member_name }}</strong>
@@ -113,6 +113,8 @@
           </div>
           {% if card.zero_streak_warning %}
           <span class="badge performance-warning-badge">{{ card.zero_streak_text }}</span>
+          {% elif card.active_streak_good %}
+          <span class="badge performance-positive-badge">{{ card.active_streak_text }}</span>
           {% endif %}
         </div>
         <div class="muted performance-member-card-updated">

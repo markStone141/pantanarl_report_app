@@ -360,6 +360,23 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "3稼働連続0件")
 
+    def test_performance_index_marks_member_when_last_three_entries_have_results(self):
+        today = timezone.localdate()
+        for offset, count in enumerate((2, 1, 3)):
+            MemberDailyMetricEntry.objects.create(
+                member=self.member,
+                department=self.department,
+                entry_date=today - timedelta(days=offset),
+                result_count=count,
+                support_amount=1000 * count,
+                activity_closed=True,
+            )
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "3稼働連続1件以上")
+
     def test_performance_member_detail_shows_current_month_entries(self):
         today = timezone.localdate()
         active_period = Period.objects.create(
