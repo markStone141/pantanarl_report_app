@@ -24,93 +24,6 @@
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
   <section class="card mt-16">
-    <h3>直近稼働の全体実績推移</h3>
-    <p id="performance-trend-description" class="muted">1稼働 = 実績が登録された1日です。金額は棒、{{ dashboard_snapshot.overall_activity_trend.count_label }}は折れ線で表示します。</p>
-    {% if dashboard_snapshot.overall_activity_trend.has_data %}
-    {{ dashboard_snapshot.overall_activity_trend|json_script:"performance-activity-trend-data" }}
-    <div class="performance-trend-legend mt-12">
-      <span id="performance-trend-primary-legend" class="performance-trend-legend-item">
-        <span id="performance-trend-primary-swatch" class="performance-trend-legend-swatch performance-trend-legend-swatch-bar"></span>
-        <span id="performance-trend-primary-label">金額</span>
-      </span>
-      <span id="performance-trend-secondary-legend" class="performance-trend-legend-item">
-        <span id="performance-trend-secondary-swatch" class="performance-trend-legend-swatch performance-trend-legend-swatch-line"></span>
-        <span id="performance-trend-line-label">{{ dashboard_snapshot.overall_activity_trend.count_label }}</span>
-      </span>
-    </div>
-    <div class="performance-trend-controls mt-12">
-      <button type="button" id="performance-trend-decrease" class="btn-inline">-10</button>
-      <span id="performance-trend-visible-count" class="muted"></span>
-      <button type="button" id="performance-trend-increase" class="btn-inline">+10</button>
-    </div>
-    <div class="performance-trend-mode-switch mt-12">
-      <button type="button" id="performance-trend-mode-amount" class="btn-inline is-active">金額/件数</button>
-      <button type="button" id="performance-trend-mode-rate" class="btn-inline">日目達成率</button>
-      <button type="button" id="performance-trend-mode-activity" class="btn-inline">AP/CM</button>
-    </div>
-    <div class="performance-chart-card mt-12">
-      <canvas id="performance-activity-trend-chart" aria-label="直近稼働の全体実績推移"></canvas>
-    </div>
-    {% else %}
-    <p class="muted mt-12">表示できる稼働実績はまだありません。</p>
-    {% endif %}
-  </section>
-
-  <section class="card mt-16">
-    <h3>有効メンバー一覧</h3>
-    {% if dashboard_snapshot.active_member_cards %}
-    <div class="grid grid-2 mt-12">
-      {% for card in dashboard_snapshot.active_member_cards %}
-      <a class="card performance-member-card-link" href="{{ card.detail_url }}">
-        <div class="row">
-          <strong>{{ card.member_name }}</strong>
-          <span class="badge">{{ card.department_code }}</span>
-        </div>
-        <div class="muted mt-6">
-          {% if card.recent_date_text == "-" %}
-          実績なし
-          {% else %}
-          {{ card.updated_at }} 更新
-          {% endif %}
-        </div>
-        <div class="grid grid-3 mt-12">
-          <div class="metric-card">
-            <span class="muted">今月の実績</span>
-            <strong>{{ card.month_amount_text }}</strong>
-            <div class="muted">{{ card.month_count_text }}</div>
-          </div>
-          <div class="metric-card">
-            <span class="muted">今路程の実績</span>
-            <strong>{{ card.period_amount_text }}</strong>
-            <div class="muted">{{ card.period_count_text }}</div>
-          </div>
-          <div class="metric-card">
-            <span class="muted">直近の実績</span>
-            <strong>{{ card.recent_amount_text }}</strong>
-            <div class="muted">{{ card.recent_date_text }} / {{ card.recent_count_text }}</div>
-          </div>
-        </div>
-        <div class="grid grid-2 mt-12">
-          <div class="metric-card">
-            <span class="muted">{{ card.month_target_progress.label }}</span>
-            <strong>{{ card.month_target_progress.rate_text }}</strong>
-            <div class="muted">{{ card.month_target_progress.actual_amount_text }} / {{ card.month_target_progress.target_amount_text }}</div>
-          </div>
-          <div class="metric-card">
-            <span class="muted">{{ card.period_target_progress.label }}</span>
-            <strong>{{ card.period_target_progress.rate_text }}</strong>
-            <div class="muted">{{ card.period_target_progress.actual_amount_text }} / {{ card.period_target_progress.target_amount_text }}</div>
-          </div>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-    {% else %}
-    <p class="muted">有効なメンバーはいません。</p>
-    {% endif %}
-  </section>
-
-  <section class="card mt-16">
     <h3>本日の活動状況</h3>
     <div class="grid grid-2 mt-12">
       <article class="card">
@@ -152,6 +65,86 @@
         {% endif %}
       </article>
     </div>
+  </section>
+
+  <section class="card mt-16">
+    <h3>直近稼働の全体実績推移</h3>
+    <p id="performance-trend-description" class="muted">1稼働 = 実績が登録された1日です。金額は棒、{{ dashboard_snapshot.overall_activity_trend.count_label }}は折れ線で表示します。</p>
+    {% if dashboard_snapshot.overall_activity_trend.has_data %}
+    {{ dashboard_snapshot.overall_activity_trend|json_script:"performance-activity-trend-data" }}
+    <div class="performance-trend-legend mt-12">
+      <span id="performance-trend-primary-legend" class="performance-trend-legend-item">
+        <span id="performance-trend-primary-swatch" class="performance-trend-legend-swatch performance-trend-legend-swatch-bar"></span>
+        <span id="performance-trend-primary-label">金額</span>
+      </span>
+      <span id="performance-trend-secondary-legend" class="performance-trend-legend-item">
+        <span id="performance-trend-secondary-swatch" class="performance-trend-legend-swatch performance-trend-legend-swatch-line"></span>
+        <span id="performance-trend-line-label">{{ dashboard_snapshot.overall_activity_trend.count_label }}</span>
+      </span>
+    </div>
+    <div class="performance-trend-controls mt-12">
+      <button type="button" id="performance-trend-decrease" class="btn-inline">-10</button>
+      <span id="performance-trend-visible-count" class="muted"></span>
+      <button type="button" id="performance-trend-increase" class="btn-inline">+10</button>
+    </div>
+    <div class="performance-trend-mode-switch mt-12">
+      <button type="button" id="performance-trend-mode-amount" class="btn-inline is-active">金額/件数</button>
+      <button type="button" id="performance-trend-mode-rate" class="btn-inline">日目達成率</button>
+      <button type="button" id="performance-trend-mode-activity" class="btn-inline">AP/CM</button>
+    </div>
+    <div class="performance-chart-card mt-12">
+      <canvas id="performance-activity-trend-chart" aria-label="直近稼働の全体実績推移"></canvas>
+    </div>
+    {% else %}
+    <p class="muted mt-12">表示できる稼働実績はまだありません。</p>
+    {% endif %}
+  </section>
+
+  <section class="card mt-16">
+    <h3>有効メンバー一覧</h3>
+    {% if dashboard_snapshot.active_member_cards %}
+    <div class="grid grid-2 mt-12">
+      {% for card in dashboard_snapshot.active_member_cards %}
+      <a class="card performance-member-card-link{% if card.zero_streak_warning %} performance-member-card-link-warning{% endif %}" href="{{ card.detail_url }}">
+        <div class="row performance-member-card-head">
+          <div>
+            <strong>{{ card.member_name }}</strong>
+            <div class="muted mt-4">{{ card.department_code }}</div>
+          </div>
+          {% if card.zero_streak_warning %}
+          <span class="badge performance-warning-badge">{{ card.zero_streak_text }}</span>
+          {% endif %}
+        </div>
+        <div class="muted performance-member-card-updated">
+          {% if card.recent_date_text == "-" %}
+          実績なし
+          {% else %}
+          {{ card.updated_at }} 更新
+          {% endif %}
+        </div>
+        <div class="grid grid-3 mt-10 performance-member-card-grid">
+          <div class="metric-card performance-member-card-metric">
+            <span class="muted">今月累計</span>
+            <strong>{{ card.month_amount_text }}</strong>
+            <div class="muted">{{ card.month_count_text }}</div>
+          </div>
+          <div class="metric-card performance-member-card-metric">
+            <span class="muted">路程累計</span>
+            <strong>{{ card.period_amount_text }}</strong>
+            <div class="muted">{{ card.period_count_text }}</div>
+          </div>
+          <div class="metric-card performance-member-card-metric">
+            <span class="muted">直近の実績</span>
+            <strong>{{ card.recent_amount_text }}</strong>
+            <div class="muted">{{ card.recent_date_text }} / {{ card.recent_count_text }}</div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">有効なメンバーはいません。</p>
+    {% endif %}
   </section>
 
   <section class="card mt-16">

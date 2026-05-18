@@ -300,6 +300,16 @@ def _final_count_text(*, department_code, totals):
     return f"{total_count}件"
 
 
+def _final_count_value(*, department_code, totals):
+    if department_code == "WV":
+        return int(totals.get("cs_count") or 0) + int(totals.get("refugee_count") or 0)
+    return (
+        int(totals.get("result_count") or 0)
+        + int(totals.get("return_postal_count") or 0)
+        + int(totals.get("return_qr_count") or 0)
+    )
+
+
 def _final_amount_text(*, totals):
     total_amount = (
         int(totals.get("support_amount") or 0)
@@ -348,30 +358,39 @@ def _build_active_member_cards(*, members, today, current_period, selected_depar
             min(current_period.end_date, today) if current_period else today,
             include_adjustments=True,
         )
-        month_target = MemberMonthMetricTarget.objects.filter(
-            member=member,
-            department=department,
-            target_month=month_start,
-        ).first()
-        period_target = (
-            MemberPeriodMetricTarget.objects.filter(
-                member=member,
-                department=department,
-                period=current_period,
-            ).first()
-            if current_period
-            else None
+        latest_entries = list(
+            MemberDailyMetricEntry.objects.filter(member=member, department=department)
+            .order_by("-entry_date", "-id")[:3]
         )
-        month_actual_amount = (
-            int(month_totals.get("support_amount") or 0)
-            + int(month_totals.get("return_postal_amount") or 0)
-            + int(month_totals.get("return_qr_amount") or 0)
-        )
-        period_actual_amount = (
-            int(period_totals.get("support_amount") or 0)
-            + int(period_totals.get("return_postal_amount") or 0)
-            + int(period_totals.get("return_qr_amount") or 0)
-        )
+        latest_adjustment_totals = _build_adjustment_totals_map(latest_entries)
+        latest_final_counts = []
+        for latest_entry in latest_entries:
+            latest_totals = latest_adjustment_totals.get(
+                (latest_entry.member_id, latest_entry.department_id, latest_entry.entry_date),
+                {
+                    "result_count": 0,
+                    "support_amount": 0,
+                    "return_postal_count": 0,
+                    "return_postal_amount": 0,
+                    "return_qr_count": 0,
+                    "return_qr_amount": 0,
+                    "cs_count": 0,
+                    "refugee_count": 0,
+                },
+            )
+            latest_final_counts.append(
+                _final_count_value(
+                    department_code=department.code,
+                    totals={
+                        "result_count": int(latest_entry.result_count or 0) + int(latest_totals["result_count"]),
+                        "return_postal_count": int(latest_totals["return_postal_count"]),
+                        "return_qr_count": int(latest_totals["return_qr_count"]),
+                        "cs_count": int(latest_entry.cs_count or 0) + int(latest_totals["cs_count"]),
+                        "refugee_count": int(latest_entry.refugee_count or 0) + int(latest_totals["refugee_count"]),
+                    },
+                )
+            )
+        zero_streak_warning = len(latest_final_counts) == 3 and all(count == 0 for count in latest_final_counts)
         if entry is not None:
             recent_totals = _build_adjustment_totals_map([entry]).get(
                 (entry.member_id, entry.department_id, entry.entry_date),
@@ -404,22 +423,14 @@ def _build_active_member_cards(*, members, today, current_period, selected_depar
                 "updated_at": updated_at_text,
                 "month_amount_text": _final_amount_text(totals=month_totals),
                 "month_count_text": _final_count_text(department_code=department.code, totals=month_totals),
-                "month_target_progress": _build_member_target_progress(
-                    label="月目標達成率",
-                    actual_amount=month_actual_amount,
-                    target_amount=int(month_target.target_amount if month_target else 0),
-                ),
                 "period_amount_text": _final_amount_text(totals=period_totals),
                 "period_count_text": _final_count_text(department_code=department.code, totals=period_totals),
-                "period_target_progress": _build_member_target_progress(
-                    label="路程目標達成率",
-                    actual_amount=period_actual_amount,
-                    target_amount=int(period_target.target_amount if period_target else 0),
-                ),
                 "recent_date_text": recent_date_text,
                 "recent_amount_text": recent_amount_text,
                 "recent_count_text": recent_count_text,
                 "recent_sort_date": recent_sort_date,
+                "zero_streak_warning": zero_streak_warning,
+                "zero_streak_text": "3稼働連続0件" if zero_streak_warning else "",
                 "detail_url": reverse(
                     "performance_member_detail",
                     args=[member.id, department.id],

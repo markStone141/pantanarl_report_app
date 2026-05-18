@@ -294,13 +294,9 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "有効メンバー一覧")
         self.assertContains(response, self.member.name)
-        self.assertContains(response, "今月の実績")
-        self.assertContains(response, "今路程の実績")
+        self.assertContains(response, "今月累計")
+        self.assertContains(response, "路程累計")
         self.assertContains(response, "直近の実績")
-        self.assertContains(response, "月目標達成率")
-        self.assertContains(response, "路程目標達成率")
-        self.assertContains(response, "60.0%")
-        self.assertContains(response, "30.0%")
         self.assertContains(response, reverse("performance_member_detail", args=[self.member.id, self.department.id]))
 
     def test_performance_index_shows_enabled_member_card_without_today_entry(self):
@@ -346,6 +342,23 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         content = response.content.decode("utf-8")
         self.assertLess(content.index("Newer"), content.index("Older"))
+
+    def test_performance_index_marks_member_when_last_three_entries_are_zero_count(self):
+        today = timezone.localdate()
+        for offset in range(3):
+            MemberDailyMetricEntry.objects.create(
+                member=self.member,
+                department=self.department,
+                entry_date=today - timedelta(days=offset),
+                result_count=0,
+                support_amount=0,
+                activity_closed=True,
+            )
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "3稼働連続0件")
 
     def test_performance_member_detail_shows_current_month_entries(self):
         today = timezone.localdate()
