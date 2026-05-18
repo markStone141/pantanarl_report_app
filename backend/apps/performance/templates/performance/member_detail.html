@@ -17,6 +17,7 @@
       {% for url_name, label in nav_items %}
       <a href="{% url url_name %}">{{ label }}</a>
       {% endfor %}
+      <a href="{% url 'dairymetrics_metrics_v2_demo' %}?department={{ department.code }}">Metrics V2</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
