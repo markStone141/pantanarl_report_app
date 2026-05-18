@@ -179,10 +179,13 @@
         <div class="muted">他メンバーとの比較を客観的に確認できます。</div>
       </div>
     </div>
-    <div class="metrics-v2-ranking-switch mt-12">
-      {% for option in metrics_v2_payload.ranking.options %}
-      <button type="button" class="btn-inline{% if option.key == metrics_v2_payload.ranking.default_metric %} is-active{% endif %}" data-metrics-v2-ranking-button data-metric-key="{{ option.key }}">{{ option.label }}</button>
-      {% endfor %}
+    <div class="mt-12">
+      <label for="metrics-v2-ranking-metric">指標</label>
+      <select id="metrics-v2-ranking-metric" data-metrics-v2-ranking-select>
+        {% for option in metrics_v2_payload.ranking.options %}
+        <option value="{{ option.key }}" {% if option.key == metrics_v2_payload.ranking.default_metric %}selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
+      </select>
     </div>
     <div class="metrics-v2-chart-frame metrics-v2-chart-frame-ranking mt-12">
       <canvas id="metrics-v2-ranking-chart" class="metrics-v2-ranking-chart" aria-label="ランキング"></canvas>
@@ -218,10 +221,13 @@
         <div class="muted">年代・男女・国籍で平均金額の差を確認できます。</div>
       </div>
     </div>
-    <div class="metrics-v2-ranking-switch mt-12">
-      <button type="button" class="btn-inline is-active" data-metrics-v2-amount-mode="age">年代</button>
-      <button type="button" class="btn-inline" data-metrics-v2-amount-mode="gender">男女</button>
-      <button type="button" class="btn-inline" data-metrics-v2-amount-mode="nationality">国籍</button>
+    <div class="mt-12">
+      <label for="metrics-v2-amount-mode">分類</label>
+      <select id="metrics-v2-amount-mode" data-metrics-v2-amount-select>
+        <option value="age">年代</option>
+        <option value="gender">男女</option>
+        <option value="nationality">国籍</option>
+      </select>
     </div>
     <div class="metrics-v2-chart-frame mt-12">
       <canvas id="metrics-v2-average-amount-chart" class="metrics-v2-history-chart" aria-label="属性別の平均金額"></canvas>
@@ -229,6 +235,6 @@
   </section>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=3"></script>
+<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=4"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 {% endblock %}

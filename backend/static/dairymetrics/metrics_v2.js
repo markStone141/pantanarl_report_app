@@ -171,7 +171,7 @@
 
   const rankingCanvas = document.getElementById("metrics-v2-ranking-chart");
   const rankingList = document.getElementById("metrics-v2-ranking-list");
-  const rankingButtons = document.querySelectorAll("[data-metrics-v2-ranking-button]");
+  const rankingSelect = document.querySelector("[data-metrics-v2-ranking-select]");
   let rankingChart = null;
 
   function renderRanking(metricKey) {
@@ -243,21 +243,26 @@
         rankingList.appendChild(item);
       });
     }
-    rankingButtons.forEach(function (button) {
-      button.classList.toggle("is-active", button.dataset.metricKey === metricKey);
-    });
+    if (rankingSelect) {
+      rankingSelect.value = metricKey;
+    }
   }
 
-  rankingButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      renderRanking(button.dataset.metricKey);
+  if (rankingSelect) {
+    rankingSelect.addEventListener("change", function () {
+      renderRanking(rankingSelect.value);
     });
-  });
+  }
   renderRanking((payload.ranking && payload.ranking.default_metric) || "support_amount");
 
-  const amountModeButtons = document.querySelectorAll("[data-metrics-v2-amount-mode]");
+  const amountModeSelect = document.querySelector("[data-metrics-v2-amount-select]");
   const averageAmountCanvas = document.getElementById("metrics-v2-average-amount-chart");
   let averageAmountChart = null;
+  const amountPalettes = {
+    age: ["#1d7dfa", "#56d4a7", "#f59e0b", "#8b5cf6", "#ef4444", "#14b8a6", "#f97316", "#94a3b8", "#7bc4ff"],
+    gender: ["#1d7dfa", "#ec4899", "#94a3b8"],
+    nationality: ["#56d4a7", "#f59e0b", "#8b5cf6"],
+  };
 
   function renderAverageAmount(mode) {
     const chartPayload = payload.average_amount_comparison ? payload.average_amount_comparison[mode] : null;
@@ -275,7 +280,10 @@
           {
             label: chartPayload.title,
             data: chartPayload.values,
-            backgroundColor: "#56d4a7",
+            backgroundColor: chartPayload.labels.map(function (_label, index) {
+              const palette = amountPalettes[mode] || amountPalettes.age;
+              return palette[index % palette.length];
+            }),
             borderRadius: 8,
           },
         ],
@@ -298,15 +306,15 @@
         },
       },
     });
-    amountModeButtons.forEach(function (button) {
-      button.classList.toggle("is-active", button.dataset.metricsV2AmountMode === mode);
-    });
+    if (amountModeSelect) {
+      amountModeSelect.value = mode;
+    }
   }
 
-  amountModeButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      renderAverageAmount(button.dataset.metricsV2AmountMode);
+  if (amountModeSelect) {
+    amountModeSelect.addEventListener("change", function () {
+      renderAverageAmount(amountModeSelect.value);
     });
-  });
+  }
   renderAverageAmount("age");
 })();
