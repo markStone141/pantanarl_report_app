@@ -130,16 +130,16 @@
         descriptionNode.textContent = "1稼働 = 実績が登録された1日です。各稼働日の目標金額に対する達成率を折れ線で表示します。";
       }
       if (primaryLegendNode) {
-        primaryLegendNode.hidden = true;
+        primaryLegendNode.hidden = false;
+      }
+      if (primarySwatchNode) {
+        primarySwatchNode.className = "performance-trend-legend-swatch performance-trend-legend-swatch-line";
+      }
+      if (primaryLabelNode) {
+        primaryLabelNode.textContent = "達成率（%）";
       }
       if (secondaryLegendNode) {
-        secondaryLegendNode.hidden = false;
-      }
-      if (secondarySwatchNode) {
-        secondarySwatchNode.className = "performance-trend-legend-swatch performance-trend-legend-swatch-line";
-      }
-      if (lineLabelNode) {
-        lineLabelNode.textContent = "達成率（%）";
+        secondaryLegendNode.hidden = true;
       }
       return;
     }
@@ -281,7 +281,7 @@
       chart.data.datasets = [
         {
           type: "line",
-          label: "日目達成率",
+          label: "達成率（%）",
           data: sliceLatest(allRateValues),
           yAxisID: "yRate",
           borderColor: "#ef7d32",
@@ -417,5 +417,6 @@
     });
   }
 
+  updateLegend();
   syncControls();
 })();
