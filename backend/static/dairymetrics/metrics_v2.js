@@ -238,7 +238,6 @@
   buildComboChart("metrics-v2-period-history-chart", payload.period_history);
 
   const rankingCanvas = document.getElementById("metrics-v2-ranking-chart");
-  const rankingList = document.getElementById("metrics-v2-ranking-list");
   const rankingSelect = document.querySelector("[data-metrics-v2-ranking-select]");
   let rankingChart = null;
 
@@ -301,16 +300,6 @@
       },
     });
 
-    if (rankingList) {
-      rankingList.innerHTML = "";
-      metricPayload.rows.forEach(function (row) {
-        const item = document.createElement("a");
-        item.className = "metric-card metrics-v2-ranking-row";
-        item.href = row.detail_url;
-        item.innerHTML = '<div class="row"><strong>' + row.member_name + '</strong><span>' + row.value_text + "</span></div>";
-        rankingList.appendChild(item);
-      });
-    }
     if (rankingSelect) {
       rankingSelect.value = metricKey;
     }
