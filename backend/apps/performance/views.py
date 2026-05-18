@@ -241,6 +241,23 @@ def _build_progress_card(*, label, actual_amount, target_amount, summary_text):
     }
 
 
+def _build_contribution_summary(*, member_actual_amount, department_actual_amount):
+    department_amount = int(department_actual_amount or 0)
+    member_amount = int(member_actual_amount or 0)
+    if department_amount <= 0:
+        return {
+            "rate": None,
+            "rate_text": "-",
+            "detail_text": "全体実績がまだありません。",
+        }
+    rate = round((member_amount / department_amount) * 100, 1)
+    return {
+        "rate": rate,
+        "rate_text": f"{rate}%",
+        "detail_text": f"全体 {department_amount:,}円中 {member_amount:,}円",
+    }
+
+
 def _build_member_target_progress(*, label, actual_amount, target_amount):
     rate = _progress_rate(actual_amount, target_amount)
     return {
@@ -828,8 +845,49 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
     department_period_target_amount = int(
         _resolve_period_target_amounts_by_code(departments=[department], period=current_period).get(department.code) or 0
     )
+    department_month_actual_amount = (
+        int(department_month_totals.get("support_amount") or 0)
+        + int(department_month_totals.get("return_postal_amount") or 0)
+        + int(department_month_totals.get("return_qr_amount") or 0)
+    )
+    department_period_actual_amount = (
+        int(department_period_totals.get("support_amount") or 0)
+        + int(department_period_totals.get("return_postal_amount") or 0)
+        + int(department_period_totals.get("return_qr_amount") or 0)
+    )
+    member_month_actual_amount = (
+        int(member_month_totals.get("support_amount") or 0)
+        + int(member_month_totals.get("return_postal_amount") or 0)
+        + int(member_month_totals.get("return_qr_amount") or 0)
+    )
+    member_period_actual_amount = (
+        int(member_period_totals.get("support_amount") or 0)
+        + int(member_period_totals.get("return_postal_amount") or 0)
+        + int(member_period_totals.get("return_qr_amount") or 0)
+    )
     edit_month_target = request.GET.get("edit_month_target") == "1"
     edit_period_target = request.GET.get("edit_period_target") == "1"
+
+    department_month_progress = _build_progress_card(
+        label="全体の月目標",
+        actual_amount=department_month_actual_amount,
+        target_amount=department_month_target_amount,
+        summary_text=f"{department.code} 全体の{selected_month:%Y/%m}進捗",
+    )
+    department_month_progress["contribution"] = _build_contribution_summary(
+        member_actual_amount=member_month_actual_amount,
+        department_actual_amount=department_month_actual_amount,
+    )
+    department_period_progress = _build_progress_card(
+        label="全体の路程目標",
+        actual_amount=department_period_actual_amount,
+        target_amount=department_period_target_amount,
+        summary_text=f"{department.code} 全体の現在路程進捗",
+    )
+    department_period_progress["contribution"] = _build_contribution_summary(
+        member_actual_amount=member_period_actual_amount,
+        department_actual_amount=department_period_actual_amount,
+    )
 
     return {
         "nav_items": _performance_member_nav_items(is_admin=is_admin),
@@ -841,35 +899,17 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "entry_rows": entry_rows,
         "adjustment_rows": adjustment_rows,
         "activity_trend": activity_trend,
-        "department_month_progress": _build_progress_card(
-            label="全体の月目標",
-            actual_amount=int(department_month_totals.get("support_amount") or 0)
-            + int(department_month_totals.get("return_postal_amount") or 0)
-            + int(department_month_totals.get("return_qr_amount") or 0),
-            target_amount=department_month_target_amount,
-            summary_text=f"{department.code} 全体の{selected_month:%Y/%m}進捗",
-        ),
-        "department_period_progress": _build_progress_card(
-            label="全体の路程目標",
-            actual_amount=int(department_period_totals.get("support_amount") or 0)
-            + int(department_period_totals.get("return_postal_amount") or 0)
-            + int(department_period_totals.get("return_qr_amount") or 0),
-            target_amount=department_period_target_amount,
-            summary_text=f"{department.code} 全体の現在路程進捗",
-        ),
+        "department_month_progress": department_month_progress,
+        "department_period_progress": department_period_progress,
         "member_month_progress": _build_progress_card(
             label="個人の月目標",
-            actual_amount=int(member_month_totals.get("support_amount") or 0)
-            + int(member_month_totals.get("return_postal_amount") or 0)
-            + int(member_month_totals.get("return_qr_amount") or 0),
+            actual_amount=member_month_actual_amount,
             target_amount=int(member_month_target.target_amount if member_month_target else 0),
             summary_text=f"{member.name} さんの{selected_month:%Y/%m}進捗",
         ),
         "member_period_progress": _build_progress_card(
             label="個人の路程目標",
-            actual_amount=int(member_period_totals.get("support_amount") or 0)
-            + int(member_period_totals.get("return_postal_amount") or 0)
-            + int(member_period_totals.get("return_qr_amount") or 0),
+            actual_amount=member_period_actual_amount,
             target_amount=int(member_period_target.target_amount if member_period_target else 0),
             summary_text=f"{member.name} さんの現在路程進捗",
         ),

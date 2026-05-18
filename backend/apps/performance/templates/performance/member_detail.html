@@ -82,6 +82,13 @@
           <div class="muted">目標 {{ department_month_progress.target_amount_text }}</div>
           <div class="muted">残り {{ department_month_progress.remaining_amount_text }}</div>
         </div>
+        <div class="metric-card mt-12">
+          <div class="row">
+            <strong>自分の貢献</strong>
+            <span class="badge">{{ department_month_progress.contribution.rate_text }}</span>
+          </div>
+          <div class="muted mt-8">{{ department_month_progress.contribution.detail_text }}</div>
+        </div>
       </article>
       <article class="card performance-progress-card">
         <div class="row">
@@ -107,6 +114,13 @@
           <div>実績 {{ department_period_progress.actual_amount_text }}</div>
           <div class="muted">目標 {{ department_period_progress.target_amount_text }}</div>
           <div class="muted">残り {{ department_period_progress.remaining_amount_text }}</div>
+        </div>
+        <div class="metric-card mt-12">
+          <div class="row">
+            <strong>自分の貢献</strong>
+            <span class="badge">{{ department_period_progress.contribution.rate_text }}</span>
+          </div>
+          <div class="muted mt-8">{{ department_period_progress.contribution.detail_text }}</div>
         </div>
       </article>
       <article class="card performance-progress-card">
