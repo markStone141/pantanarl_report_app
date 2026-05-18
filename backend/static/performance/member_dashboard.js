@@ -9,15 +9,21 @@
       canvas.width = 132;
       canvas.height = 132;
       const rawRate = canvas.dataset.rate;
+      const chartValues = (canvas.dataset.chartValues || "")
+        .split(",")
+        .map(function (value) { return Number(value || 0); })
+        .filter(function (value) { return !Number.isNaN(value); });
       const numericRate = rawRate === "" ? null : Number(rawRate);
       const boundedRate = numericRate == null || Number.isNaN(numericRate) ? 0 : Math.max(0, Math.min(numericRate, 100));
+      const datasetValues = chartValues.length ? chartValues : (boundedRate > 0 ? [boundedRate, 100 - boundedRate] : [0, 100]);
+      const datasetColors = chartValues.length >= 3 ? ["#0a84ff", "#f59e0b", "#dbe7f5"] : ["#0a84ff", "#dbe7f5"];
       new window.Chart(context, {
         type: "doughnut",
         data: {
           datasets: [
             {
-              data: boundedRate > 0 ? [boundedRate, 100 - boundedRate] : [0, 100],
-              backgroundColor: ["#0a84ff", "#dbe7f5"],
+              data: datasetValues,
+              backgroundColor: datasetColors,
               borderWidth: 0,
               hoverOffset: 0,
             },

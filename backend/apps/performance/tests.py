@@ -300,9 +300,11 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "活動終了メンバー")
         self.assertContains(response, active_entry.member.name)
         self.assertContains(response, finished_entry.member.name)
-        self.assertContains(response, "月目標達成率")
+        self.assertContains(response, "目標達成率")
         self.assertContains(response, "70.0%")
         self.assertContains(response, "7,000円")
+        self.assertContains(response, "補正 2,000円")
+        self.assertContains(response, 'data-chart-values="5000,2000,3000"', html=False)
 
     def test_performance_index_shows_active_member_cards_with_detail_link(self):
         today = timezone.localdate()

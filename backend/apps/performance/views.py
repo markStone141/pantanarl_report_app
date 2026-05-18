@@ -229,26 +229,62 @@ def _resolve_period_target_amounts_by_code(*, departments, period):
     return target_map
 
 
+def _collect_adjustment_amounts_by_codes(*, target_codes, start_date, end_date):
+    if not target_codes:
+        return {}
+    rows = (
+        MetricAdjustment.objects.filter(
+            department__code__in=target_codes,
+            target_date__range=(start_date, end_date),
+        )
+        .values("department__code")
+        .annotate(
+            support_amount_total=Sum("support_amount"),
+            return_postal_amount_total=Sum("return_postal_amount"),
+            return_qr_amount_total=Sum("return_qr_amount"),
+        )
+    )
+    return {
+        row["department__code"]: (
+            int(row["support_amount_total"] or 0)
+            + int(row["return_postal_amount_total"] or 0)
+            + int(row["return_qr_amount_total"] or 0)
+        )
+        for row in rows
+    }
+
+
 def _progress_rate(actual, target):
     if target <= 0:
         return None
     return round((actual / target) * 100, 1)
 
 
-def _build_progress_card(*, label, actual_amount, target_amount, summary_text):
+def _build_progress_card(*, label, actual_amount, target_amount, summary_text, base_actual_amount=0, adjustment_amount=0):
     rate = _progress_rate(actual_amount, target_amount)
-    fill_rate = 0 if rate is None else max(0, min(rate, 100))
     remaining_amount = max(int(target_amount or 0) - int(actual_amount or 0), 0)
+    base_actual_amount = int(base_actual_amount or 0)
+    adjustment_amount = int(adjustment_amount or 0)
+    target_amount = int(target_amount or 0)
+    if target_amount > 0:
+        capped_base_amount = min(base_actual_amount, target_amount)
+        capped_adjustment_amount = min(adjustment_amount, max(target_amount - capped_base_amount, 0))
+        remaining_chart_amount = max(target_amount - capped_base_amount - capped_adjustment_amount, 0)
+        chart_values = [capped_base_amount, capped_adjustment_amount, remaining_chart_amount]
+    else:
+        chart_values = [0, 0, 100]
     return {
         "label": label,
         "actual_amount": actual_amount,
         "actual_amount_text": f"{actual_amount:,}円",
+        "base_actual_amount_text": f"{base_actual_amount:,}円",
+        "adjustment_amount_text": f"{adjustment_amount:,}円",
         "target_amount": target_amount,
         "target_amount_text": f"{target_amount:,}円",
         "remaining_amount_text": f"{remaining_amount:,}円",
         "rate": rate,
         "rate_text": "-" if rate is None else f"{rate}%",
-        "progress_angle": round(fill_rate * 3.6, 1),
+        "chart_values": chart_values,
         "summary_text": summary_text,
     }
 
@@ -666,6 +702,16 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
         end_date=min(period.end_date, today) if period else today,
         include_adjustments=True,
     ) if target_codes else {}
+    month_adjustment_amounts = _collect_adjustment_amounts_by_codes(
+        target_codes=target_codes,
+        start_date=target_month,
+        end_date=today,
+    )
+    period_adjustment_amounts = _collect_adjustment_amounts_by_codes(
+        target_codes=target_codes,
+        start_date=period.start_date if period else today,
+        end_date=min(period.end_date, today) if period else today,
+    ) if target_codes else {}
 
     month_target_amounts = _resolve_month_target_amounts_by_code(departments=departments, target_month=target_month)
     period_target_amounts = _resolve_period_target_amounts_by_code(departments=departments, period=period)
@@ -683,6 +729,16 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
                 + int(month_totals.get("return_qr_amount") or 0),
                 target_amount=int(month_target_amounts.get(current_department.code) or 0),
                 summary_text=f"{target_month:%Y/%m} の補正込み累計",
+                base_actual_amount=max(
+                    (
+                        int(month_totals.get("support_amount") or 0)
+                        + int(month_totals.get("return_postal_amount") or 0)
+                        + int(month_totals.get("return_qr_amount") or 0)
+                    )
+                    - int(month_adjustment_amounts.get(current_department.code) or 0),
+                    0,
+                ),
+                adjustment_amount=int(month_adjustment_amounts.get(current_department.code) or 0),
             )
         )
         period_progress_cards.append(
@@ -693,6 +749,16 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
                 + int(period_totals.get("return_qr_amount") or 0),
                 target_amount=int(period_target_amounts.get(current_department.code) or 0),
                 summary_text=period.name if period else "路程未設定",
+                base_actual_amount=max(
+                    (
+                        int(period_totals.get("support_amount") or 0)
+                        + int(period_totals.get("return_postal_amount") or 0)
+                        + int(period_totals.get("return_qr_amount") or 0)
+                    )
+                    - int(period_adjustment_amounts.get(current_department.code) or 0),
+                    0,
+                ),
+                adjustment_amount=int(period_adjustment_amounts.get(current_department.code) or 0),
             )
         )
 
@@ -723,6 +789,11 @@ def _build_performance_history_snapshot(*, department, scope):
         include_adjustments=True,
     )
     scoped_totals = scoped_totals_by_code.get(department.code, {})
+    scoped_adjustment_amounts = _collect_adjustment_amounts_by_codes(
+        target_codes=target_codes,
+        start_date=scope.start_date,
+        end_date=scope.end_date,
+    )
     month_progress_cards = []
     period_progress_cards = []
     if scope.scope == "month" and scope.month_start:
@@ -741,6 +812,16 @@ def _build_performance_history_snapshot(*, department, scope):
                 + int(scoped_totals.get("return_qr_amount") or 0),
                 target_amount=month_target_amount,
                 summary_text=f"{scope.month_start:%Y/%m} の補正込み累計",
+                base_actual_amount=max(
+                    (
+                        int(scoped_totals.get("support_amount") or 0)
+                        + int(scoped_totals.get("return_postal_amount") or 0)
+                        + int(scoped_totals.get("return_qr_amount") or 0)
+                    )
+                    - int(scoped_adjustment_amounts.get(department.code) or 0),
+                    0,
+                ),
+                adjustment_amount=int(scoped_adjustment_amounts.get(department.code) or 0),
             )
         )
     if scope.scope == "period" and scope.period:
@@ -759,6 +840,16 @@ def _build_performance_history_snapshot(*, department, scope):
                 + int(scoped_totals.get("return_qr_amount") or 0),
                 target_amount=period_target_amount,
                 summary_text=scope.period.name,
+                base_actual_amount=max(
+                    (
+                        int(scoped_totals.get("support_amount") or 0)
+                        + int(scoped_totals.get("return_postal_amount") or 0)
+                        + int(scoped_totals.get("return_qr_amount") or 0)
+                    )
+                    - int(scoped_adjustment_amounts.get(department.code) or 0),
+                    0,
+                ),
+                adjustment_amount=int(scoped_adjustment_amounts.get(department.code) or 0),
             )
         )
 

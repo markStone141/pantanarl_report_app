@@ -68,13 +68,12 @@
   </section>
 
   <section class="card mt-16">
-    <h3>月目標達成率</h3>
-    {% if dashboard_snapshot.month_progress_cards %}
+    <h3>目標達成率</h3>
     <div class="grid grid-2 mt-12">
       {% for card in dashboard_snapshot.month_progress_cards %}
       <article class="card performance-progress-card">
         <div class="row">
-          <strong>{{ card.label }}</strong>
+          <strong>月目標達成率</strong>
         </div>
         <div class="muted mt-6">{{ card.summary_text }}</div>
         <div class="performance-progress-visual mt-12">
@@ -84,6 +83,7 @@
               aria-label="{{ card.label }} 月目標達成率"
               data-rate="{{ card.rate|default:'' }}"
               data-rate-text="{{ card.rate_text }}"
+              data-chart-values="{{ card.chart_values|join:',' }}"
               width="132"
               height="132"
               style="width: 132px; height: 132px; display: block;"
@@ -93,23 +93,21 @@
         </div>
         <div class="performance-progress-stats mt-12">
           <div>実績 {{ card.actual_amount_text }}</div>
+          <div class="muted">通常 {{ card.base_actual_amount_text }}</div>
+          <div class="muted">補正 {{ card.adjustment_amount_text }}</div>
           <div class="muted">目標 {{ card.target_amount_text }}</div>
         </div>
       </article>
+      {% empty %}
+      <article class="card performance-progress-card">
+        <p class="muted">対象部署の月目標データがありません。</p>
+      </article>
       {% endfor %}
-    </div>
-    {% else %}
-    <p class="muted mt-12">対象部署の月目標データがありません。</p>
-    {% endif %}
-  </section>
-  <section class="card mt-16">
-    <h3>路程目標達成率</h3>
-    {% if dashboard_snapshot.period_progress_cards %}
-    <div class="grid grid-2 mt-12">
+
       {% for card in dashboard_snapshot.period_progress_cards %}
       <article class="card performance-progress-card">
         <div class="row">
-          <strong>{{ card.label }}</strong>
+          <strong>路程目標達成率</strong>
         </div>
         <div class="muted mt-6">{{ card.summary_text }}</div>
         <div class="performance-progress-visual mt-12">
@@ -119,6 +117,7 @@
               aria-label="{{ card.label }} 路程目標達成率"
               data-rate="{{ card.rate|default:'' }}"
               data-rate-text="{{ card.rate_text }}"
+              data-chart-values="{{ card.chart_values|join:',' }}"
               width="132"
               height="132"
               style="width: 132px; height: 132px; display: block;"
@@ -128,14 +127,17 @@
         </div>
         <div class="performance-progress-stats mt-12">
           <div>実績 {{ card.actual_amount_text }}</div>
+          <div class="muted">通常 {{ card.base_actual_amount_text }}</div>
+          <div class="muted">補正 {{ card.adjustment_amount_text }}</div>
           <div class="muted">目標 {{ card.target_amount_text }}</div>
         </div>
       </article>
+      {% empty %}
+      <article class="card performance-progress-card">
+        <p class="muted">対象部署の路程目標データがありません。</p>
+      </article>
       {% endfor %}
     </div>
-    {% else %}
-    <p class="muted mt-12">対象部署の路程目標データがありません。</p>
-    {% endif %}
   </section>
 
   <section class="card mt-16">
