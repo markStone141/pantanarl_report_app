@@ -229,6 +229,25 @@ a {
 
 .performance-dashboard-filter-grid {
   align-items: end;
+  gap: 12px;
+}
+
+.performance-scope-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.performance-scope-switch .btn-inline.is-active {
+  background: #1f76d1;
+  color: #fff;
+  border-color: #1f76d1;
+}
+
+.performance-dashboard-range-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .performance-member-card-head {

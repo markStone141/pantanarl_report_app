@@ -24,26 +24,31 @@
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
   <section class="card mt-16">
-    <form method="get" class="grid grid-3 performance-dashboard-filter-grid">
-      <div>
-        <label for="performance-dashboard-department">部署</label>
-        <select id="performance-dashboard-department" name="dashboard_department">
-          {% for department_option in dashboard_departments %}
-          <option value="{{ department_option.id }}"{% if dashboard_department and department_option.id == dashboard_department.id %} selected{% endif %}>{{ department_option.code }}{% if department_option.name and department_option.name != department_option.code %} ({{ department_option.name }}){% endif %}</option>
-          {% endfor %}
-        </select>
+    <form method="get" class="grid performance-dashboard-filter-grid">
+      <input type="hidden" id="performance-dashboard-scope" name="dashboard_scope" value="{{ dashboard_scope }}">
+      <div class="performance-scope-switch">
+        <button type="button" class="btn-inline{% if dashboard_scope == 'month' %} is-active{% endif %}" data-dashboard-scope="month">月</button>
+        <button type="button" class="btn-inline{% if dashboard_scope == 'period' %} is-active{% endif %}" data-dashboard-scope="period">路程</button>
+        <button type="button" class="btn-inline{% if dashboard_scope == 'range' %} is-active{% endif %}" data-dashboard-scope="range">期間指定</button>
       </div>
-      <div>
-        <label for="performance-dashboard-month">月</label>
-        <input id="performance-dashboard-month" type="month" name="dashboard_month" value="{{ dashboard_month|date:'Y-m' }}">
+      <select id="performance-dashboard-department" name="dashboard_department" aria-label="部署">
+        {% for department_option in dashboard_departments %}
+        <option value="{{ department_option.id }}"{% if dashboard_department and department_option.id == dashboard_department.id %} selected{% endif %}>{{ department_option.code }}{% if department_option.name and department_option.name != department_option.code %} ({{ department_option.name }}){% endif %}</option>
+        {% endfor %}
+      </select>
+      <div data-dashboard-scope-panel="month"{% if dashboard_scope != 'month' %} hidden{% endif %}>
+        <input id="performance-dashboard-month" type="month" name="dashboard_month" value="{{ dashboard_month|date:'Y-m' }}" aria-label="月">
       </div>
-      <div>
-        <label for="performance-dashboard-period">路程</label>
-        <select id="performance-dashboard-period" name="dashboard_period">
+      <div data-dashboard-scope-panel="period"{% if dashboard_scope != 'period' %} hidden{% endif %}>
+        <select id="performance-dashboard-period" name="dashboard_period" aria-label="路程">
           {% for period_option in dashboard_periods %}
           <option value="{{ period_option.id }}"{% if dashboard_period and period_option.id == dashboard_period.id %} selected{% endif %}>{{ period_option.name }}</option>
           {% endfor %}
         </select>
+      </div>
+      <div class="performance-dashboard-range-fields" data-dashboard-scope-panel="range"{% if dashboard_scope != 'range' %} hidden{% endif %}>
+        <input type="date" name="dashboard_start" value="{{ dashboard_start }}" aria-label="開始日">
+        <input type="date" name="dashboard_end" value="{{ dashboard_end }}" aria-label="終了日">
       </div>
       <div>
         <button type="submit">表示</button>
@@ -95,80 +100,79 @@
     </div>
   </section>
 
+  {% if dashboard_scope == 'month' %}
   <section class="card mt-16">
-    <div class="grid grid-2">
-      <article>
-        <h3>月目標達成率</h3>
-        {% if dashboard_snapshot.month_progress_cards %}
-        <div class="grid grid-2 mt-12">
-          {% for card in dashboard_snapshot.month_progress_cards %}
-          <article class="card performance-progress-card">
-            <div class="row">
-              <strong>{{ card.label }}</strong>
-            </div>
-            <div class="muted mt-6">{{ card.summary_text }}</div>
-            <div class="performance-progress-visual mt-12">
-              <div class="performance-progress-donut">
-                <canvas
-                  class="performance-progress-donut-chart"
-                  aria-label="{{ card.label }} 月目標達成率"
-                  data-rate="{{ card.rate|default:'' }}"
-                  data-rate-text="{{ card.rate_text }}"
-                  width="132"
-                  height="132"
-                  style="width: 132px; height: 132px; display: block;"
-                ></canvas>
-                <div class="performance-progress-donut-value">{{ card.rate_text }}</div>
-              </div>
-            </div>
-            <div class="performance-progress-stats mt-12">
-              <div>実績 {{ card.actual_amount_text }}</div>
-              <div class="muted">目標 {{ card.target_amount_text }}</div>
-            </div>
-          </article>
-          {% endfor %}
+    <h3>月目標達成率</h3>
+    {% if dashboard_snapshot.month_progress_cards %}
+    <div class="grid grid-2 mt-12">
+      {% for card in dashboard_snapshot.month_progress_cards %}
+      <article class="card performance-progress-card">
+        <div class="row">
+          <strong>{{ card.label }}</strong>
         </div>
-        {% else %}
-        <p class="muted mt-12">対象部署の月目標データがありません。</p>
-        {% endif %}
-      </article>
-      <article>
-        <h3>路程目標達成率</h3>
-        {% if dashboard_snapshot.period_progress_cards %}
-        <div class="grid grid-2 mt-12">
-          {% for card in dashboard_snapshot.period_progress_cards %}
-          <article class="card performance-progress-card">
-            <div class="row">
-              <strong>{{ card.label }}</strong>
-            </div>
-            <div class="muted mt-6">{{ card.summary_text }}</div>
-            <div class="performance-progress-visual mt-12">
-              <div class="performance-progress-donut">
-                <canvas
-                  class="performance-progress-donut-chart"
-                  aria-label="{{ card.label }} 路程目標達成率"
-                  data-rate="{{ card.rate|default:'' }}"
-                  data-rate-text="{{ card.rate_text }}"
-                  width="132"
-                  height="132"
-                  style="width: 132px; height: 132px; display: block;"
-                ></canvas>
-                <div class="performance-progress-donut-value">{{ card.rate_text }}</div>
-              </div>
-            </div>
-            <div class="performance-progress-stats mt-12">
-              <div>実績 {{ card.actual_amount_text }}</div>
-              <div class="muted">目標 {{ card.target_amount_text }}</div>
-            </div>
-          </article>
-          {% endfor %}
+        <div class="muted mt-6">{{ card.summary_text }}</div>
+        <div class="performance-progress-visual mt-12">
+          <div class="performance-progress-donut">
+            <canvas
+              class="performance-progress-donut-chart"
+              aria-label="{{ card.label }} 月目標達成率"
+              data-rate="{{ card.rate|default:'' }}"
+              data-rate-text="{{ card.rate_text }}"
+              width="132"
+              height="132"
+              style="width: 132px; height: 132px; display: block;"
+            ></canvas>
+            <div class="performance-progress-donut-value">{{ card.rate_text }}</div>
+          </div>
         </div>
-        {% else %}
-        <p class="muted mt-12">対象部署の路程目標データがありません。</p>
-        {% endif %}
+        <div class="performance-progress-stats mt-12">
+          <div>実績 {{ card.actual_amount_text }}</div>
+          <div class="muted">目標 {{ card.target_amount_text }}</div>
+        </div>
       </article>
+      {% endfor %}
     </div>
+    {% else %}
+    <p class="muted mt-12">対象部署の月目標データがありません。</p>
+    {% endif %}
   </section>
+  {% elif dashboard_scope == 'period' %}
+  <section class="card mt-16">
+    <h3>路程目標達成率</h3>
+    {% if dashboard_snapshot.period_progress_cards %}
+    <div class="grid grid-2 mt-12">
+      {% for card in dashboard_snapshot.period_progress_cards %}
+      <article class="card performance-progress-card">
+        <div class="row">
+          <strong>{{ card.label }}</strong>
+        </div>
+        <div class="muted mt-6">{{ card.summary_text }}</div>
+        <div class="performance-progress-visual mt-12">
+          <div class="performance-progress-donut">
+            <canvas
+              class="performance-progress-donut-chart"
+              aria-label="{{ card.label }} 路程目標達成率"
+              data-rate="{{ card.rate|default:'' }}"
+              data-rate-text="{{ card.rate_text }}"
+              width="132"
+              height="132"
+              style="width: 132px; height: 132px; display: block;"
+            ></canvas>
+            <div class="performance-progress-donut-value">{{ card.rate_text }}</div>
+          </div>
+        </div>
+        <div class="performance-progress-stats mt-12">
+          <div>実績 {{ card.actual_amount_text }}</div>
+          <div class="muted">目標 {{ card.target_amount_text }}</div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted mt-12">対象部署の路程目標データがありません。</p>
+    {% endif %}
+  </section>
+  {% endif %}
 
   <section class="card mt-16">
     <h3>直近稼働の全体実績推移</h3>
@@ -254,6 +258,32 @@
 
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'performance/member_dashboard.js' %}?v=5"></script>
+<script src="{% static 'performance/member_dashboard.js' %}?v=6"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+<script>
+  (function () {
+    const scopeInput = document.getElementById("performance-dashboard-scope");
+    if (!scopeInput) return;
+    const buttons = document.querySelectorAll("[data-dashboard-scope]");
+    const panels = document.querySelectorAll("[data-dashboard-scope-panel]");
+
+    function syncScope(nextScope) {
+      scopeInput.value = nextScope;
+      buttons.forEach(function (button) {
+        button.classList.toggle("is-active", button.dataset.dashboardScope === nextScope);
+      });
+      panels.forEach(function (panel) {
+        panel.hidden = panel.dataset.dashboardScopePanel !== nextScope;
+      });
+    }
+
+    buttons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        syncScope(button.dataset.dashboardScope);
+      });
+    });
+
+    syncScope(scopeInput.value || "month");
+  })();
+</script>
 {% endblock %}

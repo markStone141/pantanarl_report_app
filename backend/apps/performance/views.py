@@ -1003,6 +1003,9 @@ def performance_index(request: HttpRequest) -> HttpResponse:
 
     current_query = request.GET.copy()
     current_query.pop("page", None)
+    dashboard_scope = request.GET.get("dashboard_scope") or "month"
+    if dashboard_scope not in {"month", "period", "range"}:
+        dashboard_scope = "month"
     department_id = request.GET.get("dashboard_department")
     dashboard_department = None
     if department_id:
@@ -1016,6 +1019,8 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         dashboard_period = Period.objects.filter(pk=dashboard_period_id).first()
     if dashboard_period is None:
         dashboard_period = _resolve_current_period(timezone.localdate())
+    dashboard_start = request.GET.get("dashboard_start") or ""
+    dashboard_end = request.GET.get("dashboard_end") or ""
     dashboard_snapshot = _build_performance_dashboard_snapshot(
         department=dashboard_department,
         target_month=dashboard_month,
@@ -1035,6 +1040,9 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         "dashboard_month": dashboard_month,
         "dashboard_period": dashboard_period,
         "dashboard_periods": Period.objects.order_by("-end_date", "-start_date", "-id")[:24],
+        "dashboard_scope": dashboard_scope,
+        "dashboard_start": dashboard_start,
+        "dashboard_end": dashboard_end,
     }
     return render(request, "performance/index.html", context)
 

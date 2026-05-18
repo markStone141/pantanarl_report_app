@@ -109,6 +109,7 @@ class PerformanceManagementTests(TestCase):
         response = self.client.get(
             reverse("performance_index"),
             {
+                "dashboard_scope": "period",
                 "dashboard_department": str(self.department.id),
                 "dashboard_month": selected_month.strftime("%Y-%m"),
                 "dashboard_period": str(selected_period.id),
@@ -116,9 +117,7 @@ class PerformanceManagementTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "2026/04 の補正込み累計")
         self.assertContains(response, "4月第2次路程")
-        self.assertContains(response, "12,000円")
         self.assertContains(response, "28,000円")
 
     def test_performance_entry_edit_updates_daily_entry_and_department_summary(self):
@@ -301,9 +300,7 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, active_entry.member.name)
         self.assertContains(response, finished_entry.member.name)
         self.assertContains(response, "月目標達成率")
-        self.assertContains(response, "路程目標達成率")
         self.assertContains(response, "70.0%")
-        self.assertContains(response, "23.3%")
         self.assertContains(response, "7,000円")
 
     def test_performance_index_shows_active_member_cards_with_detail_link(self):
