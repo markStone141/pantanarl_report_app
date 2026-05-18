@@ -69,6 +69,9 @@
               aria-label="{{ department_month_progress.label }}"
               data-rate="{{ department_month_progress.rate|default:'' }}"
               data-rate-text="{{ department_month_progress.rate_text }}"
+              width="132"
+              height="132"
+              style="width: 132px; height: 132px; display: block;"
             ></canvas>
             <div class="performance-progress-donut-value">{{ department_month_progress.rate_text }}</div>
           </div>
@@ -92,6 +95,9 @@
               aria-label="{{ department_period_progress.label }}"
               data-rate="{{ department_period_progress.rate|default:'' }}"
               data-rate-text="{{ department_period_progress.rate_text }}"
+              width="132"
+              height="132"
+              style="width: 132px; height: 132px; display: block;"
             ></canvas>
             <div class="performance-progress-donut-value">{{ department_period_progress.rate_text }}</div>
           </div>
@@ -115,6 +121,9 @@
               aria-label="{{ member_month_progress.label }}"
               data-rate="{{ member_month_progress.rate|default:'' }}"
               data-rate-text="{{ member_month_progress.rate_text }}"
+              width="132"
+              height="132"
+              style="width: 132px; height: 132px; display: block;"
             ></canvas>
             <div class="performance-progress-donut-value">{{ member_month_progress.rate_text }}</div>
           </div>
@@ -162,6 +171,9 @@
               aria-label="{{ member_period_progress.label }}"
               data-rate="{{ member_period_progress.rate|default:'' }}"
               data-rate-text="{{ member_period_progress.rate_text }}"
+              width="132"
+              height="132"
+              style="width: 132px; height: 132px; display: block;"
             ></canvas>
             <div class="performance-progress-donut-value">{{ member_period_progress.rate_text }}</div>
           </div>
@@ -332,6 +344,6 @@
   </section>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'performance/member_dashboard.js' %}?v=1"></script>
+<script src="{% static 'performance/member_dashboard.js' %}?v=2"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 {% endblock %}
