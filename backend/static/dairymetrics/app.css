@@ -2370,6 +2370,11 @@
 .metrics-v2-rate-card {
   display: grid;
   gap: 10px;
+  text-align: center;
+}
+
+.metrics-v2-rate-card .row {
+  justify-content: center;
 }
 
 .metrics-v2-mini-donut {
@@ -2395,6 +2400,10 @@
   font-size: 1.02rem;
   color: #223448;
   pointer-events: none;
+}
+
+.metrics-v2-rate-card .muted {
+  text-align: center;
 }
 
 .metrics-v2-chart-frame {
