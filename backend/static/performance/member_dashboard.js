@@ -45,7 +45,10 @@
   const visibleCountNode = document.getElementById("performance-trend-visible-count");
   const modeAmountButton = document.getElementById("performance-trend-mode-amount");
   const modeRateButton = document.getElementById("performance-trend-mode-rate");
+  const modeActivityButton = document.getElementById("performance-trend-mode-activity");
   const lineLabelNode = document.getElementById("performance-trend-line-label");
+  const secondaryLegendNode = document.getElementById("performance-trend-secondary-legend");
+  const secondaryLineLabelNode = document.getElementById("performance-trend-secondary-line-label");
   if (!dataNode || !canvas) {
     return;
   }
@@ -68,6 +71,8 @@
   const allLabels = trendData.labels.slice();
   const allAmounts = trendData.amounts.slice();
   const allCounts = trendData.counts.slice();
+  const allApproachCounts = (trendData.approach_counts || []).slice();
+  const allCommunicationCounts = (trendData.communication_counts || []).slice();
   const allTargetAmounts = (trendData.target_amounts || []).slice();
   const allRateValues = (trendData.rate_values || []).slice();
   const minVisibleCount = Math.min(10, allLabels.length);
@@ -80,6 +85,45 @@
 
   function sliceLatest(values) {
     return values.slice(Math.max(0, values.length - visibleCount));
+  }
+
+  function updateLegend() {
+    if (modeAmountButton) {
+      modeAmountButton.classList.toggle("is-active", currentMode === "amount");
+    }
+    if (modeRateButton) {
+      modeRateButton.classList.toggle("is-active", currentMode === "rate");
+    }
+    if (modeActivityButton) {
+      modeActivityButton.classList.toggle("is-active", currentMode === "activity");
+    }
+    if (currentMode === "amount") {
+      if (lineLabelNode) {
+        lineLabelNode.textContent = trendData.count_label || "件数";
+      }
+      if (secondaryLegendNode) {
+        secondaryLegendNode.hidden = true;
+      }
+      return;
+    }
+    if (currentMode === "rate") {
+      if (lineLabelNode) {
+        lineLabelNode.textContent = "達成率（%）";
+      }
+      if (secondaryLegendNode) {
+        secondaryLegendNode.hidden = true;
+      }
+      return;
+    }
+    if (lineLabelNode) {
+      lineLabelNode.textContent = "アプローチ数";
+    }
+    if (secondaryLineLabelNode) {
+      secondaryLineLabelNode.textContent = "コミュニケーション数";
+    }
+    if (secondaryLegendNode) {
+      secondaryLegendNode.hidden = false;
+    }
   }
 
   const chart = new window.Chart(context, {
@@ -189,16 +233,8 @@
 
   function setMode(nextMode) {
     currentMode = nextMode;
-    if (modeAmountButton) {
-      modeAmountButton.classList.toggle("is-active", currentMode === "amount");
-    }
-    if (modeRateButton) {
-      modeRateButton.classList.toggle("is-active", currentMode === "rate");
-    }
+    updateLegend();
     if (currentMode === "rate") {
-      if (lineLabelNode) {
-        lineLabelNode.textContent = "達成率（%）";
-      }
       chart.data.datasets = [
         {
           type: "line",
@@ -229,10 +265,37 @@
           },
         },
       };
+    } else if (currentMode === "activity") {
+      chart.data.datasets = [
+        {
+          type: "line",
+          label: "アプローチ数",
+          data: sliceLatest(allApproachCounts),
+          yAxisID: "yCount",
+          borderColor: "#277bd3",
+          backgroundColor: "#277bd3",
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 4,
+          tension: 0.28,
+        },
+        {
+          type: "line",
+          label: "コミュニケーション数",
+          data: sliceLatest(allCommunicationCounts),
+          yAxisID: "yCount",
+          borderColor: "#14b8a6",
+          backgroundColor: "#14b8a6",
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 4,
+          tension: 0.28,
+        },
+      ];
+      chart.options.scales.yAmount.display = false;
+      chart.options.scales.yCount.display = true;
+      delete chart.options.scales.yRate;
     } else {
-      if (lineLabelNode) {
-        lineLabelNode.textContent = trendData.count_label || "件数";
-      }
       chart.data.datasets = [
         {
           type: "bar",
@@ -303,6 +366,11 @@
   if (modeRateButton) {
     modeRateButton.addEventListener("click", function () {
       setMode("rate");
+    });
+  }
+  if (modeActivityButton) {
+    modeActivityButton.addEventListener("click", function () {
+      setMode("activity");
     });
   }
 

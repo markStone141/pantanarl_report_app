@@ -585,6 +585,8 @@ def _build_member_activity_trend(*, member, department):
     labels = []
     amounts = []
     counts = []
+    approach_counts = []
+    communication_counts = []
     target_amounts = []
     rate_values = []
     for entry in latest_entries:
@@ -623,6 +625,8 @@ def _build_member_activity_trend(*, member, department):
                 + int(adjustment_totals["return_postal_count"])
                 + int(adjustment_totals["return_qr_count"])
             )
+        approach_counts.append(int(entry.approach_count or 0))
+        communication_counts.append(int(entry.communication_count or 0))
         target_amount = int(entry.daily_target_amount or 0)
         target_amounts.append(target_amount)
         rate_values.append(round((amount_value / target_amount) * 100, 1) if target_amount > 0 else None)
@@ -630,6 +634,8 @@ def _build_member_activity_trend(*, member, department):
         "labels": labels,
         "amounts": amounts,
         "counts": counts,
+        "approach_counts": approach_counts,
+        "communication_counts": communication_counts,
         "target_amounts": target_amounts,
         "rate_values": rate_values,
         "has_data": True,
@@ -651,6 +657,8 @@ def _build_overall_activity_trend(*, department=None):
             "labels": [],
             "amounts": [],
             "counts": [],
+            "approach_counts": [],
+            "communication_counts": [],
             "target_amounts": [],
             "rate_values": [],
             "has_data": False,
@@ -666,6 +674,8 @@ def _build_overall_activity_trend(*, department=None):
         .annotate(
             result_count_total=Sum("result_count"),
             support_amount_total=Sum("support_amount"),
+            approach_count_total=Sum("approach_count"),
+            communication_count_total=Sum("communication_count"),
             cs_count_total=Sum("cs_count"),
             refugee_count_total=Sum("refugee_count"),
         )
@@ -698,6 +708,8 @@ def _build_overall_activity_trend(*, department=None):
     labels = []
     amounts = []
     counts = []
+    approach_counts = []
+    communication_counts = []
     target_amounts = []
     rate_values = []
     use_equivalent_count = department is None or department.code == "WV"
@@ -730,6 +742,8 @@ def _build_overall_activity_trend(*, department=None):
                 + int(adjustment_row.get("return_postal_count_total") or 0)
                 + int(adjustment_row.get("return_qr_count_total") or 0)
             )
+        approach_counts.append(int(entry_row.get("approach_count_total") or 0))
+        communication_counts.append(int(entry_row.get("communication_count_total") or 0))
         target_amount = int(daily_target_totals.get(activity_date) or 0)
         target_amounts.append(target_amount)
         rate_values.append(round((amount_value / target_amount) * 100, 1) if target_amount > 0 else None)
@@ -738,6 +752,8 @@ def _build_overall_activity_trend(*, department=None):
         "labels": labels,
         "amounts": amounts,
         "counts": counts,
+        "approach_counts": approach_counts,
+        "communication_counts": communication_counts,
         "target_amounts": target_amounts,
         "rate_values": rate_values,
         "has_data": True,

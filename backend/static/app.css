@@ -244,6 +244,12 @@ a {
   border-top: 3px solid #ef7d32;
 }
 
+.performance-trend-legend-swatch-line-secondary {
+  width: 18px;
+  height: 0;
+  border-top: 3px solid #14b8a6;
+}
+
 .performance-chart-card {
   position: relative;
   min-height: 280px;
