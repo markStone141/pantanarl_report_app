@@ -1152,6 +1152,8 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
     selected_month = _parse_selected_month(request.GET.get("month"), default=today)
     selected_month_end = min(_month_end(selected_month), today)
     current_period = _resolve_current_period(today)
+    recent_start = today - timedelta(days=29)
+    recent_end = today
     entry_rows = _build_member_dashboard_entry_rows(
         member=member,
         department=department,
@@ -1163,6 +1165,19 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
             member=member,
             department=department,
             target_date__range=(selected_month, selected_month_end),
+        ).order_by("-target_date", "-created_at")
+    )
+    recent_entry_rows = _build_member_dashboard_entry_rows(
+        member=member,
+        department=department,
+        month_start=recent_start,
+        month_end=recent_end,
+    )
+    recent_adjustment_rows = list(
+        MetricAdjustment.objects.filter(
+            member=member,
+            department=department,
+            target_date__range=(recent_start, recent_end),
         ).order_by("-target_date", "-created_at")
     )
     activity_trend = _build_member_activity_trend(member=member, department=department)
@@ -1266,6 +1281,9 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "selected_month": selected_month,
         "entry_rows": entry_rows,
         "adjustment_rows": adjustment_rows,
+        "recent_entry_rows": recent_entry_rows,
+        "recent_adjustment_rows": recent_adjustment_rows,
+        "recent_range_label": f"{recent_start:%Y/%m/%d} - {recent_end:%Y/%m/%d}",
         "activity_trend": activity_trend,
         "department_month_progress": department_month_progress,
         "department_period_progress": department_period_progress,

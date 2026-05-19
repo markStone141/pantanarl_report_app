@@ -532,8 +532,8 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "9,400円 / 9,400円")
         self.assertContains(response, "月目標")
         self.assertContains(response, "修正")
-        self.assertNotContains(response, "の日次実績")
-        self.assertNotContains(response, "の補正実績")
+        self.assertContains(response, "直近30日の実績")
+        self.assertContains(response, "直近30日の補正実績")
 
     def test_performance_member_history_shows_scoped_entries_and_adjustments(self):
         today = timezone.localdate()
@@ -666,6 +666,9 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f"{self.member.name} の実績ダッシュボード")
         self.assertContains(response, "個人の月目標")
+        self.assertContains(response, "直近30日の実績")
+        self.assertContains(response, "直近30日の補正実績")
+        self.assertContains(response, reverse("performance_member_history"))
         self.assertContains(response, "実績管理ダッシュボード")
         self.assertContains(response, "決済入力")
         self.assertContains(response, "実績閲覧")
