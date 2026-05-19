@@ -1420,6 +1420,15 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
     departments, selected_department = _resolve_metrics_v2_department(request=request, member=viewer_member)
     if not selected_department:
         return redirect("dairymetrics_dashboard")
+    selected_member = None
+    raw_member_id = (request.GET.get("member") or "").strip()
+    if request.user.is_staff and raw_member_id.isdigit():
+        selected_member = (
+            _member_directory_queryset()
+            .filter(pk=int(raw_member_id), department_links__department=selected_department)
+            .distinct()
+            .first()
+        )
 
     today = timezone.localdate()
     requested_scope = (request.GET.get("scope") or "recent").strip()
@@ -1442,7 +1451,7 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
     payload = build_metrics_v2_dashboard_payload(
         department=selected_department,
         scope=scope,
-        member=None if request.user.is_staff else viewer_member,
+        member=selected_member if request.user.is_staff else viewer_member,
     )
     payload_json = {**payload, "scope": {"scope": scope.scope, "label": scope.label}}
     available_periods = list(Period.objects.order_by("-end_date", "-start_date", "-id")[:18])
@@ -1450,6 +1459,7 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
     context = {
         "is_admin": request.user.is_staff,
         "member": viewer_member,
+        "selected_member": selected_member,
         "selected_department": selected_department,
         "departments": departments,
         "scope": scope,

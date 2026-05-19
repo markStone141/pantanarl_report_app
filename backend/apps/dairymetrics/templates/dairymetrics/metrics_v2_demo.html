@@ -14,7 +14,11 @@
       <strong>Metrics V2</strong>
       <div class="topbar-muted">
         {% if is_admin %}
+        {% if selected_member %}
+        {{ selected_member.name }}さん / {{ selected_department.name }} の分析デモ
+        {% else %}
         {{ selected_department.name }} の全体分析デモ
+        {% endif %}
         {% else %}
         {{ member.name }}さん / {{ selected_department.name }} の分析デモ
         {% endif %}
@@ -54,6 +58,9 @@
           <option value="{{ department.code }}" {% if department.code == selected_department.code %}selected{% endif %}>{{ department.name }}</option>
           {% endfor %}
         </select>
+        {% if is_admin and selected_member %}
+        <input type="hidden" name="member" value="{{ selected_member.id }}">
+        {% endif %}
       </div>
       <div>
         <select id="metrics-v2-scope" name="scope" data-metrics-v2-scope aria-label="集計期間">

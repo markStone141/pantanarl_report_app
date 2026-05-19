@@ -3599,6 +3599,18 @@ class DairyMetricsV2DemoTests(TestCase):
         self.assertContains(response, "総合管理者ページ")
         self.assertNotContains(response, "決済入力")
 
+    def test_metrics_v2_demo_can_render_selected_member_for_admin(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_metrics_v2_demo"),
+            {"department": self.department.code, "member": str(self.member.id)},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_member"], self.member)
+        self.assertContains(response, f"{self.member.name}さん / {self.department.name} の分析デモ")
+
     def test_metrics_v2_demo_defaults_admin_department_to_un(self):
         other_department = Department.objects.create(code="WV", name="WV")
         self.client.force_login(self.admin)

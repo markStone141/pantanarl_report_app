@@ -26,6 +26,12 @@
   </header>
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
+  {% if is_admin_view %}
+  <section class="mt-16">
+    <a class="btn-inline" href="{% url 'dairymetrics_metrics_v2_demo' %}?department={{ department.code }}&member={{ member.id }}">このメンバーの Metrics V2</a>
+  </section>
+  {% endif %}
+
   <section class="card mt-16">
     <h3>直近稼働の実績推移</h3>
     <p id="performance-trend-description" class="muted">1稼働 = 実績が登録された1日です。金額は棒、{{ activity_trend.count_label }}は折れ線で表示します。</p>
