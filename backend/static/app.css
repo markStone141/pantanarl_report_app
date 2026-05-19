@@ -294,6 +294,12 @@ a {
   text-align: left;
 }
 
+.performance-today-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .performance-today-total-card strong {
   display: block;
   font-size: 1.5rem;
@@ -301,8 +307,21 @@ a {
   color: #0f2744;
 }
 
-.performance-today-total-meta {
-  line-height: 1.45;
+.performance-today-inline-value {
+  font-size: 1rem !important;
+  line-height: 1.4 !important;
+}
+
+@media (max-width: 900px) {
+  .performance-today-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .performance-today-summary-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .performance-trend-legend {
