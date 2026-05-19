@@ -17,12 +17,8 @@
       {% for url_name, label in nav_items %}
       <a href="{% url url_name %}">{{ label }}</a>
       {% endfor %}
-      {% if is_admin_view %}
-      <a href="{% url 'performance_member_detail' member.id department.id %}">実績ダッシュボード</a>
-      <a href="{% url 'performance_member_history_detail' member.id department.id %}">実績閲覧</a>
-      {% else %}
-      <a href="{% url 'performance_member_dashboard' %}">実績ダッシュボード</a>
-      <a href="{% url 'performance_member_history' %}">実績閲覧</a>
+      {% if not is_admin_view %}
+      <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
       {% endif %}
       <a href="{% url 'dairymetrics_metrics_v2_demo' %}?department={{ department.code }}">Metrics V2</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>

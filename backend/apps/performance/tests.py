@@ -651,6 +651,11 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f"{self.member.name} の実績ダッシュボード")
         self.assertContains(response, "個人の月目標")
+        self.assertContains(response, "実績管理ダッシュボード")
+        self.assertContains(response, "決済入力")
+        self.assertContains(response, "実績閲覧")
+        self.assertContains(response, "Metrics V2")
+        self.assertNotContains(response, "総合管理者ページ")
 
     def test_performance_member_history_uses_logged_in_member_profile(self):
         self.client.logout()
@@ -671,6 +676,9 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f"{self.member.name} の実績閲覧")
         self.assertContains(response, "集計条件")
+        self.assertContains(response, "実績管理ダッシュボード")
+        self.assertContains(response, "決済入力")
+        self.assertContains(response, "Metrics V2")
 
     def test_performance_member_detail_can_save_month_target(self):
         today = timezone.localdate()

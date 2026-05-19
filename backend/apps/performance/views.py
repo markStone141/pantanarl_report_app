@@ -52,25 +52,20 @@ class PerformanceHistoryScope:
 
 def _performance_nav_items():
     return [
-        ("dashboard_index", "管理者ページ"),
-        ("member_settings", "メンバー管理"),
-        ("department_settings", "部署管理"),
-        ("performance_index", "実績管理"),
+        ("performance_index", "実績管理ダッシュボード"),
         ("performance_history", "実績閲覧"),
-        ("performance_adjustments", "補正実績"),
-        ("mail_integration_settings", "メール連携"),
-        ("mail_group_settings", "メールグループ"),
+        ("dashboard_index", "総合管理者ページ"),
     ]
 
 
 def _performance_member_nav_items(*, is_admin=False):
     if is_admin:
         return [
-            ("performance_index", "実績管理"),
-            ("performance_adjustments", "補正実績"),
+            ("performance_index", "実績管理ダッシュボード"),
+            ("performance_history", "実績閲覧"),
         ]
     return [
-        ("performance_member_dashboard", "実績ダッシュボード"),
+        ("performance_member_dashboard", "実績管理ダッシュボード"),
         ("performance_member_history", "実績閲覧"),
     ]
 

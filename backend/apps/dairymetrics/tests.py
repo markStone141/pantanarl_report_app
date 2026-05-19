@@ -3581,6 +3581,11 @@ class DairyMetricsV2DemoTests(TestCase):
         self.assertContains(response, "年代別決済比率")
         self.assertContains(response, "metrics-v2-dashboard-data")
         self.assertContains(response, reverse("performance_member_dashboard"))
+        self.assertContains(response, "実績管理ダッシュボード")
+        self.assertContains(response, "決済入力")
+        self.assertContains(response, "過去実績閲覧")
+        self.assertNotContains(response, "現行 Metrics")
+        self.assertNotContains(response, "総合管理者ページ")
 
     def test_metrics_v2_demo_renders_admin_overall_mode(self):
         self.client.force_login(self.admin)
@@ -3589,6 +3594,10 @@ class DairyMetricsV2DemoTests(TestCase):
         self.assertContains(response, "UN の全体分析デモ")
         self.assertContains(response, "ランキングモード")
         self.assertContains(response, "属性別の平均金額")
+        self.assertContains(response, "実績管理ダッシュボード")
+        self.assertContains(response, "過去実績閲覧")
+        self.assertContains(response, "総合管理者ページ")
+        self.assertNotContains(response, "決済入力")
 
     def test_metrics_v2_demo_defaults_admin_department_to_un(self):
         other_department = Department.objects.create(code="WV", name="WV")
