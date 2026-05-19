@@ -258,6 +258,7 @@
           {
             label: metricPayload.label,
             data: metricPayload.values,
+            detailUrls: metricPayload.detail_urls || [],
             backgroundColor: "#1d7dfa",
             borderRadius: 8,
           },
@@ -266,6 +267,16 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        onClick: function (_event, elements) {
+          if (!elements || !elements.length) {
+            return;
+          }
+          const point = elements[0];
+          const url = rankingChart.data.datasets[point.datasetIndex].detailUrls[point.index];
+          if (url) {
+            window.location.href = url;
+          }
+        },
         scales: {
           x: {
             ticks: {

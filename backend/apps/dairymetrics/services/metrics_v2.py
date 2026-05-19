@@ -421,6 +421,7 @@ def _build_ranking_payload(*, department, scope: MetricsV2Scope):
             "unit": option["unit"],
             "labels": [row["member"].name for row in ranked_rows],
             "values": [row["metrics"][option["key"]] for row in ranked_rows],
+            "detail_urls": [reverse("dairymetrics_member_dashboard", args=[row["member"].id]) for row in ranked_rows],
             "rows": [
                 {
                     "member_name": row["member"].name,

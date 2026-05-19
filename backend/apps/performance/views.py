@@ -1228,6 +1228,33 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         ).order_by("-target_date", "-created_at")
     )
     activity_trend = _build_member_activity_trend(member=member, department=department)
+    recent_totals = collect_member_final_actual_totals(
+        member,
+        department,
+        recent_start,
+        recent_end,
+        include_adjustments=True,
+    )
+    recent_increase_queryset = MetricAdjustment.objects.filter(
+        member=member,
+        department=department,
+        target_date__range=(recent_start, recent_end),
+        source_type=MetricAdjustment.SOURCE_INCREASE,
+    )
+    recent_increase_totals = recent_increase_queryset.aggregate(
+        total_count=Sum("result_count"),
+        total_amount=Sum("support_amount"),
+    )
+    recent_active_days = (
+        MemberDailyMetricEntry.objects.filter(
+            member=member,
+            department=department,
+            entry_date__range=(recent_start, recent_end),
+        )
+        .values("entry_date")
+        .distinct()
+        .count()
+    )
 
     member_month_totals = collect_member_final_actual_totals(
         member,
@@ -1341,6 +1368,22 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "recent_entry_rows": recent_entry_rows,
         "recent_adjustment_rows": recent_adjustment_rows,
         "recent_range_label": f"{recent_start:%Y/%m/%d} - {recent_end:%Y/%m/%d}",
+        "recent_summary_items": [
+            {"label": "合計AP", "value": f"{int(recent_totals.get('approach_count') or 0):,}"},
+            {"label": "合計CM", "value": f"{int(recent_totals.get('communication_count') or 0):,}"},
+            {"label": "合計件数", "value": _final_count_text(department_code=department.code, totals=recent_totals)},
+            {"label": "合計金額", "value": _final_amount_text(totals=recent_totals)},
+            {
+                "label": "補正実績件数",
+                "value": (
+                    f"{int(recent_increase_totals['total_count'] or 0):,}件"
+                    if department.code != "WV"
+                    else f"{int(recent_increase_totals['total_count'] or 0):,}"
+                ),
+            },
+            {"label": "補正実績金額", "value": f"{int(recent_increase_totals['total_amount'] or 0):,}円"},
+            {"label": "稼働日数", "value": f"{recent_active_days:,}日"},
+        ],
         "activity_trend": activity_trend,
         "department_month_progress": department_month_progress,
         "department_period_progress": department_period_progress,
