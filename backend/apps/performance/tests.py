@@ -711,6 +711,38 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "1500円")
         self.assertContains(response, "補正実績")
 
+    def test_performance_member_dashboard_trend_includes_adjustment_only_dates(self):
+        today = timezone.localdate()
+        entry_day = today - timedelta(days=1)
+        adjustment_only_day = today - timedelta(days=3)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_day,
+            result_count=1,
+            support_amount=3000,
+            approach_count=4,
+            communication_count=2,
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=adjustment_only_day,
+            source_type=MetricAdjustment.SOURCE_QR,
+            return_qr_count=1,
+            return_qr_amount=1500,
+        )
+
+        response = self.client.get(reverse("performance_member_detail", args=[self.member.id, self.department.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["activity_trend"]["labels"],
+            [adjustment_only_day.strftime("%m/%d"), entry_day.strftime("%m/%d")],
+        )
+        self.assertEqual(response.context["activity_trend"]["amounts"], [1500, 3000])
+        self.assertEqual(response.context["activity_trend"]["counts"], [1, 1])
+
     def test_performance_member_detail_shows_target_forms_when_edit_requested(self):
         today = timezone.localdate()
         MemberMonthMetricTarget.objects.create(

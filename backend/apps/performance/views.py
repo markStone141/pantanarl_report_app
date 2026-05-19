@@ -1108,13 +1108,21 @@ def _adjustment_totals_dict_from_queryset(*, queryset):
 
 def _build_member_activity_trend(*, member, department, start_date=None, end_date=None):
     entry_queryset = MemberDailyMetricEntry.objects.select_related("department").filter(member=member, department=department)
+    adjustment_queryset = MetricAdjustment.objects.filter(member=member, department=department)
     if start_date is not None and end_date is not None:
         entry_queryset = entry_queryset.filter(entry_date__range=(start_date, end_date))
-        latest_entries = list(entry_queryset.order_by("entry_date", "id"))
+        adjustment_queryset = adjustment_queryset.filter(target_date__range=(start_date, end_date))
+        latest_entry_dates = list(entry_queryset.order_by("entry_date").values_list("entry_date", flat=True).distinct())
+        latest_adjustment_dates = list(adjustment_queryset.order_by("target_date").values_list("target_date", flat=True).distinct())
     else:
-        latest_entries = list(entry_queryset.order_by("-entry_date", "-id")[:120])
-        latest_entries.reverse()
-    if not latest_entries:
+        latest_entry_dates = list(entry_queryset.order_by("-entry_date").values_list("entry_date", flat=True).distinct()[:120])
+        latest_entry_dates.reverse()
+        latest_adjustment_dates = list(adjustment_queryset.order_by("-target_date").values_list("target_date", flat=True).distinct()[:120])
+        latest_adjustment_dates.reverse()
+    latest_dates = sorted(set(latest_entry_dates) | set(latest_adjustment_dates))
+    if start_date is None and end_date is None and len(latest_dates) > 120:
+        latest_dates = latest_dates[-120:]
+    if not latest_dates:
         return {
             "labels": [],
             "amounts": [],
@@ -1123,7 +1131,41 @@ def _build_member_activity_trend(*, member, department, start_date=None, end_dat
             "count_label": "件数",
             "default_visible_count": 0,
         }
+    latest_entries = list(
+        entry_queryset.filter(entry_date__in=latest_dates)
+        .order_by("entry_date", "id")
+    )
+    entry_by_date = {}
+    for entry in latest_entries:
+        entry_by_date[entry.entry_date] = entry
     adjustment_totals_map = _build_adjustment_totals_map(latest_entries)
+    adjustment_only_rows = (
+        adjustment_queryset.filter(target_date__in=latest_dates)
+        .values("target_date")
+        .annotate(
+            result_count_total=Sum("result_count"),
+            support_amount_total=Sum("support_amount"),
+            return_postal_count_total=Sum("return_postal_count"),
+            return_postal_amount_total=Sum("return_postal_amount"),
+            return_qr_count_total=Sum("return_qr_count"),
+            return_qr_amount_total=Sum("return_qr_amount"),
+            cs_count_total=Sum("cs_count"),
+            refugee_count_total=Sum("refugee_count"),
+        )
+    )
+    adjustment_only_map = {
+        row["target_date"]: {
+            "result_count": int(row["result_count_total"] or 0),
+            "support_amount": int(row["support_amount_total"] or 0),
+            "return_postal_count": int(row["return_postal_count_total"] or 0),
+            "return_postal_amount": int(row["return_postal_amount_total"] or 0),
+            "return_qr_count": int(row["return_qr_count_total"] or 0),
+            "return_qr_amount": int(row["return_qr_amount_total"] or 0),
+            "cs_count": int(row["cs_count_total"] or 0),
+            "refugee_count": int(row["refugee_count_total"] or 0),
+        }
+        for row in adjustment_only_rows
+    }
     labels = []
     amounts = []
     counts = []
@@ -1133,22 +1175,34 @@ def _build_member_activity_trend(*, member, department, start_date=None, end_dat
     communication_counts = []
     target_amounts = []
     rate_values = []
-    for entry in latest_entries:
-        adjustment_totals = adjustment_totals_map.get(
-            (entry.member_id, entry.department_id, entry.entry_date),
-            {
-                "result_count": 0,
-                "support_amount": 0,
-                "return_postal_count": 0,
-                "return_postal_amount": 0,
-                "return_qr_count": 0,
-                "return_qr_amount": 0,
-                "cs_count": 0,
-                "refugee_count": 0,
-            },
-        )
-        labels.append(entry.entry_date.strftime("%m/%d"))
-        amount_value = _entry_final_amount_value(entry=entry, adjustment_totals=adjustment_totals)
+    empty_adjustment_totals = {
+        "result_count": 0,
+        "support_amount": 0,
+        "return_postal_count": 0,
+        "return_postal_amount": 0,
+        "return_qr_count": 0,
+        "return_qr_amount": 0,
+        "cs_count": 0,
+        "refugee_count": 0,
+    }
+    for activity_date in latest_dates:
+        entry = entry_by_date.get(activity_date)
+        if entry is not None:
+            adjustment_totals = adjustment_totals_map.get(
+                (entry.member_id, entry.department_id, entry.entry_date),
+                empty_adjustment_totals,
+            )
+        else:
+            adjustment_totals = adjustment_only_map.get(activity_date, empty_adjustment_totals)
+        labels.append(activity_date.strftime("%m/%d"))
+        if entry is not None:
+            amount_value = _entry_final_amount_value(entry=entry, adjustment_totals=adjustment_totals)
+        else:
+            amount_value = (
+                int(adjustment_totals["support_amount"])
+                + int(adjustment_totals["return_postal_amount"])
+                + int(adjustment_totals["return_qr_amount"])
+            )
         amounts.append(amount_value)
         adjustment_amount_value = (
             int(adjustment_totals["support_amount"])
@@ -1164,11 +1218,17 @@ def _build_member_activity_trend(*, member, department, start_date=None, end_dat
                 + int(adjustment_totals["return_postal_count"])
                 + int(adjustment_totals["return_qr_count"])
             )
-        counts.append(_entry_final_count_value(entry=entry, adjustment_totals=adjustment_totals))
+        if entry is not None:
+            counts.append(_entry_final_count_value(entry=entry, adjustment_totals=adjustment_totals))
+            approach_counts.append(int(entry.approach_count or 0))
+            communication_counts.append(int(entry.communication_count or 0))
+            target_amount = int(entry.daily_target_amount or 0)
+        else:
+            counts.append(adjustment_count_value)
+            approach_counts.append(0)
+            communication_counts.append(0)
+            target_amount = 0
         adjustment_counts.append(adjustment_count_value)
-        approach_counts.append(int(entry.approach_count or 0))
-        communication_counts.append(int(entry.communication_count or 0))
-        target_amount = int(entry.daily_target_amount or 0)
         target_amounts.append(target_amount)
         rate_values.append(round((amount_value / target_amount) * 100, 1) if target_amount > 0 else None)
     return {
