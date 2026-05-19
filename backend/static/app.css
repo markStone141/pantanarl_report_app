@@ -216,6 +216,8 @@ a {
 .card.performance-member-card-link-warning,
 .card.performance-member-card-link-positive {
   border: none !important;
+  border-left: none !important;
+  border-left-width: 0 !important;
   box-shadow: none;
 }
 
