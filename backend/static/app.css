@@ -214,8 +214,8 @@ a {
 }
 
 .card.performance-member-card-link-warning {
-  border-color: #ef4444;
-  border-left-width: 6px;
+  border-color: var(--line);
+  border-left-width: 1px;
   background: linear-gradient(180deg, rgba(254, 226, 226, 0.98), rgba(255, 245, 245, 0.98)) !important;
   box-shadow: none;
 }
