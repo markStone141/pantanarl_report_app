@@ -1,13 +1,21 @@
 (function () {
-  const donutCanvases = document.querySelectorAll(".performance-progress-donut-chart");
-  if (typeof window.Chart !== "undefined" && donutCanvases.length) {
+  function initProgressDonuts() {
+    if (typeof window.Chart === "undefined") {
+      return;
+    }
+    const donutCanvases = document.querySelectorAll(".performance-progress-donut-chart");
     donutCanvases.forEach(function (canvas) {
       const context = canvas.getContext("2d");
       if (!context) {
         return;
       }
+      if (canvas._performanceDonutChart) {
+        canvas._performanceDonutChart.destroy();
+      }
       canvas.width = 132;
       canvas.height = 132;
+      canvas.style.width = "132px";
+      canvas.style.height = "132px";
       const rawRate = canvas.dataset.rate;
       const chartValues = (canvas.dataset.chartValues || "")
         .split(",")
@@ -17,7 +25,7 @@
       const boundedRate = numericRate == null || Number.isNaN(numericRate) ? 0 : Math.max(0, Math.min(numericRate, 100));
       const datasetValues = chartValues.length ? chartValues : (boundedRate > 0 ? [boundedRate, 100 - boundedRate] : [0, 100]);
       const datasetColors = chartValues.length >= 3 ? ["#0a84ff", "#f59e0b", "#dbe7f5"] : ["#0a84ff", "#dbe7f5"];
-      new window.Chart(context, {
+      canvas._performanceDonutChart = new window.Chart(context, {
         type: "doughnut",
         data: {
           datasets: [
@@ -31,7 +39,7 @@
         },
         options: {
           responsive: false,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
           cutout: "68%",
           animation: false,
           events: [],
@@ -42,6 +50,12 @@
         },
       });
     });
+  }
+
+  if (document.readyState === "complete") {
+    initProgressDonuts();
+  } else {
+    window.addEventListener("load", initProgressDonuts, { once: true });
   }
 
   const dataNode = document.getElementById("performance-activity-trend-data");

@@ -41,6 +41,16 @@
   <section class="card mt-16">
     <h3>本日の活動状況</h3>
     <div class="grid grid-2 mt-12">
+      <article class="metric-card performance-today-total-card">
+        <span class="muted">今日の合計件数</span>
+        <strong class="mt-6">{{ dashboard_snapshot.today_total_count_text }}</strong>
+      </article>
+      <article class="metric-card performance-today-total-card">
+        <span class="muted">今日の合計金額</span>
+        <strong class="mt-6">{{ dashboard_snapshot.today_total_amount_text }}</strong>
+      </article>
+    </div>
+    <div class="grid grid-2 mt-12">
       <article class="card">
         <h4>現在活動中メンバー</h4>
         {% if dashboard_snapshot.activity_in_progress %}
@@ -267,6 +277,6 @@
 
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'performance/member_dashboard.js' %}?v=6"></script>
+<script src="{% static 'performance/member_dashboard.js' %}?v=7"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 {% endblock %}
