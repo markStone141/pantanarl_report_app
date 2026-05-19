@@ -295,10 +295,11 @@ a {
 }
 
 .performance-today-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: nowrap;
   gap: 12px;
   align-items: stretch;
+  overflow-x: auto;
 }
 
 .performance-today-total-card strong {
@@ -314,13 +315,8 @@ a {
 }
 
 .performance-today-summary-grid > .performance-today-total-card {
-  min-width: 0;
-}
-
-@media (max-width: 768px) {
-  .performance-today-summary-grid {
-    grid-template-columns: 1fr;
-  }
+  min-width: 180px;
+  flex: 1 0 180px;
 }
 
 .performance-trend-legend {
