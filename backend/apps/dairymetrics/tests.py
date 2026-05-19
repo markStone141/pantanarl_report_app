@@ -3580,6 +3580,7 @@ class DairyMetricsV2DemoTests(TestCase):
         self.assertContains(response, "ランキングモード")
         self.assertContains(response, "年代別決済比率")
         self.assertContains(response, "metrics-v2-dashboard-data")
+        self.assertContains(response, reverse("performance_member_dashboard"))
 
     def test_metrics_v2_demo_renders_admin_overall_mode(self):
         self.client.force_login(self.admin)
