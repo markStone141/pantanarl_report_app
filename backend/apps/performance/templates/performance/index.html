@@ -39,8 +39,7 @@
   </section>
 
   <section class="card mt-16">
-    <h3>本日の活動状況</h3>
-    <div class="performance-today-summary-grid mt-12">
+    <div class="performance-today-summary-grid">
       <article class="metric-card performance-today-total-card">
         <span class="muted">今日の合計件数</span>
         <strong class="mt-6">{{ dashboard_snapshot.today_total_count_text }}</strong>
@@ -58,6 +57,10 @@
         <strong class="mt-6 performance-today-inline-value">{{ dashboard_snapshot.today_rate_text }}</strong>
       </article>
     </div>
+  </section>
+
+  <section class="card mt-16">
+    <h3>本日の活動状況</h3>
     <div class="grid grid-2 mt-12">
       <article class="card">
         <h4>現在活動中メンバー</h4>

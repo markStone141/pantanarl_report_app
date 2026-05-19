@@ -296,9 +296,8 @@ a {
 
 .performance-today-summary-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-  overflow-x: auto;
   align-items: stretch;
 }
 
@@ -315,7 +314,13 @@ a {
 }
 
 .performance-today-summary-grid > .performance-today-total-card {
-  min-width: 180px;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .performance-today-summary-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .performance-trend-legend {
