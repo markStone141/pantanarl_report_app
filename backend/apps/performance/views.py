@@ -1524,7 +1524,12 @@ def performance_index(request: HttpRequest) -> HttpResponse:
 
     current_query = request.GET.copy()
     current_query.pop("page", None)
-    dashboard_department = _resolve_default_dashboard_department()
+    department_id = request.GET.get("dashboard_department")
+    dashboard_department = None
+    if department_id:
+        dashboard_department = Department.objects.filter(pk=department_id, is_active=True).first()
+    if dashboard_department is None:
+        dashboard_department = _resolve_default_dashboard_department()
     dashboard_month = timezone.localdate().replace(day=1)
     dashboard_period = _resolve_current_period(timezone.localdate())
     dashboard_start = request.GET.get("dashboard_start") or ""

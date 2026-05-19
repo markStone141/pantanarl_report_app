@@ -70,6 +70,19 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(response.context["dashboard_department"].code, "UN")
         self.assertContains(response, "月目標達成率")
 
+    def test_performance_index_can_switch_dashboard_department(self):
+        other_department = Department.objects.create(code="WV", name="WV", is_active=True)
+
+        response = self.client.get(reverse("performance_index"), {"dashboard_department": other_department.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["dashboard_department"].id, other_department.id)
+        self.assertContains(
+            response,
+            f'<option value="{other_department.id}" selected>WV</option>',
+            html=True,
+        )
+
     def test_performance_history_uses_selected_month_and_period_for_progress_cards(self):
         today = timezone.localdate()
         selected_month = date(today.year, 4, 1)

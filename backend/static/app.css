@@ -213,7 +213,7 @@ a {
   transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.performance-member-card-link-warning {
+.card.performance-member-card-link-warning {
   border-color: #ef4444;
   border-left-width: 6px;
   background: linear-gradient(180deg, rgba(254, 226, 226, 0.98), rgba(255, 245, 245, 0.98)) !important;
