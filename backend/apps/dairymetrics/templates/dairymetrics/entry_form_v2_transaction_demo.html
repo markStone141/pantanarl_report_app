@@ -994,7 +994,7 @@
       revealSection(transactionListPanel);
       openMailModal(autoOpenMailButton);
     }
-    if (!{{ open_entry_panel|yesno:"true,false" }}) {
+    if ("{{ open_entry_panel|yesno:'true,false' }}" !== "true") {
       resetTransactionForm();
     }
   })();
