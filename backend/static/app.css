@@ -291,6 +291,7 @@ a {
 .performance-today-total-card {
   background: linear-gradient(180deg, rgba(233, 243, 255, 0.92), rgba(248, 251, 255, 0.98));
   border: 1px solid rgba(39, 123, 211, 0.12);
+  text-align: left;
 }
 
 .performance-today-total-card strong {
@@ -298,6 +299,10 @@ a {
   font-size: 1.5rem;
   line-height: 1.1;
   color: #0f2744;
+}
+
+.performance-today-total-meta {
+  line-height: 1.45;
 }
 
 .performance-trend-legend {

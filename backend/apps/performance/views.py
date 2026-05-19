@@ -535,6 +535,41 @@ def _final_amount_text(*, totals):
     return f"{total_amount:,}円"
 
 
+def _totals_count_text_for_dashboard(*, department, totals):
+    if department is not None:
+        return _final_count_text(department_code=department.code, totals=totals)
+    total_count = (
+        int(totals.get("result_count") or 0)
+        + int(totals.get("return_postal_count") or 0)
+        + int(totals.get("return_qr_count") or 0)
+        + int(totals.get("cs_count") or 0)
+        + int(totals.get("refugee_count") or 0)
+    )
+    return f"{total_count}件相当"
+
+
+def _today_target_text_for_dashboard(*, department, count_target, amount_target):
+    if department is not None and department.code == "WV":
+        return f"目標 {int(amount_target or 0):,}円"
+    return f"目標 {int(count_target or 0)}件 / {int(amount_target or 0):,}円"
+
+
+def _today_rate_text_for_dashboard(*, actual_count, actual_amount, count_target, amount_target):
+    count_rate = None
+    amount_rate = None
+    if count_target and int(count_target) > 0:
+        count_rate = round((int(actual_count or 0) / int(count_target)) * 100, 1)
+    if amount_target and int(amount_target) > 0:
+        amount_rate = round((int(actual_amount or 0) / int(amount_target)) * 100, 1)
+    if count_rate is not None and amount_rate is not None:
+        return f"達成率 {count_rate}% / {amount_rate}%"
+    if amount_rate is not None:
+        return f"達成率 {amount_rate}%"
+    if count_rate is not None:
+        return f"達成率 {count_rate}%"
+    return "達成率 -"
+
+
 def _resolve_member_card_department(*, member, selected_department=None):
     if selected_department is not None:
         return selected_department
@@ -712,6 +747,60 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
     active_entries = list(active_entries.order_by("department__code", "member__name"))
     activity_in_progress = [entry for entry in active_entries if not entry.activity_closed]
     activity_finished = [entry for entry in active_entries if entry.activity_closed]
+    today_totals = (
+        collect_department_final_actual_totals(
+            department,
+            today,
+            today,
+            include_adjustments=True,
+        )
+        if department is not None
+        else collect_department_final_actual_totals_by_codes(
+            target_codes=[current_department.code for current_department in departments],
+            start_date=today,
+            end_date=today,
+            include_adjustments=True,
+        )
+    )
+    if department is None:
+        merged_today_totals = {
+            "result_count": 0,
+            "support_amount": 0,
+            "return_postal_count": 0,
+            "return_postal_amount": 0,
+            "return_qr_count": 0,
+            "return_qr_amount": 0,
+            "cs_count": 0,
+            "refugee_count": 0,
+            "approach_count": 0,
+            "communication_count": 0,
+        }
+        for department_totals in today_totals.values():
+            for key in merged_today_totals:
+                merged_today_totals[key] += int(department_totals.get(key) or 0)
+        today_totals = merged_today_totals
+    summary_queryset = DepartmentDailyMetricSummary.objects.filter(entry_date=today)
+    if department is not None:
+        summary_queryset = summary_queryset.filter(department=department)
+    elif departments:
+        summary_queryset = summary_queryset.filter(department__in=departments)
+    today_target_count = int(summary_queryset.aggregate(total=Sum("daily_target_count")).get("total") or 0)
+    today_target_amount = int(summary_queryset.aggregate(total=Sum("daily_target_amount")).get("total") or 0)
+    today_actual_count = _final_count_value(
+        department_code=department.code if department is not None else "",
+        totals=today_totals,
+    ) if department is not None else (
+        int(today_totals.get("result_count") or 0)
+        + int(today_totals.get("return_postal_count") or 0)
+        + int(today_totals.get("return_qr_count") or 0)
+        + int(today_totals.get("cs_count") or 0)
+        + int(today_totals.get("refugee_count") or 0)
+    )
+    today_actual_amount = (
+        int(today_totals.get("support_amount") or 0)
+        + int(today_totals.get("return_postal_amount") or 0)
+        + int(today_totals.get("return_qr_amount") or 0)
+    )
     if department:
         active_members = list(
             Member.objects.active()
@@ -805,6 +894,19 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
 
     return {
         "today": today,
+        "today_total_count_text": _totals_count_text_for_dashboard(department=department, totals=today_totals),
+        "today_total_amount_text": _final_amount_text(totals=today_totals),
+        "today_target_text": _today_target_text_for_dashboard(
+            department=department,
+            count_target=today_target_count,
+            amount_target=today_target_amount,
+        ),
+        "today_rate_text": _today_rate_text_for_dashboard(
+            actual_count=today_actual_count,
+            actual_amount=today_actual_amount,
+            count_target=today_target_count,
+            amount_target=today_target_amount,
+        ),
         "overall_activity_trend": _build_overall_activity_trend(department=department),
         "activity_in_progress": _build_activity_member_rows(activity_in_progress),
         "activity_finished": _build_activity_member_rows(activity_finished),

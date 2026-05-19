@@ -328,6 +328,14 @@ class PerformanceManagementTests(TestCase):
             support_amount=2000,
             activity_closed=True,
         )
+        DepartmentDailyMetricSummary.objects.create(
+            department=self.department,
+            entry_date=today,
+            daily_target_count=3,
+            daily_target_amount=8000,
+            created_by=self.member,
+            updated_by=self.member,
+        )
         MetricAdjustment.objects.create(
             member=self.member,
             department=self.department,
@@ -346,6 +354,12 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "現在活動中メンバー")
         self.assertContains(response, "活動終了メンバー")
+        self.assertContains(response, "今日の合計件数")
+        self.assertContains(response, "2件")
+        self.assertContains(response, "今日の合計金額")
+        self.assertContains(response, "5,500円")
+        self.assertContains(response, "目標 3件 / 8,000円")
+        self.assertContains(response, "達成率 66.7% / 68.8%")
         self.assertContains(response, active_entry.member.name)
         self.assertContains(response, finished_entry.member.name)
         self.assertContains(response, "目標達成率")
