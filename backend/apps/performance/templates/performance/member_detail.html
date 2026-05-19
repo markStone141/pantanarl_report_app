@@ -74,6 +74,7 @@
               aria-label="{{ department_month_progress.label }}"
               data-rate="{{ department_month_progress.rate|default:'' }}"
               data-rate-text="{{ department_month_progress.rate_text }}"
+              data-chart-values="{{ department_month_progress.chart_values|join:',' }}"
               width="132"
               height="132"
               style="width: 132px; height: 132px; display: block;"
@@ -83,6 +84,8 @@
         </div>
         <div class="performance-progress-stats mt-12">
           <div>実績 {{ department_month_progress.actual_amount_text }}</div>
+          <div class="muted">通常 {{ department_month_progress.base_actual_amount_text }}</div>
+          <div class="muted">補正 {{ department_month_progress.adjustment_amount_text }}</div>
           <div class="muted">目標 {{ department_month_progress.target_amount_text }}</div>
           <div class="muted">残り {{ department_month_progress.remaining_amount_text }}</div>
         </div>
@@ -107,6 +110,7 @@
               aria-label="{{ department_period_progress.label }}"
               data-rate="{{ department_period_progress.rate|default:'' }}"
               data-rate-text="{{ department_period_progress.rate_text }}"
+              data-chart-values="{{ department_period_progress.chart_values|join:',' }}"
               width="132"
               height="132"
               style="width: 132px; height: 132px; display: block;"
@@ -116,6 +120,8 @@
         </div>
         <div class="performance-progress-stats mt-12">
           <div>実績 {{ department_period_progress.actual_amount_text }}</div>
+          <div class="muted">通常 {{ department_period_progress.base_actual_amount_text }}</div>
+          <div class="muted">補正 {{ department_period_progress.adjustment_amount_text }}</div>
           <div class="muted">目標 {{ department_period_progress.target_amount_text }}</div>
           <div class="muted">残り {{ department_period_progress.remaining_amount_text }}</div>
         </div>
@@ -140,6 +146,7 @@
               aria-label="{{ member_month_progress.label }}"
               data-rate="{{ member_month_progress.rate|default:'' }}"
               data-rate-text="{{ member_month_progress.rate_text }}"
+              data-chart-values="{{ member_month_progress.chart_values|join:',' }}"
               width="132"
               height="132"
               style="width: 132px; height: 132px; display: block;"
@@ -149,6 +156,8 @@
         </div>
         <div class="performance-progress-stats mt-12">
           <div>実績 {{ member_month_progress.actual_amount_text }}</div>
+          <div class="muted">通常 {{ member_month_progress.base_actual_amount_text }}</div>
+          <div class="muted">補正 {{ member_month_progress.adjustment_amount_text }}</div>
           <div class="muted">目標 {{ member_month_progress.target_amount_text }}</div>
           <div class="muted">残り {{ member_month_progress.remaining_amount_text }}</div>
         </div>
@@ -191,6 +200,7 @@
               aria-label="{{ member_period_progress.label }}"
               data-rate="{{ member_period_progress.rate|default:'' }}"
               data-rate-text="{{ member_period_progress.rate_text }}"
+              data-chart-values="{{ member_period_progress.chart_values|join:',' }}"
               width="132"
               height="132"
               style="width: 132px; height: 132px; display: block;"
@@ -200,6 +210,8 @@
         </div>
         <div class="performance-progress-stats mt-12">
           <div>実績 {{ member_period_progress.actual_amount_text }}</div>
+          <div class="muted">通常 {{ member_period_progress.base_actual_amount_text }}</div>
+          <div class="muted">補正 {{ member_period_progress.adjustment_amount_text }}</div>
           <div class="muted">目標 {{ member_period_progress.target_amount_text }}</div>
           <div class="muted">残り {{ member_period_progress.remaining_amount_text }}</div>
         </div>
