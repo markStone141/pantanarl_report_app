@@ -441,7 +441,7 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "3稼働連続1件以上")
 
-    def test_performance_member_detail_shows_current_month_entries(self):
+    def test_performance_member_detail_shows_realtime_dashboard(self):
         today = timezone.localdate()
         active_period = Period.objects.create(
             month=today.replace(day=1),
@@ -481,6 +481,7 @@ class PerformanceManagementTests(TestCase):
             member=self.member,
             department=self.department,
             target_date=today,
+            source_type=MetricAdjustment.SOURCE_POSTAL,
             return_postal_count=1,
             return_postal_amount=900,
         )
@@ -516,13 +517,77 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "9,400円 / 9,400円")
         self.assertContains(response, "月目標")
         self.assertContains(response, "修正")
+        self.assertNotContains(response, "の日次実績")
+        self.assertNotContains(response, "の補正実績")
+
+    def test_performance_member_history_shows_scoped_entries_and_adjustments(self):
+        today = timezone.localdate()
+        active_period = Period.objects.create(
+            month=today.replace(day=1),
+            name="5月第2次路程",
+            status="active",
+            start_date=today - timedelta(days=3),
+            end_date=today + timedelta(days=3),
+        )
+        entry_today = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            result_count=1,
+            support_amount=3000,
+            approach_count=8,
+            communication_count=4,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=entry_today,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷",
+            comment="初回決済",
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=today,
+            source_type=MetricAdjustment.SOURCE_POSTAL,
+            return_postal_count=1,
+            return_postal_amount=900,
+        )
+        MemberMonthMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            target_month=today.replace(day=1),
+            target_amount=10000,
+        )
+        MemberPeriodMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            period=active_period,
+            target_amount=20000,
+        )
+
+        response = self.client.get(
+            reverse("performance_member_history_detail", args=[self.member.id, self.department.id]),
+            {"dashboard_scope": "month", "dashboard_month": today.strftime("%Y-%m")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"{self.member.name} の実績閲覧")
+        self.assertContains(response, "集計条件")
+        self.assertContains(response, "全体の月目標")
+        self.assertContains(response, "個人の月目標")
+        self.assertContains(response, "日次実績")
+        self.assertContains(response, "補正実績")
         self.assertContains(response, entry_today.entry_date.strftime("%Y/%m/%d"))
         self.assertContains(response, "郵送")
-        self.assertContains(response, "2件")
+        self.assertContains(response, "戻り 郵送 1 / QR 0")
         self.assertContains(response, "900円")
+        self.assertContains(response, "初回決済")
         self.assertNotContains(response, "<th>メモ</th>", html=False)
 
-    def test_performance_member_detail_shows_qr_adjustment_amount_and_count(self):
+    def test_performance_member_history_shows_qr_adjustment_amount_and_count(self):
         today = timezone.localdate()
         MemberDailyMetricEntry.objects.create(
             member=self.member,
@@ -540,7 +605,10 @@ class PerformanceManagementTests(TestCase):
             return_qr_amount=1500,
         )
 
-        response = self.client.get(reverse("performance_member_detail", args=[self.member.id, self.department.id]))
+        response = self.client.get(
+            reverse("performance_member_history_detail", args=[self.member.id, self.department.id]),
+            {"dashboard_scope": "month", "dashboard_month": today.strftime("%Y-%m")},
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "QR")
@@ -583,6 +651,26 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f"{self.member.name} の実績ダッシュボード")
         self.assertContains(response, "個人の月目標")
+
+    def test_performance_member_history_uses_logged_in_member_profile(self):
+        self.client.logout()
+        report_user = User.objects.create_user(username="perf-member-history", password="pass1234", is_staff=False)
+        self.member.user = report_user
+        self.member.save(update_fields=["user"])
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=timezone.localdate(),
+            result_count=1,
+            support_amount=3000,
+        )
+        self.client.force_login(report_user)
+
+        response = self.client.get(reverse("performance_member_history"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"{self.member.name} の実績閲覧")
+        self.assertContains(response, "集計条件")
 
     def test_performance_member_detail_can_save_month_target(self):
         today = timezone.localdate()
