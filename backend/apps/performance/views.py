@@ -549,24 +549,15 @@ def _totals_count_text_for_dashboard(*, department, totals):
 
 
 def _today_target_text_for_dashboard(*, department, count_target, amount_target):
-    if department is not None and department.code == "WV":
-        return f"目標 {int(amount_target or 0):,}円"
-    return f"目標 {int(count_target or 0)}件 / {int(amount_target or 0):,}円"
+    return f"目標 {int(amount_target or 0):,}円"
 
 
 def _today_rate_text_for_dashboard(*, actual_count, actual_amount, count_target, amount_target):
-    count_rate = None
     amount_rate = None
-    if count_target and int(count_target) > 0:
-        count_rate = round((int(actual_count or 0) / int(count_target)) * 100, 1)
     if amount_target and int(amount_target) > 0:
         amount_rate = round((int(actual_amount or 0) / int(amount_target)) * 100, 1)
-    if count_rate is not None and amount_rate is not None:
-        return f"達成率 {count_rate}% / {amount_rate}%"
     if amount_rate is not None:
         return f"達成率 {amount_rate}%"
-    if count_rate is not None:
-        return f"達成率 {count_rate}%"
     return "達成率 -"
 
 
