@@ -472,6 +472,32 @@ class PerformanceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "3稼働連続0件")
 
+    def test_performance_index_streak_uses_adjustment_counts(self):
+        today = timezone.localdate()
+        for offset in range(3):
+            entry = MemberDailyMetricEntry.objects.create(
+                member=self.member,
+                department=self.department,
+                entry_date=today - timedelta(days=offset),
+                result_count=0,
+                support_amount=0,
+                activity_closed=True,
+            )
+            if offset == 0:
+                MetricAdjustment.objects.create(
+                    member=self.member,
+                    department=self.department,
+                    target_date=entry.entry_date,
+                    source_type=MetricAdjustment.SOURCE_INCREASE,
+                    result_count=1,
+                    support_amount=500,
+                )
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "3稼働連続0件")
+
     def test_performance_index_marks_member_when_last_three_entries_have_results(self):
         today = timezone.localdate()
         for offset, count in enumerate((2, 1, 3)):
@@ -568,6 +594,8 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "直近30日の実績")
         self.assertContains(response, "直近30日の補正実績")
         self.assertContains(response, f'{reverse("dairymetrics_metrics_v2_demo")}?department={self.department.code}')
+        self.assertEqual(response.context["activity_trend"]["amounts"], [2500, 6900])
+        self.assertEqual(response.context["activity_trend"]["counts"], [2, 3])
         self.assertContains(response, "補正実績件数")
         self.assertContains(response, "1件")
         self.assertContains(response, "補正実績金額")

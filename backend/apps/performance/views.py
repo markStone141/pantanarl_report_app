@@ -204,23 +204,38 @@ def _count_text(entry, adjustment_totals):
         total_cs = int(entry.cs_count or 0) + int(adjustment_totals["cs_count"])
         total_refugee = int(entry.refugee_count or 0) + int(adjustment_totals["refugee_count"])
         return f"CS {total_cs} / 難民 {total_refugee}"
-    total_count = (
+    total_count = _entry_final_count_value(entry=entry, adjustment_totals=adjustment_totals)
+    return f"{total_count}件"
+
+
+def _amount_text(entry, adjustment_totals):
+    total_amount = _entry_final_amount_value(entry=entry, adjustment_totals=adjustment_totals)
+    return f"{total_amount:,}円"
+
+
+def _entry_final_count_value(*, entry, adjustment_totals):
+    if entry.department.code == "WV":
+        return (
+            int(entry.cs_count or 0)
+            + int(entry.refugee_count or 0)
+            + int(adjustment_totals["cs_count"])
+            + int(adjustment_totals["refugee_count"])
+        )
+    return (
         int(entry.result_count or 0)
         + int(adjustment_totals["result_count"])
         + int(adjustment_totals["return_postal_count"])
         + int(adjustment_totals["return_qr_count"])
     )
-    return f"{total_count}件"
 
 
-def _amount_text(entry, adjustment_totals):
-    total_amount = (
+def _entry_final_amount_value(*, entry, adjustment_totals):
+    return (
         int(entry.support_amount or 0)
         + int(adjustment_totals["support_amount"])
         + int(adjustment_totals["return_postal_amount"])
         + int(adjustment_totals["return_qr_amount"])
     )
-    return f"{total_amount:,}円"
 
 
 def _resolve_current_period(today):
@@ -429,18 +444,7 @@ def _build_scoped_member_cards(*, members, selected_department, scope):
                     "refugee_count": 0,
                 },
             )
-            latest_final_counts.append(
-                _final_count_value(
-                    department_code=department.code,
-                    totals={
-                        "result_count": int(latest_entry.result_count or 0) + int(latest_totals["result_count"]),
-                        "return_postal_count": int(latest_totals["return_postal_count"]),
-                        "return_qr_count": int(latest_totals["return_qr_count"]),
-                        "cs_count": int(latest_entry.cs_count or 0) + int(latest_totals["cs_count"]),
-                        "refugee_count": int(latest_entry.refugee_count or 0) + int(latest_totals["refugee_count"]),
-                    },
-                )
-            )
+            latest_final_counts.append(_entry_final_count_value(entry=latest_entry, adjustment_totals=latest_totals))
         zero_streak_warning = len(latest_final_counts) == 3 and all(count == 0 for count in latest_final_counts)
         active_streak_good = len(latest_final_counts) == 3 and all(count >= 1 for count in latest_final_counts)
         if scoped_entries:
@@ -635,18 +639,7 @@ def _build_active_member_cards(*, members, today, target_month, target_period, s
                     "refugee_count": 0,
                 },
             )
-            latest_final_counts.append(
-                _final_count_value(
-                    department_code=department.code,
-                    totals={
-                        "result_count": int(latest_entry.result_count or 0) + int(latest_totals["result_count"]),
-                        "return_postal_count": int(latest_totals["return_postal_count"]),
-                        "return_qr_count": int(latest_totals["return_qr_count"]),
-                        "cs_count": int(latest_entry.cs_count or 0) + int(latest_totals["cs_count"]),
-                        "refugee_count": int(latest_entry.refugee_count or 0) + int(latest_totals["refugee_count"]),
-                    },
-                )
-            )
+            latest_final_counts.append(_entry_final_count_value(entry=latest_entry, adjustment_totals=latest_totals))
         zero_streak_warning = len(latest_final_counts) == 3 and all(count == 0 for count in latest_final_counts)
         active_streak_good = len(latest_final_counts) == 3 and all(count >= 1 for count in latest_final_counts)
         if entry is not None:
@@ -1062,12 +1055,7 @@ def _build_member_activity_trend(*, member, department, start_date=None, end_dat
             },
         )
         labels.append(entry.entry_date.strftime("%m/%d"))
-        amount_value = (
-            int(entry.support_amount or 0)
-            + int(adjustment_totals["support_amount"])
-            + int(adjustment_totals["return_postal_amount"])
-            + int(adjustment_totals["return_qr_amount"])
-        )
+        amount_value = _entry_final_amount_value(entry=entry, adjustment_totals=adjustment_totals)
         amounts.append(amount_value)
         adjustment_amount_value = (
             int(adjustment_totals["support_amount"])
@@ -1077,14 +1065,13 @@ def _build_member_activity_trend(*, member, department, start_date=None, end_dat
         adjustment_amounts.append(adjustment_amount_value)
         if department.code == "WV":
             adjustment_count_value = int(adjustment_totals["cs_count"]) + int(adjustment_totals["refugee_count"])
-            counts.append(int(entry.cs_count or 0) + int(entry.refugee_count or 0) + adjustment_count_value)
         else:
             adjustment_count_value = (
                 int(adjustment_totals["result_count"])
                 + int(adjustment_totals["return_postal_count"])
                 + int(adjustment_totals["return_qr_count"])
             )
-            counts.append(int(entry.result_count or 0) + adjustment_count_value)
+        counts.append(_entry_final_count_value(entry=entry, adjustment_totals=adjustment_totals))
         adjustment_counts.append(adjustment_count_value)
         approach_counts.append(int(entry.approach_count or 0))
         communication_counts.append(int(entry.communication_count or 0))
