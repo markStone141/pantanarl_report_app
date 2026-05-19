@@ -59,6 +59,8 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "performance-activity-trend-chart")
         self.assertContains(response, "日目達成率")
         self.assertContains(response, entry.entry_date.strftime("%m/%d"))
+        self.assertContains(response, "補正実績入力")
+        self.assertContains(response, reverse("performance_adjustments"))
 
     def test_performance_index_defaults_dashboard_department_to_un(self):
         other_department = Department.objects.create(code="WV", name="WV", is_active=True)

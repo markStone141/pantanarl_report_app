@@ -54,6 +54,7 @@ def _performance_nav_items():
     return [
         ("performance_index", "実績管理ダッシュボード"),
         ("performance_history", "実績閲覧"),
+        ("performance_adjustments", "補正実績入力"),
         ("dashboard_index", "総合管理者ページ"),
     ]
 
