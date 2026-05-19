@@ -20,7 +20,7 @@
       {% if not is_admin_view %}
       <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
       {% endif %}
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}?department={{ department.code }}">Metrics V2</a>
+      <a href="{% url 'dairymetrics_metrics_v2_demo' %}?department={{ department.code }}{% if readonly_member_view %}&member={{ member.id }}{% endif %}">Metrics V2</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>

@@ -98,6 +98,13 @@ def _performance_member_nav_items(*, is_admin=False):
     ]
 
 
+def _resolve_performance_member_department_or_404(*, member, department_id):
+    department = get_object_or_404(Department, pk=department_id, is_active=True)
+    if not MemberDepartment.objects.filter(member=member, department=department).exists() and member.default_department_id != department.id:
+        raise Http404
+    return department
+
+
 def performance_login(request: HttpRequest) -> HttpResponse:
     role = resolve_request_role(request)
     if role in {ROLE_ADMIN, ROLE_REPORT} and request.user.is_authenticated:
@@ -478,7 +485,7 @@ def _build_scoped_member_cards(*, members, selected_department, scope):
                 "zero_streak_text": "3稼働連続0件" if zero_streak_warning else "",
                 "active_streak_good": active_streak_good,
                 "active_streak_text": "3稼働連続1件以上" if active_streak_good else "",
-                "detail_url": reverse("performance_member_detail", args=[member.id, department.id]),
+                "detail_url": reverse("performance_member_insight", args=[member.id, department.id]),
             }
         )
     cards.sort(
@@ -684,10 +691,7 @@ def _build_active_member_cards(*, members, today, target_month, target_period, s
                 "zero_streak_text": "3稼働連続0件" if zero_streak_warning else "",
                 "active_streak_good": active_streak_good,
                 "active_streak_text": "3稼働連続1件以上" if active_streak_good else "",
-                "detail_url": reverse(
-                    "performance_member_detail",
-                    args=[member.id, department.id],
-                ),
+                "detail_url": reverse("performance_member_insight", args=[member.id, department.id]),
             }
         )
     cards.sort(
@@ -1453,6 +1457,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "edit_month_target": edit_month_target,
         "edit_period_target": edit_period_target,
         "is_admin_view": is_admin,
+        "readonly_member_view": False,
     }
 
 
@@ -1615,6 +1620,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
         "member": member,
         "department": department,
         "is_admin_view": is_admin,
+        "readonly_member_view": False,
         "dashboard_scope": dashboard_scope,
         "dashboard_month": dashboard_month,
         "dashboard_period": dashboard_period,
@@ -1801,9 +1807,7 @@ def performance_entry_edit(request: HttpRequest, entry_id: int) -> HttpResponse:
 @require_performance_roles(ROLE_ADMIN)
 def performance_member_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
-    department = get_object_or_404(Department, pk=department_id, is_active=True)
-    if not MemberDepartment.objects.filter(member=member, department=department).exists() and member.default_department_id != department.id:
-        raise Http404
+    department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
     if request.method == "POST":
         selected_month = _parse_selected_month(request.GET.get("month"), default=timezone.localdate())
         current_period = _resolve_current_period(timezone.localdate())
@@ -1839,10 +1843,36 @@ def performance_member_detail(request: HttpRequest, member_id: int, department_i
 @require_performance_roles(ROLE_ADMIN)
 def performance_member_history_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
-    department = get_object_or_404(Department, pk=department_id, is_active=True)
-    if not MemberDepartment.objects.filter(member=member, department=department).exists() and member.default_department_id != department.id:
-        raise Http404
+    department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
     context = _build_member_history_context(request=request, member=member, department=department, is_admin=True)
+    return render(request, "performance/member_history.html", context)
+
+
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
+def performance_member_insight(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
+    member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
+    department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
+    context = _build_member_dashboard_context(
+        request=request,
+        member=member,
+        department=department,
+        is_admin=request.user.is_staff or request.user.is_superuser,
+    )
+    context["readonly_member_view"] = True
+    return render(request, "performance/member_detail.html", context)
+
+
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
+def performance_member_history_insight(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
+    member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
+    department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
+    context = _build_member_history_context(
+        request=request,
+        member=member,
+        department=department,
+        is_admin=request.user.is_staff or request.user.is_superuser,
+    )
+    context["readonly_member_view"] = True
     return render(request, "performance/member_history.html", context)
 
 

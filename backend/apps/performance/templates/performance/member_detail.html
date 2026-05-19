@@ -20,13 +20,13 @@
       {% if not is_admin_view %}
       <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
       {% endif %}
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}?department={{ department.code }}">Metrics V2</a>
+      <a href="{% url 'dairymetrics_metrics_v2_demo' %}?department={{ department.code }}{% if readonly_member_view %}&member={{ member.id }}{% endif %}">Metrics V2</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
-  {% if is_admin_view %}
+  {% if readonly_member_view %}
   <section class="mt-16">
     <a class="btn-inline" href="{% url 'dairymetrics_metrics_v2_demo' %}?department={{ department.code }}&member={{ member.id }}">このメンバーの Metrics V2</a>
   </section>
@@ -175,7 +175,18 @@
           <div class="muted">目標 {{ member_month_progress.target_amount_text }}</div>
           <div class="muted">残り {{ member_month_progress.remaining_amount_text }}</div>
         </div>
-        {% if member_month_target and not edit_month_target %}
+        {% if readonly_member_view %}
+        {% if member_month_target %}
+        <div class="metric-card mt-12 performance-target-config-card">
+          <div class="performance-target-config-values">
+            <div>件数 {{ member_month_target.target_count }}件</div>
+            <div class="muted">金額 {{ member_month_target.target_amount|floatformat:0 }}円</div>
+          </div>
+        </div>
+        {% else %}
+        <p class="muted mt-12">月目標は未設定です。</p>
+        {% endif %}
+        {% elif member_month_target and not edit_month_target %}
         <div class="metric-card mt-12 performance-target-config-card">
           <div class="row">
             <div class="performance-target-config-values">
@@ -229,7 +240,18 @@
           <div class="muted">目標 {{ member_period_progress.target_amount_text }}</div>
           <div class="muted">残り {{ member_period_progress.remaining_amount_text }}</div>
         </div>
-        {% if member_period_target and not edit_period_target %}
+        {% if readonly_member_view %}
+        {% if member_period_target %}
+        <div class="metric-card mt-12 performance-target-config-card">
+          <div class="performance-target-config-values">
+            <div>件数 {{ member_period_target.target_count }}件</div>
+            <div class="muted">金額 {{ member_period_target.target_amount|floatformat:0 }}円</div>
+          </div>
+        </div>
+        {% else %}
+        <p class="muted mt-12">現在の路程が未設定です。</p>
+        {% endif %}
+        {% elif member_period_target and not edit_period_target %}
         <div class="metric-card mt-12 performance-target-config-card">
           <div class="row">
             <div class="performance-target-config-values">

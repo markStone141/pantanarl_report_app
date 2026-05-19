@@ -409,7 +409,7 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "今月累計")
         self.assertContains(response, "路程累計")
         self.assertContains(response, "直近の実績")
-        self.assertContains(response, reverse("performance_member_detail", args=[self.member.id, self.department.id]))
+        self.assertContains(response, reverse("performance_member_insight", args=[self.member.id, self.department.id]))
 
     def test_performance_index_shows_enabled_member_card_without_today_entry(self):
         today = timezone.localdate()
@@ -428,7 +428,7 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "有効メンバー一覧")
         self.assertContains(response, self.member.name)
         self.assertContains(response, "2,800円")
-        self.assertContains(response, reverse("performance_member_detail", args=[self.member.id, self.department.id]))
+        self.assertContains(response, reverse("performance_member_insight", args=[self.member.id, self.department.id]))
 
     def test_performance_index_orders_enabled_member_cards_by_recent_entry_desc(self):
         today = timezone.localdate()
@@ -567,10 +567,7 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "修正")
         self.assertContains(response, "直近30日の実績")
         self.assertContains(response, "直近30日の補正実績")
-        self.assertContains(
-            response,
-            f'{reverse("dairymetrics_metrics_v2_demo")}?department={self.department.code}&member={self.member.id}',
-        )
+        self.assertContains(response, f'{reverse("dairymetrics_metrics_v2_demo")}?department={self.department.code}')
         self.assertContains(response, "補正実績件数")
         self.assertContains(response, "1件")
         self.assertContains(response, "補正実績金額")
@@ -715,6 +712,32 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "実績閲覧")
         self.assertContains(response, "Metrics V2")
         self.assertNotContains(response, "総合管理者ページ")
+
+    def test_performance_member_insight_is_readonly_for_member_viewer(self):
+        self.client.logout()
+        viewer_user = User.objects.create_user(username="perf-viewer", password="pass1234", is_staff=False)
+        self.member.user = viewer_user
+        self.member.save(update_fields=["user"])
+        teammate = Member.objects.create(name="Teammate", default_department=self.department)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
+        MemberMonthMetricTarget.objects.create(
+            member=teammate,
+            department=self.department,
+            target_month=timezone.localdate().replace(day=1),
+            target_amount=8000,
+        )
+        self.client.force_login(viewer_user)
+
+        response = self.client.get(reverse("performance_member_insight", args=[teammate.id, self.department.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"{teammate.name} の実績ダッシュボード")
+        self.assertContains(
+            response,
+            f'{reverse("dairymetrics_metrics_v2_demo")}?department={self.department.code}&member={teammate.id}',
+        )
+        self.assertNotContains(response, "月目標を保存")
+        self.assertNotContains(response, "路程目標を保存")
 
     def test_performance_member_history_uses_logged_in_member_profile(self):
         self.client.logout()

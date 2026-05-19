@@ -1453,6 +1453,17 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
         scope=scope,
         member=selected_member if request.user.is_staff else viewer_member,
     )
+    ranking_metric_map = payload.get("ranking", {}).get("metric_map", {})
+    for metric_payload in ranking_metric_map.values():
+        detail_urls = []
+        for row in metric_payload.get("rows", []):
+            detail_url = reverse(
+                "performance_member_insight",
+                args=[row["member_id"], selected_department.id],
+            )
+            row["detail_url"] = detail_url
+            detail_urls.append(detail_url)
+        metric_payload["detail_urls"] = detail_urls
     payload_json = {**payload, "scope": {"scope": scope.scope, "label": scope.label}}
     available_periods = list(Period.objects.order_by("-end_date", "-start_date", "-id")[:18])
 

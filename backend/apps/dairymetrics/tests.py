@@ -3598,6 +3598,7 @@ class DairyMetricsV2DemoTests(TestCase):
         self.assertContains(response, "過去実績閲覧")
         self.assertContains(response, "総合管理者ページ")
         self.assertNotContains(response, "決済入力")
+        self.assertContains(response, reverse("performance_member_insight", args=[self.member.id, self.department.id]))
 
     def test_metrics_v2_demo_can_render_selected_member_for_admin(self):
         self.client.force_login(self.admin)
