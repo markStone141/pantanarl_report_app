@@ -993,6 +993,29 @@ def _sum_adjustment_amount(*, member=None, department=None, start_date, end_date
     )
 
 
+def _adjustment_totals_dict_from_queryset(*, queryset):
+    totals = queryset.aggregate(
+        result_count_total=Sum("result_count"),
+        support_amount_total=Sum("support_amount"),
+        return_postal_count_total=Sum("return_postal_count"),
+        return_postal_amount_total=Sum("return_postal_amount"),
+        return_qr_count_total=Sum("return_qr_count"),
+        return_qr_amount_total=Sum("return_qr_amount"),
+        cs_count_total=Sum("cs_count"),
+        refugee_count_total=Sum("refugee_count"),
+    )
+    return {
+        "result_count": int(totals["result_count_total"] or 0),
+        "support_amount": int(totals["support_amount_total"] or 0),
+        "return_postal_count": int(totals["return_postal_count_total"] or 0),
+        "return_postal_amount": int(totals["return_postal_amount_total"] or 0),
+        "return_qr_count": int(totals["return_qr_count_total"] or 0),
+        "return_qr_amount": int(totals["return_qr_amount_total"] or 0),
+        "cs_count": int(totals["cs_count_total"] or 0),
+        "refugee_count": int(totals["refugee_count_total"] or 0),
+    }
+
+
 def _build_member_activity_trend(*, member, department, start_date=None, end_date=None):
     entry_queryset = MemberDailyMetricEntry.objects.select_related("department").filter(member=member, department=department)
     if start_date is not None and end_date is not None:
@@ -1014,6 +1037,8 @@ def _build_member_activity_trend(*, member, department, start_date=None, end_dat
     labels = []
     amounts = []
     counts = []
+    adjustment_amounts = []
+    adjustment_counts = []
     approach_counts = []
     communication_counts = []
     target_amounts = []
@@ -1040,20 +1065,23 @@ def _build_member_activity_trend(*, member, department, start_date=None, end_dat
             + int(adjustment_totals["return_qr_amount"])
         )
         amounts.append(amount_value)
+        adjustment_amount_value = (
+            int(adjustment_totals["support_amount"])
+            + int(adjustment_totals["return_postal_amount"])
+            + int(adjustment_totals["return_qr_amount"])
+        )
+        adjustment_amounts.append(adjustment_amount_value)
         if department.code == "WV":
-            counts.append(
-                int(entry.cs_count or 0)
-                + int(entry.refugee_count or 0)
-                + int(adjustment_totals["cs_count"])
-                + int(adjustment_totals["refugee_count"])
-            )
+            adjustment_count_value = int(adjustment_totals["cs_count"]) + int(adjustment_totals["refugee_count"])
+            counts.append(int(entry.cs_count or 0) + int(entry.refugee_count or 0) + adjustment_count_value)
         else:
-            counts.append(
-                int(entry.result_count or 0)
-                + int(adjustment_totals["result_count"])
+            adjustment_count_value = (
+                int(adjustment_totals["result_count"])
                 + int(adjustment_totals["return_postal_count"])
                 + int(adjustment_totals["return_qr_count"])
             )
+            counts.append(int(entry.result_count or 0) + adjustment_count_value)
+        adjustment_counts.append(adjustment_count_value)
         approach_counts.append(int(entry.approach_count or 0))
         communication_counts.append(int(entry.communication_count or 0))
         target_amount = int(entry.daily_target_amount or 0)
@@ -1063,6 +1091,8 @@ def _build_member_activity_trend(*, member, department, start_date=None, end_dat
         "labels": labels,
         "amounts": amounts,
         "counts": counts,
+        "adjustment_amounts": adjustment_amounts,
+        "adjustment_counts": adjustment_counts,
         "approach_counts": approach_counts,
         "communication_counts": communication_counts,
         "target_amounts": target_amounts,
@@ -1235,16 +1265,12 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         recent_end,
         include_adjustments=True,
     )
-    recent_increase_queryset = MetricAdjustment.objects.filter(
+    recent_adjustment_queryset = MetricAdjustment.objects.filter(
         member=member,
         department=department,
         target_date__range=(recent_start, recent_end),
-        source_type=MetricAdjustment.SOURCE_INCREASE,
     )
-    recent_increase_totals = recent_increase_queryset.aggregate(
-        total_count=Sum("result_count"),
-        total_amount=Sum("support_amount"),
-    )
+    recent_adjustment_totals = _adjustment_totals_dict_from_queryset(queryset=recent_adjustment_queryset)
     recent_active_days = (
         MemberDailyMetricEntry.objects.filter(
             member=member,
@@ -1369,20 +1395,21 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "recent_adjustment_rows": recent_adjustment_rows,
         "recent_range_label": f"{recent_start:%Y/%m/%d} - {recent_end:%Y/%m/%d}",
         "recent_summary_items": [
-            {"label": "合計AP", "value": f"{int(recent_totals.get('approach_count') or 0):,}"},
-            {"label": "合計CM", "value": f"{int(recent_totals.get('communication_count') or 0):,}"},
-            {"label": "合計件数", "value": _final_count_text(department_code=department.code, totals=recent_totals)},
-            {"label": "合計金額", "value": _final_amount_text(totals=recent_totals)},
+            {"key": "approach_total", "label": "合計AP", "value": f"{int(recent_totals.get('approach_count') or 0):,}"},
+            {"key": "communication_total", "label": "合計CM", "value": f"{int(recent_totals.get('communication_count') or 0):,}"},
+            {"key": "count_total", "label": "合計件数", "value": _final_count_text(department_code=department.code, totals=recent_totals)},
+            {"key": "amount_total", "label": "合計金額", "value": _final_amount_text(totals=recent_totals)},
             {
+                "key": "adjustment_count_total",
                 "label": "補正実績件数",
-                "value": (
-                    f"{int(recent_increase_totals['total_count'] or 0):,}件"
-                    if department.code != "WV"
-                    else f"{int(recent_increase_totals['total_count'] or 0):,}"
-                ),
+                "value": _final_count_text(department_code=department.code, totals=recent_adjustment_totals),
             },
-            {"label": "補正実績金額", "value": f"{int(recent_increase_totals['total_amount'] or 0):,}円"},
-            {"label": "稼働日数", "value": f"{recent_active_days:,}日"},
+            {
+                "key": "adjustment_amount_total",
+                "label": "補正実績金額",
+                "value": _final_amount_text(totals=recent_adjustment_totals),
+            },
+            {"key": "active_days", "label": "稼働日数", "value": f"{recent_active_days:,}日"},
         ],
         "activity_trend": activity_trend,
         "department_month_progress": department_month_progress,

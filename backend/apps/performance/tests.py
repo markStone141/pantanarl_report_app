@@ -567,6 +567,10 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "修正")
         self.assertContains(response, "直近30日の実績")
         self.assertContains(response, "直近30日の補正実績")
+        self.assertContains(response, "補正実績件数")
+        self.assertContains(response, "1件")
+        self.assertContains(response, "補正実績金額")
+        self.assertContains(response, "900円")
 
     def test_performance_member_history_shows_scoped_entries_and_adjustments(self):
         today = timezone.localdate()

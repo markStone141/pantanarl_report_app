@@ -59,9 +59,18 @@
   const lineLabelNode = document.getElementById("performance-trend-line-label");
   const secondaryLegendNode = document.getElementById("performance-trend-secondary-legend");
   const secondarySwatchNode = document.getElementById("performance-trend-secondary-swatch");
+  const summaryCards = {};
   if (!dataNode || !canvas) {
     return;
   }
+
+  document.querySelectorAll("[data-performance-summary-card]").forEach(function (node) {
+    const key = node.dataset.performanceSummaryCard;
+    const valueNode = node.querySelector("[data-performance-summary-value]");
+    if (key && valueNode) {
+      summaryCards[key] = valueNode;
+    }
+  });
 
   let trendData;
   try {
@@ -81,6 +90,8 @@
   const allLabels = trendData.labels.slice();
   const allAmounts = trendData.amounts.slice();
   const allCounts = trendData.counts.slice();
+  const allAdjustmentAmounts = (trendData.adjustment_amounts || []).slice();
+  const allAdjustmentCounts = (trendData.adjustment_counts || []).slice();
   const allApproachCounts = (trendData.approach_counts || []).slice();
   const allCommunicationCounts = (trendData.communication_counts || []).slice();
   const allTargetAmounts = (trendData.target_amounts || []).slice();
@@ -95,6 +106,51 @@
 
   function sliceLatest(values) {
     return values.slice(Math.max(0, values.length - visibleCount));
+  }
+
+  function sumValues(values) {
+    return values.reduce(function (total, value) {
+      return total + Number(value || 0);
+    }, 0);
+  }
+
+  function formatCount(value) {
+    const numericValue = Number(value || 0);
+    return (trendData.count_label || "件数") === "件数相当"
+      ? numericValue.toLocaleString("ja-JP")
+      : numericValue.toLocaleString("ja-JP") + "件";
+  }
+
+  function formatAmount(value) {
+    return Number(value || 0).toLocaleString("ja-JP") + "円";
+  }
+
+  function updateSummaryCards() {
+    if (!Object.keys(summaryCards).length) {
+      return;
+    }
+    const visibleLabels = sliceLatest(allLabels);
+    if (summaryCards.approach_total) {
+      summaryCards.approach_total.textContent = sumValues(sliceLatest(allApproachCounts)).toLocaleString("ja-JP");
+    }
+    if (summaryCards.communication_total) {
+      summaryCards.communication_total.textContent = sumValues(sliceLatest(allCommunicationCounts)).toLocaleString("ja-JP");
+    }
+    if (summaryCards.count_total) {
+      summaryCards.count_total.textContent = formatCount(sumValues(sliceLatest(allCounts)));
+    }
+    if (summaryCards.amount_total) {
+      summaryCards.amount_total.textContent = formatAmount(sumValues(sliceLatest(allAmounts)));
+    }
+    if (summaryCards.adjustment_count_total) {
+      summaryCards.adjustment_count_total.textContent = formatCount(sumValues(sliceLatest(allAdjustmentCounts)));
+    }
+    if (summaryCards.adjustment_amount_total) {
+      summaryCards.adjustment_amount_total.textContent = formatAmount(sumValues(sliceLatest(allAdjustmentAmounts)));
+    }
+    if (summaryCards.active_days) {
+      summaryCards.active_days.textContent = visibleLabels.length.toLocaleString("ja-JP") + "日";
+    }
   }
 
   function updateLegend() {
@@ -388,6 +444,7 @@
     if (increaseButton) {
       increaseButton.disabled = visibleCount >= allLabels.length;
     }
+    updateSummaryCards();
   }
 
   function updateVisibleRange(nextVisibleCount) {
