@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}実績管理 ログイン | Report App{% endblock %}
+
+{% block content %}
+<main class="login-wrap">
+  <section class="card login-card">
+    <div>
+      <p class="dairymetrics-eyebrow">Performance</p>
+      <h1>実績管理</h1>
+      <p class="muted mt-8">メンバーのパスワード、または管理者アカウントでログインします。</p>
+    </div>
+    <form method="post" class="grid mt-16">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}" />
+      <div>
+        <label for="{{ form.login_id.id_for_label }}">ID</label>
+        {{ form.login_id }}
+      </div>
+      <div>
+        <label for="{{ form.password.id_for_label }}">パスワード</label>
+        {{ form.password }}
+      </div>
+      {% if form.non_field_errors %}
+      <div class="error-text">{{ form.non_field_errors|join:", " }}</div>
+      {% endif %}
+      <button type="submit">ログイン</button>
+    </form>
+    <div class="reportapp-login-shortcuts">
+      <a href="{% url 'dairymetrics_login' %}">
+        <span class="reportapp-login-shortcuts-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span>
+        <span>
+          <strong>決済登録</strong>
+          <small>当日の入力へ</small>
+        </span>
+      </a>
+      <a href="{% url 'home' %}">
+        <span class="reportapp-login-shortcuts-icon"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span>
+        <span>
+          <strong>Report App</strong>
+          <small>全体ログインへ</small>
+        </span>
+      </a>
+    </div>
+  </section>
+</main>
+{% endblock %}

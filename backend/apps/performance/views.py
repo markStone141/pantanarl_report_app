@@ -1,6 +1,8 @@
+from functools import wraps
 from dataclasses import dataclass
 from datetime import date, timedelta
 
+from django.contrib.auth import login as auth_login
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
@@ -10,9 +12,9 @@ from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils import timezone
 
-from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, require_roles
+from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, resolve_request_role
 from apps.accounts.models import Department, Member, MemberDepartment
-from apps.dairymetrics.forms import MemberScopeTargetForm
+from apps.dairymetrics.forms import DairyMetricsLoginForm, MemberScopeTargetForm
 from apps.dairymetrics.models import (
     DepartmentDailyMetricSummary,
     MemberDailyMetricEntry,
@@ -50,6 +52,31 @@ class PerformanceHistoryScope:
     period: Period | None = None
 
 
+def _performance_redirect_for_user(user, *, fallback=""):
+    if fallback and isinstance(fallback, str) and fallback.startswith("/performance/"):
+        return redirect(fallback)
+    if user.is_staff or user.is_superuser:
+        return redirect("performance_index")
+    return redirect("performance_member_dashboard")
+
+
+def require_performance_roles(*allowed_roles: str):
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapper(request: HttpRequest, *args, **kwargs) -> HttpResponse:
+            role = resolve_request_role(request)
+            if role not in allowed_roles:
+                next_url = request.get_full_path()
+                query = urlencode({"next": next_url}) if next_url else ""
+                login_url = reverse("performance_login")
+                return redirect(f"{login_url}?{query}" if query else login_url)
+            return view_func(request, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
 def _performance_nav_items():
     return [
         ("performance_index", "実績管理ダッシュボード"),
@@ -69,6 +96,26 @@ def _performance_member_nav_items(*, is_admin=False):
         ("performance_member_dashboard", "実績管理ダッシュボード"),
         ("performance_member_history", "実績閲覧"),
     ]
+
+
+def performance_login(request: HttpRequest) -> HttpResponse:
+    role = resolve_request_role(request)
+    if role in {ROLE_ADMIN, ROLE_REPORT} and request.user.is_authenticated:
+        return _performance_redirect_for_user(request.user, fallback=request.GET.get("next", ""))
+
+    form = DairyMetricsLoginForm(request=request, data=request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        auth_login(request, form.user)
+        return _performance_redirect_for_user(form.user, fallback=request.POST.get("next", ""))
+
+    return render(
+        request,
+        "performance/login.html",
+        {
+            "form": form,
+            "next": request.GET.get("next", ""),
+        },
+    )
 
 
 def _filtered_entries_queryset(cleaned_data):
@@ -1513,7 +1560,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
     }
 
 
-@require_roles(ROLE_ADMIN)
+@require_performance_roles(ROLE_ADMIN)
 def performance_index(request: HttpRequest) -> HttpResponse:
     filter_data = request.GET.copy()
     if not filter_data:
@@ -1598,7 +1645,7 @@ def performance_index(request: HttpRequest) -> HttpResponse:
     return render(request, "performance/index.html", context)
 
 
-@require_roles(ROLE_ADMIN)
+@require_performance_roles(ROLE_ADMIN)
 def performance_history(request: HttpRequest) -> HttpResponse:
     today = timezone.localdate()
     dashboard_scope = request.GET.get("dashboard_scope") or "month"
@@ -1646,7 +1693,7 @@ def performance_history(request: HttpRequest) -> HttpResponse:
     return render(request, "performance/history.html", context)
 
 
-@require_roles(ROLE_ADMIN)
+@require_performance_roles(ROLE_ADMIN)
 def performance_entry_edit(request: HttpRequest, entry_id: int) -> HttpResponse:
     entry = get_object_or_404(MemberDailyMetricEntry.objects.select_related("member", "department"), pk=entry_id)
     status_message = ""
@@ -1681,7 +1728,7 @@ def performance_entry_edit(request: HttpRequest, entry_id: int) -> HttpResponse:
     return render(request, "performance/entry_edit.html", context)
 
 
-@require_roles(ROLE_ADMIN)
+@require_performance_roles(ROLE_ADMIN)
 def performance_member_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
     department = get_object_or_404(Department, pk=department_id, is_active=True)
@@ -1719,7 +1766,7 @@ def performance_member_detail(request: HttpRequest, member_id: int, department_i
     return render(request, "performance/member_detail.html", context)
 
 
-@require_roles(ROLE_ADMIN)
+@require_performance_roles(ROLE_ADMIN)
 def performance_member_history_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
     department = get_object_or_404(Department, pk=department_id, is_active=True)
@@ -1729,7 +1776,7 @@ def performance_member_history_detail(request: HttpRequest, member_id: int, depa
     return render(request, "performance/member_history.html", context)
 
 
-@require_roles(ROLE_ADMIN, ROLE_REPORT)
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_dashboard(request: HttpRequest) -> HttpResponse:
     if request.user.is_staff or request.user.is_superuser:
         return redirect("performance_index")
@@ -1769,7 +1816,7 @@ def performance_member_dashboard(request: HttpRequest) -> HttpResponse:
     return render(request, "performance/member_detail.html", context)
 
 
-@require_roles(ROLE_ADMIN, ROLE_REPORT)
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_history(request: HttpRequest) -> HttpResponse:
     if request.user.is_staff or request.user.is_superuser:
         return redirect("performance_index")
@@ -1783,7 +1830,7 @@ def performance_member_history(request: HttpRequest) -> HttpResponse:
     return render(request, "performance/member_history.html", context)
 
 
-@require_roles(ROLE_ADMIN)
+@require_performance_roles(ROLE_ADMIN)
 def performance_adjustments(request: HttpRequest) -> HttpResponse:
     status_message = ""
     edit_adjustment = None
@@ -1846,7 +1893,7 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
     return render(request, "performance/adjustments.html", context)
 
 
-@require_roles(ROLE_ADMIN)
+@require_performance_roles(ROLE_ADMIN)
 def performance_adjustment_delete(request: HttpRequest, adjustment_id: int) -> HttpResponse:
     adjustment = get_object_or_404(MetricAdjustment, pk=adjustment_id)
     if request.method == "POST":

@@ -62,6 +62,16 @@ class PerformanceManagementTests(TestCase):
         self.assertContains(response, "補正実績入力")
         self.assertContains(response, reverse("performance_adjustments"))
 
+    def test_performance_member_dashboard_redirects_to_performance_login(self):
+        self.client.logout()
+
+        response = self.client.get(reverse("performance_member_dashboard"))
+
+        self.assertRedirects(
+            response,
+            f"{reverse('performance_login')}?next={reverse('performance_member_dashboard')}",
+        )
+
     def test_performance_index_defaults_dashboard_department_to_un(self):
         other_department = Department.objects.create(code="WV", name="WV", is_active=True)
         response = self.client.get(reverse("performance_index"))
@@ -82,6 +92,29 @@ class PerformanceManagementTests(TestCase):
             f'<option value="{other_department.id}" selected>WV</option>',
             html=True,
         )
+
+    def test_performance_login_redirects_member_to_member_dashboard(self):
+        self.client.logout()
+        member_user = User.objects.create_user(username="perf-member-login", password="pass1234", is_staff=False)
+        self.member.user = member_user
+        self.member.save(update_fields=["user"])
+
+        response = self.client.post(
+            reverse("performance_login"),
+            {"login_id": "perf-member-login", "password": "pass1234"},
+        )
+
+        self.assertRedirects(response, reverse("performance_member_dashboard"))
+
+    def test_performance_login_redirects_admin_to_admin_dashboard(self):
+        self.client.logout()
+
+        response = self.client.post(
+            reverse("performance_login"),
+            {"login_id": "perf-admin", "password": "pass1234"},
+        )
+
+        self.assertRedirects(response, reverse("performance_index"))
 
     def test_performance_history_uses_selected_month_and_period_for_progress_cards(self):
         today = timezone.localdate()

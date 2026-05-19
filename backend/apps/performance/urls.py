@@ -6,6 +6,7 @@ from .views import (
     performance_entry_edit,
     performance_history,
     performance_index,
+    performance_login,
     performance_member_dashboard,
     performance_member_detail,
     performance_member_history,
@@ -13,6 +14,7 @@ from .views import (
 )
 
 urlpatterns = [
+    path("login/", performance_login, name="performance_login"),
     path("", performance_index, name="performance_index"),
     path("history/", performance_history, name="performance_history"),
     path("member/", performance_member_dashboard, name="performance_member_dashboard"),
