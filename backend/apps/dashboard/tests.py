@@ -560,6 +560,8 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
         self.assertIn("3", row["month_actual"])
         self.assertIn("1,300", row["month_actual"])
+        self.assertIn("補正 件数2件 / 金額300円込み", row["month_actual"])
+        self.assertIn("補正 件数2件 / 金額300円", row["period_actual"])
         payload_map = response.context["mail_template_payload_map"]
         today_section = next(s for s in payload_map["today"]["sections"] if s["code"] == "UN")
         self.assertEqual(today_section["daily_count"], 3)
@@ -568,6 +570,8 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertEqual(today_section["member_lines"][0]["count"], 3)
         self.assertEqual(today_section["member_lines"][0]["amount_text"], "1,300円")
         self.assertEqual(today_section["month_remaining_text"], "2件/700円")
+        self.assertIn("補正 件数2件 / 金額300円", today_section["month_lines"])
+        self.assertIn("補正 件数2件 / 金額300円", today_section["period_lines"])
 
     def test_dashboard_mail_treats_adjustment_only_day_as_daily_actual(self):
         today = timezone.localdate()
@@ -612,10 +616,13 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         response = self.client.get(reverse("dashboard_index"))
 
         self.assertEqual(response.status_code, 200)
+        row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
+        self.assertIn("補正 件数1件 / 金額1,500円込み", row["month_actual"])
         today_section = next(s for s in response.context["mail_template_payload_map"]["today"]["sections"] if s["code"] == "UN")
         self.assertTrue(today_section["has_report"])
         self.assertEqual(today_section["daily_count"], 1)
         self.assertEqual(today_section["daily_amount_text"], "1,500円")
+        self.assertIn("補正 件数1件 / 金額1,500円", today_section["month_lines"])
 
     def test_dashboard_reflects_wv_and_style_reports_into_kpi_and_targets(self):
         today = timezone.localdate()

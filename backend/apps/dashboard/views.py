@@ -16,6 +16,7 @@ from apps.common.dashboard_snapshot import build_member_rows, build_submission_s
 from apps.common.report_metrics import (
     SPLIT_COUNT_CODES,
     collect_actual_totals,
+    collect_adjustment_totals,
     format_metric_triples,
     format_yen,
     metric_detail_rows,
@@ -42,6 +43,25 @@ def _format_amount_text(value):
 def _mail_period_heading(period_name: str) -> str:
     match = re.search(r"第\d+次路程", period_name or "")
     return match.group(0) if match else (period_name or "-")
+
+
+def _format_adjustment_breakdown(*, code: str, totals: dict) -> str:
+    count = int(totals.get("count") or 0)
+    amount = int(totals.get("amount") or 0)
+    cs_count = int(totals.get("cs_count") or 0)
+    refugee_count = int(totals.get("refugee_count") or 0)
+    if not any([count, amount, cs_count, refugee_count]):
+        return ""
+    if code == "WV":
+        return f"補正 CS{cs_count}件 / 難民{refugee_count}件 / 金額{amount:,}円"
+    return f"補正 件数{count}件 / 金額{amount:,}円"
+
+
+def _append_adjustment_note(*, base_text: str, code: str, totals: dict) -> str:
+    note = _format_adjustment_breakdown(code=code, totals=totals)
+    if not note:
+        return base_text
+    return f"{base_text}（{note}込み）"
 
 
 def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
@@ -138,6 +158,11 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
         target_codes=target_codes,
         include_adjustments=True,
     )
+    month_adjustment_totals_by_code = collect_adjustment_totals(
+        start_date=month_start,
+        end_date=month_end,
+        target_codes=target_codes,
+    )
     if period_start and period_end:
         period_actual_totals_by_code = collect_actual_totals(
             start_date=period_start,
@@ -145,8 +170,17 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
             target_codes=target_codes,
             include_adjustments=True,
         )
+        period_adjustment_totals_by_code = collect_adjustment_totals(
+            start_date=period_start,
+            end_date=period_end,
+            target_codes=target_codes,
+        )
     else:
         period_actual_totals_by_code = {
+            code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
+            for code in target_codes
+        }
+        period_adjustment_totals_by_code = {
             code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
             for code in target_codes
         }
@@ -192,10 +226,18 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
             {
                 "label": label,
                 "month_target": month_target_text,
-                "month_actual": month_actual_text,
+                "month_actual": _append_adjustment_note(
+                    base_text=month_actual_text,
+                    code=code,
+                    totals=month_adjustment_totals_by_code.get(code, {}),
+                ),
                 "month_rate": month_rate_text,
                 "period_target": period_target_text,
-                "period_actual": period_actual_text,
+                "period_actual": _append_adjustment_note(
+                    base_text=period_actual_text,
+                    code=code,
+                    totals=period_adjustment_totals_by_code.get(code, {}),
+                ),
                 "period_rate": period_rate_text,
             }
         )
@@ -297,6 +339,11 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
             target_codes=target_codes,
             include_adjustments=True,
         )
+        base_month_adjustment_totals_by_code = collect_adjustment_totals(
+            start_date=base_month,
+            end_date=base_month_end,
+            target_codes=target_codes,
+        )
         if base_period_start and base_period_end:
             base_period_actual_totals_by_code = collect_actual_totals(
                 start_date=base_period_start,
@@ -304,8 +351,17 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                 target_codes=target_codes,
                 include_adjustments=True,
             )
+            base_period_adjustment_totals_by_code = collect_adjustment_totals(
+                start_date=base_period_start,
+                end_date=base_period_end,
+                target_codes=target_codes,
+            )
         else:
             base_period_actual_totals_by_code = {
+                code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
+                for code in target_codes
+            }
+            base_period_adjustment_totals_by_code = {
                 code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
                 for code in target_codes
             }
@@ -434,10 +490,22 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                 f"{row['label']} {row['actual_text']}/{row['target_text']}{row['unit']} 達成率{row['rate']}"
                 for row in base_metric_detail_by_code.get(code, {}).get("month", [])
             ]
+            month_adjustment_note = _format_adjustment_breakdown(
+                code=code,
+                totals=base_month_adjustment_totals_by_code.get(code, {}),
+            )
+            if month_adjustment_note:
+                month_metric_lines.append(month_adjustment_note)
             period_metric_lines = [
                 f"{row['label']} {row['actual_text']}/{row['target_text']}{row['unit']} 達成率{row['rate']}"
                 for row in base_metric_detail_by_code.get(code, {}).get("period", [])
             ]
+            period_adjustment_note = _format_adjustment_breakdown(
+                code=code,
+                totals=base_period_adjustment_totals_by_code.get(code, {}),
+            )
+            if period_adjustment_note:
+                period_metric_lines.append(period_adjustment_note)
             month_remaining = build_remaining_values(base_metric_detail_by_code.get(code, {}).get("month", []))
             period_remaining = build_remaining_values(base_metric_detail_by_code.get(code, {}).get("period", []))
             has_daily_actual = any(
