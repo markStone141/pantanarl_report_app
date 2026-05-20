@@ -3,6 +3,8 @@ import re
 from datetime import timedelta
 
 from django.core.paginator import Paginator
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth import get_user_model
@@ -946,6 +948,7 @@ def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
     status_message = None
     row_errors = {}
     row_login_inputs = {}
+    row_email_inputs = {}
 
     if request.method == "POST":
         posted_page = request.POST.get("page") or "1"
@@ -955,16 +958,25 @@ def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
         for member in page_obj.object_list:
             login_key = f"login_id_{member.id}"
             password_key = f"password_{member.id}"
+            email_key = f"email_{member.id}"
             auth_login_id = (request.POST.get(login_key) or "").strip()
             auth_password = (request.POST.get(password_key) or "").strip()
+            email_value = (request.POST.get(email_key) or "").strip()
             row_login_inputs[member.id] = auth_login_id
+            row_email_inputs[member.id] = email_value
             errors = []
 
-            if not auth_login_id and not auth_password:
+            if not auth_login_id and not auth_password and not email_value:
                 continue
 
             linked_user = member.user
             changed = False
+
+            if email_value:
+                try:
+                    validate_email(email_value)
+                except ValidationError:
+                    errors.append("メールアドレスの形式が正しくありません。")
 
             if linked_user:
                 if auth_login_id:
@@ -979,7 +991,7 @@ def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
                     linked_user.set_password(auth_password)
                     linked_user.save(update_fields=["password"])
                     changed = True
-            else:
+            elif auth_login_id or auth_password:
                 if auth_password and not auth_login_id:
                     errors.append("新規連携時はログインIDとパスワードを両方入力してください。")
                 elif auth_login_id and not auth_password:
@@ -995,6 +1007,11 @@ def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
                         member.user = linked_user
                         member.save(update_fields=["user"])
                         changed = True
+
+            if not errors and member.email != email_value:
+                member.email = email_value
+                member.save(update_fields=["email"])
+                changed = True
 
             if errors:
                 row_errors[member.id] = errors
@@ -1013,6 +1030,7 @@ def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
             {
                 "member": member,
                 "login_input": row_login_inputs.get(member.id, ""),
+                "email_input": row_email_inputs.get(member.id, member.email or ""),
                 "errors": row_errors.get(member.id, []),
             }
         )

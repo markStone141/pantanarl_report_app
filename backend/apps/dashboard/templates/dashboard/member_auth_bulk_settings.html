@@ -37,6 +37,7 @@
           <thead>
             <tr>
               <th>名前</th>
+              <th>メールアドレス</th>
               <th>ログインID</th>
               <th>パスワード</th>
             </tr>
@@ -47,14 +48,22 @@
                 <td>{{ row.member.name }}</td>
                 <td>
                   <input
+                    type="email"
+                    name="email_{{ row.member.id }}"
+                    value="{{ row.email_input }}"
+                    placeholder="未設定"
+                  >
+                  {% if row.errors %}
+                    <div class="error-text">{{ row.errors|join:" " }}</div>
+                  {% endif %}
+                </td>
+                <td>
+                  <input
                     type="text"
                     name="login_id_{{ row.member.id }}"
                     value="{{ row.login_input }}"
                     placeholder="{% if row.member.user %}現在: {{ row.member.user.username }}{% else %}未連携{% endif %}"
                   >
-                  {% if row.errors %}
-                    <div class="error-text">{{ row.errors|join:" " }}</div>
-                  {% endif %}
                 </td>
                 <td>
                   <input
@@ -67,7 +76,7 @@
               </tr>
             {% empty %}
               <tr>
-                <td colspan="3">メンバーが存在しません。</td>
+                <td colspan="4">メンバーが存在しません。</td>
               </tr>
             {% endfor %}
           </tbody>

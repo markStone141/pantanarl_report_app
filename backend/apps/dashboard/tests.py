@@ -208,6 +208,7 @@ class MemberSettingsViewTests(TestCase):
         response = self.client.get(reverse("member_auth_bulk_settings"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "ID・パスワード一括管理")
+        self.assertContains(response, "メールアドレス")
 
     def test_member_auth_bulk_settings_updates_existing_user(self):
         user = User.objects.create_user(username="bulk_user_old", password="OldPass123")
@@ -224,6 +225,33 @@ class MemberSettingsViewTests(TestCase):
         member.refresh_from_db()
         self.assertEqual(member.user.username, "bulk_user_new")
         self.assertTrue(member.user.check_password("NewPass123"))
+
+    def test_member_auth_bulk_settings_updates_member_email(self):
+        member = Member.objects.create(name="Bulk Mail User", email="old@example.com")
+        response = self.client.post(
+            reverse("member_auth_bulk_settings"),
+            {
+                "page": "1",
+                f"email_{member.id}": "new@example.com",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        member.refresh_from_db()
+        self.assertEqual(member.email, "new@example.com")
+
+    def test_member_auth_bulk_settings_rejects_invalid_email(self):
+        member = Member.objects.create(name="Invalid Mail User")
+        response = self.client.post(
+            reverse("member_auth_bulk_settings"),
+            {
+                "page": "1",
+                f"email_{member.id}": "invalid-mail",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "メールアドレスの形式が正しくありません。")
+        member.refresh_from_db()
+        self.assertEqual(member.email, "")
 
 
 class DepartmentSettingsViewTests(TestCase):
