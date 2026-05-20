@@ -184,7 +184,8 @@ class PerformanceManagementTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "4月第2次路程")
-        self.assertContains(response, "28,000円")
+        self.assertContains(response, "4,500円")
+        self.assertContains(response, "16.1%")
         self.assertContains(response, "実績閲覧")
 
     def test_performance_entry_edit_updates_daily_entry_and_department_summary(self):
