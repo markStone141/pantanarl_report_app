@@ -474,11 +474,13 @@ label {
 }
 
 .mail-group-department-card {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
   margin: 0;
   padding: 12px 14px;
+  min-height: 56px;
   border: 1px solid rgba(109, 123, 141, 0.20);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.84);
@@ -494,10 +496,9 @@ label {
 }
 
 .mail-group-department-card input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  flex: 0 0 auto;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .mail-group-department-card:has(input[type="checkbox"]:checked) {
@@ -511,6 +512,7 @@ label {
   font-size: 0.95rem;
   font-weight: 700;
   color: #243746;
+  text-align: center;
 }
 
 input,
