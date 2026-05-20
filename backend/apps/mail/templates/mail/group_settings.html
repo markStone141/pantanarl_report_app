@@ -71,9 +71,12 @@
         {% if form.departments.errors %}<div class="error-text">{{ form.departments.errors|striptags }}</div>{% endif %}
 
         <label>{{ form.members.label }}</label>
-        <div class="checkbox-list" id="mail-group-members" data-members-url="{% url 'mail_group_member_options' %}">
+        <div class="mail-group-member-grid" id="mail-group-members" data-members-url="{% url 'mail_group_member_options' %}">
           {% for checkbox in form.members %}
-          <div class="checkbox-row">{{ checkbox.tag }} <label for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label></div>
+          <label class="mail-group-member-card" for="{{ checkbox.id_for_label }}">
+            {{ checkbox.tag }}
+            <span class="mail-group-member-card__name">{{ checkbox.choice_label }}</span>
+          </label>
           {% empty %}
           <div class="muted">メールアドレスが登録された有効メンバーがいません。</div>
           {% endfor %}
@@ -153,12 +156,13 @@
       }
       memberWrap.innerHTML = items.map((member) => {
         const checked = checkedIds.includes(String(member.id)) ? "checked" : "";
-        const departments = member.departments.length ? ` <span class="muted">(${member.departments.join(", ")})</span>` : "";
+        const departments = member.departments.length ? member.departments.join(", ") : "";
         return `
-          <div class="checkbox-row">
+          <label class="mail-group-member-card" for="id_members_${member.id}">
             <input type="checkbox" name="members" value="${member.id}" id="id_members_${member.id}" ${checked}>
-            <label for="id_members_${member.id}">${member.name}${departments}</label>
-          </div>
+            <span class="mail-group-member-card__name">${member.name}</span>
+            ${departments ? `<span class="mail-group-member-card__meta">${departments}</span>` : ""}
+          </label>
         `;
       }).join("");
     }
