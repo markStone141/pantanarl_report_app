@@ -40,20 +40,20 @@
 
   <section class="card mt-16">
     <h3>本日の活動状況</h3>
-    <div class="performance-today-summary-grid mt-12" style="display:flex; flex-wrap:nowrap; gap:12px; overflow-x:auto; align-items:stretch;">
-      <article class="metric-card performance-today-total-card" style="flex:1 0 180px; min-width:180px;">
+    <div class="performance-today-summary-grid mt-12">
+      <article class="metric-card performance-today-total-card">
         <span class="muted">今日の合計件数</span>
         <strong class="mt-6">{{ dashboard_snapshot.today_total_count_text }}</strong>
       </article>
-      <article class="metric-card performance-today-total-card" style="flex:1 0 180px; min-width:180px;">
+      <article class="metric-card performance-today-total-card">
         <span class="muted">今日の合計金額</span>
         <strong class="mt-6">{{ dashboard_snapshot.today_total_amount_text }}</strong>
       </article>
-      <article class="metric-card performance-today-total-card" style="flex:1 0 180px; min-width:180px;">
+      <article class="metric-card performance-today-total-card">
         <span class="muted">今日の目標</span>
         <strong class="mt-6 performance-today-inline-value">{{ dashboard_snapshot.today_target_text }}</strong>
       </article>
-      <article class="metric-card performance-today-total-card" style="flex:1 0 180px; min-width:180px;">
+      <article class="metric-card performance-today-total-card">
         <span class="muted">今日の達成率</span>
         <strong class="mt-6 performance-today-inline-value">{{ dashboard_snapshot.today_rate_text }}</strong>
       </article>
