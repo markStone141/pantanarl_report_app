@@ -28,7 +28,7 @@
 
   <section class="mt-16">
     <article class="card mt-16">
-      <h3>現在のメールグループ</h3>
+      <h3>メールグループ一覧</h3>
       {% if groups %}
       <div class="table-scroll">
         <table class="mobile-card-table">
@@ -123,7 +123,7 @@
     </article>
 
     <article class="card">
-      <h3>決済報告の既定メールグループ</h3>
+      <h3>決済報告用メールグループ設定</h3>
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="save_routing" />
