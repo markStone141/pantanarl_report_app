@@ -130,10 +130,13 @@ class MailSendHistory(models.Model):
     body_snapshot = models.TextField(blank=True)
     sent_to_snapshot = models.TextField(blank=True)
     provider_message_id = models.CharField(max_length=255, blank=True)
+    error_code = models.CharField(max_length=64, blank=True)
+    error_message = models.TextField(blank=True)
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_DRAFT)
     is_test = models.BooleanField(default=False)
     is_resend = models.BooleanField(default=False)
     sent_at = models.DateTimeField(null=True, blank=True)
+    last_attempt_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

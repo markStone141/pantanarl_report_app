@@ -14,7 +14,7 @@ from django.utils.dateparse import parse_date
 
 from apps.accounts.models import Department, Member
 from apps.mail.models import MailRecipientGroup, MailSendHistory
-from apps.mail.services import send_transaction_mail_mock
+from apps.mail.services import record_transaction_mail_failure, send_transaction_mail_mock
 from apps.targets.models import (
     DepartmentMonthTarget,
     DepartmentPeriodTarget,
@@ -257,7 +257,9 @@ def _get_or_create_department_daily_summary(*, department, entry_date, member):
 
 
 def _transaction_mail_status(transaction_obj):
-    latest_history = transaction_obj.mail_send_histories.order_by("-sent_at", "-created_at", "-id").first()
+    latest_history = transaction_obj.mail_send_histories.order_by("-last_attempt_at", "-sent_at", "-created_at", "-id").first()
+    if latest_history and latest_history.status == MailSendHistory.STATUS_FAILED:
+        return "送信失敗"
     if latest_history and latest_history.status == MailSendHistory.STATUS_SENT:
         if latest_history.sent_at and transaction_obj.updated_at and transaction_obj.updated_at > latest_history.sent_at:
             return "修正済み未送信"
@@ -567,10 +569,9 @@ def _build_entry_v2_transaction_demo_context(
     if existing_entry:
         default_mail_group = _get_default_mail_group(department=selected_department_obj)
         for tx in existing_entry.transactions.all():
-            latest_sent_history = tx.mail_send_histories.filter(
-                status=MailSendHistory.STATUS_SENT,
+            latest_history = tx.mail_send_histories.filter(
                 is_test=False,
-            ).order_by("-sent_at", "-created_at", "-id").first()
+            ).order_by("-last_attempt_at", "-sent_at", "-created_at", "-id").first()
             preview_payload = _build_transaction_mail_preview(
                 member=member,
                 department_code=selected_department_code,
@@ -593,17 +594,22 @@ def _build_entry_v2_transaction_demo_context(
                     "location": tx.location,
                     "comment": tx.comment,
                     "mail_status": _transaction_mail_status(tx),
-                    "has_sent_history": bool(latest_sent_history),
+                    "has_mail_history": bool(latest_history),
                     "preview_subject": preview_payload["subject"],
                     "resend_preview_subject": (
                         f"{preview_payload['subject']}（再送）"
-                        if latest_sent_history and not preview_payload["subject"].endswith("（再送）")
+                        if latest_history and not preview_payload["subject"].endswith("（再送）")
                         else preview_payload["subject"]
                     ),
                     "preview_body": preview_payload["body"],
-                    "latest_sent_history_id": latest_sent_history.id if latest_sent_history else "",
-                    "latest_sent_subject": latest_sent_history.subject_snapshot if latest_sent_history else "",
-                    "latest_sent_body": latest_sent_history.body_snapshot if latest_sent_history else "",
+                    "latest_history_id": latest_history.id if latest_history else "",
+                    "latest_history_subject": latest_history.subject_snapshot if latest_history else "",
+                    "latest_history_body": latest_history.body_snapshot if latest_history else "",
+                    "mail_error_message": (
+                        latest_history.error_message
+                        if latest_history and latest_history.status == MailSendHistory.STATUS_FAILED
+                        else ""
+                    ),
                 }
             )
 
@@ -1659,7 +1665,6 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                             id=int(preview_history_id),
                             department=selected_department_obj,
                             activity_date=entry_date,
-                            status=MailSendHistory.STATUS_SENT,
                             is_test=False,
                         )
                         .select_related("transaction", "transaction__entry", "transaction__entry__department")
@@ -1676,7 +1681,6 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                             MailSendHistory.objects.filter(
                                 id=int(preview_history_id),
                                 transaction=preview_transaction,
-                                status=MailSendHistory.STATUS_SENT,
                                 is_test=False,
                             )
                             .select_related("transaction")
@@ -1695,14 +1699,35 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                         transaction_obj=preview_transaction,
                         progress_cards=preview_context["progress_cards"],
                     )
-                    send_transaction_mail_mock(
-                        sender_member=member,
-                        transaction=preview_transaction,
-                        recipient_group=recipient_group,
-                        subject=edited_subject or preview_payload["subject"],
-                        body=edited_body or preview_payload["body"],
-                        existing_history=existing_history,
-                    )
+                    subject = edited_subject or preview_payload["subject"]
+                    body = edited_body or preview_payload["body"]
+                    try:
+                        send_transaction_mail_mock(
+                            sender_member=member,
+                            transaction=preview_transaction,
+                            recipient_group=recipient_group,
+                            subject=subject,
+                            body=body,
+                            existing_history=existing_history,
+                        )
+                    except Exception as exc:
+                        record_transaction_mail_failure(
+                            sender_member=member,
+                            transaction=preview_transaction,
+                            recipient_group=recipient_group,
+                            subject=subject,
+                            body=body,
+                            existing_history=existing_history,
+                            error_code=exc.__class__.__name__,
+                            error_message=str(exc),
+                        )
+                        return redirect(
+                            _build_v2_redirect_url(
+                                department_code=selected_department,
+                                entry_date=entry_date,
+                                saved="mail_failed",
+                            )
+                        )
                     return redirect(
                         _build_v2_redirect_url(
                             department_code=selected_department,
@@ -1776,6 +1801,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
             "department_target": "部署全体の日目標を保存しました。",
             "transaction": "決済明細を登録しました。",
             "mail_sent": "メール履歴を保存しました。",
+            "mail_failed": "メール送信に失敗しました。復旧後に再送してください。",
             "closeout": "活動終了時の最終実績を保存しました。",
         }.get(saved, "")
 

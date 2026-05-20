@@ -1,5 +1,6 @@
 import json
 from datetime import date, timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -805,6 +806,54 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, self.member.name)
         self.assertContains(response, "3,000円")
         self.assertContains(response, history.body_snapshot)
+
+    def test_entry_v2_transaction_demo_mail_failure_creates_failed_history_and_badge(self):
+        entry_date = timezone.localdate()
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_SEVENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+            comment="送信失敗テスト",
+        )
+        self.client.force_login(self.user)
+
+        with patch("apps.dairymetrics.views.send_transaction_mail_mock", side_effect=RuntimeError("gmail timeout")):
+            response = self.client.post(
+                reverse("dairymetrics_entry_v2_transaction_demo"),
+                {
+                    "action": "send_transaction_mock",
+                    "department_code": self.department.code,
+                    "entry_date": entry_date.strftime("%Y-%m-%d"),
+                    "preview_transaction_id": str(transaction.id),
+                },
+            )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=mail_failed",
+        )
+        history = MailSendHistory.objects.get(transaction=transaction)
+        self.assertEqual(history.status, MailSendHistory.STATUS_FAILED)
+        self.assertEqual(history.error_code, "RuntimeError")
+        self.assertEqual(history.error_message, "gmail timeout")
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+        self.assertContains(response, "送信失敗")
+        self.assertContains(response, "gmail timeout")
+        self.assertContains(response, "再送")
 
     def test_entry_v2_transaction_demo_can_edit_and_resend_sent_mail(self):
         entry_date = timezone.localdate()

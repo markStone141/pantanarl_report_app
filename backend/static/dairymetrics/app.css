@@ -2240,6 +2240,15 @@
   background: #b86a12;
 }
 
+.dairymetrics-v2-mail-badge.is-failed {
+  background: #7d1f24;
+}
+
+.dairymetrics-error-text {
+  color: #a0222e;
+  font-weight: 600;
+}
+
 .dairymetrics-v2-mail-send-link {
   display: inline-flex;
   align-items: center;

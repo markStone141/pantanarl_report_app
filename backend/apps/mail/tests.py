@@ -8,7 +8,7 @@ from apps.accounts.models import Department, Member
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction
 
 from .models import MailIntegrationSetting, MailRecipientGroup, MailSendHistory
-from .services import send_transaction_mail_mock
+from .services import record_transaction_mail_failure, send_transaction_mail_mock
 
 
 User = get_user_model()
@@ -120,3 +120,38 @@ class MailManagementTests(TestCase):
         self.assertEqual(history.recipient_group, group)
         self.assertIn("alice@example.com", history.sent_to_snapshot)
         self.assertIn("bob@example.com", history.sent_to_snapshot)
+
+    def test_record_transaction_mail_failure_saves_failed_history(self):
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member_one,
+            department=self.department,
+            entry_date=timezone.localdate(),
+            daily_target_count=1,
+            daily_target_amount=3000,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=1000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            is_student=False,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+            comment="テスト",
+        )
+
+        history = record_transaction_mail_failure(
+            sender_member=self.member_one,
+            transaction=transaction,
+            recipient_group=None,
+            subject="件名",
+            body="本文",
+            error_code="RuntimeError",
+            error_message="gmail timeout",
+        )
+
+        self.assertEqual(history.status, MailSendHistory.STATUS_FAILED)
+        self.assertEqual(history.error_code, "RuntimeError")
+        self.assertEqual(history.error_message, "gmail timeout")
+        self.assertIsNone(history.sent_at)
+        self.assertIsNotNone(history.last_attempt_at)
