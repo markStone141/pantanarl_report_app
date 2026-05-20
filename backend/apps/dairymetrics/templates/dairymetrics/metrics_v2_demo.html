@@ -71,12 +71,10 @@
         </select>
       </div>
       <div data-metrics-v2-scope-field="month">
-        <label for="metrics-v2-month">対象月</label>
-        <input id="metrics-v2-month" type="month" name="month" value="{{ month_value }}">
+        <input id="metrics-v2-month" type="month" name="month" value="{{ month_value }}" aria-label="対象月">
       </div>
       <div data-metrics-v2-scope-field="period">
-        <label for="metrics-v2-period">対象路程</label>
-        <select id="metrics-v2-period" name="period_id">
+        <select id="metrics-v2-period" name="period_id" aria-label="対象路程">
           <option value="">選択してください</option>
           {% for period in period_options %}
           <option value="{{ period.id }}" {% if period.id == selected_period_id %}selected{% endif %}>{{ period.name }}</option>
