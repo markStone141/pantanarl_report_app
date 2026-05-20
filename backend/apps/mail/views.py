@@ -1,9 +1,9 @@
 from django.core.paginator import Paginator
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.accounts.auth import ROLE_ADMIN, require_roles
-from apps.accounts.models import Member
+from apps.accounts.models import Department, Member
 
 from .forms import MailIntegrationSettingForm, MailIntegrationTestForm, MailRecipientGroupForm
 from .models import MailIntegrationSetting, MailRecipientGroup, MailSendHistory
@@ -92,7 +92,7 @@ def mail_integration_settings(request: HttpRequest) -> HttpResponse:
 @require_roles(ROLE_ADMIN)
 def mail_group_settings(request: HttpRequest) -> HttpResponse:
     status_message = ""
-    groups = MailRecipientGroup.objects.prefetch_related("members").select_related("department").order_by("name")
+    groups = MailRecipientGroup.objects.prefetch_related("members", "related_departments").select_related("department").order_by("name")
     edit_group = None
     edit_group_id = request.GET.get("edit")
     if edit_group_id:
@@ -105,9 +105,11 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             group = edit_group or MailRecipientGroup()
             group.name = form.cleaned_data["name"]
-            group.department = form.cleaned_data["department"]
+            selected_departments = list(form.cleaned_data["departments"])
+            group.department = selected_departments[0] if selected_departments else None
             group.is_active = form.cleaned_data["is_active"]
             group.save()
+            group.related_departments.set(selected_departments)
             group.members.set(form.cleaned_data["members"])
             status_message = "メールグループを保存しました。"
             edit_group = None
@@ -119,7 +121,8 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
             form = MailRecipientGroupForm(
                 initial={
                     "name": edit_group.name,
-                    "department": edit_group.department_id,
+                    "departments": list(edit_group.related_departments.values_list("id", flat=True))
+                    or ([edit_group.department_id] if edit_group.department_id else []),
                     "members": edit_group.members.all(),
                     "is_active": edit_group.is_active,
                 }
@@ -135,6 +138,33 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
         "status_message": status_message,
     }
     return render(request, "mail/group_settings.html", context)
+
+
+@require_roles(ROLE_ADMIN)
+def mail_group_member_options(request: HttpRequest) -> HttpResponse:
+    raw_departments = request.GET.getlist("departments")
+    department_ids = [int(value) for value in raw_departments if str(value).isdigit()]
+    members = Member.objects.active().exclude(email="")
+    if department_ids:
+        members = members.filter(department_links__department_id__in=department_ids).distinct()
+    members = members.order_by("name")
+    return JsonResponse(
+        {
+            "members": [
+                {
+                    "id": member.id,
+                    "name": member.name,
+                    "email": member.email,
+                    "departments": list(
+                        Department.objects.filter(member_links__member=member, is_active=True)
+                        .order_by("code")
+                        .values_list("code", flat=True)
+                    ),
+                }
+                for member in members
+            ]
+        }
+    )
 
 
 @require_roles(ROLE_ADMIN)

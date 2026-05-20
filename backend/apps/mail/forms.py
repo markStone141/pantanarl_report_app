@@ -99,11 +99,11 @@ class MailRecipientGroupForm(forms.Form):
         max_length=128,
         widget=forms.TextInput(attrs={"placeholder": "例: 当日共有グループA"}),
     )
-    department = forms.ModelChoiceField(
+    departments = forms.ModelMultipleChoiceField(
         label="関連部署",
         required=False,
         queryset=Department.objects.filter(is_active=True).order_by("code"),
-        empty_label="未設定",
+        widget=forms.CheckboxSelectMultiple,
     )
     members = forms.ModelMultipleChoiceField(
         label="対象メンバー",
@@ -116,3 +116,25 @@ class MailRecipientGroupForm(forms.Form):
         required=False,
         initial=True,
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        selected_departments = []
+        source_data = self.data if self.is_bound else self.initial
+        if source_data:
+            raw_departments = source_data.get("departments", [])
+            if hasattr(source_data, "getlist"):
+                raw_departments = source_data.getlist("departments")
+            if not isinstance(raw_departments, list):
+                raw_departments = [raw_departments]
+            selected_departments = [
+                int(value)
+                for value in raw_departments
+                if str(value).isdigit()
+            ]
+        member_queryset = Member.objects.active().exclude(email="")
+        if selected_departments:
+            member_queryset = member_queryset.filter(
+                department_links__department_id__in=selected_departments
+            ).distinct()
+        self.fields["members"].queryset = member_queryset.order_by("name")

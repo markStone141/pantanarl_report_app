@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.accounts.models import Department, Member
+from apps.accounts.models import Department, Member, MemberDepartment
 
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction
 
@@ -19,8 +19,14 @@ class MailManagementTests(TestCase):
         self.user = User.objects.create_user(username="mail-admin", password="pass1234", is_staff=True)
         self.client.force_login(self.user)
         self.department = Department.objects.create(code="UN", name="UN")
+        self.other_department = Department.objects.create(code="WV", name="WV")
         self.member_one = Member.objects.create(name="Alice", email="alice@example.com")
         self.member_two = Member.objects.create(name="Bob", email="bob@example.com")
+        self.member_three = Member.objects.create(name="Carol", email="carol@example.com")
+        MemberDepartment.objects.create(member=self.member_one, department=self.department)
+        MemberDepartment.objects.create(member=self.member_two, department=self.other_department)
+        MemberDepartment.objects.create(member=self.member_three, department=self.department)
+        MemberDepartment.objects.create(member=self.member_three, department=self.other_department)
 
     def test_mail_settings_page_renders(self):
         response = self.client.get(reverse("mail_integration_settings"))
@@ -61,7 +67,7 @@ class MailManagementTests(TestCase):
             reverse("mail_group_settings"),
             {
                 "name": "当日共有A",
-                "department": self.department.id,
+                "departments": [self.department.id, self.other_department.id],
                 "members": [self.member_one.id, self.member_two.id],
                 "is_active": "on",
             },
@@ -69,6 +75,22 @@ class MailManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         group = MailRecipientGroup.objects.get(name="当日共有A")
         self.assertEqual(group.members.count(), 2)
+        self.assertEqual(
+            list(group.related_departments.order_by("code").values_list("code", flat=True)),
+            ["UN", "WV"],
+        )
+        self.assertEqual(group.department, self.department)
+
+    def test_mail_group_member_options_filters_by_selected_departments(self):
+        response = self.client.get(
+            reverse("mail_group_member_options"),
+            {"departments": [self.department.id]},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        names = [item["name"] for item in payload["members"]]
+        self.assertEqual(names, ["Alice", "Carol"])
 
     def test_mail_settings_test_preview_shows_group_members(self):
         group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)

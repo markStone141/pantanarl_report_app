@@ -315,6 +315,16 @@ def _get_default_mail_group(*, department):
     group = (
         MailRecipientGroup.objects.filter(
             is_active=True,
+            related_departments=department,
+        )
+        .order_by("name", "id")
+        .first()
+    )
+    if group:
+        return group
+    group = (
+        MailRecipientGroup.objects.filter(
+            is_active=True,
             department=department,
         )
         .order_by("name", "id")

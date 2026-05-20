@@ -37,6 +37,11 @@ class MailRecipientGroup(models.Model):
         blank=True,
         related_name="mail_recipient_groups",
     )
+    related_departments = models.ManyToManyField(
+        Department,
+        blank=True,
+        related_name="mail_recipient_group_links",
+    )
     is_active = models.BooleanField(default=True)
     members = models.ManyToManyField(
         Member,
