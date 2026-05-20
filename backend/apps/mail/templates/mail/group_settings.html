@@ -27,22 +27,42 @@
   {% endif %}
 
   <section class="mt-16">
-    <article class="card">
-      <h3>決済報告の既定メールグループ</h3>
-      <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="save_routing" />
-
-        <label for="id_un_group">{{ routing_form.un_group.label }}</label>
-        {{ routing_form.un_group }}
-        {% if routing_form.un_group.errors %}<div class="error-text">{{ routing_form.un_group.errors|striptags }}</div>{% endif %}
-
-        <label for="id_wv_group">{{ routing_form.wv_group.label }}</label>
-        {{ routing_form.wv_group }}
-        {% if routing_form.wv_group.errors %}<div class="error-text">{{ routing_form.wv_group.errors|striptags }}</div>{% endif %}
-
-        <button type="submit" class="mt-12">既定グループを保存</button>
-      </form>
+    <article class="card mt-16">
+      <h3>現在のメールグループ</h3>
+      {% if groups %}
+      <div class="table-scroll">
+        <table class="mobile-card-table">
+          <thead>
+            <tr><th>グループ名</th><th>関連部署</th><th>状態</th><th>メンバー</th><th>操作</th></tr>
+          </thead>
+          <tbody>
+            {% for group in groups %}
+            <tr>
+              <td>{{ group.name }}</td>
+              <td>
+                {% for department in group.related_departments.all %}
+                  {{ department.name }} ({{ department.code }}){% if not forloop.last %}, {% endif %}
+                {% empty %}
+                  {% if group.department %}{{ group.department.name }} ({{ group.department.code }}){% else %}-{% endif %}
+                {% endfor %}
+              </td>
+              <td>{% if group.is_active %}有効{% else %}無効{% endif %}</td>
+              <td>
+                {% for member in group.members.all %}
+                  {{ member.name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                  -
+                {% endfor %}
+              </td>
+              <td><a class="btn-inline" href="{% url 'mail_group_settings' %}?edit={{ group.id }}">編集</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="muted">まだメールグループはありません。</p>
+      {% endif %}
     </article>
 
     <article class="card">
@@ -91,42 +111,22 @@
       </form>
     </article>
 
-    <article class="card mt-16">
-      <h3>現在のメールグループ</h3>
-      {% if groups %}
-      <div class="table-scroll">
-        <table class="mobile-card-table">
-          <thead>
-            <tr><th>グループ名</th><th>関連部署</th><th>状態</th><th>メンバー</th><th>操作</th></tr>
-          </thead>
-          <tbody>
-            {% for group in groups %}
-            <tr>
-              <td>{{ group.name }}</td>
-              <td>
-                {% for department in group.related_departments.all %}
-                  {{ department.name }} ({{ department.code }}){% if not forloop.last %}, {% endif %}
-                {% empty %}
-                  {% if group.department %}{{ group.department.name }} ({{ group.department.code }}){% else %}-{% endif %}
-                {% endfor %}
-              </td>
-              <td>{% if group.is_active %}有効{% else %}無効{% endif %}</td>
-              <td>
-                {% for member in group.members.all %}
-                  {{ member.name }}{% if not forloop.last %}, {% endif %}
-                {% empty %}
-                  -
-                {% endfor %}
-              </td>
-              <td><a class="btn-inline" href="{% url 'mail_group_settings' %}?edit={{ group.id }}">編集</a></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <p class="muted">まだメールグループはありません。</p>
-      {% endif %}
+    <article class="card">
+      <h3>決済報告の既定メールグループ</h3>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_routing" />
+
+        <label for="id_un_group">{{ routing_form.un_group.label }}</label>
+        {{ routing_form.un_group }}
+        {% if routing_form.un_group.errors %}<div class="error-text">{{ routing_form.un_group.errors|striptags }}</div>{% endif %}
+
+        <label for="id_wv_group">{{ routing_form.wv_group.label }}</label>
+        {{ routing_form.wv_group }}
+        {% if routing_form.wv_group.errors %}<div class="error-text">{{ routing_form.wv_group.errors|striptags }}</div>{% endif %}
+
+        <button type="submit" class="mt-12">既定グループを保存</button>
+      </form>
     </article>
   </section>
 </div>
