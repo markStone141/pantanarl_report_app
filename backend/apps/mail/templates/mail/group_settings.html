@@ -55,10 +55,14 @@
               </td>
               <td>
                 <div class="inline-row">
-                  <a class="btn-inline" href="{% url 'mail_group_settings' %}?edit={{ group.id }}">編集</a>
+                  <a class="icon-btn" href="{% url 'mail_group_settings' %}?edit={{ group.id }}" aria-label="メールグループを編集">
+                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                  </a>
                   <form method="post" action="{% url 'mail_group_delete' group.id %}" onsubmit="return confirm('このメールグループを削除しますか？');">
                     {% csrf_token %}
-                    <button type="submit" class="btn-inline">削除</button>
+                    <button type="submit" class="icon-btn icon-btn-danger" aria-label="メールグループを削除">
+                      <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                    </button>
                   </form>
                 </div>
               </td>

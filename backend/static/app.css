@@ -918,6 +918,37 @@ th {
   color: var(--brand);
 }
 
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(109, 123, 141, 0.22);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--brand);
+  box-shadow: 0 10px 22px rgba(15, 39, 73, 0.08);
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background-color .16s ease;
+}
+
+.icon-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(15, 39, 73, 0.12);
+  border-color: rgba(24, 126, 255, 0.28);
+}
+
+.icon-btn-danger {
+  color: #c23934;
+  border-color: rgba(194, 57, 52, 0.24);
+}
+
+.icon-btn-danger:hover {
+  border-color: rgba(194, 57, 52, 0.36);
+  background: rgba(194, 57, 52, 0.08);
+}
+
 .report-edit-head,
 .report-edit-cell {
   text-align: center;
