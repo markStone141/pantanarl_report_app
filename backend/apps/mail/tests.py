@@ -7,7 +7,7 @@ from apps.accounts.models import Department, Member, MemberDepartment
 
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction
 
-from .models import MailIntegrationSetting, MailRecipientGroup, MailSendHistory
+from .models import MailDepartmentRouting, MailIntegrationSetting, MailRecipientGroup, MailSendHistory
 from .services import record_transaction_mail_failure, send_transaction_mail_mock
 
 
@@ -91,6 +91,29 @@ class MailManagementTests(TestCase):
         payload = response.json()
         names = [item["name"] for item in payload["members"]]
         self.assertEqual(names, ["Alice", "Carol"])
+
+    def test_mail_group_settings_saves_default_routing_for_un_and_wv(self):
+        un_group = MailRecipientGroup.objects.create(name="UN共有", is_active=True)
+        wv_group = MailRecipientGroup.objects.create(name="WV共有", is_active=True)
+
+        response = self.client.post(
+            reverse("mail_group_settings"),
+            {
+                "action": "save_routing",
+                "un_group": un_group.id,
+                "wv_group": wv_group.id,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            MailDepartmentRouting.objects.get(department=self.department).recipient_group,
+            un_group,
+        )
+        self.assertEqual(
+            MailDepartmentRouting.objects.get(department=self.other_department).recipient_group,
+            wv_group,
+        )
 
     def test_mail_settings_test_preview_shows_group_members(self):
         group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)

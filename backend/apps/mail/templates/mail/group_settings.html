@@ -28,6 +28,24 @@
 
   <section class="mt-16">
     <article class="card">
+      <h3>決済報告の既定メールグループ</h3>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_routing" />
+
+        <label for="id_un_group">{{ routing_form.un_group.label }}</label>
+        {{ routing_form.un_group }}
+        {% if routing_form.un_group.errors %}<div class="error-text">{{ routing_form.un_group.errors|striptags }}</div>{% endif %}
+
+        <label for="id_wv_group">{{ routing_form.wv_group.label }}</label>
+        {{ routing_form.wv_group }}
+        {% if routing_form.wv_group.errors %}<div class="error-text">{{ routing_form.wv_group.errors|striptags }}</div>{% endif %}
+
+        <button type="submit" class="mt-12">既定グループを保存</button>
+      </form>
+    </article>
+
+    <article class="card">
       <h3>{% if edit_group %}メールグループ編集{% else %}新規メールグループ追加{% endif %}</h3>
       <form method="post">
         {% csrf_token %}

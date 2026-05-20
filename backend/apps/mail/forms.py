@@ -138,3 +138,24 @@ class MailRecipientGroupForm(forms.Form):
                 department_links__department_id__in=selected_departments
             ).distinct()
         self.fields["members"].queryset = member_queryset.order_by("name")
+
+
+class MailDepartmentRoutingForm(forms.Form):
+    un_group = forms.ModelChoiceField(
+        label="UN決済報告",
+        required=False,
+        queryset=MailRecipientGroup.objects.none(),
+        empty_label="未設定",
+    )
+    wv_group = forms.ModelChoiceField(
+        label="WV決済報告",
+        required=False,
+        queryset=MailRecipientGroup.objects.none(),
+        empty_label="未設定",
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        group_queryset = MailRecipientGroup.objects.filter(is_active=True).order_by("name")
+        self.fields["un_group"].queryset = group_queryset
+        self.fields["wv_group"].queryset = group_queryset

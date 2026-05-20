@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from apps.accounts.models import Department, Member
-from apps.mail.models import MailRecipientGroup, MailSendHistory
+from apps.mail.models import MailDepartmentRouting, MailRecipientGroup, MailSendHistory
 from apps.mail.services import record_transaction_mail_failure, send_transaction_mail_mock
 from apps.targets.models import (
     DepartmentMonthTarget,
@@ -312,6 +312,13 @@ def _build_v2_department_activity_rows(*, department, entry_date):
 def _get_default_mail_group(*, department):
     if not department:
         return None
+    routing = (
+        MailDepartmentRouting.objects.filter(department=department)
+        .select_related("recipient_group")
+        .first()
+    )
+    if routing and routing.recipient_group.is_active:
+        return routing.recipient_group
     group = (
         MailRecipientGroup.objects.filter(
             is_active=True,

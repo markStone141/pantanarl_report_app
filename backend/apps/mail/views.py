@@ -5,8 +5,13 @@ from django.shortcuts import get_object_or_404, redirect, render
 from apps.accounts.auth import ROLE_ADMIN, require_roles
 from apps.accounts.models import Department, Member
 
-from .forms import MailIntegrationSettingForm, MailIntegrationTestForm, MailRecipientGroupForm
-from .models import MailIntegrationSetting, MailRecipientGroup, MailSendHistory
+from .forms import (
+    MailDepartmentRoutingForm,
+    MailIntegrationSettingForm,
+    MailIntegrationTestForm,
+    MailRecipientGroupForm,
+)
+from .models import MailDepartmentRouting, MailIntegrationSetting, MailRecipientGroup, MailSendHistory
 
 
 def _mail_nav_items():
@@ -98,24 +103,77 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
     if edit_group_id:
         edit_group = get_object_or_404(MailRecipientGroup, pk=edit_group_id)
 
+    routing_departments = {
+        department.code: department
+        for department in Department.objects.filter(code__in=["UN", "WV"], is_active=True)
+    }
+    routing_map = {
+        routing.department.code: routing.recipient_group_id
+        for routing in MailDepartmentRouting.objects.filter(department__code__in=["UN", "WV"]).select_related("department")
+    }
+
     if request.method == "POST":
-        group_id = request.POST.get("group_id")
-        edit_group = get_object_or_404(MailRecipientGroup, pk=group_id) if group_id else None
-        form = MailRecipientGroupForm(request.POST)
-        if form.is_valid():
-            group = edit_group or MailRecipientGroup()
-            group.name = form.cleaned_data["name"]
-            selected_departments = list(form.cleaned_data["departments"])
-            group.department = selected_departments[0] if selected_departments else None
-            group.is_active = form.cleaned_data["is_active"]
-            group.save()
-            group.related_departments.set(selected_departments)
-            group.members.set(form.cleaned_data["members"])
-            status_message = "メールグループを保存しました。"
-            edit_group = None
-            form = MailRecipientGroupForm()
+        if request.POST.get("action") == "save_routing":
+            form = MailRecipientGroupForm(
+                initial={
+                    "name": edit_group.name,
+                    "departments": list(edit_group.related_departments.values_list("id", flat=True))
+                    or ([edit_group.department_id] if edit_group and edit_group.department_id else []),
+                    "members": edit_group.members.all() if edit_group else [],
+                    "is_active": edit_group.is_active if edit_group else True,
+                }
+            ) if edit_group else MailRecipientGroupForm()
+            routing_form = MailDepartmentRoutingForm(request.POST)
+            if routing_form.is_valid():
+                for code, field_name in (("UN", "un_group"), ("WV", "wv_group")):
+                    department = routing_departments.get(code)
+                    if not department:
+                        continue
+                    group = routing_form.cleaned_data.get(field_name)
+                    if group:
+                        MailDepartmentRouting.objects.update_or_create(
+                            department=department,
+                            defaults={"recipient_group": group},
+                        )
+                    else:
+                        MailDepartmentRouting.objects.filter(department=department).delete()
+                status_message = "決済報告の既定メールグループを更新しました。"
+                routing_map = {
+                    routing.department.code: routing.recipient_group_id
+                    for routing in MailDepartmentRouting.objects.filter(department__code__in=["UN", "WV"]).select_related("department")
+                }
+                routing_form = MailDepartmentRoutingForm(
+                    initial={
+                        "un_group": routing_map.get("UN"),
+                        "wv_group": routing_map.get("WV"),
+                    }
+                )
+            else:
+                status_message = "決済報告グループの設定を確認してください。"
         else:
-            status_message = "入力内容を確認してください。"
+            group_id = request.POST.get("group_id")
+            edit_group = get_object_or_404(MailRecipientGroup, pk=group_id) if group_id else None
+            form = MailRecipientGroupForm(request.POST)
+            routing_form = MailDepartmentRoutingForm(
+                initial={
+                    "un_group": routing_map.get("UN"),
+                    "wv_group": routing_map.get("WV"),
+                }
+            )
+            if form.is_valid():
+                group = edit_group or MailRecipientGroup()
+                group.name = form.cleaned_data["name"]
+                selected_departments = list(form.cleaned_data["departments"])
+                group.department = selected_departments[0] if selected_departments else None
+                group.is_active = form.cleaned_data["is_active"]
+                group.save()
+                group.related_departments.set(selected_departments)
+                group.members.set(form.cleaned_data["members"])
+                status_message = "メールグループを保存しました。"
+                edit_group = None
+                form = MailRecipientGroupForm()
+            else:
+                status_message = "入力内容を確認してください。"
     else:
         if edit_group:
             form = MailRecipientGroupForm(
@@ -129,10 +187,17 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
             )
         else:
             form = MailRecipientGroupForm()
+        routing_form = MailDepartmentRoutingForm(
+            initial={
+                "un_group": routing_map.get("UN"),
+                "wv_group": routing_map.get("WV"),
+            }
+        )
 
     context = {
         "nav_items": _mail_nav_items(),
         "form": form,
+        "routing_form": routing_form,
         "groups": groups,
         "edit_group": edit_group,
         "status_message": status_message,

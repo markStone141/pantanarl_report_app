@@ -149,3 +149,24 @@ class MailSendHistory(models.Model):
 
     def __str__(self) -> str:
         return f"{self.activity_date} {self.subject_snapshot}"
+
+
+class MailDepartmentRouting(models.Model):
+    department = models.OneToOneField(
+        Department,
+        on_delete=models.CASCADE,
+        related_name="mail_routing",
+    )
+    recipient_group = models.ForeignKey(
+        MailRecipientGroup,
+        on_delete=models.CASCADE,
+        related_name="department_routings",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["department__code", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.department.code} -> {self.recipient_group.name}"
