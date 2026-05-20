@@ -526,7 +526,7 @@ label {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   gap: 4px;
   margin: 0;
@@ -563,12 +563,14 @@ label {
   font-size: 0.95rem;
   font-weight: 700;
   color: #243746;
+  text-align: center;
 }
 
 .mail-group-member-card__meta {
   display: block;
   font-size: 0.82rem;
   color: #6f7d8d;
+  text-align: center;
 }
 
 @media (max-width: 1024px) {
@@ -1492,7 +1494,7 @@ th {
 
 .performance-progress-visual {
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 .performance-progress-donut {
@@ -1522,12 +1524,12 @@ th {
 .performance-progress-stats {
   display: grid;
   gap: 4px;
-  text-align: left;
+  text-align: center;
 }
 
 .performance-progress-legend {
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 10px 14px;
   font-size: 0.84rem;
@@ -1535,7 +1537,7 @@ th {
 }
 
 .performance-progress-target-line {
-  text-align: left;
+  text-align: center;
 }
 
 .performance-progress-legend-item {

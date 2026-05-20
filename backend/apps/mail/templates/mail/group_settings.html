@@ -52,6 +52,7 @@
         {% if edit_group %}
         <input type="hidden" name="group_id" value="{{ edit_group.id }}" />
         {% endif %}
+        <input type="hidden" name="is_active" value="on" />
 
         <label for="id_name">{{ form.name.label }}</label>
         {{ form.name }}
@@ -82,9 +83,6 @@
           {% endfor %}
         </div>
         {% if form.members.errors %}<div class="error-text">{{ form.members.errors|striptags }}</div>{% endif %}
-
-        <label class="checkbox-label" for="id_is_active">{{ form.is_active }} {{ form.is_active.label }}</label>
-        {% if form.is_active.errors %}<div class="error-text">{{ form.is_active.errors|striptags }}</div>{% endif %}
 
         <button type="submit" class="mt-12">{% if edit_group %}グループを更新{% else %}グループを追加{% endif %}</button>
         {% if edit_group %}
