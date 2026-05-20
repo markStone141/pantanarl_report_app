@@ -93,6 +93,24 @@ class PerformanceManagementTests(TestCase):
             html=True,
         )
 
+    def test_performance_index_auto_closes_stale_open_entries(self):
+        stale_entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=timezone.localdate() - timedelta(days=1),
+            result_count=1,
+            support_amount=1000,
+            activity_closed=False,
+            activity_closed_at=None,
+        )
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        stale_entry.refresh_from_db()
+        self.assertTrue(stale_entry.activity_closed)
+        self.assertIsNotNone(stale_entry.activity_closed_at)
+
     def test_performance_login_redirects_member_to_member_dashboard(self):
         self.client.logout()
         member_user = User.objects.create_user(username="perf-member-login", password="pass1234", is_staff=False)

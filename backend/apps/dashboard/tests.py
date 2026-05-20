@@ -462,7 +462,7 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertEqual(today_section["daily_count"], 2)
         self.assertEqual(prev_section["daily_count"], 1)
 
-    def test_dashboard_mail_today_stays_report_based_while_month_totals_include_adjustments(self):
+    def test_dashboard_mail_today_includes_adjustments_in_daily_totals(self):
         today = timezone.localdate()
         month = today.replace(day=1)
         period = Period.objects.create(
@@ -534,9 +534,60 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertIn("1,300", row["month_actual"])
         payload_map = response.context["mail_template_payload_map"]
         today_section = next(s for s in payload_map["today"]["sections"] if s["code"] == "UN")
-        self.assertEqual(today_section["daily_count"], 1)
-        self.assertEqual(today_section["daily_amount_text"], "1,000円")
+        self.assertEqual(today_section["daily_count"], 3)
+        self.assertEqual(today_section["daily_amount_text"], "1,300円")
+        self.assertEqual(len(today_section["member_lines"]), 1)
+        self.assertEqual(today_section["member_lines"][0]["count"], 3)
+        self.assertEqual(today_section["member_lines"][0]["amount_text"], "1,300円")
         self.assertEqual(today_section["month_remaining_text"], "2件/700円")
+
+    def test_dashboard_mail_treats_adjustment_only_day_as_daily_actual(self):
+        today = timezone.localdate()
+        month = today.replace(day=1)
+        period = Period.objects.create(
+            month=month,
+            name=f"{today.year}年度{today.month}月 第1次路程",
+            status="active",
+            start_date=today - timedelta(days=1),
+            end_date=today + timedelta(days=1),
+        )
+        amount_metric = TargetMetric.objects.create(
+            department=self.depts["UN"],
+            code="amount",
+            label="金額",
+            unit="円",
+            display_order=1,
+            is_active=True,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.depts["UN"],
+            target_month=month,
+            metric=amount_metric,
+            status="active",
+            value=2000,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=period,
+            department=self.depts["UN"],
+            metric=amount_metric,
+            value=2000,
+        )
+        MetricAdjustment.objects.create(
+            member=self.reporter,
+            department=self.depts["UN"],
+            target_date=today,
+            source_type="qr",
+            return_qr_count=1,
+            return_qr_amount=1500,
+        )
+
+        response = self.client.get(reverse("dashboard_index"))
+
+        self.assertEqual(response.status_code, 200)
+        today_section = next(s for s in response.context["mail_template_payload_map"]["today"]["sections"] if s["code"] == "UN")
+        self.assertTrue(today_section["has_report"])
+        self.assertEqual(today_section["daily_count"], 1)
+        self.assertEqual(today_section["daily_amount_text"], "1,500円")
 
     def test_dashboard_reflects_wv_and_style_reports_into_kpi_and_targets(self):
         today = timezone.localdate()

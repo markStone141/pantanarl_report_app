@@ -3,6 +3,7 @@ import re
 from datetime import timedelta
 
 from django.core.paginator import Paginator
+from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth import get_user_model
@@ -19,6 +20,7 @@ from apps.common.report_metrics import (
     metric_detail_rows,
     period_status as calc_period_status,
 )
+from apps.dairymetrics.models import MetricAdjustment
 from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 
 from .forms import DepartmentForm, MemberRegistrationForm, TargetMetricForm
@@ -36,6 +38,121 @@ def _format_amount_text(value):
 def _mail_period_heading(period_name: str) -> str:
     match = re.search(r"第\d+次路程", period_name or "")
     return match.group(0) if match else (period_name or "-")
+
+
+def _build_mail_daily_final_totals_by_code(*, base_daily_totals, report_date, target_codes):
+    totals_by_code = {
+        code: {
+            "count": int(base_daily_totals.get(code, {}).get("count", 0) or 0),
+            "amount": int(base_daily_totals.get(code, {}).get("amount", 0) or 0),
+            "cs_count": int(base_daily_totals.get(code, {}).get("cs_count", 0) or 0),
+            "refugee_count": int(base_daily_totals.get(code, {}).get("refugee_count", 0) or 0),
+        }
+        for code in target_codes
+    }
+    adjustment_rows = (
+        MetricAdjustment.objects.filter(
+            target_date=report_date,
+            department__code__in=target_codes,
+        )
+        .values("department__code")
+        .annotate(
+            result_count=Sum("result_count"),
+            support_amount=Sum("support_amount"),
+            return_postal_count=Sum("return_postal_count"),
+            return_postal_amount=Sum("return_postal_amount"),
+            return_qr_count=Sum("return_qr_count"),
+            return_qr_amount=Sum("return_qr_amount"),
+            cs_count=Sum("cs_count"),
+            refugee_count=Sum("refugee_count"),
+        )
+    )
+    for row in adjustment_rows:
+        code = row["department__code"]
+        totals = totals_by_code.setdefault(
+            code,
+            {
+                "count": 0,
+                "amount": 0,
+                "cs_count": 0,
+                "refugee_count": 0,
+            },
+        )
+        totals["count"] += (
+            int(row["result_count"] or 0)
+            + int(row["return_postal_count"] or 0)
+            + int(row["return_qr_count"] or 0)
+        )
+        totals["amount"] += (
+            int(row["support_amount"] or 0)
+            + int(row["return_postal_amount"] or 0)
+            + int(row["return_qr_amount"] or 0)
+        )
+        totals["cs_count"] += int(row["cs_count"] or 0)
+        totals["refugee_count"] += int(row["refugee_count"] or 0)
+
+    return totals_by_code
+
+
+def _build_mail_member_totals_by_code(*, base_member_totals, report_date, target_codes):
+    member_totals = {
+        code: {
+            member_name: {
+                "member_name": row["member_name"],
+                "count": int(row.get("count", 0) or 0),
+                "amount": int(row.get("amount", 0) or 0),
+                "cs_count": int(row.get("cs_count", 0) or 0),
+                "refugee_count": int(row.get("refugee_count", 0) or 0),
+            }
+            for member_name, row in base_member_totals.get(code, {}).items()
+        }
+        for code in target_codes
+    }
+
+    adjustment_rows = (
+        MetricAdjustment.objects.filter(
+            target_date=report_date,
+            department__code__in=target_codes,
+        )
+        .values("department__code", "member__name")
+        .annotate(
+            result_count=Sum("result_count"),
+            support_amount=Sum("support_amount"),
+            return_postal_count=Sum("return_postal_count"),
+            return_postal_amount=Sum("return_postal_amount"),
+            return_qr_count=Sum("return_qr_count"),
+            return_qr_amount=Sum("return_qr_amount"),
+            cs_count=Sum("cs_count"),
+            refugee_count=Sum("refugee_count"),
+        )
+    )
+    for row in adjustment_rows:
+        code = row["department__code"]
+        member_name = row["member__name"] or "-"
+        member_row = member_totals[code].setdefault(
+            member_name,
+            {
+                "member_name": member_name,
+                "count": 0,
+                "amount": 0,
+                "cs_count": 0,
+                "refugee_count": 0,
+            },
+        )
+        member_row["count"] += (
+            int(row["result_count"] or 0)
+            + int(row["return_postal_count"] or 0)
+            + int(row["return_qr_count"] or 0)
+        )
+        member_row["amount"] += (
+            int(row["support_amount"] or 0)
+            + int(row["return_postal_amount"] or 0)
+            + int(row["return_qr_amount"] or 0)
+        )
+        member_row["cs_count"] += int(row["cs_count"] or 0)
+        member_row["refugee_count"] += int(row["refugee_count"] or 0)
+
+    return member_totals
 
 
 def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
@@ -220,8 +337,16 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
             report_date=base_date,
             target_departments=target_departments,
         )
-        base_daily_totals = base_snapshot["daily_totals"]
-        base_member_totals = base_snapshot["member_totals"]
+        base_daily_totals = _build_mail_daily_final_totals_by_code(
+            base_daily_totals=base_snapshot["daily_totals"],
+            report_date=base_date,
+            target_codes=target_codes,
+        )
+        base_member_totals = _build_mail_member_totals_by_code(
+            base_member_totals=base_snapshot["member_totals"],
+            report_date=base_date,
+            target_codes=target_codes,
+        )
         base_has_report_by_code = base_snapshot["has_report_by_code"]
 
         base_month = base_date.replace(day=1)
@@ -426,12 +551,16 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
             ]
             month_remaining = build_remaining_values(base_metric_detail_by_code.get(code, {}).get("month", []))
             period_remaining = build_remaining_values(base_metric_detail_by_code.get(code, {}).get("period", []))
+            has_daily_actual = any(
+                int(base_daily_totals.get(code, {}).get(field, 0) or 0) > 0
+                for field in ("count", "amount", "cs_count", "refugee_count")
+            )
             mail_sections.append(
                 {
                     "code": code,
                     "heading": heading,
                     "name": label_by_code[code],
-                    "has_report": base_has_report_by_code.get(code, False),
+                    "has_report": base_has_report_by_code.get(code, False) or has_daily_actual,
                     "daily_count": base_daily_totals.get(code, {}).get("count", 0),
                     "daily_cs_count": base_daily_totals.get(code, {}).get("cs_count", 0),
                     "daily_refugee_count": base_daily_totals.get(code, {}).get("refugee_count", 0),

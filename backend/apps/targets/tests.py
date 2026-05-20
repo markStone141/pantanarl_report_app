@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member
+from apps.dairymetrics.models import MetricAdjustment
 from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
 
 from . import views as target_views
@@ -680,6 +681,89 @@ class TargetStatusBoundaryTests(TestCase):
             selected = target_views._current_period()
         self.assertEqual(selected.id, latest.id)
         self.assertNotEqual(selected.id, old.id)
+
+    def test_month_history_entry_includes_adjustments_in_actuals(self):
+        metric = self._make_un_amount_metric()
+        target_month = timezone.datetime(2026, 3, 1).date()
+        member = Member.objects.create(name="UN User", login_id="target_un_user", password="")
+        report = DailyDepartmentReport.objects.create(
+            department=self.un,
+            report_date=timezone.datetime(2026, 3, 15).date(),
+            reporter=member,
+            total_count=1,
+            followup_count=1000,
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=member,
+            amount=1000,
+            count=1,
+        )
+        MetricAdjustment.objects.create(
+            member=member,
+            department=self.un,
+            target_date=timezone.datetime(2026, 3, 15).date(),
+            source_type="postal",
+            return_postal_count=1,
+            return_postal_amount=300,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.un,
+            target_month=target_month,
+            metric=metric,
+            status="active",
+            value=2000,
+        )
+
+        entry = target_views._build_month_history_entry(target_month=target_month, configs=target_views._department_configs())
+
+        un_row = next(row for row in entry["department_rows"] if row["label"] == "UN")
+        amount_detail = next(detail for detail in un_row["detail_rows"] if detail["code"] == "amount")
+        self.assertEqual(amount_detail["actual"], 1300)
+
+    def test_period_history_entry_includes_adjustments_in_actuals(self):
+        metric = self._make_un_amount_metric()
+        period = Period.objects.create(
+            month=timezone.datetime(2026, 3, 1).date(),
+            name="2026年度3月 第1次路程",
+            status="active",
+            start_date=timezone.datetime(2026, 3, 10).date(),
+            end_date=timezone.datetime(2026, 3, 20).date(),
+        )
+        member = Member.objects.create(name="UN User 2", login_id="target_un_user2", password="")
+        report = DailyDepartmentReport.objects.create(
+            department=self.un,
+            report_date=timezone.datetime(2026, 3, 15).date(),
+            reporter=member,
+            total_count=1,
+            followup_count=1000,
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=member,
+            amount=1000,
+            count=1,
+        )
+        MetricAdjustment.objects.create(
+            member=member,
+            department=self.un,
+            target_date=timezone.datetime(2026, 3, 15).date(),
+            source_type="postal",
+            return_postal_count=1,
+            return_postal_amount=300,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=period,
+            department=self.un,
+            metric=metric,
+            value=2000,
+        )
+
+        entry = target_views._build_period_history_entry(period=period, configs=target_views._department_configs())
+
+        un_row = next(row for row in entry["department_rows"] if row["label"] == "UN")
+        amount_detail = next(detail for detail in un_row["detail_rows"] if detail["code"] == "amount")
+        self.assertEqual(amount_detail["actual"], 1300)
 
 
 class TargetSeedCommandTests(TestCase):

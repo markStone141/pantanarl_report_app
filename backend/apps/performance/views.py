@@ -23,6 +23,7 @@ from apps.dairymetrics.models import (
     MemberPeriodMetricTarget,
     MetricAdjustment,
 )
+from apps.dairymetrics.services.activity_state import auto_close_stale_entries
 from apps.dairymetrics.services.final_actuals import (
     collect_department_final_actual_totals,
     collect_department_final_actual_totals_by_codes,
@@ -70,6 +71,7 @@ def require_performance_roles(*allowed_roles: str):
                 query = urlencode({"next": next_url}) if next_url else ""
                 login_url = reverse("performance_login")
                 return redirect(f"{login_url}?{query}" if query else login_url)
+            auto_close_stale_entries()
             return view_func(request, *args, **kwargs)
 
         return wrapper

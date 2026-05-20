@@ -8,7 +8,8 @@ from django.utils import timezone
 from apps.accounts.models import Department, Member, MemberDepartment
 from apps.dairymetrics.models import MemberDailyMetricEntry
 from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
-from apps.targets.models import MonthTargetMetricValue, TargetMetric
+from apps.dairymetrics.models import MetricAdjustment
+from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 
 
 class ReportMemberFilteringTests(TestCase):
@@ -668,3 +669,65 @@ class ReportTargetMonthSelectionTests(TestCase):
             response.context["target_month_summary"],
             f"{current_month.year}/{current_month.month}",
         )
+
+    def test_report_index_month_and_period_actuals_include_adjustments(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        un = Department.objects.create(name="UN", code="UN")
+        reporter = Member.objects.create(name="Reporter", login_id="report_index_user", password="")
+        period = Period.objects.create(
+            month=current_month,
+            name=f"{today.year}年度{today.month}月 第1次路程",
+            status="active",
+            start_date=today - timedelta(days=1),
+            end_date=today + timedelta(days=1),
+        )
+        metric = TargetMetric.objects.create(
+            department=un,
+            code="amount",
+            label="Amount",
+            unit="yen",
+            display_order=1,
+            is_active=True,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=un,
+            target_month=current_month,
+            metric=metric,
+            status="active",
+            value=2000,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=period,
+            department=un,
+            metric=metric,
+            value=2000,
+        )
+        report = DailyDepartmentReport.objects.create(
+            department=un,
+            report_date=today,
+            reporter=reporter,
+            total_count=1,
+            followup_count=1000,
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=reporter,
+            amount=1000,
+            count=1,
+        )
+        MetricAdjustment.objects.create(
+            member=reporter,
+            department=un,
+            target_date=today,
+            source_type="postal",
+            return_postal_count=1,
+            return_postal_amount=300,
+        )
+
+        response = self.client.get(reverse("report_index"))
+
+        self.assertEqual(response.status_code, 200)
+        row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
+        self.assertIn("1,300", row["month_actual"])
+        self.assertIn("1,300", row["period_actual"])

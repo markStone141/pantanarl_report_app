@@ -264,6 +264,7 @@ def _build_month_history_entry(*, target_month: date, configs):
         start_date=target_month,
         end_date=month_end,
         target_codes=[config["code"] for config in configs],
+        include_adjustments=True,
     )
     department_rows = []
     for config in configs:
@@ -348,6 +349,7 @@ def _build_period_history_entry(*, period: Period, configs):
         start_date=period.start_date,
         end_date=period.end_date,
         target_codes=[config["code"] for config in configs],
+        include_adjustments=True,
     )
     department_rows = []
     for config in configs:

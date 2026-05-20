@@ -3625,3 +3625,22 @@ class DairyMetricsV2DemoTests(TestCase):
             f'<option value="{self.department.code}" selected>{self.department.name}</option>',
             html=True,
         )
+
+    def test_metrics_v2_demo_auto_closes_stale_open_entries(self):
+        stale_entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=timezone.localdate() - timedelta(days=1),
+            result_count=1,
+            support_amount=1000,
+            activity_closed=False,
+            activity_closed_at=None,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_metrics_v2_demo"))
+
+        self.assertEqual(response.status_code, 200)
+        stale_entry.refresh_from_db()
+        self.assertTrue(stale_entry.activity_closed)
+        self.assertIsNotNone(stale_entry.activity_closed_at)

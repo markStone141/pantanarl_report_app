@@ -136,12 +136,14 @@ def _dashboard_cards_context():
         start_date=month_start,
         end_date=month_end,
         target_codes=target_codes,
+        include_adjustments=True,
     )
     if period_start and period_end:
         period_actual_totals_by_code = collect_actual_totals(
             start_date=period_start,
             end_date=period_end,
             target_codes=target_codes,
+            include_adjustments=True,
         )
     else:
         period_actual_totals_by_code = {

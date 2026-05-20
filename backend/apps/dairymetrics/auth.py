@@ -3,6 +3,8 @@ from functools import wraps
 from django.http import Http404
 from django.shortcuts import redirect
 
+from apps.dairymetrics.services.activity_state import auto_close_stale_entries
+
 
 def get_member_profile(user):
     if not getattr(user, "is_authenticated", False):
@@ -16,6 +18,7 @@ def require_dairymetrics_member(view_func):
         user = request.user
         if not getattr(user, "is_authenticated", False):
             return redirect("dairymetrics_login")
+        auto_close_stale_entries()
         if user.is_staff:
             return view_func(request, *args, **kwargs)
         if not get_member_profile(user):
@@ -31,6 +34,7 @@ def require_dairymetrics_admin(view_func):
         user = request.user
         if not getattr(user, "is_authenticated", False):
             return redirect("dairymetrics_login")
+        auto_close_stale_entries()
         if not user.is_staff:
             raise Http404()
         return view_func(request, *args, **kwargs)
