@@ -30,8 +30,7 @@ class MailManagementTests(TestCase):
 
     def test_mail_settings_page_renders(self):
         response = self.client.get(reverse("mail_integration_settings"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "メール連携設定")
+        self.assertRedirects(response, reverse("mail_group_settings"))
 
     def test_mail_settings_preserve_existing_secrets_when_blank(self):
         setting = MailIntegrationSetting.objects.create(
@@ -43,7 +42,7 @@ class MailManagementTests(TestCase):
             is_active=True,
         )
         response = self.client.post(
-            reverse("mail_integration_settings"),
+            reverse("mail_group_settings"),
             {
                 "action": "save_settings",
                 "sender_email": "after@example.com",
@@ -129,7 +128,7 @@ class MailManagementTests(TestCase):
         group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)
         group.members.set([self.member_one, self.member_two])
         response = self.client.post(
-            reverse("mail_integration_settings"),
+            reverse("mail_group_settings"),
             {
                 "action": "test_preview",
                 "target_type": "group",
@@ -140,6 +139,13 @@ class MailManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "alice@example.com")
         self.assertContains(response, "bob@example.com")
+
+    def test_mail_group_settings_renders_integrated_mail_sections(self):
+        response = self.client.get(reverse("mail_group_settings"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "メールグループ一覧")
+        self.assertContains(response, "Gmail連携設定")
+        self.assertContains(response, "決済報告用メールグループ設定")
 
     def test_send_transaction_mail_mock_creates_sent_history(self):
         group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)

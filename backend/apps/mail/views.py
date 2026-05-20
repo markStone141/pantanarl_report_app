@@ -16,92 +16,34 @@ from .models import MailDepartmentRouting, MailIntegrationSetting, MailRecipient
 
 def _mail_nav_items():
     return [
-        ("dashboard_index", "管理者ページ"),
         ("member_settings", "メンバー管理"),
         ("department_settings", "部署管理"),
         ("performance_index", "実績管理"),
-        ("mail_integration_settings", "メール連携設定"),
-        ("mail_group_settings", "メールグループ管理"),
-        ("mail_history", "メール履歴"),
+        ("mail_group_settings", "メール"),
+        ("target_index", "目標設定"),
+        ("report_history", "保存報告一覧"),
     ]
 
 
 @require_roles(ROLE_ADMIN)
 def mail_integration_settings(request: HttpRequest) -> HttpResponse:
-    status_message = ""
-    preview_recipients: list[str] = []
-    preview_summary = ""
-    setting, _ = MailIntegrationSetting.objects.get_or_create(
-        pk=1,
-        defaults={"sender_name": "獲得メール送信"},
-    )
-
-    if request.method == "POST" and request.POST.get("action") == "save_settings":
-        existing_secret_values = {
-            secret_field: getattr(setting, secret_field)
-            for secret_field in ("client_id", "client_secret", "refresh_token")
-        }
-        form = MailIntegrationSettingForm(request.POST, instance=setting)
-        test_form = MailIntegrationTestForm()
-        if form.is_valid():
-            updated_setting = form.save(commit=False)
-            for secret_field in ("client_id", "client_secret", "refresh_token"):
-                new_value = form.cleaned_data.get(secret_field)
-                if not new_value:
-                    setattr(updated_setting, secret_field, existing_secret_values[secret_field])
-            updated_setting.save()
-            status_message = "メール連携設定を更新しました。"
-            setting = updated_setting
-            form = MailIntegrationSettingForm(instance=setting)
-        else:
-            status_message = "入力内容を確認してください。"
-    elif request.method == "POST" and request.POST.get("action") == "test_preview":
-        form = MailIntegrationSettingForm(instance=setting)
-        test_form = MailIntegrationTestForm(request.POST)
-        if test_form.is_valid():
-            target_type = test_form.cleaned_data["target_type"]
-            if target_type == MailIntegrationTestForm.TARGET_MEMBER:
-                member = test_form.cleaned_data["member"]
-                preview_recipients = [f"{member.name} <{member.email}>"]
-                preview_summary = "選択したメンバー1人にテスト送信する想定です。"
-            else:
-                group = test_form.cleaned_data["group"]
-                members = group.members.exclude(email="").order_by("name")
-                preview_recipients = [f"{member.name} <{member.email}>" for member in members]
-                preview_summary = f"{group.name} に紐づくメンバーへテスト送信する想定です。"
-            status_message = "テスト送信先のプレビューを更新しました。"
-        else:
-            status_message = "テスト送信先を確認してください。"
-    else:
-        form = MailIntegrationSettingForm(instance=setting)
-        test_form = MailIntegrationTestForm()
-
-    recent_test_histories = MailSendHistory.objects.filter(is_test=True).select_related(
-        "recipient_group",
-        "sender_member",
-    )[:10]
-
-    context = {
-        "nav_items": _mail_nav_items(),
-        "form": form,
-        "test_form": test_form,
-        "setting": setting,
-        "status_message": status_message,
-        "preview_recipients": preview_recipients,
-        "preview_summary": preview_summary,
-        "recent_test_histories": recent_test_histories,
-    }
-    return render(request, "mail/settings.html", context)
+    return redirect("mail_group_settings")
 
 
 @require_roles(ROLE_ADMIN)
 def mail_group_settings(request: HttpRequest) -> HttpResponse:
     status_message = ""
+    preview_recipients: list[str] = []
+    preview_summary = ""
     groups = MailRecipientGroup.objects.prefetch_related("members", "related_departments").select_related("department").order_by("name")
     edit_group = None
     edit_group_id = request.GET.get("edit")
     if edit_group_id:
         edit_group = get_object_or_404(MailRecipientGroup, pk=edit_group_id)
+    setting, _ = MailIntegrationSetting.objects.get_or_create(
+        pk=1,
+        defaults={"sender_name": "獲得メール送信"},
+    )
 
     routing_departments = {
         department.code: department
@@ -113,7 +55,74 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
     }
 
     if request.method == "POST":
-        if request.POST.get("action") == "save_routing":
+        action = request.POST.get("action")
+        if action == "save_settings":
+            existing_secret_values = {
+                secret_field: getattr(setting, secret_field)
+                for secret_field in ("client_id", "client_secret", "refresh_token")
+            }
+            form = MailRecipientGroupForm(
+                initial={
+                    "name": edit_group.name,
+                    "departments": list(edit_group.related_departments.values_list("id", flat=True))
+                    or ([edit_group.department_id] if edit_group and edit_group.department_id else []),
+                    "members": edit_group.members.all() if edit_group else [],
+                    "is_active": edit_group.is_active if edit_group else True,
+                }
+            ) if edit_group else MailRecipientGroupForm()
+            routing_form = MailDepartmentRoutingForm(
+                initial={
+                    "un_group": routing_map.get("UN"),
+                    "wv_group": routing_map.get("WV"),
+                }
+            )
+            settings_form = MailIntegrationSettingForm(request.POST, instance=setting)
+            test_form = MailIntegrationTestForm()
+            if settings_form.is_valid():
+                updated_setting = settings_form.save(commit=False)
+                for secret_field in ("client_id", "client_secret", "refresh_token"):
+                    new_value = settings_form.cleaned_data.get(secret_field)
+                    if not new_value:
+                        setattr(updated_setting, secret_field, existing_secret_values[secret_field])
+                updated_setting.save()
+                setting = updated_setting
+                settings_form = MailIntegrationSettingForm(instance=setting)
+                status_message = "メール連携設定を更新しました。"
+            else:
+                status_message = "入力内容を確認してください。"
+        elif action == "test_preview":
+            form = MailRecipientGroupForm(
+                initial={
+                    "name": edit_group.name,
+                    "departments": list(edit_group.related_departments.values_list("id", flat=True))
+                    or ([edit_group.department_id] if edit_group and edit_group.department_id else []),
+                    "members": edit_group.members.all() if edit_group else [],
+                    "is_active": edit_group.is_active if edit_group else True,
+                }
+            ) if edit_group else MailRecipientGroupForm()
+            routing_form = MailDepartmentRoutingForm(
+                initial={
+                    "un_group": routing_map.get("UN"),
+                    "wv_group": routing_map.get("WV"),
+                }
+            )
+            settings_form = MailIntegrationSettingForm(instance=setting)
+            test_form = MailIntegrationTestForm(request.POST)
+            if test_form.is_valid():
+                target_type = test_form.cleaned_data["target_type"]
+                if target_type == MailIntegrationTestForm.TARGET_MEMBER:
+                    member = test_form.cleaned_data["member"]
+                    preview_recipients = [f"{member.name} <{member.email}>"]
+                    preview_summary = "選択したメンバー1人にテスト送信する想定です。"
+                else:
+                    group = test_form.cleaned_data["group"]
+                    members = group.members.exclude(email="").order_by("name")
+                    preview_recipients = [f"{member.name} <{member.email}>" for member in members]
+                    preview_summary = f"{group.name} に紐づくメンバーへテスト送信する想定です。"
+                status_message = "テスト送信先のプレビューを更新しました。"
+            else:
+                status_message = "テスト送信先を確認してください。"
+        elif action == "save_routing":
             form = MailRecipientGroupForm(
                 initial={
                     "name": edit_group.name,
@@ -124,6 +133,8 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
                 }
             ) if edit_group else MailRecipientGroupForm()
             routing_form = MailDepartmentRoutingForm(request.POST)
+            settings_form = MailIntegrationSettingForm(instance=setting)
+            test_form = MailIntegrationTestForm()
             if routing_form.is_valid():
                 for code, field_name in (("UN", "un_group"), ("WV", "wv_group")):
                     department = routing_departments.get(code)
@@ -160,6 +171,8 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
                     "wv_group": routing_map.get("WV"),
                 }
             )
+            settings_form = MailIntegrationSettingForm(instance=setting)
+            test_form = MailIntegrationTestForm()
             if form.is_valid():
                 group = edit_group or MailRecipientGroup()
                 group.name = form.cleaned_data["name"]
@@ -193,11 +206,24 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
                 "wv_group": routing_map.get("WV"),
             }
         )
+        settings_form = MailIntegrationSettingForm(instance=setting)
+        test_form = MailIntegrationTestForm()
+
+    recent_test_histories = MailSendHistory.objects.filter(is_test=True).select_related(
+        "recipient_group",
+        "sender_member",
+    )[:10]
 
     context = {
         "nav_items": _mail_nav_items(),
         "form": form,
         "routing_form": routing_form,
+        "settings_form": settings_form,
+        "test_form": test_form,
+        "setting": setting,
+        "preview_recipients": preview_recipients,
+        "preview_summary": preview_summary,
+        "recent_test_histories": recent_test_histories,
         "groups": groups,
         "edit_group": edit_group,
         "status_message": status_message,
