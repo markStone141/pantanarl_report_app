@@ -253,3 +253,12 @@ def mail_history(request: HttpRequest) -> HttpResponse:
         "status_choices": MailSendHistory.STATUS_CHOICES,
     }
     return render(request, "mail/history.html", context)
+
+
+@require_roles(ROLE_ADMIN)
+def mail_group_delete(request: HttpRequest, group_id: int) -> HttpResponse:
+    group = get_object_or_404(MailRecipientGroup, pk=group_id)
+    if request.method == "POST":
+        MailDepartmentRouting.objects.filter(recipient_group=group).delete()
+        group.delete()
+    return redirect("mail_group_settings")

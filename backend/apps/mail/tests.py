@@ -115,6 +115,16 @@ class MailManagementTests(TestCase):
             wv_group,
         )
 
+    def test_mail_group_delete_removes_group_and_related_routing(self):
+        group = MailRecipientGroup.objects.create(name="削除対象", department=self.department, is_active=True)
+        MailDepartmentRouting.objects.create(department=self.department, recipient_group=group)
+
+        response = self.client.post(reverse("mail_group_delete", args=[group.id]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(MailRecipientGroup.objects.filter(id=group.id).exists())
+        self.assertFalse(MailDepartmentRouting.objects.filter(department=self.department).exists())
+
     def test_mail_settings_test_preview_shows_group_members(self):
         group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)
         group.members.set([self.member_one, self.member_two])
