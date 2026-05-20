@@ -517,8 +517,9 @@ label {
 
 .mail-group-member-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+  align-items: start;
 }
 
 .mail-group-member-card {
@@ -568,6 +569,24 @@ label {
   display: block;
   font-size: 0.82rem;
   color: #6f7d8d;
+}
+
+@media (max-width: 1024px) {
+  .mail-group-member-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .mail-group-member-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .mail-group-member-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 input,
