@@ -58,9 +58,12 @@
         {% if form.name.errors %}<div class="error-text">{{ form.name.errors|striptags }}</div>{% endif %}
 
         <label>{{ form.departments.label }}</label>
-        <div class="checkbox-list" id="mail-group-departments">
+        <div class="mail-group-department-grid" id="mail-group-departments">
           {% for checkbox in form.departments %}
-          <div class="checkbox-row">{{ checkbox.tag }} <label for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label></div>
+          <label class="mail-group-department-card" for="{{ checkbox.id_for_label }}">
+            {{ checkbox.tag }}
+            <span class="mail-group-department-card__name">{{ checkbox.choice_label }}</span>
+          </label>
           {% empty %}
           <div class="muted">有効な部署がありません。</div>
           {% endfor %}

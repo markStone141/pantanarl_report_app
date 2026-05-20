@@ -467,6 +467,52 @@ label {
   margin: 0;
 }
 
+.mail-group-department-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 10px;
+}
+
+.mail-group-department-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(109, 123, 141, 0.20);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 10px 24px rgba(15, 39, 73, 0.08);
+  cursor: pointer;
+  transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease, transform .16s ease;
+}
+
+.mail-group-department-card:hover {
+  border-color: rgba(24, 126, 255, 0.24);
+  box-shadow: 0 14px 28px rgba(15, 39, 73, 0.12);
+  transform: translateY(-1px);
+}
+
+.mail-group-department-card input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.mail-group-department-card:has(input[type="checkbox"]:checked) {
+  border-color: rgba(24, 126, 255, 0.42);
+  background: rgba(24, 126, 255, 0.10);
+  box-shadow: 0 16px 30px rgba(24, 126, 255, 0.14);
+}
+
+.mail-group-department-card__name {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #243746;
+}
+
 input,
 select,
 textarea,
