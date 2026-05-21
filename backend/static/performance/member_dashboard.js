@@ -134,15 +134,17 @@
   }
 
   function visibleDateFromEvent(event) {
-    if (!chart.scales || !chart.scales.x || !window.Chart.helpers || typeof window.Chart.helpers.getRelativePosition !== "function") {
+    if (!chart.scales || !chart.scales.x) {
       return "";
     }
-    const position = window.Chart.helpers.getRelativePosition(event, chart);
+    const rect = canvas.getBoundingClientRect();
+    const clientX = typeof event.clientX === "number" ? event.clientX : 0;
+    const relativeX = clientX - rect.left;
     const xScale = chart.scales.x;
-    if (!position || position.x < xScale.left || position.x > xScale.right) {
+    if (relativeX < xScale.left || relativeX > xScale.right) {
       return "";
     }
-    const rawIndex = xScale.getValueForPixel(position.x);
+    const rawIndex = xScale.getValueForPixel(relativeX);
     if (Number.isNaN(rawIndex)) {
       return "";
     }
@@ -557,9 +559,12 @@
     });
   }
   if (dayDetailContainer) {
-    canvas.addEventListener("click", function (event) {
+    function handleDayDetailClick(event) {
+      event.preventDefault();
       loadDayDetail(visibleDateFromEvent(event));
-    });
+    }
+    canvas.addEventListener("click", handleDayDetailClick);
+    canvas.addEventListener("pointerup", handleDayDetailClick);
     canvas.style.cursor = "pointer";
   }
 
