@@ -301,9 +301,6 @@
       button.className = "performance-trend-date-link";
       button.dataset.date = value;
       button.textContent = visibleLabels[index] || value;
-      button.addEventListener("click", function () {
-        loadDayDetail(value);
-      });
       dateLinksNode.appendChild(button);
     });
   }
@@ -560,6 +557,17 @@
       setMode("activity");
     });
   }
+  if (dateLinksNode) {
+    dateLinksNode.addEventListener("click", function (event) {
+      const button = event.target.closest(".performance-trend-date-link");
+      if (!button) {
+        return;
+      }
+      event.preventDefault();
+      loadDayDetail(button.dataset.date || "");
+    });
+  }
+
   updateLegend();
   syncControls();
 })();

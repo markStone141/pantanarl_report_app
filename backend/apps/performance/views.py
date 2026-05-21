@@ -947,6 +947,24 @@ def _build_member_dashboard_detail_context(
     }
 
 
+def _build_trend_date_links(activity_trend):
+    dates = list(activity_trend.get("dates") or [])
+    labels = list(activity_trend.get("labels") or [])
+    visible_count = int(activity_trend.get("default_visible_count") or 0)
+    if not dates or not labels or visible_count <= 0:
+        return []
+    start_index = max(0, len(dates) - visible_count)
+    links = []
+    for index in range(start_index, len(dates)):
+        links.append(
+            {
+                "date": dates[index],
+                "label": labels[index],
+            }
+        )
+    return links
+
+
 def _build_member_dashboard_context(*, request, member, department, is_admin=False):
     today = timezone.localdate()
     selected_month = _parse_selected_month(request.GET.get("month"), default=today)
@@ -1149,6 +1167,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
             {"key": "active_days", "label": "稼働日数", "value": f"{recent_active_days:,}日"},
         ],
         "activity_trend": activity_trend,
+        "trend_date_links": _build_trend_date_links(activity_trend),
         "department_month_progress": department_month_progress,
         "department_period_progress": department_period_progress,
         "member_month_progress": build_progress_card(
