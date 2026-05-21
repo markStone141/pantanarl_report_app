@@ -702,7 +702,9 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "戻り 郵送 1 / QR 0")
         self.assertContains(response, "900円")
         self.assertContains(response, "初回決済")
-        self.assertContains(response, "過去の実績を修正")
+        self.assertContains(response, "<th>修正</th>", html=False)
+        self.assertContains(response, 'aria-label="過去の実績を修正"', html=False)
+        self.assertNotContains(response, "<th>状態</th>", html=False)
         self.assertNotContains(response, "<th>メモ</th>", html=False)
 
     def test_performance_member_history_shows_qr_adjustment_amount_and_count(self):

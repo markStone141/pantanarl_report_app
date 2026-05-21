@@ -212,7 +212,7 @@
             <th>件数</th>
             <th>金額</th>
             <th>AP / CM</th>
-            <th>状態</th>
+            <th>修正</th>
             <th>詳細</th>
           </tr>
         </thead>
@@ -229,8 +229,14 @@
             </td>
             <td data-label="金額">{{ row.amount_text }}</td>
             <td data-label="AP / CM">{{ row.entry.approach_count }} / {{ row.entry.communication_count }}</td>
-            <td data-label="状態">
-              <span class="badge">{% if row.entry.activity_closed %}活動終了{% else %}活動中{% endif %}</span>
+            <td data-label="修正">
+              {% if not readonly_member_view %}
+              <a class="icon-btn" href="{{ row.edit_url }}" aria-label="過去の実績を修正">
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+              </a>
+              {% else %}
+              <span class="muted">-</span>
+              {% endif %}
             </td>
             <td data-label="詳細">
               <details>
@@ -252,11 +258,6 @@
                 </div>
                 {% else %}
                 <p class="muted mt-10">決済明細はありません。</p>
-                {% endif %}
-                {% if not readonly_member_view %}
-                <div class="mt-10">
-                  <a class="btn-inline" href="{{ row.edit_url }}">過去の実績を修正</a>
-                </div>
                 {% endif %}
               </details>
             </td>
