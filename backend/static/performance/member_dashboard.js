@@ -253,6 +253,40 @@
     }
   }
 
+  function loadDayDetail(selectedDate) {
+    if (!dayDetailContainer || !dayDetailContainer.dataset.dayDetailUrl || !selectedDate) {
+      return;
+    }
+    const requestId = dayDetailRequestId + 1;
+    dayDetailRequestId = requestId;
+    dayDetailContainer.classList.add("is-loading");
+    const separator = dayDetailContainer.dataset.dayDetailUrl.indexOf("?") === -1 ? "?" : "&";
+    fetch(dayDetailContainer.dataset.dayDetailUrl + separator + "date=" + encodeURIComponent(selectedDate), {
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      credentials: "same-origin",
+    })
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error("failed");
+        }
+        return response.text();
+      })
+      .then(function (html) {
+        if (requestId !== dayDetailRequestId) {
+          return;
+        }
+        dayDetailContainer.innerHTML = html;
+      })
+      .catch(function () {})
+      .finally(function () {
+        if (requestId === dayDetailRequestId) {
+          dayDetailContainer.classList.remove("is-loading");
+        }
+      });
+  }
+
   const chart = new window.Chart(context, {
     data: {
       labels: sliceLatest(allLabels),
@@ -321,43 +355,6 @@
             },
           },
         },
-      },
-      onClick(event, elements) {
-        if (!dayDetailContainer || !dayDetailContainer.dataset.dayDetailUrl || !elements.length) {
-          return;
-        }
-        const selectedDate = visibleDateAt(elements[0].index);
-        if (!selectedDate) {
-          return;
-        }
-        const requestId = dayDetailRequestId + 1;
-        dayDetailRequestId = requestId;
-        dayDetailContainer.classList.add("is-loading");
-        const separator = dayDetailContainer.dataset.dayDetailUrl.indexOf("?") === -1 ? "?" : "&";
-        fetch(dayDetailContainer.dataset.dayDetailUrl + separator + "date=" + encodeURIComponent(selectedDate), {
-          headers: {
-            "X-Requested-With": "XMLHttpRequest",
-          },
-          credentials: "same-origin",
-        })
-          .then(function (response) {
-            if (!response.ok) {
-              throw new Error("failed");
-            }
-            return response.text();
-          })
-          .then(function (html) {
-            if (requestId !== dayDetailRequestId) {
-              return;
-            }
-            dayDetailContainer.innerHTML = html;
-          })
-          .catch(function () {})
-          .finally(function () {
-            if (requestId === dayDetailRequestId) {
-              dayDetailContainer.classList.remove("is-loading");
-            }
-          });
       },
       scales: {
         x: {
@@ -540,6 +537,16 @@
     modeActivityButton.addEventListener("click", function () {
       setMode("activity");
     });
+  }
+  if (dayDetailContainer) {
+    canvas.addEventListener("click", function (event) {
+      const elements = chart.getElementsAtEventForMode(event, "nearest", { intersect: false }, true);
+      if (!elements.length) {
+        return;
+      }
+      loadDayDetail(visibleDateAt(elements[0].index));
+    });
+    canvas.style.cursor = "pointer";
   }
 
   updateLegend();
