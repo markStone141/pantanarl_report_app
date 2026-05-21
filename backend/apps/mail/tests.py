@@ -2,13 +2,14 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from unittest.mock import patch
 
 from apps.accounts.models import Department, Member, MemberDepartment
 
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction
 
 from .models import MailDepartmentRouting, MailIntegrationSetting, MailRecipientGroup, MailSendHistory
-from .services import record_transaction_mail_failure, send_transaction_mail_mock
+from .services import MailSendError, record_transaction_mail_failure, send_transaction_mail_mock
 
 
 User = get_user_model()
@@ -146,6 +147,66 @@ class MailManagementTests(TestCase):
         self.assertContains(response, "メールグループ一覧")
         self.assertContains(response, "Gmail連携設定")
         self.assertContains(response, "決済報告用メールグループ設定")
+
+    @patch("apps.mail.services._send_via_gmail", return_value="gmail-message-1")
+    def test_mail_settings_test_send_creates_sent_history(self, mocked_send):
+        MailIntegrationSetting.objects.create(
+            sender_email="sender@example.com",
+            sender_name="Sender",
+            client_id="client-id",
+            client_secret="client-secret",
+            refresh_token="refresh-token",
+            token_uri="https://oauth2.googleapis.com/token",
+            is_active=True,
+        )
+        response = self.client.post(
+            reverse("mail_group_settings"),
+            {
+                "action": "test_send",
+                "target_type": "member",
+                "member": self.member_one.id,
+                "group": "",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        history = MailSendHistory.objects.get(is_test=True)
+        self.assertEqual(history.status, MailSendHistory.STATUS_SENT)
+        self.assertEqual(history.provider_message_id, "gmail-message-1")
+        self.assertIn("alice@example.com", history.sent_to_snapshot)
+        mocked_send.assert_called_once()
+
+    @patch(
+        "apps.mail.services._send_via_gmail",
+        side_effect=MailSendError("Gmail送信に失敗しました。", code="invalid_grant", detail="Token has been expired or revoked."),
+    )
+    def test_mail_settings_test_send_creates_failed_history(self, mocked_send):
+        MailIntegrationSetting.objects.create(
+            sender_email="sender@example.com",
+            sender_name="Sender",
+            client_id="client-id",
+            client_secret="client-secret",
+            refresh_token="refresh-token",
+            token_uri="https://oauth2.googleapis.com/token",
+            is_active=True,
+        )
+        group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)
+        group.members.set([self.member_one, self.member_three])
+        response = self.client.post(
+            reverse("mail_group_settings"),
+            {
+                "action": "test_send",
+                "target_type": "group",
+                "member": "",
+                "group": group.id,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        history = MailSendHistory.objects.get(is_test=True)
+        self.assertEqual(history.status, MailSendHistory.STATUS_FAILED)
+        self.assertEqual(history.error_code, "invalid_grant")
+        self.assertIn("expired or revoked", history.error_message)
+        self.assertEqual(history.recipient_group, group)
+        mocked_send.assert_called_once()
 
     def test_send_transaction_mail_mock_creates_sent_history(self):
         group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)

@@ -187,8 +187,7 @@
             <div class="muted">現在: {% if setting.refresh_token %}設定済み{% else %}未設定{% endif %}</div>
             {% if settings_form.refresh_token.errors %}<div class="error-text">{{ settings_form.refresh_token.errors|striptags }}</div>{% endif %}
 
-            <label class="checkbox-label" for="id_is_active">{{ settings_form.is_active }} {{ settings_form.is_active.label }}</label>
-            {% if settings_form.is_active.errors %}<div class="error-text">{{ settings_form.is_active.errors|striptags }}</div>{% endif %}
+            {{ settings_form.is_active.as_hidden }}
 
             <button type="submit" class="mt-12">設定を保存</button>
           </form>
@@ -202,7 +201,6 @@
         <div class="mt-12">
           <form method="post">
             {% csrf_token %}
-            <input type="hidden" name="action" value="test_preview" />
 
             <label for="id_target_type">{{ test_form.target_type.label }}</label>
             {{ test_form.target_type }}
@@ -215,7 +213,10 @@
             {{ test_form.group }}
             {% if test_form.group.errors %}<div class="error-text">{{ test_form.group.errors|striptags }}</div>{% endif %}
 
-            <button type="submit" class="mt-12">送信先を確認</button>
+            <div class="inline-row mt-12">
+              <button type="submit" name="action" value="test_preview">送信先を確認</button>
+              <button type="submit" name="action" value="test_send">テスト送信</button>
+            </div>
           </form>
 
           {% if preview_summary %}

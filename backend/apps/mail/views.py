@@ -12,6 +12,7 @@ from .forms import (
     MailRecipientGroupForm,
 )
 from .models import MailDepartmentRouting, MailIntegrationSetting, MailRecipientGroup, MailSendHistory
+from .services import send_test_mail
 
 
 def _mail_nav_items():
@@ -90,7 +91,7 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
                 status_message = "メール連携設定を更新しました。"
             else:
                 status_message = "入力内容を確認してください。"
-        elif action == "test_preview":
+        elif action in {"test_preview", "test_send"}:
             form = MailRecipientGroupForm(
                 initial={
                     "name": edit_group.name,
@@ -114,12 +115,26 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
                     member = test_form.cleaned_data["member"]
                     preview_recipients = [f"{member.name} <{member.email}>"]
                     preview_summary = "選択したメンバー1人にテスト送信する想定です。"
+                    target_member = member
+                    target_group = None
                 else:
                     group = test_form.cleaned_data["group"]
                     members = group.members.exclude(email="").order_by("name")
                     preview_recipients = [f"{member.name} <{member.email}>" for member in members]
                     preview_summary = f"{group.name} に紐づくメンバーへテスト送信する想定です。"
-                status_message = "テスト送信先のプレビューを更新しました。"
+                    target_member = None
+                    target_group = group
+                if action == "test_send":
+                    history = send_test_mail(
+                        target_member=target_member,
+                        recipient_group=target_group,
+                    )
+                    if history.status == MailSendHistory.STATUS_SENT:
+                        status_message = "テスト送信を実行しました。"
+                    else:
+                        status_message = f"テスト送信に失敗しました: {history.error_message or history.error_code or '送信エラー'}"
+                else:
+                    status_message = "テスト送信先のプレビューを更新しました。"
             else:
                 status_message = "テスト送信先を確認してください。"
         elif action == "save_routing":
