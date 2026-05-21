@@ -68,6 +68,7 @@
     <div class="performance-chart-card mt-12">
       <canvas id="performance-activity-trend-chart" aria-label="直近稼働の実績推移"></canvas>
     </div>
+    <div id="performance-trend-date-links" class="performance-trend-date-links mt-12" aria-label="日付から実績を表示"></div>
     {% else %}
     <p class="muted mt-12">表示できる稼働実績はまだありません。</p>
     {% endif %}
@@ -290,6 +291,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'performance/member_dashboard.js' %}?v=11"></script>
+<script src="{% static 'performance/member_dashboard.js' %}?v=12"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 {% endblock %}

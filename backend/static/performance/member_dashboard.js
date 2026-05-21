@@ -66,6 +66,7 @@
   const modeAmountButton = document.getElementById("performance-trend-mode-amount");
   const modeRateButton = document.getElementById("performance-trend-mode-rate");
   const modeActivityButton = document.getElementById("performance-trend-mode-activity");
+  const dateLinksNode = document.getElementById("performance-trend-date-links");
   const descriptionNode = document.getElementById("performance-trend-description");
   const primaryLegendNode = document.getElementById("performance-trend-primary-legend");
   const primarySwatchNode = document.getElementById("performance-trend-primary-swatch");
@@ -130,26 +131,6 @@
     if (index < 0 || index >= visibleDates.length) {
       return "";
     }
-    return visibleDates[index] || "";
-  }
-
-  function visibleDateFromEvent(event) {
-    if (!chart.scales || !chart.scales.x) {
-      return "";
-    }
-    const rect = canvas.getBoundingClientRect();
-    const clientX = typeof event.clientX === "number" ? event.clientX : 0;
-    const relativeX = clientX - rect.left;
-    const xScale = chart.scales.x;
-    if (relativeX < xScale.left || relativeX > xScale.right) {
-      return "";
-    }
-    const rawIndex = xScale.getValueForPixel(relativeX);
-    if (Number.isNaN(rawIndex)) {
-      return "";
-    }
-    const visibleDates = sliceLatest(allDates);
-    const index = Math.max(0, Math.min(visibleDates.length - 1, Math.round(rawIndex)));
     return visibleDates[index] || "";
   }
 
@@ -305,6 +286,26 @@
           dayDetailContainer.classList.remove("is-loading");
         }
       });
+  }
+
+  function renderDateLinks() {
+    if (!dateLinksNode) {
+      return;
+    }
+    const visibleDates = sliceLatest(allDates);
+    const visibleLabels = sliceLatest(allLabels);
+    dateLinksNode.innerHTML = "";
+    visibleDates.forEach(function (value, index) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "performance-trend-date-link";
+      button.dataset.date = value;
+      button.textContent = visibleLabels[index] || value;
+      button.addEventListener("click", function () {
+        loadDayDetail(value);
+      });
+      dateLinksNode.appendChild(button);
+    });
   }
 
   const chart = new window.Chart(context, {
@@ -524,6 +525,7 @@
       increaseButton.disabled = visibleCount >= allLabels.length;
     }
     updateSummaryCards();
+    renderDateLinks();
   }
 
   function updateVisibleRange(nextVisibleCount) {
@@ -558,16 +560,6 @@
       setMode("activity");
     });
   }
-  if (dayDetailContainer) {
-    function handleDayDetailClick(event) {
-      event.preventDefault();
-      loadDayDetail(visibleDateFromEvent(event));
-    }
-    canvas.addEventListener("click", handleDayDetailClick);
-    canvas.addEventListener("pointerup", handleDayDetailClick);
-    canvas.style.cursor = "pointer";
-  }
-
   updateLegend();
   syncControls();
 })();

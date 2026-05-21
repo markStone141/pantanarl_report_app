@@ -397,6 +397,28 @@ a {
   border-color: #1f76d1;
 }
 
+.performance-trend-date-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.performance-trend-date-link {
+  border: 1px solid rgba(39, 123, 211, 0.18);
+  background: #fff;
+  color: var(--brand);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.performance-trend-date-link:hover {
+  background: rgba(39, 123, 211, 0.08);
+  border-color: rgba(39, 123, 211, 0.28);
+}
+
 .performance-trend-controls .btn-inline[disabled] {
   opacity: 0.45;
   cursor: default;
