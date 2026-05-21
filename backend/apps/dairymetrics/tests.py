@@ -2305,6 +2305,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
             return_postal_amount=3000,
             return_qr_count=1,
             return_qr_amount=800,
+            location_name="新宿",
         )
         self.client.force_login(self.user)
 
@@ -2320,6 +2321,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertContains(response, "QR金額")
         self.assertContains(response, "3,000")
         self.assertContains(response, "800")
+        self.assertContains(response, "現場")
+        self.assertContains(response, "新宿")
 
 
 class DairyMetricsAdminTests(AppTestMixin, TestCase):
@@ -2762,6 +2765,7 @@ class DairyMetricsAdminTests(AppTestMixin, TestCase):
             return_postal_amount=5000,
             return_qr_count=1,
             return_qr_amount=800,
+            location_name="Shibuya",
             created_by=self.admin,
         )
         self.client.force_login(self.admin)
@@ -2778,11 +2782,12 @@ class DairyMetricsAdminTests(AppTestMixin, TestCase):
         self.assertContains(response, "QR金額")
         self.assertContains(response, "5,000")
         self.assertContains(response, "800")
+        self.assertContains(response, "現場")
+        self.assertContains(response, "Shibuya")
         self.assertNotContains(response, ">AP<", html=False)
         self.assertNotContains(response, ">CM<", html=False)
         self.assertNotContains(response, ">件数<", html=False)
         self.assertNotContains(response, ">金額<", html=False)
-        self.assertNotContains(response, "Shibuya")
 
     def test_admin_monthly_update_cell_updates_numeric_field_entry(self):
         entry = MemberDailyMetricEntry.objects.create(

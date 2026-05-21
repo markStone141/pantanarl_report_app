@@ -220,13 +220,7 @@
           {% for row in entry_rows %}
           <tr>
             <td data-label="日付">{{ row.entry.entry_date|date:"Y/m/d" }}</td>
-            <td data-label="件数">
-              {{ row.count_text }}
-              <div class="muted">{{ row.count_breakdown_text }}</div>
-              {% if row.adjustment_summary %}
-              <div class="muted">{{ row.adjustment_summary }}</div>
-              {% endif %}
-            </td>
+            <td data-label="件数">{{ row.count_text }}</td>
             <td data-label="金額">{{ row.amount_text }}</td>
             <td data-label="AP / CM">{{ row.entry.approach_count }} / {{ row.entry.communication_count }}</td>
             <td data-label="修正">
@@ -279,6 +273,7 @@
         <thead>
           <tr>
             <th>対象日</th>
+            <th>現場</th>
             <th>種別</th>
             <th>件数</th>
             <th>金額</th>
@@ -288,6 +283,7 @@
           {% for adjustment in adjustment_rows %}
           <tr>
             <td data-label="対象日">{{ adjustment.target_date|date:"Y/m/d" }}</td>
+            <td data-label="現場">{{ adjustment.location_name|default:"-" }}</td>
             <td data-label="種別">{{ adjustment.get_source_type_display }}</td>
             <td data-label="件数">
               {% if department.code == "WV" %}

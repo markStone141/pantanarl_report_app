@@ -698,8 +698,9 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "補正実績")
         self.assertContains(response, entry_today.entry_date.strftime("%Y/%m/%d"))
         self.assertContains(response, "郵送")
-        self.assertContains(response, "現場 2件 / 補正 1件")
-        self.assertContains(response, "戻り 郵送 1 / QR 0")
+        self.assertContains(response, ">2件<", html=False)
+        self.assertContains(response, "<th>現場</th>", html=False)
+        self.assertContains(response, ">-<", html=False)
         self.assertContains(response, "900円")
         self.assertContains(response, "初回決済")
         self.assertContains(response, "<th>修正</th>", html=False)
@@ -723,6 +724,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
             source_type=MetricAdjustment.SOURCE_QR,
             return_qr_count=1,
             return_qr_amount=1500,
+            location_name="現場A",
         )
 
         response = self.client.get(
@@ -735,6 +737,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "1件")
         self.assertContains(response, "1500円")
         self.assertContains(response, "補正実績")
+        self.assertContains(response, "現場A")
 
     def test_performance_member_dashboard_trend_includes_adjustment_only_dates(self):
         today = timezone.localdate()

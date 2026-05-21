@@ -1405,6 +1405,7 @@ def build_member_month_overview(member, *, target_month, department_code="", tod
     entry_daily_totals_by_date = {}
     adjustment_daily_totals_by_date = {}
     location_names_by_date = {}
+    adjustment_location_names_by_date = {}
     entry_totals = _zero_totals()
     adjustment_totals = _zero_totals()
 
@@ -1426,6 +1427,11 @@ def build_member_month_overview(member, *, target_month, department_code="", tod
             value = int(getattr(adjustment, field, 0) or 0)
             day_totals[field] += value
             adjustment_totals[field] += value
+        normalized_name = (adjustment.location_name or "").strip()
+        if normalized_name:
+            adjustment_location_names_by_date.setdefault(adjustment.target_date, [])
+            if normalized_name not in adjustment_location_names_by_date[adjustment.target_date]:
+                adjustment_location_names_by_date[adjustment.target_date].append(normalized_name)
 
     field_active_day_count = sum(
         1
@@ -1544,6 +1550,25 @@ def build_member_month_overview(member, *, target_month, department_code="", tod
                 "cells": cells,
             }
         )
+    adjustment_metric_rows.append(
+        {
+            "label": "現場",
+            "field": "location_name",
+            "editable": False,
+            "monthly_total": "",
+            "monthly_average": f"{adjustment_active_day_count}日" if adjustment_active_day_count else "-",
+            "cells": [
+                _field_cell(
+                    field="location_name",
+                    value=" / ".join(adjustment_location_names_by_date.get(month_day["date"], [])) or "-",
+                    entry_date=month_day["date"],
+                    editable=False,
+                    is_empty=not adjustment_location_names_by_date.get(month_day["date"]),
+                )
+                for month_day in month_days
+            ],
+        }
+    )
 
     return {
         "departments": departments,
@@ -1601,6 +1626,7 @@ def build_admin_month_overview(*, target_month, department_code="", sort_key="ac
         entry_daily_totals_by_member = {}
         adjustment_daily_totals_by_member = {}
         location_names_by_member = {}
+        adjustment_location_names_by_member = {}
         entry_monthly_totals_by_member = {member_id: _zero_totals() for member_id in member_ids}
         adjustment_monthly_totals_by_member = {member_id: _zero_totals() for member_id in member_ids}
         today_entries_by_member = {}
@@ -1629,6 +1655,11 @@ def build_admin_month_overview(*, target_month, department_code="", sort_key="ac
                 value = int(getattr(adjustment, field, 0) or 0)
                 day_totals[field] += value
                 adjustment_monthly_totals_by_member[adjustment.member_id][field] += value
+            normalized_name = (adjustment.location_name or "").strip()
+            if normalized_name:
+                adjustment_location_names_by_member.setdefault(adjustment.member_id, {}).setdefault(adjustment.target_date, [])
+                if normalized_name not in adjustment_location_names_by_member[adjustment.member_id][adjustment.target_date]:
+                    adjustment_location_names_by_member[adjustment.member_id][adjustment.target_date].append(normalized_name)
 
         for member in members:
             today_entry = today_entries_by_member.get(member.id)
@@ -1643,6 +1674,7 @@ def build_admin_month_overview(*, target_month, department_code="", sort_key="ac
                 activity_status = "未入力"
 
             member_locations = location_names_by_member.get(member.id, {})
+            adjustment_member_locations = adjustment_location_names_by_member.get(member.id, {})
             entry_totals = entry_monthly_totals_by_member.get(member.id, _zero_totals())
             adjustment_totals = adjustment_monthly_totals_by_member.get(member.id, _zero_totals())
 
@@ -1779,6 +1811,24 @@ def build_admin_month_overview(*, target_month, department_code="", sort_key="ac
                         "cells": cells,
                     }
                 )
+            adjustment_metric_rows.append(
+                {
+                    "label": "現場",
+                    "field": "location_name",
+                    "editable": True,
+                    "monthly_total": "",
+                    "monthly_average": f"{adjustment_active_day_count}日" if adjustment_active_day_count else "-",
+                    "cells": [
+                        _field_cell(
+                            field="location_name",
+                            value=" / ".join(adjustment_member_locations.get(month_day["date"], [])) or "-",
+                            entry_date=month_day["date"],
+                            is_empty=not adjustment_member_locations.get(month_day["date"]),
+                        )
+                        for month_day in month_days
+                    ],
+                }
+            )
             adjustment_rows.append(
                 {
                     "department": department,

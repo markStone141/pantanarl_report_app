@@ -185,28 +185,19 @@ def _count_text(entry, adjustment_totals):
     return f"{total_count}件"
 
 
-def _count_breakdown_text(entry, adjustment_totals):
-    if entry.department.code == "WV":
-        base_cs = int(entry.cs_count or 0)
-        base_refugee = int(entry.refugee_count or 0)
-        adjustment_cs = int(adjustment_totals["cs_count"] or 0)
-        adjustment_refugee = int(adjustment_totals["refugee_count"] or 0)
-        return (
-            f"現場 CS {base_cs} / 難民 {base_refugee}"
-            f" / 補正 CS {adjustment_cs} / 難民 {adjustment_refugee}"
-        )
-    base_count = int(entry.result_count or 0)
-    adjustment_count = (
-        int(adjustment_totals["result_count"] or 0)
-        + int(adjustment_totals["return_postal_count"] or 0)
-        + int(adjustment_totals["return_qr_count"] or 0)
-    )
-    return f"現場 {base_count}件 / 補正 {adjustment_count}件"
-
-
 def _amount_text(entry, adjustment_totals):
     total_amount = entry_final_amount_value(entry=entry, adjustment_totals=adjustment_totals)
     return f"{total_amount:,}円"
+
+
+def _field_count_text(entry):
+    if entry.department.code == "WV":
+        return f"CS {int(entry.cs_count or 0)} / 難民 {int(entry.refugee_count or 0)}"
+    return f"{int(entry.result_count or 0)}件"
+
+
+def _field_amount_text(entry):
+    return f"{int(entry.support_amount or 0):,}円"
 
 
 def _resolve_current_period(today):
@@ -905,17 +896,11 @@ def _build_member_dashboard_entry_rows(*, member, department, month_start, month
         entry_rows.append(
             {
                 "entry": entry,
-                "count_text": _count_text(entry, adjustment_totals),
-                "count_breakdown_text": _count_breakdown_text(entry, adjustment_totals),
-                "amount_text": _amount_text(entry, adjustment_totals),
+                "count_text": _field_count_text(entry),
+                "amount_text": _field_amount_text(entry),
                 "transactions": list(entry.transactions.all().order_by("created_at", "id")),
-                "adjustment_summary": (
-                    f"戻り 郵送 {adjustment_totals['return_postal_count']} / QR {adjustment_totals['return_qr_count']}"
-                    if adjustment_totals["return_postal_count"] or adjustment_totals["return_qr_count"]
-                    else ""
-                ),
             }
-    )
+        )
     return entry_rows
 
 
@@ -1349,34 +1334,13 @@ def performance_index(request: HttpRequest) -> HttpResponse:
     paginator = Paginator(entries_queryset, 20)
     page_obj = paginator.get_page(request.GET.get("page") or 1)
     entries = list(page_obj.object_list)
-    adjustment_totals_map = build_adjustment_totals_map(entries)
     entry_rows = []
     for entry in entries:
-        key = (entry.member_id, entry.department_id, entry.entry_date)
-        adjustment_totals = adjustment_totals_map.get(
-            key,
-            {
-                "result_count": 0,
-                "support_amount": 0,
-                "return_postal_count": 0,
-                "return_postal_amount": 0,
-                "return_qr_count": 0,
-                "return_qr_amount": 0,
-                "cs_count": 0,
-                "refugee_count": 0,
-            },
-        )
         entry_rows.append(
             {
                 "entry": entry,
-                "count_text": _count_text(entry, adjustment_totals),
-                "amount_text": _amount_text(entry, adjustment_totals),
-                "has_adjustments": any(adjustment_totals.values()),
-                "adjustment_summary": (
-                    f"戻り 郵送 {adjustment_totals['return_postal_count']} / QR {adjustment_totals['return_qr_count']}"
-                    if adjustment_totals["return_postal_count"] or adjustment_totals["return_qr_count"]
-                    else ""
-                ),
+                "count_text": _field_count_text(entry),
+                "amount_text": _field_amount_text(entry),
             }
         )
 
