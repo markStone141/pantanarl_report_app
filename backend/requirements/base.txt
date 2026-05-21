@@ -3,3 +3,7 @@ psycopg[binary]>=3.1
 gunicorn>=22.0
 whitenoise>=6.7
 openpyxl>=3.1
+google-api-python-client>=2.170
+google-auth>=2.40
+google-auth-httplib2>=0.2
+requests>=2.32

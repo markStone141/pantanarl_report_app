@@ -3,7 +3,6 @@ from __future__ import annotations
 import base64
 import json
 from email.message import EmailMessage
-from urllib import error, parse, request
 
 from django.utils import timezone
 
@@ -47,58 +46,66 @@ def _integration_is_ready(setting: MailIntegrationSetting | None) -> bool:
     )
 
 
-def _extract_error_detail(exc: error.HTTPError | error.URLError | Exception) -> tuple[str, str]:
-    if isinstance(exc, error.HTTPError):
-        payload = ""
-        try:
-            payload = exc.read().decode("utf-8")
-        except Exception:
-            payload = ""
-        if payload:
-            try:
-                error_payload = json.loads(payload)
-                error_block = error_payload.get("error") or {}
-                code = str(error_block.get("status") or error_block.get("code") or exc.code)
-                message = error_block.get("message") or payload
-                return code, str(message)
-            except json.JSONDecodeError:
-                pass
-        return str(exc.code), str(exc.reason or exc)
-    if isinstance(exc, error.URLError):
-        return "network_error", str(exc.reason)
+def _extract_error_detail(exc: Exception) -> tuple[str, str]:
     if isinstance(exc, MailSendError):
         return exc.code, exc.detail
+    response = getattr(exc, "resp", None)
+    status = getattr(response, "status", "") or getattr(exc, "status_code", "")
+    content = getattr(exc, "content", b"")
+    if isinstance(content, bytes):
+        content_text = content.decode("utf-8", errors="ignore")
+    else:
+        content_text = str(content or "")
+    if content_text:
+        try:
+            error_payload = json.loads(content_text)
+            error_block = error_payload.get("error") or {}
+            code = str(error_block.get("status") or error_block.get("code") or status or exc.__class__.__name__)
+            message = error_block.get("message") or content_text
+            return code, str(message)
+        except json.JSONDecodeError:
+            pass
+    reason = getattr(exc, "reason", "")
+    if status or reason:
+        return str(status or "network_error"), str(reason or content_text or exc)
     return exc.__class__.__name__, str(exc)
 
 
-def _fetch_access_token(setting: MailIntegrationSetting) -> str:
+def _gmail_scopes() -> list[str]:
+    return ["https://www.googleapis.com/auth/gmail.send"]
+
+
+def _gmail_credentials(setting: MailIntegrationSetting):
     if not _integration_is_ready(setting):
         raise MailSendError("Gmail連携設定が不足しています。", code="missing_setting")
-    payload = parse.urlencode(
+    try:
+        from google.auth.transport.requests import Request
+        from google.oauth2.credentials import Credentials
+    except ImportError as exc:
+        raise MailSendError(
+            "Gmail連携ライブラリが未インストールです。",
+            code="missing_library",
+            detail=str(exc),
+        ) from exc
+
+    credentials = Credentials.from_authorized_user_info(
         {
             "client_id": setting.client_id,
             "client_secret": setting.client_secret,
             "refresh_token": setting.refresh_token,
-            "grant_type": "refresh_token",
-        }
-    ).encode("utf-8")
-    token_request = request.Request(
-        setting.token_uri,
-        data=payload,
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-        method="POST",
+            "token_uri": setting.token_uri,
+            "type": "authorized_user",
+        },
+        scopes=_gmail_scopes(),
     )
     try:
-        with request.urlopen(token_request, timeout=20) as response:
-            token_payload = json.loads(response.read().decode("utf-8"))
-    except (error.HTTPError, error.URLError) as exc:
+        credentials.refresh(Request())
+    except Exception as exc:
         code, detail = _extract_error_detail(exc)
         raise MailSendError("アクセストークンの取得に失敗しました。", code=code, detail=detail) from exc
-
-    access_token = token_payload.get("access_token", "")
-    if not access_token:
+    if not credentials.token:
         raise MailSendError("アクセストークンが返されませんでした。", code="missing_access_token")
-    return str(access_token)
+    return credentials
 
 
 def _build_raw_message(
@@ -129,7 +136,16 @@ def _send_via_gmail(
 ) -> str:
     if not recipients:
         raise MailSendError("送信先メールアドレスがありません。", code="missing_recipient")
-    access_token = _fetch_access_token(setting)
+    try:
+        from googleapiclient.discovery import build
+    except ImportError as exc:
+        raise MailSendError(
+            "Gmail連携ライブラリが未インストールです。",
+            code="missing_library",
+            detail=str(exc),
+        ) from exc
+
+    credentials = _gmail_credentials(setting)
     raw_message = _build_raw_message(
         sender_email=setting.sender_email,
         sender_name=setting.sender_name,
@@ -137,19 +153,15 @@ def _send_via_gmail(
         subject=subject,
         body=body,
     )
-    send_request = request.Request(
-        "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
-        data=json.dumps({"raw": raw_message}).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
     try:
-        with request.urlopen(send_request, timeout=20) as response:
-            response_payload = json.loads(response.read().decode("utf-8"))
-    except (error.HTTPError, error.URLError) as exc:
+        service = build("gmail", "v1", credentials=credentials, cache_discovery=False)
+        response_payload = (
+            service.users()
+            .messages()
+            .send(userId="me", body={"raw": raw_message})
+            .execute()
+        )
+    except Exception as exc:
         code, detail = _extract_error_detail(exc)
         raise MailSendError("Gmail送信に失敗しました。", code=code, detail=detail) from exc
 
