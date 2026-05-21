@@ -133,6 +133,24 @@
     return visibleDates[index] || "";
   }
 
+  function visibleDateFromEvent(event) {
+    if (!chart.scales || !chart.scales.x || !window.Chart.helpers || typeof window.Chart.helpers.getRelativePosition !== "function") {
+      return "";
+    }
+    const position = window.Chart.helpers.getRelativePosition(event, chart);
+    const xScale = chart.scales.x;
+    if (!position || position.x < xScale.left || position.x > xScale.right) {
+      return "";
+    }
+    const rawIndex = xScale.getValueForPixel(position.x);
+    if (Number.isNaN(rawIndex)) {
+      return "";
+    }
+    const visibleDates = sliceLatest(allDates);
+    const index = Math.max(0, Math.min(visibleDates.length - 1, Math.round(rawIndex)));
+    return visibleDates[index] || "";
+  }
+
   function sumValues(values) {
     return values.reduce(function (total, value) {
       return total + Number(value || 0);
@@ -540,11 +558,7 @@
   }
   if (dayDetailContainer) {
     canvas.addEventListener("click", function (event) {
-      const elements = chart.getElementsAtEventForMode(event, "nearest", { intersect: false }, true);
-      if (!elements.length) {
-        return;
-      }
-      loadDayDetail(visibleDateAt(elements[0].index));
+      loadDayDetail(visibleDateFromEvent(event));
     });
     canvas.style.cursor = "pointer";
   }
