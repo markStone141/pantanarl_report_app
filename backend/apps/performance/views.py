@@ -185,6 +185,25 @@ def _count_text(entry, adjustment_totals):
     return f"{total_count}件"
 
 
+def _count_breakdown_text(entry, adjustment_totals):
+    if entry.department.code == "WV":
+        base_cs = int(entry.cs_count or 0)
+        base_refugee = int(entry.refugee_count or 0)
+        adjustment_cs = int(adjustment_totals["cs_count"] or 0)
+        adjustment_refugee = int(adjustment_totals["refugee_count"] or 0)
+        return (
+            f"現場 CS {base_cs} / 難民 {base_refugee}"
+            f" / 補正 CS {adjustment_cs} / 難民 {adjustment_refugee}"
+        )
+    base_count = int(entry.result_count or 0)
+    adjustment_count = (
+        int(adjustment_totals["result_count"] or 0)
+        + int(adjustment_totals["return_postal_count"] or 0)
+        + int(adjustment_totals["return_qr_count"] or 0)
+    )
+    return f"現場 {base_count}件 / 補正 {adjustment_count}件"
+
+
 def _amount_text(entry, adjustment_totals):
     total_amount = entry_final_amount_value(entry=entry, adjustment_totals=adjustment_totals)
     return f"{total_amount:,}円"
@@ -887,6 +906,7 @@ def _build_member_dashboard_entry_rows(*, member, department, month_start, month
             {
                 "entry": entry,
                 "count_text": _count_text(entry, adjustment_totals),
+                "count_breakdown_text": _count_breakdown_text(entry, adjustment_totals),
                 "amount_text": _amount_text(entry, adjustment_totals),
                 "transactions": list(entry.transactions.all().order_by("created_at", "id")),
                 "adjustment_summary": (
@@ -1161,6 +1181,12 @@ def _build_member_history_context(*, request, member, department, is_admin=False
         month_start=scope.start_date,
         month_end=scope.end_date,
     )
+    entry_edit_next_url = request.get_full_path()
+    for row in entry_rows:
+        row["edit_url"] = (
+            f"{reverse('performance_entry_edit', args=[row['entry'].id])}"
+            f"?{urlencode({'next': entry_edit_next_url})}"
+        )
     adjustment_rows = list(
         MetricAdjustment.objects.filter(
             member=member,
@@ -1440,10 +1466,16 @@ def performance_history(request: HttpRequest) -> HttpResponse:
     return render(request, "performance/history.html", context)
 
 
-@require_performance_roles(ROLE_ADMIN)
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_entry_edit(request: HttpRequest, entry_id: int) -> HttpResponse:
     entry = get_object_or_404(MemberDailyMetricEntry.objects.select_related("member", "department"), pk=entry_id)
+    is_admin = bool(request.user.is_staff or request.user.is_superuser)
+    if not is_admin:
+        member = getattr(request.user, "member_profile", None)
+        if member is None or member.id != entry.member_id:
+            raise Http404
     status_message = ""
+    next_url = request.GET.get("next") or request.POST.get("next") or ""
     if request.method == "POST":
         previous_department_id = entry.department_id
         previous_entry_date = entry.entry_date
@@ -1461,16 +1493,23 @@ def performance_entry_edit(request: HttpRequest, entry_id: int) -> HttpResponse:
                     old_summary.recalculate_from_entries()
             summary = DepartmentDailyMetricSummary.get_or_create_for_entry(entry=saved_entry)
             summary.recalculate_from_entries()
-            return redirect(f"{reverse('performance_index')}?updated=entry")
+            if next_url:
+                joiner = "&" if "?" in next_url else "?"
+                return redirect(f"{next_url}{joiner}updated=entry")
+            if is_admin:
+                return redirect(f"{reverse('performance_index')}?updated=entry")
+            return redirect(f"{reverse('performance_member_history')}?updated=entry")
         status_message = "入力内容を確認してください。"
     else:
         form = PerformanceMemberDailyMetricEntryForm(instance=entry)
 
     context = {
-        "nav_items": _performance_nav_items(),
+        "nav_items": _performance_nav_items() if is_admin else _performance_member_nav_items(is_admin=False),
         "form": form,
         "entry": entry,
         "status_message": status_message,
+        "next_url": next_url,
+        "back_url": next_url or (reverse("performance_index") if is_admin else reverse("performance_member_history")),
     }
     return render(request, "performance/entry_edit.html", context)
 

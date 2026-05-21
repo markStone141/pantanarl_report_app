@@ -112,7 +112,8 @@ def _build_raw_message(
     *,
     sender_email: str,
     sender_name: str,
-    recipients: list[str],
+    to_recipients: list[str],
+    cc_recipients: list[str] | None = None,
     subject: str,
     body: str,
 ) -> str:
@@ -121,7 +122,9 @@ def _build_raw_message(
         message["From"] = f"{sender_name} <{sender_email}>"
     else:
         message["From"] = sender_email
-    message["To"] = ", ".join(recipients)
+    message["To"] = ", ".join(to_recipients)
+    if cc_recipients:
+        message["Cc"] = ", ".join(cc_recipients)
     message["Subject"] = subject
     message.set_content(body)
     return base64.urlsafe_b64encode(message.as_bytes()).decode("ascii")
@@ -130,11 +133,12 @@ def _build_raw_message(
 def _send_via_gmail(
     *,
     setting: MailIntegrationSetting,
-    recipients: list[str],
+    to_recipients: list[str],
+    cc_recipients: list[str] | None = None,
     subject: str,
     body: str,
 ) -> str:
-    if not recipients:
+    if not to_recipients and not cc_recipients:
         raise MailSendError("送信先メールアドレスがありません。", code="missing_recipient")
     try:
         from googleapiclient.discovery import build
@@ -149,7 +153,8 @@ def _send_via_gmail(
     raw_message = _build_raw_message(
         sender_email=setting.sender_email,
         sender_name=setting.sender_name,
-        recipients=recipients,
+        to_recipients=to_recipients,
+        cc_recipients=cc_recipients,
         subject=subject,
         body=body,
     )
@@ -180,13 +185,15 @@ def send_test_mail(
     today = timezone.localdate()
     now = timezone.now()
     if target_member is not None:
-        recipients = [target_member.email] if target_member.email else []
+        to_recipients = [target_member.email] if target_member.email else []
+        cc_recipients = []
         recipient_snapshot = _members_recipient_snapshot([target_member])
         department = target_member.default_department
         summary = target_member.name
     elif recipient_group is not None:
         members = list(recipient_group.members.exclude(email="").order_by("name"))
-        recipients = [member.email for member in members]
+        to_recipients = [setting.sender_email] if setting and setting.sender_email else []
+        cc_recipients = [member.email for member in members]
         recipient_snapshot = _members_recipient_snapshot(members)
         department = recipient_group.department
         summary = recipient_group.name
@@ -224,7 +231,8 @@ def send_test_mail(
             raise MailSendError("Gmail連携設定が未完了です。", code="missing_setting")
         provider_message_id = _send_via_gmail(
             setting=setting,
-            recipients=recipients,
+            to_recipients=to_recipients,
+            cc_recipients=cc_recipients,
             subject=subject,
             body=body,
         )

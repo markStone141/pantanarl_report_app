@@ -32,6 +32,7 @@
     {% endif %}
     <form method="post" class="grid dairymetrics-entry-grid">
       {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next_url }}">
       {% for field in form %}
       <div class="{% if field.name == 'memo' %}dairymetrics-field dairymetrics-field-full{% else %}dairymetrics-field{% endif %}">
         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
@@ -46,7 +47,7 @@
       {% endfor %}
       <div class="dairymetrics-field-full dairymetrics-form-actions">
         <button type="submit">保存する</button>
-        <a class="btn-inline" href="{% url 'performance_index' %}">一覧へ戻る</a>
+        <a class="btn-inline" href="{{ back_url }}">一覧へ戻る</a>
       </div>
     </form>
   </section>

@@ -222,6 +222,7 @@
             <td data-label="日付">{{ row.entry.entry_date|date:"Y/m/d" }}</td>
             <td data-label="件数">
               {{ row.count_text }}
+              <div class="muted">{{ row.count_breakdown_text }}</div>
               {% if row.adjustment_summary %}
               <div class="muted">{{ row.adjustment_summary }}</div>
               {% endif %}
@@ -252,9 +253,9 @@
                 {% else %}
                 <p class="muted mt-10">決済明細はありません。</p>
                 {% endif %}
-                {% if is_admin_view %}
+                {% if not readonly_member_view %}
                 <div class="mt-10">
-                  <a class="btn-inline" href="{% url 'performance_entry_edit' row.entry.id %}">日次実績を編集</a>
+                  <a class="btn-inline" href="{{ row.edit_url }}">過去の実績を修正</a>
                 </div>
                 {% endif %}
               </details>

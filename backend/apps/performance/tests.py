@@ -698,9 +698,11 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "補正実績")
         self.assertContains(response, entry_today.entry_date.strftime("%Y/%m/%d"))
         self.assertContains(response, "郵送")
+        self.assertContains(response, "現場 2件 / 補正 1件")
         self.assertContains(response, "戻り 郵送 1 / QR 0")
         self.assertContains(response, "900円")
         self.assertContains(response, "初回決済")
+        self.assertContains(response, "過去の実績を修正")
         self.assertNotContains(response, "<th>メモ</th>", html=False)
 
     def test_performance_member_history_shows_qr_adjustment_amount_and_count(self):
@@ -856,6 +858,49 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "実績管理ダッシュボード")
         self.assertContains(response, "決済入力")
         self.assertContains(response, "Metrics V2")
+
+    def test_performance_member_can_edit_own_past_entry_from_history_flow(self):
+        self.client.logout()
+        report_user = User.objects.create_user(username="perf-member-edit", password="pass1234", is_staff=False)
+        self.member.user = report_user
+        self.member.save(update_fields=["user"])
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=timezone.localdate() - timedelta(days=1),
+            result_count=0,
+            support_amount=0,
+            approach_count=0,
+            communication_count=0,
+        )
+        self.client.force_login(report_user)
+
+        history_response = self.client.get(reverse("performance_member_history"))
+        self.assertContains(history_response, reverse("performance_entry_edit", args=[entry.id]))
+
+        response = self.client.post(
+            f"{reverse('performance_entry_edit', args=[entry.id])}?next={reverse('performance_member_history')}",
+            {
+                "member": self.member.id,
+                "department": self.department.id,
+                "entry_date": entry.entry_date.strftime("%Y-%m-%d"),
+                "approach_count": 12,
+                "communication_count": 4,
+                "result_count": 0,
+                "support_amount": 0,
+                "daily_target_count": 1,
+                "daily_target_amount": 3000,
+                "activity_closed": "on",
+                "location_name": "",
+                "memo": "",
+                "next": reverse("performance_member_history"),
+            },
+        )
+
+        self.assertRedirects(response, f"{reverse('performance_member_history')}?updated=entry")
+        entry.refresh_from_db()
+        self.assertEqual(entry.approach_count, 12)
+        self.assertEqual(entry.communication_count, 4)
 
     def test_performance_member_detail_can_save_month_target(self):
         today = timezone.localdate()

@@ -176,6 +176,11 @@ class MailManagementTests(AppTestMixin, TestCase):
         self.assertEqual(history.provider_message_id, "gmail-message-1")
         self.assertIn("alice@example.com", history.sent_to_snapshot)
         mocked_send.assert_called_once()
+        self.assertEqual(
+            mocked_send.call_args.kwargs["to_recipients"],
+            ["alice@example.com"],
+        )
+        self.assertEqual(mocked_send.call_args.kwargs["cc_recipients"], [])
 
     @patch(
         "apps.mail.services._send_via_gmail",
@@ -209,6 +214,14 @@ class MailManagementTests(AppTestMixin, TestCase):
         self.assertIn("expired or revoked", history.error_message)
         self.assertEqual(history.recipient_group, group)
         mocked_send.assert_called_once()
+        self.assertEqual(
+            mocked_send.call_args.kwargs["to_recipients"],
+            ["sender@example.com"],
+        )
+        self.assertEqual(
+            mocked_send.call_args.kwargs["cc_recipients"],
+            ["alice@example.com", "carol@example.com"],
+        )
 
     def test_send_transaction_mail_mock_creates_sent_history(self):
         group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)
