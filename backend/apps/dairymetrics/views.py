@@ -358,10 +358,34 @@ def _build_entry_v2_transaction_demo_context(
     default_mail_group = None
     if existing_entry:
         default_mail_group = get_default_mail_group(department=selected_department_obj)
+        latest_histories_by_transaction_id = {}
         for tx in existing_entry.transactions.all():
-            latest_history = tx.mail_send_histories.filter(
-                is_test=False,
-            ).order_by("-last_attempt_at", "-sent_at", "-created_at", "-id").first()
+            non_test_histories = [history for history in tx.mail_send_histories.all() if not history.is_test]
+            non_test_histories.sort(
+                key=lambda history: (
+                    history.last_attempt_at is not None,
+                    history.last_attempt_at or history.created_at,
+                    history.sent_at is not None,
+                    history.sent_at or history.created_at,
+                    history.created_at,
+                    history.id,
+                ),
+                reverse=True,
+            )
+            latest_histories_by_transaction_id[tx.id] = non_test_histories[0] if non_test_histories else None
+        for tx in existing_entry.transactions.all():
+            latest_history = latest_histories_by_transaction_id.get(tx.id)
+            if latest_history and latest_history.status == MailSendHistory.STATUS_FAILED:
+                mail_status = "送信失敗"
+            elif latest_history and latest_history.status == MailSendHistory.STATUS_SENT:
+                if latest_history.sent_at and tx.updated_at and tx.updated_at > latest_history.sent_at:
+                    mail_status = "修正済み未送信"
+                elif latest_history.is_resend:
+                    mail_status = "修正再送済み"
+                else:
+                    mail_status = "送信済み"
+            else:
+                mail_status = "未送信"
             preview_payload = build_transaction_mail_preview(
                 member=member,
                 department_code=selected_department_code,
@@ -383,7 +407,7 @@ def _build_entry_v2_transaction_demo_context(
                     "nationality_value": tx.nationality_type,
                     "location": tx.location,
                     "comment": tx.comment,
-                    "mail_status": transaction_mail_status(tx),
+                    "mail_status": mail_status,
                     "has_mail_history": bool(latest_history),
                     "preview_subject": preview_payload["subject"],
                     "resend_preview_subject": (

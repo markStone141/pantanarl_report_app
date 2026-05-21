@@ -260,7 +260,7 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
 def mail_group_member_options(request: HttpRequest) -> HttpResponse:
     raw_departments = request.GET.getlist("departments")
     department_ids = [int(value) for value in raw_departments if str(value).isdigit()]
-    members = Member.objects.active().exclude(email="")
+    members = Member.objects.active().exclude(email="").prefetch_related("department_links__department")
     if department_ids:
         members = members.filter(department_links__department_id__in=department_ids).distinct()
     members = members.order_by("name")
@@ -271,10 +271,12 @@ def mail_group_member_options(request: HttpRequest) -> HttpResponse:
                     "id": member.id,
                     "name": member.name,
                     "email": member.email,
-                    "departments": list(
-                        Department.objects.filter(member_links__member=member, is_active=True)
-                        .order_by("code")
-                        .values_list("code", flat=True)
+                    "departments": sorted(
+                        {
+                            link.department.code
+                            for link in member.department_links.all()
+                            if link.department and link.department.is_active
+                        }
                     ),
                 }
                 for member in members

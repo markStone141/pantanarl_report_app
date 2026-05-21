@@ -90,6 +90,54 @@ def collect_department_final_actual_totals(department, start_date, end_date, *, 
     return merge_final_actual_totals(entry_totals, adjustment_totals)
 
 
+def collect_member_final_actual_totals_by_ids(
+    *,
+    member_ids,
+    department,
+    start_date,
+    end_date,
+    include_adjustments=True,
+):
+    totals_by_member_id = {member_id: zero_final_actual_totals() for member_id in member_ids}
+    if not member_ids:
+        return totals_by_member_id
+
+    entry_annotations = {f"sum_{field}": Sum(field) for field in ENTRY_METRIC_FIELDS}
+    entry_rows = (
+        MemberDailyMetricEntry.objects.filter(
+            member_id__in=member_ids,
+            department=department,
+            entry_date__range=(start_date, end_date),
+        )
+        .values("member_id")
+        .annotate(**entry_annotations)
+    )
+    for row in entry_rows:
+        totals = totals_by_member_id.setdefault(row["member_id"], zero_final_actual_totals())
+        for field in ENTRY_METRIC_FIELDS:
+            totals[field] = int(row.get(f"sum_{field}") or 0)
+
+    if not include_adjustments:
+        return totals_by_member_id
+
+    adjustment_annotations = {f"sum_{field}": Sum(field) for field in ADJUSTMENT_METRIC_FIELDS}
+    adjustment_rows = (
+        MetricAdjustment.objects.filter(
+            member_id__in=member_ids,
+            department=department,
+            target_date__range=(start_date, end_date),
+        )
+        .values("member_id")
+        .annotate(**adjustment_annotations)
+    )
+    for row in adjustment_rows:
+        totals = totals_by_member_id.setdefault(row["member_id"], zero_final_actual_totals())
+        for field in ADJUSTMENT_METRIC_FIELDS:
+            totals[field] = int(totals.get(field) or 0) + int(row.get(f"sum_{field}") or 0)
+
+    return totals_by_member_id
+
+
 def collect_department_final_actual_totals_by_codes(*, target_codes, start_date, end_date, include_adjustments=True):
     totals_by_code = {code: zero_final_actual_totals() for code in target_codes}
     if not target_codes:
@@ -129,4 +177,3 @@ def collect_department_final_actual_totals_by_codes(*, target_codes, start_date,
             totals[field] = int(totals.get(field) or 0) + int(row.get(f"sum_{field}") or 0)
 
     return totals_by_code
-

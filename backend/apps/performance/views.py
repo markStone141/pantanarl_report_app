@@ -28,6 +28,7 @@ from apps.dairymetrics.services.final_actuals import (
     collect_department_final_actual_totals,
     collect_department_final_actual_totals_by_codes,
     collect_member_final_actual_totals,
+    collect_member_final_actual_totals_by_ids,
 )
 from apps.performance.services.progress import (
     adjustment_totals_dict_from_queryset,
@@ -40,6 +41,7 @@ from apps.performance.services.progress import (
     sum_adjustment_amount,
 )
 from apps.performance.services.trends import (
+    EMPTY_ADJUSTMENT_TOTALS,
     build_adjustment_totals_map,
     build_member_activity_trend,
     build_overall_activity_trend,
@@ -223,41 +225,54 @@ def _build_scoped_member_cards(*, members, selected_department, scope):
         "period": "路程累計",
         "range": "期間累計",
     }.get(scope.scope, "累計")
+    member_department_pairs = []
     for member in members:
         department = _resolve_member_card_department(member=member, selected_department=selected_department)
         if department is None:
             continue
-        scoped_totals = collect_member_final_actual_totals(
-            member,
-            department,
-            scope.start_date,
-            scope.end_date,
+        member_department_pairs.append((member, department))
+
+    department_totals_map = {}
+    latest_entries_by_pair = {}
+    adjustment_totals_by_pair = {}
+    departments_by_id = {department.id: department for _, department in member_department_pairs}
+    for department in departments_by_id.values():
+        department_member_ids = [member.id for member, current_department in member_department_pairs if current_department.id == department.id]
+        department_totals_map[department.id] = collect_member_final_actual_totals_by_ids(
+            member_ids=department_member_ids,
+            department=department,
+            start_date=scope.start_date,
+            end_date=scope.end_date,
             include_adjustments=True,
         )
         scoped_entries = list(
             MemberDailyMetricEntry.objects.filter(
-                member=member,
+                member_id__in=department_member_ids,
                 department=department,
                 entry_date__range=(scope.start_date, scope.end_date),
             )
             .select_related("member", "department")
-            .order_by("-entry_date", "-id")[:3]
+            .order_by("member_id", "-entry_date", "-id")
         )
-        latest_adjustment_totals = build_adjustment_totals_map(scoped_entries)
+        latest_entries_by_pair[department.id] = {}
+        latest_entries = []
+        for scoped_entry in scoped_entries:
+            pair_key = (scoped_entry.member_id, scoped_entry.department_id)
+            bucket = latest_entries_by_pair[department.id].setdefault(pair_key, [])
+            if len(bucket) < 3:
+                bucket.append(scoped_entry)
+                latest_entries.append(scoped_entry)
+        adjustment_totals_by_pair[department.id] = build_adjustment_totals_map(latest_entries)
+
+    for member, department in member_department_pairs:
+        scoped_totals = department_totals_map.get(department.id, {}).get(member.id, {})
+        scoped_entries = latest_entries_by_pair.get(department.id, {}).get((member.id, department.id), [])
+        latest_adjustment_totals = adjustment_totals_by_pair.get(department.id, {})
         latest_final_counts = []
         for latest_entry in scoped_entries:
             latest_totals = latest_adjustment_totals.get(
                 (latest_entry.member_id, latest_entry.department_id, latest_entry.entry_date),
-                {
-                    "result_count": 0,
-                    "support_amount": 0,
-                    "return_postal_count": 0,
-                    "return_postal_amount": 0,
-                    "return_qr_count": 0,
-                    "return_qr_amount": 0,
-                    "cs_count": 0,
-                    "refugee_count": 0,
-                },
+                EMPTY_ADJUSTMENT_TOTALS,
             )
             latest_final_counts.append(entry_final_count_value(entry=latest_entry, adjustment_totals=latest_totals))
         zero_streak_warning = len(latest_final_counts) == 3 and all(count == 0 for count in latest_final_counts)
@@ -266,16 +281,7 @@ def _build_scoped_member_cards(*, members, selected_department, scope):
             latest_entry = scoped_entries[0]
             latest_totals = latest_adjustment_totals.get(
                 (latest_entry.member_id, latest_entry.department_id, latest_entry.entry_date),
-                {
-                    "result_count": 0,
-                    "support_amount": 0,
-                    "return_postal_count": 0,
-                    "return_postal_amount": 0,
-                    "return_qr_count": 0,
-                    "return_qr_amount": 0,
-                    "cs_count": 0,
-                    "refugee_count": 0,
-                },
+                EMPTY_ADJUSTMENT_TOTALS,
             )
             updated_at_text = timezone.localtime(latest_entry.updated_at).strftime("%H:%M")
             recent_date_text = latest_entry.entry_date.strftime("%Y/%m/%d")
@@ -381,6 +387,17 @@ def _resolve_member_card_department(*, member, selected_department=None):
         return selected_department
     if member.default_department_id and member.default_department and member.default_department.is_active:
         return member.default_department
+    prefetched_links = getattr(member, "_prefetched_objects_cache", {}).get("department_links")
+    if prefetched_links is not None:
+        active_departments = sorted(
+            [
+                link.department
+                for link in prefetched_links
+                if link.department and link.department.is_active
+            ],
+            key=lambda department: (department.code, department.id),
+        )
+        return active_departments[0] if active_departments else None
     return (
         Department.objects.filter(member_links__member=member, is_active=True)
         .order_by("code", "id")
@@ -436,66 +453,68 @@ def _resolve_performance_history_scope(*, today, scope_value, requested_month=No
 
 def _build_active_member_cards(*, members, today, target_month, target_period, selected_department=None):
     cards = []
+    member_department_pairs = []
     for member in members:
         department = _resolve_member_card_department(member=member, selected_department=selected_department)
         if department is None:
             continue
-        entry = (
-            MemberDailyMetricEntry.objects.select_related("member", "department")
-            .filter(member=member, department=department)
-            .order_by("-entry_date", "-id")
-            .first()
-        )
-        month_totals = collect_member_final_actual_totals(
-            member,
-            department,
-            target_month,
-            today,
+        member_department_pairs.append((member, department))
+
+    month_totals_map = {}
+    period_totals_map = {}
+    latest_entries_by_pair = {}
+    adjustment_totals_by_pair = {}
+    departments_by_id = {department.id: department for _, department in member_department_pairs}
+    for department in departments_by_id.values():
+        department_member_ids = [member.id for member, current_department in member_department_pairs if current_department.id == department.id]
+        month_totals_map[department.id] = collect_member_final_actual_totals_by_ids(
+            member_ids=department_member_ids,
+            department=department,
+            start_date=target_month,
+            end_date=today,
             include_adjustments=True,
         )
-        period_totals = collect_member_final_actual_totals(
-            member,
-            department,
-            target_period.start_date if target_period else today,
-            min(target_period.end_date, today) if target_period else today,
+        period_totals_map[department.id] = collect_member_final_actual_totals_by_ids(
+            member_ids=department_member_ids,
+            department=department,
+            start_date=target_period.start_date if target_period else today,
+            end_date=min(target_period.end_date, today) if target_period else today,
             include_adjustments=True,
         )
         latest_entries = list(
-            MemberDailyMetricEntry.objects.filter(member=member, department=department)
-            .order_by("-entry_date", "-id")[:3]
+            MemberDailyMetricEntry.objects.filter(member_id__in=department_member_ids, department=department)
+            .select_related("member", "department")
+            .order_by("member_id", "-entry_date", "-id")
         )
-        latest_adjustment_totals = build_adjustment_totals_map(latest_entries)
+        latest_entries_by_pair[department.id] = {}
+        picked_entries = []
+        for entry in latest_entries:
+            pair_key = (entry.member_id, entry.department_id)
+            bucket = latest_entries_by_pair[department.id].setdefault(pair_key, [])
+            if len(bucket) < 3:
+                bucket.append(entry)
+                picked_entries.append(entry)
+        adjustment_totals_by_pair[department.id] = build_adjustment_totals_map(picked_entries)
+
+    for member, department in member_department_pairs:
+        month_totals = month_totals_map.get(department.id, {}).get(member.id, {})
+        period_totals = period_totals_map.get(department.id, {}).get(member.id, {})
+        latest_entries = latest_entries_by_pair.get(department.id, {}).get((member.id, department.id), [])
+        latest_adjustment_totals = adjustment_totals_by_pair.get(department.id, {})
         latest_final_counts = []
         for latest_entry in latest_entries:
             latest_totals = latest_adjustment_totals.get(
                 (latest_entry.member_id, latest_entry.department_id, latest_entry.entry_date),
-                {
-                    "result_count": 0,
-                    "support_amount": 0,
-                    "return_postal_count": 0,
-                    "return_postal_amount": 0,
-                    "return_qr_count": 0,
-                    "return_qr_amount": 0,
-                    "cs_count": 0,
-                    "refugee_count": 0,
-                },
+                EMPTY_ADJUSTMENT_TOTALS,
             )
             latest_final_counts.append(entry_final_count_value(entry=latest_entry, adjustment_totals=latest_totals))
         zero_streak_warning = len(latest_final_counts) == 3 and all(count == 0 for count in latest_final_counts)
         active_streak_good = len(latest_final_counts) == 3 and all(count >= 1 for count in latest_final_counts)
-        if entry is not None:
-            recent_totals = build_adjustment_totals_map([entry]).get(
+        if latest_entries:
+            entry = latest_entries[0]
+            recent_totals = latest_adjustment_totals.get(
                 (entry.member_id, entry.department_id, entry.entry_date),
-                {
-                    "result_count": 0,
-                    "support_amount": 0,
-                    "return_postal_count": 0,
-                    "return_postal_amount": 0,
-                    "return_qr_count": 0,
-                    "return_qr_amount": 0,
-                    "cs_count": 0,
-                    "refugee_count": 0,
-                },
+                EMPTY_ADJUSTMENT_TOTALS,
             )
             updated_at_text = timezone.localtime(entry.updated_at).strftime("%H:%M")
             recent_date_text = entry.entry_date.strftime("%Y/%m/%d")
@@ -590,8 +609,12 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
         summary_queryset = summary_queryset.filter(department=department)
     elif departments:
         summary_queryset = summary_queryset.filter(department__in=departments)
-    today_target_count = int(summary_queryset.aggregate(total=Sum("daily_target_count")).get("total") or 0)
-    today_target_amount = int(summary_queryset.aggregate(total=Sum("daily_target_amount")).get("total") or 0)
+    today_targets = summary_queryset.aggregate(
+        total_count=Sum("daily_target_count"),
+        total_amount=Sum("daily_target_amount"),
+    )
+    today_target_count = int(today_targets.get("total_count") or 0)
+    today_target_amount = int(today_targets.get("total_amount") or 0)
     today_actual_count = _final_count_value(
         department_code=department.code if department is not None else "",
         totals=today_totals,
@@ -612,6 +635,7 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
             Member.objects.active()
             .filter(department_links__department=department, department_links__department__is_active=True)
             .select_related("default_department")
+            .prefetch_related("department_links__department")
             .distinct()
             .order_by("name", "id")
         )
@@ -620,6 +644,7 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
             Member.objects.active()
             .filter(Q(default_department__is_active=True) | Q(department_links__department__is_active=True))
             .select_related("default_department")
+            .prefetch_related("department_links__department")
             .distinct()
             .order_by("name", "id")
         )
