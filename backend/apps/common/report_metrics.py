@@ -47,8 +47,10 @@ def metric_actual_value(*, metric_code, total_count, total_amount, total_cs_coun
     return 0
 
 
-def format_metric_value(*, metric_code, value: int) -> str:
-    if _metric_kind(metric_code=metric_code) == "amount":
+def format_metric_value(*, metric_code, value: int, unit: str = "") -> str:
+    if _metric_kind(metric_code=metric_code, unit=unit) == "amount":
+        if (unit or "").strip().lower() == "yen":
+            return str(value)
         return f"{value:,}"
     return str(value)
 
@@ -171,8 +173,8 @@ def format_metric_triples(*, metrics, target_values, actual_totals):
             unit=metric.unit or "",
         )
         rate = f"{(actual / target) * 100:.1f}%" if target > 0 else "-"
-        target_parts.append(f"{label} {format_metric_value(metric_code=metric.code, value=target)}{unit}")
-        actual_parts.append(f"{label} {format_metric_value(metric_code=metric.code, value=actual)}{unit}")
+        target_parts.append(f"{label} {format_metric_value(metric_code=metric.code, value=target, unit=unit)}{unit}")
+        actual_parts.append(f"{label} {format_metric_value(metric_code=metric.code, value=actual, unit=unit)}{unit}")
         rate_parts.append(f"{label} {rate}")
     return " / ".join(target_parts), " / ".join(actual_parts), " / ".join(rate_parts)
 
@@ -197,8 +199,8 @@ def metric_detail_rows(*, metrics, target_values, actual_totals):
                 "unit": metric.unit or "",
                 "target": target,
                 "actual": actual,
-                "target_text": format_metric_value(metric_code=metric.code, value=target),
-                "actual_text": format_metric_value(metric_code=metric.code, value=actual),
+                "target_text": format_metric_value(metric_code=metric.code, value=target, unit=metric.unit or ""),
+                "actual_text": format_metric_value(metric_code=metric.code, value=actual, unit=metric.unit or ""),
                 "rate": rate,
             }
         )

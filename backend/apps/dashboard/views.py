@@ -15,20 +15,17 @@ from apps.accounts.models import Department, Member, MemberDepartment
 from apps.common.dashboard_snapshot import build_member_rows, build_submission_snapshot
 from apps.common.report_metrics import (
     SPLIT_COUNT_CODES,
-    collect_actual_totals,
-    collect_adjustment_totals,
     format_metric_triples,
     format_yen,
-    metric_detail_rows,
-    period_status as calc_period_status,
 )
-from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
+from apps.targets.models import TargetMetric
 
 from .forms import DepartmentForm, MemberRegistrationForm, TargetMetricForm
 from .services.mail_actuals import (
     merge_adjustment_totals_into_department_totals,
     merge_adjustment_totals_into_member_totals,
 )
+from .services.target_progress import build_target_scope_snapshot, collect_metrics_by_code
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -68,11 +65,8 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
     real_today = timezone.localdate()
     selected_mode = "prev" if request.GET.get("mode") == "prev" else "today"
     today = real_today - timedelta(days=1) if selected_mode == "prev" else real_today
-    target_departments = list(
-        Department.objects.filter(is_active=True)
-        .order_by("code")
-        .values_list("code", "name")
-    )
+    target_department_objects = list(Department.objects.filter(is_active=True).order_by("code"))
+    target_departments = [(department.code, department.name) for department in target_department_objects]
     snapshot = build_submission_snapshot(
         report_date=today,
         target_departments=target_departments,
@@ -84,134 +78,27 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
     for row in submission_rows:
         row["amount_text"] = _format_amount_text(row.get("amount"))
 
-
-    current_month = today.replace(day=1)
-
-    month_target_rows = list(
-        MonthTargetMetricValue.objects.filter(
-            target_month=current_month,
-            metric__is_active=True,
-            department__code__in=target_codes,
-        )
-        .order_by("department__code", "metric__display_order", "id")
-        .values("department__code", "metric_id", "value")
-    )
-    month_target_values_by_code = {code: {} for code in target_codes}
-    for row in month_target_rows:
-        month_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
-
-    if current_month == today.replace(day=1):
-        month_status = "active"
-    elif current_month > today.replace(day=1):
-        month_status = "planned"
-    else:
-        month_status = "finished"
-
-    current_period = (
-        Period.objects.filter(start_date__lte=today, end_date__gte=today)
-        .order_by("-month", "start_date", "id")
-        .first()
-    )
-
-    if current_period:
-        period_rows = list(
-            PeriodTargetMetricValue.objects.filter(
-                period=current_period,
-                metric__is_active=True,
-                department__code__in=target_codes,
-            )
-            .order_by("department__code", "metric__display_order", "id")
-            .values("department__code", "metric_id", "value")
-        )
-        period_target_values_by_code = {code: {} for code in target_codes}
-        for row in period_rows:
-            period_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
-        current_period_label = current_period.name
-        period_status = calc_period_status(
-            today=today,
-            start_date=current_period.start_date,
-            end_date=current_period.end_date,
-        )
-        period_start = current_period.start_date
-        period_end = current_period.end_date
-        current_period_range = (
-            f"{current_period.start_date.month}/{current_period.start_date.day}"
-            f"～{current_period.end_date.month}/{current_period.end_date.day}"
-        )
-    else:
-        current_period_label = "-"
-        period_status = "-"
-        period_target_values_by_code = {code: {} for code in target_codes}
-        period_start = None
-        period_end = None
-        current_period_range = "-"
-
-    month_start = current_month
-    if current_month.month == 12:
-        month_end = current_month.replace(year=current_month.year + 1, month=1, day=1) - timedelta(days=1)
-    else:
-        month_end = current_month.replace(month=current_month.month + 1, day=1) - timedelta(days=1)
-
-    month_actual_totals_by_code = collect_actual_totals(
-        start_date=month_start,
-        end_date=month_end,
+    metrics_by_code = collect_metrics_by_code(target_codes=target_codes)
+    target_scope = build_target_scope_snapshot(
+        target_date=today,
         target_codes=target_codes,
-        include_adjustments=True,
+        metrics_by_code=metrics_by_code,
     )
-    month_adjustment_totals_by_code = collect_adjustment_totals(
-        start_date=month_start,
-        end_date=month_end,
-        target_codes=target_codes,
-    )
-    if period_start and period_end:
-        period_actual_totals_by_code = collect_actual_totals(
-            start_date=period_start,
-            end_date=period_end,
-            target_codes=target_codes,
-            include_adjustments=True,
-        )
-        period_adjustment_totals_by_code = collect_adjustment_totals(
-            start_date=period_start,
-            end_date=period_end,
-            target_codes=target_codes,
-        )
-    else:
-        period_actual_totals_by_code = {
-            code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
-            for code in target_codes
-        }
-        period_adjustment_totals_by_code = {
-            code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
-            for code in target_codes
-        }
-
-    metrics_by_code = {}
-    for code, label in target_departments:
-        department = Department.objects.filter(code=code).first()
-        if department:
-            metrics_by_code[code] = list(
-                TargetMetric.objects.filter(department=department, is_active=True).order_by("display_order", "id")
-            )
-        else:
-            metrics_by_code[code] = []
+    current_month = target_scope["month_start"]
+    month_status = target_scope["month_status"]
+    month_target_values_by_code = target_scope["month_target_values_by_code"]
+    month_actual_totals_by_code = target_scope["month_actual_totals_by_code"]
+    month_adjustment_totals_by_code = target_scope["month_adjustment_totals_by_code"]
+    current_period_label = target_scope["period_label"]
+    period_status = target_scope["period_status"]
+    period_target_values_by_code = target_scope["period_target_values_by_code"]
+    period_actual_totals_by_code = target_scope["period_actual_totals_by_code"]
+    period_adjustment_totals_by_code = target_scope["period_adjustment_totals_by_code"]
+    current_period_range = target_scope["period_range"]
+    metric_detail_by_code = target_scope["metric_detail_by_code"]
 
     target_progress_rows = []
-    metric_detail_by_code = {}
     for code, label in target_departments:
-        month_metric_rows = metric_detail_rows(
-            metrics=metrics_by_code[code],
-            target_values=month_target_values_by_code.get(code, {}),
-            actual_totals=month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
-        )
-        period_metric_rows = metric_detail_rows(
-            metrics=metrics_by_code[code],
-            target_values=period_target_values_by_code.get(code, {}),
-            actual_totals=period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
-        )
-        metric_detail_by_code[code] = {
-            "month": month_metric_rows,
-            "period": period_metric_rows,
-        }
         month_target_text, month_actual_text, month_rate_text = format_metric_triples(
             metrics=metrics_by_code[code],
             target_values=month_target_values_by_code.get(code, {}),
@@ -280,106 +167,21 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
         )
         base_has_report_by_code = base_snapshot["has_report_by_code"]
 
-        base_month = base_date.replace(day=1)
-
-        base_month_target_rows = list(
-            MonthTargetMetricValue.objects.filter(
-                target_month=base_month,
-                metric__is_active=True,
-                department__code__in=target_codes,
-            )
-            .order_by("department__code", "metric__display_order", "id")
-            .values("department__code", "metric_id", "value")
-        )
-        base_month_target_values_by_code = {code: {} for code in target_codes}
-        for row in base_month_target_rows:
-            base_month_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
-
-        base_period = (
-            Period.objects.filter(start_date__lte=base_date, end_date__gte=base_date)
-            .order_by("-month", "start_date", "id")
-            .first()
-        )
-
-        if base_period:
-            base_period_rows = list(
-                PeriodTargetMetricValue.objects.filter(
-                    period=base_period,
-                    metric__is_active=True,
-                    department__code__in=target_codes,
-                )
-                .order_by("department__code", "metric__display_order", "id")
-                .values("department__code", "metric_id", "value")
-            )
-            base_period_target_values_by_code = {code: {} for code in target_codes}
-            for row in base_period_rows:
-                base_period_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
-            base_period_start = base_period.start_date
-            base_period_end = base_period.end_date
-            base_period_name = _mail_period_heading(base_period.name)
-            base_period_range = (
-                f"{base_period.start_date.month}/{base_period.start_date.day}"
-                f"～{base_period.end_date.month}/{base_period.end_date.day}"
-            )
-        else:
-            base_period_target_values_by_code = {code: {} for code in target_codes}
-            base_period_start = None
-            base_period_end = None
-            base_period_name = "-"
-            base_period_range = "-"
-
-        if base_month.month == 12:
-            base_month_end = base_month.replace(year=base_month.year + 1, month=1, day=1) - timedelta(days=1)
-        else:
-            base_month_end = base_month.replace(month=base_month.month + 1, day=1) - timedelta(days=1)
-
-        base_month_actual_totals_by_code = collect_actual_totals(
-            start_date=base_month,
-            end_date=base_month_end,
+        base_scope = build_target_scope_snapshot(
+            target_date=base_date,
             target_codes=target_codes,
-            include_adjustments=True,
+            metrics_by_code=metrics_by_code,
         )
-        base_month_adjustment_totals_by_code = collect_adjustment_totals(
-            start_date=base_month,
-            end_date=base_month_end,
-            target_codes=target_codes,
-        )
-        if base_period_start and base_period_end:
-            base_period_actual_totals_by_code = collect_actual_totals(
-                start_date=base_period_start,
-                end_date=base_period_end,
-                target_codes=target_codes,
-                include_adjustments=True,
-            )
-            base_period_adjustment_totals_by_code = collect_adjustment_totals(
-                start_date=base_period_start,
-                end_date=base_period_end,
-                target_codes=target_codes,
-            )
-        else:
-            base_period_actual_totals_by_code = {
-                code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
-                for code in target_codes
-            }
-            base_period_adjustment_totals_by_code = {
-                code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
-                for code in target_codes
-            }
-
-        base_metric_detail_by_code = {}
-        for code, _ in target_departments:
-            base_metric_detail_by_code[code] = {
-                "month": metric_detail_rows(
-                    metrics=metrics_by_code.get(code, []),
-                    target_values=base_month_target_values_by_code.get(code, {}),
-                    actual_totals=base_month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
-                ),
-                "period": metric_detail_rows(
-                    metrics=metrics_by_code.get(code, []),
-                    target_values=base_period_target_values_by_code.get(code, {}),
-                    actual_totals=base_period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
-                ),
-            }
+        base_month = base_scope["month_start"]
+        base_month_target_values_by_code = base_scope["month_target_values_by_code"]
+        base_month_actual_totals_by_code = base_scope["month_actual_totals_by_code"]
+        base_month_adjustment_totals_by_code = base_scope["month_adjustment_totals_by_code"]
+        base_period_target_values_by_code = base_scope["period_target_values_by_code"]
+        base_period_actual_totals_by_code = base_scope["period_actual_totals_by_code"]
+        base_period_adjustment_totals_by_code = base_scope["period_adjustment_totals_by_code"]
+        base_metric_detail_by_code = base_scope["metric_detail_by_code"]
+        base_period_name = _mail_period_heading(base_scope["period_label"])
+        base_period_range = base_scope["period_range"]
 
         def build_remaining_values(detail_rows):
             remaining_count = 0
@@ -979,7 +781,7 @@ def member_settings(request: HttpRequest) -> HttpResponse:
             form = _member_form()
 
     members_qs = (
-        Member.objects.prefetch_related("department_links")
+        Member.objects.prefetch_related("department_links__department")
         .select_related("default_department")
         .select_related("user")
         .order_by("-is_active", "name")
