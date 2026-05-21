@@ -1,6 +1,5 @@
 import json
-from datetime import date, timedelta
-from urllib.parse import urlencode
+from datetime import date
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.db import transaction
@@ -13,15 +12,9 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from apps.accounts.models import Department, Member
-from apps.mail.models import MailDepartmentRouting, MailRecipientGroup, MailSendHistory
+from apps.mail.models import MailRecipientGroup, MailSendHistory
 from apps.mail.services import record_transaction_mail_failure, send_transaction_mail_mock
-from apps.targets.models import (
-    DepartmentMonthTarget,
-    DepartmentPeriodTarget,
-    MonthTargetMetricValue,
-    Period,
-    PeriodTargetMetricValue,
-)
+from apps.targets.models import Period
 
 from .auth import get_member_profile, require_dairymetrics_admin, require_dairymetrics_member
 from .forms import (
@@ -35,6 +28,18 @@ from .forms import (
     MetricAdjustmentForm,
 )
 from .models import DepartmentDailyMetricSummary, MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjustment
+from .services.entry_v2 import (
+    build_transaction_mail_preview,
+    build_v2_department_activity_rows,
+    build_v2_redirect_url,
+    get_default_mail_group,
+    get_month_target_amount,
+    get_or_create_department_daily_summary,
+    get_period_target_amount,
+    get_previous_department_target_amount,
+    get_previous_personal_targets,
+    transaction_mail_status,
+)
 from .services.metrics_v2 import build_metrics_v2_dashboard_payload, resolve_metrics_v2_scope
 from .selectors import (
     build_admin_daily_overview,
@@ -196,238 +201,6 @@ def _build_demo_progress_card(*, label, current_amount, target_amount, helper_te
         "is_complete": bool(target_amount) and current_amount >= target_amount,
     }
 
-
-def _build_v2_redirect_url(*, department_code, entry_date, saved="", preview_tx=None):
-    query = {
-        "department": department_code,
-        "date": entry_date.strftime("%Y-%m-%d"),
-    }
-    if saved:
-        query["saved"] = saved
-    if preview_tx:
-        query["preview_tx"] = str(preview_tx)
-    return f"{reverse('dairymetrics_entry_v2_transaction_demo')}?{urlencode(query)}"
-
-
-def _get_previous_personal_targets(*, member, department, entry_date):
-    previous_entry = (
-        MemberDailyMetricEntry.objects.filter(
-            member=member,
-            department=department,
-            entry_date=entry_date - timedelta(days=1),
-        )
-        .only("daily_target_count", "daily_target_amount")
-        .first()
-    )
-    if not previous_entry:
-        return 1, 3000
-    return (
-        int(previous_entry.daily_target_count or 1),
-        int(previous_entry.daily_target_amount or 3000),
-    )
-
-
-def _get_previous_department_target_amount(*, department, entry_date):
-    previous_summary = (
-        DepartmentDailyMetricSummary.objects.filter(
-            department=department,
-            entry_date=entry_date - timedelta(days=1),
-        )
-        .only("daily_target_amount")
-        .first()
-    )
-    if not previous_summary:
-        return 10000
-    return int(previous_summary.daily_target_amount or 10000)
-
-
-def _get_or_create_department_daily_summary(*, department, entry_date, member):
-    summary, created = DepartmentDailyMetricSummary.objects.get_or_create(
-        department=department,
-        entry_date=entry_date,
-        defaults={
-            "created_by": member,
-            "updated_by": member,
-        },
-    )
-    if not created and summary.updated_by_id is None:
-        summary.updated_by = member
-        summary.save(update_fields=["updated_by", "updated_at"])
-    return summary
-
-
-def _transaction_mail_status(transaction_obj):
-    latest_history = transaction_obj.mail_send_histories.order_by("-last_attempt_at", "-sent_at", "-created_at", "-id").first()
-    if latest_history and latest_history.status == MailSendHistory.STATUS_FAILED:
-        return "送信失敗"
-    if latest_history and latest_history.status == MailSendHistory.STATUS_SENT:
-        if latest_history.sent_at and transaction_obj.updated_at and transaction_obj.updated_at > latest_history.sent_at:
-            return "修正済み未送信"
-        if latest_history.is_resend:
-            return "修正再送済み"
-        return "送信済み"
-    return "未送信"
-
-
-def _build_v2_department_activity_rows(*, department, entry_date):
-    if not department:
-        return {"active": [], "closed": []}
-
-    rows = []
-    entries = (
-        MemberDailyMetricEntry.objects.filter(
-            department=department,
-            entry_date=entry_date,
-            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
-        )
-        .select_related("member", "department")
-        .order_by("-updated_at", "member__name")
-    )
-    for today_entry in entries:
-        count_value = (
-            int(today_entry.cs_count or 0) + int(today_entry.refugee_count or 0)
-            if department.code == "WV"
-            else int(today_entry.result_count or 0)
-        )
-        rows.append(
-            {
-                "member_name": today_entry.member.name,
-                "member_id": today_entry.member_id,
-                "status_label": "活動終了" if today_entry.activity_closed else "活動中",
-                "is_closed": bool(today_entry.activity_closed),
-                "updated_at": timezone.localtime(today_entry.updated_at),
-                "updated_label": timezone.localtime(today_entry.updated_at).strftime("%H:%M"),
-                "department_name": department.name,
-                "count_value": count_value,
-                "amount_value": int(today_entry.support_amount or 0),
-                "location_name": today_entry.location_name or "",
-            }
-        )
-    return {
-        "active": [row for row in rows if not row["is_closed"]],
-        "closed": [row for row in rows if row["is_closed"]],
-    }
-
-
-def _get_default_mail_group(*, department):
-    if not department:
-        return None
-    routing = (
-        MailDepartmentRouting.objects.filter(department=department)
-        .select_related("recipient_group")
-        .first()
-    )
-    if routing and routing.recipient_group.is_active:
-        return routing.recipient_group
-    group = (
-        MailRecipientGroup.objects.filter(
-            is_active=True,
-            related_departments=department,
-        )
-        .order_by("name", "id")
-        .first()
-    )
-    if group:
-        return group
-    group = (
-        MailRecipientGroup.objects.filter(
-            is_active=True,
-            department=department,
-        )
-        .order_by("name", "id")
-        .first()
-    )
-    if group:
-        return group
-    return (
-        MailRecipientGroup.objects.filter(
-            is_active=True,
-            department__isnull=True,
-        )
-        .order_by("name", "id")
-        .first()
-    )
-
-
-def _get_period_target_amount(*, period, department):
-    metric_value = (
-        PeriodTargetMetricValue.objects.filter(
-            period=period,
-            department=department,
-            metric__is_active=True,
-            metric__code="amount",
-        )
-        .select_related("metric")
-        .first()
-    )
-    if metric_value:
-        return int(metric_value.value or 0), True
-    legacy_target = DepartmentPeriodTarget.objects.filter(
-        period=period,
-        department=department,
-    ).first()
-    return int(getattr(legacy_target, "target_amount", 0) or 0), bool(legacy_target)
-
-
-def _get_month_target_amount(*, target_month, department):
-    metric_value = (
-        MonthTargetMetricValue.objects.filter(
-            target_month=target_month,
-            department=department,
-            metric__is_active=True,
-            metric__code="amount",
-        )
-        .select_related("metric")
-        .first()
-    )
-    if metric_value:
-        return int(metric_value.value or 0), True
-    legacy_target = DepartmentMonthTarget.objects.filter(
-        department=department,
-        target_month=target_month,
-    ).first()
-    return int(getattr(legacy_target, "target_amount", 0) or 0), bool(legacy_target)
-
-
-def _build_transaction_mail_preview(*, member, department_code, transaction_obj, progress_cards):
-    personal_card, department_card, period_card, month_card = progress_cards
-    subject = (
-        f"{transaction_obj.entry.entry_date.month}/{transaction_obj.entry.entry_date.day}"
-        f"{member.name}です({department_code or 'UN①'})"
-    )
-    body = "\n".join(
-        [
-            department_code or "",
-            f"会員1名 {transaction_obj.support_amount:,}円",
-            f"日目まで {department_card['remaining_amount']:,}円",
-            f"路目まで {period_card['remaining_amount']:,}円",
-            f"月目まで {month_card['remaining_amount']:,}円",
-            "",
-            " ".join(
-                filter(
-                    None,
-                    [
-                        transaction_obj.get_age_band_display(),
-                        "学生" if transaction_obj.is_student else "",
-                        transaction_obj.get_gender_display(),
-                        transaction_obj.get_nationality_type_display(),
-                    ],
-                )
-            ),
-            transaction_obj.location,
-            transaction_obj.comment,
-            "",
-            "栄光在天✨全体精誠に感謝です！",
-            "",
-            f"{personal_card['current_amount']:,}/{personal_card['target_amount']:,}円",
-        ]
-    ).strip()
-    return {
-        "subject": subject,
-        "body": body,
-    }
-
-
 def _first_non_empty_line(text):
     if not text:
         return ""
@@ -486,12 +259,12 @@ def _build_entry_v2_transaction_demo_context(
     previous_personal_target_amount = 3000
     previous_department_target_amount = 10000
     if selected_department_obj:
-        previous_personal_target_count, previous_personal_target_amount = _get_previous_personal_targets(
+        previous_personal_target_count, previous_personal_target_amount = get_previous_personal_targets(
             member=member,
             department=selected_department_obj,
             entry_date=entry_date,
         )
-        previous_department_target_amount = _get_previous_department_target_amount(
+        previous_department_target_amount = get_previous_department_target_amount(
             department=selected_department_obj,
             entry_date=entry_date,
         )
@@ -515,7 +288,7 @@ def _build_entry_v2_transaction_demo_context(
     period_target_source = ""
     if active_period and selected_department_obj:
         period_label = active_period.name
-        period_target_amount, has_period_target = _get_period_target_amount(
+        period_target_amount, has_period_target = get_period_target_amount(
             period=active_period,
             department=selected_department_obj,
         )
@@ -535,7 +308,7 @@ def _build_entry_v2_transaction_demo_context(
     month_target_source = ""
     month_label = entry_date.strftime("%Y年%m月")
     if selected_department_obj:
-        month_target_amount, has_month_target = _get_month_target_amount(
+        month_target_amount, has_month_target = get_month_target_amount(
             department=selected_department_obj,
             target_month=entry_date.replace(day=1),
         )
@@ -584,12 +357,12 @@ def _build_entry_v2_transaction_demo_context(
     transactions = []
     default_mail_group = None
     if existing_entry:
-        default_mail_group = _get_default_mail_group(department=selected_department_obj)
+        default_mail_group = get_default_mail_group(department=selected_department_obj)
         for tx in existing_entry.transactions.all():
             latest_history = tx.mail_send_histories.filter(
                 is_test=False,
             ).order_by("-last_attempt_at", "-sent_at", "-created_at", "-id").first()
-            preview_payload = _build_transaction_mail_preview(
+            preview_payload = build_transaction_mail_preview(
                 member=member,
                 department_code=selected_department_code,
                 transaction_obj=tx,
@@ -610,7 +383,7 @@ def _build_entry_v2_transaction_demo_context(
                     "nationality_value": tx.nationality_type,
                     "location": tx.location,
                     "comment": tx.comment,
-                    "mail_status": _transaction_mail_status(tx),
+                    "mail_status": transaction_mail_status(tx),
                     "has_mail_history": bool(latest_history),
                     "preview_subject": preview_payload["subject"],
                     "resend_preview_subject": (
@@ -634,7 +407,7 @@ def _build_entry_v2_transaction_demo_context(
     available_mail_groups = []
     department_activity_rows = {"active": [], "closed": []}
     if selected_department_obj:
-        department_activity_rows = _build_v2_department_activity_rows(
+        department_activity_rows = build_v2_department_activity_rows(
             department=selected_department_obj,
             entry_date=entry_date,
         )
@@ -703,7 +476,7 @@ def _build_entry_v2_transaction_demo_context(
 
     preview_payload = None
     if preview_transaction:
-        preview_payload = _build_transaction_mail_preview(
+        preview_payload = build_transaction_mail_preview(
             member=member,
             department_code=selected_department_code,
             transaction_obj=preview_transaction,
@@ -1573,13 +1346,13 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                         "updated_at",
                     ]
                 )
-                _get_or_create_department_daily_summary(
+                get_or_create_department_daily_summary(
                     department=selected_department_obj,
                     entry_date=entry_date,
                     member=member,
                 )
                 return redirect(
-                    _build_v2_redirect_url(
+                    build_v2_redirect_url(
                         department_code=selected_department,
                         entry_date=entry_date,
                         saved="personal_setup",
@@ -1599,7 +1372,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                 department_target_form = DairymetricsV2DepartmentTargetForm(request.POST)
                 if department_target_form.is_valid():
                     entry_date = department_target_form.cleaned_data["entry_date"]
-                    summary = _get_or_create_department_daily_summary(
+                    summary = get_or_create_department_daily_summary(
                         department=selected_department_obj,
                         entry_date=entry_date,
                         member=member,
@@ -1610,7 +1383,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                     summary.updated_by = member
                     summary.save(update_fields=["daily_target_amount", "created_by", "updated_by", "updated_at"])
                     return redirect(
-                        _build_v2_redirect_url(
+                        build_v2_redirect_url(
                             department_code=selected_department,
                             entry_date=entry_date,
                             saved="department_target",
@@ -1647,7 +1420,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                     transaction_obj.entry = entry
                     transaction_obj.save()
                     return redirect(
-                        _build_v2_redirect_url(
+                        build_v2_redirect_url(
                             department_code=selected_department,
                             entry_date=entry_date,
                             saved="transaction",
@@ -1703,14 +1476,14 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                             .select_related("transaction")
                             .first()
                         )
-                    recipient_group = _get_default_mail_group(department=selected_department_obj)
+                    recipient_group = get_default_mail_group(department=selected_department_obj)
                     preview_context = _build_entry_v2_transaction_demo_context(
                         member=member,
                         selected_department=selected_department,
                         entry_date=entry_date,
                         preview_transaction=preview_transaction,
                     )
-                    preview_payload = preview_context["preview_payload"] or _build_transaction_mail_preview(
+                    preview_payload = preview_context["preview_payload"] or build_transaction_mail_preview(
                         member=member,
                         department_code=selected_department,
                         transaction_obj=preview_transaction,
@@ -1739,14 +1512,14 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                             error_message=str(exc),
                         )
                         return redirect(
-                            _build_v2_redirect_url(
+                            build_v2_redirect_url(
                                 department_code=selected_department,
                                 entry_date=entry_date,
                                 saved="mail_failed",
                             )
                         )
                     return redirect(
-                        _build_v2_redirect_url(
+                        build_v2_redirect_url(
                             department_code=selected_department,
                             entry_date=entry_date,
                             saved="mail_sent",
@@ -1781,14 +1554,14 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                                 "updated_at",
                             ]
                         )
-                        summary = _get_or_create_department_daily_summary(
+                        summary = get_or_create_department_daily_summary(
                             department=selected_department_obj,
                             entry_date=entry_date,
                             member=member,
                         )
                         summary.recalculate_from_entries()
                         return redirect(
-                            _build_v2_redirect_url(
+                            build_v2_redirect_url(
                                 department_code=selected_department,
                                 entry_date=entry_date,
                                 saved="closeout",

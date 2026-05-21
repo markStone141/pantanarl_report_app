@@ -1,0 +1,248 @@
+from __future__ import annotations
+
+from datetime import timedelta
+
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.http import urlencode
+
+from apps.mail.models import MailDepartmentRouting, MailRecipientGroup, MailSendHistory
+from apps.targets.models import (
+    DepartmentMonthTarget,
+    DepartmentPeriodTarget,
+    MonthTargetMetricValue,
+    PeriodTargetMetricValue,
+)
+
+from ..models import DepartmentDailyMetricSummary, MemberDailyMetricEntry
+
+
+def build_v2_redirect_url(*, department_code, entry_date, saved="", preview_tx=None):
+    query = {
+        "department": department_code,
+        "date": entry_date.strftime("%Y-%m-%d"),
+    }
+    if saved:
+        query["saved"] = saved
+    if preview_tx:
+        query["preview_tx"] = str(preview_tx)
+    return f"{reverse('dairymetrics_entry_v2_transaction_demo')}?{urlencode(query)}"
+
+
+def get_previous_personal_targets(*, member, department, entry_date):
+    previous_entry = (
+        MemberDailyMetricEntry.objects.filter(
+            member=member,
+            department=department,
+            entry_date=entry_date - timedelta(days=1),
+        )
+        .only("daily_target_count", "daily_target_amount")
+        .first()
+    )
+    if not previous_entry:
+        return 1, 3000
+    return (
+        int(previous_entry.daily_target_count or 1),
+        int(previous_entry.daily_target_amount or 3000),
+    )
+
+
+def get_previous_department_target_amount(*, department, entry_date):
+    previous_summary = (
+        DepartmentDailyMetricSummary.objects.filter(
+            department=department,
+            entry_date=entry_date - timedelta(days=1),
+        )
+        .only("daily_target_amount")
+        .first()
+    )
+    if not previous_summary:
+        return 10000
+    return int(previous_summary.daily_target_amount or 10000)
+
+
+def get_or_create_department_daily_summary(*, department, entry_date, member):
+    summary, created = DepartmentDailyMetricSummary.objects.get_or_create(
+        department=department,
+        entry_date=entry_date,
+        defaults={
+            "created_by": member,
+            "updated_by": member,
+        },
+    )
+    if not created and summary.updated_by_id is None:
+        summary.updated_by = member
+        summary.save(update_fields=["updated_by", "updated_at"])
+    return summary
+
+
+def transaction_mail_status(transaction_obj):
+    latest_history = transaction_obj.mail_send_histories.order_by("-last_attempt_at", "-sent_at", "-created_at", "-id").first()
+    if latest_history and latest_history.status == MailSendHistory.STATUS_FAILED:
+        return "送信失敗"
+    if latest_history and latest_history.status == MailSendHistory.STATUS_SENT:
+        if latest_history.sent_at and transaction_obj.updated_at and transaction_obj.updated_at > latest_history.sent_at:
+            return "修正済み未送信"
+        if latest_history.is_resend:
+            return "修正再送済み"
+        return "送信済み"
+    return "未送信"
+
+
+def build_v2_department_activity_rows(*, department, entry_date):
+    if not department:
+        return {"active": [], "closed": []}
+
+    rows = []
+    entries = (
+        MemberDailyMetricEntry.objects.filter(
+            department=department,
+            entry_date=entry_date,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+        )
+        .select_related("member", "department")
+        .order_by("-updated_at", "member__name")
+    )
+    for today_entry in entries:
+        count_value = (
+            int(today_entry.cs_count or 0) + int(today_entry.refugee_count or 0)
+            if department.code == "WV"
+            else int(today_entry.result_count or 0)
+        )
+        rows.append(
+            {
+                "member_name": today_entry.member.name,
+                "member_id": today_entry.member_id,
+                "status_label": "活動終了" if today_entry.activity_closed else "活動中",
+                "is_closed": bool(today_entry.activity_closed),
+                "updated_at": timezone.localtime(today_entry.updated_at),
+                "updated_label": timezone.localtime(today_entry.updated_at).strftime("%H:%M"),
+                "department_name": department.name,
+                "count_value": count_value,
+                "amount_value": int(today_entry.support_amount or 0),
+                "location_name": today_entry.location_name or "",
+            }
+        )
+    return {
+        "active": [row for row in rows if not row["is_closed"]],
+        "closed": [row for row in rows if row["is_closed"]],
+    }
+
+
+def get_default_mail_group(*, department):
+    if not department:
+        return None
+    routing = (
+        MailDepartmentRouting.objects.filter(department=department)
+        .select_related("recipient_group")
+        .first()
+    )
+    if routing and routing.recipient_group.is_active:
+        return routing.recipient_group
+    group = (
+        MailRecipientGroup.objects.filter(
+            is_active=True,
+            related_departments=department,
+        )
+        .order_by("name", "id")
+        .first()
+    )
+    if group:
+        return group
+    group = (
+        MailRecipientGroup.objects.filter(
+            is_active=True,
+            department=department,
+        )
+        .order_by("name", "id")
+        .first()
+    )
+    if group:
+        return group
+    return (
+        MailRecipientGroup.objects.filter(
+            is_active=True,
+            department__isnull=True,
+        )
+        .order_by("name", "id")
+        .first()
+    )
+
+
+def get_period_target_amount(*, period, department):
+    metric_value = (
+        PeriodTargetMetricValue.objects.filter(
+            period=period,
+            department=department,
+            metric__is_active=True,
+            metric__code="amount",
+        )
+        .select_related("metric")
+        .first()
+    )
+    if metric_value:
+        return int(metric_value.value or 0), True
+    legacy_target = DepartmentPeriodTarget.objects.filter(
+        period=period,
+        department=department,
+    ).first()
+    return int(getattr(legacy_target, "target_amount", 0) or 0), bool(legacy_target)
+
+
+def get_month_target_amount(*, target_month, department):
+    metric_value = (
+        MonthTargetMetricValue.objects.filter(
+            target_month=target_month,
+            department=department,
+            metric__is_active=True,
+            metric__code="amount",
+        )
+        .select_related("metric")
+        .first()
+    )
+    if metric_value:
+        return int(metric_value.value or 0), True
+    legacy_target = DepartmentMonthTarget.objects.filter(
+        department=department,
+        target_month=target_month,
+    ).first()
+    return int(getattr(legacy_target, "target_amount", 0) or 0), bool(legacy_target)
+
+
+def build_transaction_mail_preview(*, member, department_code, transaction_obj, progress_cards):
+    personal_card, department_card, period_card, month_card = progress_cards
+    subject = (
+        f"{transaction_obj.entry.entry_date.month}/{transaction_obj.entry.entry_date.day}"
+        f"{member.name}です({department_code or 'UN①'})"
+    )
+    body = "\n".join(
+        [
+            department_code or "",
+            f"会員1名 {transaction_obj.support_amount:,}円",
+            f"日目まで {department_card['remaining_amount']:,}円",
+            f"路目まで {period_card['remaining_amount']:,}円",
+            f"月目まで {month_card['remaining_amount']:,}円",
+            "",
+            " ".join(
+                filter(
+                    None,
+                    [
+                        transaction_obj.get_age_band_display(),
+                        "学生" if transaction_obj.is_student else "",
+                        transaction_obj.get_gender_display(),
+                        transaction_obj.get_nationality_type_display(),
+                    ],
+                )
+            ),
+            transaction_obj.location,
+            transaction_obj.comment,
+            "",
+            "栄光在天✨全体精誠に感謝です！",
+            "",
+            f"{personal_card['current_amount']:,}/{personal_card['target_amount']:,}円",
+        ]
+    ).strip()
+    return {
+        "subject": subject,
+        "body": body,
+    }

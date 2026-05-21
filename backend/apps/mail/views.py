@@ -26,6 +26,71 @@ def _mail_nav_items():
     ]
 
 
+def _routing_departments():
+    return {
+        department.code: department
+        for department in Department.objects.filter(code__in=["UN", "WV"], is_active=True)
+    }
+
+
+def _routing_map():
+    return {
+        routing.department.code: routing.recipient_group_id
+        for routing in MailDepartmentRouting.objects.filter(department__code__in=["UN", "WV"]).select_related("department")
+    }
+
+
+def _group_form_initial(edit_group: MailRecipientGroup | None) -> dict:
+    if not edit_group:
+        return {}
+    return {
+        "name": edit_group.name,
+        "departments": list(edit_group.related_departments.values_list("id", flat=True))
+        or ([edit_group.department_id] if edit_group.department_id else []),
+        "members": edit_group.members.all(),
+        "is_active": edit_group.is_active,
+    }
+
+
+def _build_group_settings_forms(
+    *,
+    setting: MailIntegrationSetting,
+    routing_map: dict,
+    edit_group: MailRecipientGroup | None = None,
+    group_data=None,
+    routing_data=None,
+    settings_data=None,
+    test_data=None,
+):
+    group_initial = _group_form_initial(edit_group)
+    group_form = (
+        MailRecipientGroupForm(group_data)
+        if group_data is not None
+        else MailRecipientGroupForm(initial=group_initial)
+    )
+    routing_form = (
+        MailDepartmentRoutingForm(routing_data)
+        if routing_data is not None
+        else MailDepartmentRoutingForm(
+            initial={
+                "un_group": routing_map.get("UN"),
+                "wv_group": routing_map.get("WV"),
+            }
+        )
+    )
+    settings_form = (
+        MailIntegrationSettingForm(settings_data, instance=setting)
+        if settings_data is not None
+        else MailIntegrationSettingForm(instance=setting)
+    )
+    test_form = (
+        MailIntegrationTestForm(test_data)
+        if test_data is not None
+        else MailIntegrationTestForm()
+    )
+    return group_form, routing_form, settings_form, test_form
+
+
 @require_roles(ROLE_ADMIN)
 def mail_integration_settings(request: HttpRequest) -> HttpResponse:
     return redirect("mail_group_settings")
@@ -45,15 +110,8 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
         pk=1,
         defaults={"sender_name": "獲得メール送信"},
     )
-
-    routing_departments = {
-        department.code: department
-        for department in Department.objects.filter(code__in=["UN", "WV"], is_active=True)
-    }
-    routing_map = {
-        routing.department.code: routing.recipient_group_id
-        for routing in MailDepartmentRouting.objects.filter(department__code__in=["UN", "WV"]).select_related("department")
-    }
+    routing_departments = _routing_departments()
+    routing_map = _routing_map()
 
     if request.method == "POST":
         action = request.POST.get("action")
@@ -62,23 +120,12 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
                 secret_field: getattr(setting, secret_field)
                 for secret_field in ("client_id", "client_secret", "refresh_token")
             }
-            form = MailRecipientGroupForm(
-                initial={
-                    "name": edit_group.name,
-                    "departments": list(edit_group.related_departments.values_list("id", flat=True))
-                    or ([edit_group.department_id] if edit_group and edit_group.department_id else []),
-                    "members": edit_group.members.all() if edit_group else [],
-                    "is_active": edit_group.is_active if edit_group else True,
-                }
-            ) if edit_group else MailRecipientGroupForm()
-            routing_form = MailDepartmentRoutingForm(
-                initial={
-                    "un_group": routing_map.get("UN"),
-                    "wv_group": routing_map.get("WV"),
-                }
+            form, routing_form, settings_form, test_form = _build_group_settings_forms(
+                setting=setting,
+                routing_map=routing_map,
+                edit_group=edit_group,
+                settings_data=request.POST,
             )
-            settings_form = MailIntegrationSettingForm(request.POST, instance=setting)
-            test_form = MailIntegrationTestForm()
             if settings_form.is_valid():
                 updated_setting = settings_form.save(commit=False)
                 for secret_field in ("client_id", "client_secret", "refresh_token"):
@@ -93,23 +140,12 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
             else:
                 status_message = "入力内容を確認してください。"
         elif action in {"test_preview", "test_send"}:
-            form = MailRecipientGroupForm(
-                initial={
-                    "name": edit_group.name,
-                    "departments": list(edit_group.related_departments.values_list("id", flat=True))
-                    or ([edit_group.department_id] if edit_group and edit_group.department_id else []),
-                    "members": edit_group.members.all() if edit_group else [],
-                    "is_active": edit_group.is_active if edit_group else True,
-                }
-            ) if edit_group else MailRecipientGroupForm()
-            routing_form = MailDepartmentRoutingForm(
-                initial={
-                    "un_group": routing_map.get("UN"),
-                    "wv_group": routing_map.get("WV"),
-                }
+            form, routing_form, settings_form, test_form = _build_group_settings_forms(
+                setting=setting,
+                routing_map=routing_map,
+                edit_group=edit_group,
+                test_data=request.POST,
             )
-            settings_form = MailIntegrationSettingForm(instance=setting)
-            test_form = MailIntegrationTestForm(request.POST)
             if test_form.is_valid():
                 target_type = test_form.cleaned_data["target_type"]
                 if target_type == MailIntegrationTestForm.TARGET_MEMBER:
@@ -139,18 +175,12 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
             else:
                 status_message = "テスト送信先を確認してください。"
         elif action == "save_routing":
-            form = MailRecipientGroupForm(
-                initial={
-                    "name": edit_group.name,
-                    "departments": list(edit_group.related_departments.values_list("id", flat=True))
-                    or ([edit_group.department_id] if edit_group and edit_group.department_id else []),
-                    "members": edit_group.members.all() if edit_group else [],
-                    "is_active": edit_group.is_active if edit_group else True,
-                }
-            ) if edit_group else MailRecipientGroupForm()
-            routing_form = MailDepartmentRoutingForm(request.POST)
-            settings_form = MailIntegrationSettingForm(instance=setting)
-            test_form = MailIntegrationTestForm()
+            form, routing_form, settings_form, test_form = _build_group_settings_forms(
+                setting=setting,
+                routing_map=routing_map,
+                edit_group=edit_group,
+                routing_data=request.POST,
+            )
             if routing_form.is_valid():
                 for code, field_name in (("UN", "un_group"), ("WV", "wv_group")):
                     department = routing_departments.get(code)
@@ -165,10 +195,7 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
                     else:
                         MailDepartmentRouting.objects.filter(department=department).delete()
                 status_message = "決済報告の既定メールグループを更新しました。"
-                routing_map = {
-                    routing.department.code: routing.recipient_group_id
-                    for routing in MailDepartmentRouting.objects.filter(department__code__in=["UN", "WV"]).select_related("department")
-                }
+                routing_map = _routing_map()
                 routing_form = MailDepartmentRoutingForm(
                     initial={
                         "un_group": routing_map.get("UN"),
@@ -180,15 +207,12 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
         else:
             group_id = request.POST.get("group_id")
             edit_group = get_object_or_404(MailRecipientGroup, pk=group_id) if group_id else None
-            form = MailRecipientGroupForm(request.POST)
-            routing_form = MailDepartmentRoutingForm(
-                initial={
-                    "un_group": routing_map.get("UN"),
-                    "wv_group": routing_map.get("WV"),
-                }
+            form, routing_form, settings_form, test_form = _build_group_settings_forms(
+                setting=setting,
+                routing_map=routing_map,
+                edit_group=edit_group,
+                group_data=request.POST,
             )
-            settings_form = MailIntegrationSettingForm(instance=setting)
-            test_form = MailIntegrationTestForm()
             if form.is_valid():
                 group = edit_group or MailRecipientGroup()
                 group.name = form.cleaned_data["name"]
@@ -204,26 +228,11 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
             else:
                 status_message = "入力内容を確認してください。"
     else:
-        if edit_group:
-            form = MailRecipientGroupForm(
-                initial={
-                    "name": edit_group.name,
-                    "departments": list(edit_group.related_departments.values_list("id", flat=True))
-                    or ([edit_group.department_id] if edit_group.department_id else []),
-                    "members": edit_group.members.all(),
-                    "is_active": edit_group.is_active,
-                }
-            )
-        else:
-            form = MailRecipientGroupForm()
-        routing_form = MailDepartmentRoutingForm(
-            initial={
-                "un_group": routing_map.get("UN"),
-                "wv_group": routing_map.get("WV"),
-            }
+        form, routing_form, settings_form, test_form = _build_group_settings_forms(
+            setting=setting,
+            routing_map=routing_map,
+            edit_group=edit_group,
         )
-        settings_form = MailIntegrationSettingForm(instance=setting)
-        test_form = MailIntegrationTestForm()
 
     recent_test_histories = MailSendHistory.objects.filter(is_test=True).select_related(
         "recipient_group",

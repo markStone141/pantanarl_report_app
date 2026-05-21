@@ -29,12 +29,25 @@ from apps.dairymetrics.services.final_actuals import (
     collect_department_final_actual_totals_by_codes,
     collect_member_final_actual_totals,
 )
+from apps.performance.services.progress import (
+    adjustment_totals_dict_from_queryset,
+    build_contribution_summary,
+    build_progress_card,
+    collect_adjustment_amounts_by_codes,
+    month_end,
+    resolve_month_target_amounts_by_code,
+    resolve_period_target_amounts_by_code,
+    sum_adjustment_amount,
+)
+from apps.performance.services.trends import (
+    build_adjustment_totals_map,
+    build_member_activity_trend,
+    build_overall_activity_trend,
+    entry_final_amount_value,
+    entry_final_count_value,
+)
 from apps.targets.models import (
-    DepartmentMonthTarget,
-    DepartmentPeriodTarget,
-    MonthTargetMetricValue,
     Period,
-    PeriodTargetMetricValue,
 )
 
 from .forms import PerformanceEntryFilterForm, PerformanceMemberDailyMetricEntryForm, PerformanceMetricAdjustmentForm
@@ -161,83 +174,18 @@ def _filtered_adjustments_queryset(cleaned_data):
     return queryset
 
 
-def _build_adjustment_totals_map(entries):
-    entries = list(entries)
-    if not entries:
-        return {}
-    member_ids = {entry.member_id for entry in entries}
-    department_ids = {entry.department_id for entry in entries}
-    dates = {entry.entry_date for entry in entries}
-    rows = (
-        MetricAdjustment.objects.filter(
-            member_id__in=member_ids,
-            department_id__in=department_ids,
-            target_date__in=dates,
-        )
-        .values("member_id", "department_id", "target_date")
-        .annotate(
-            result_count_total=Sum("result_count"),
-            support_amount_total=Sum("support_amount"),
-            return_postal_count_total=Sum("return_postal_count"),
-            return_postal_amount_total=Sum("return_postal_amount"),
-            return_qr_count_total=Sum("return_qr_count"),
-            return_qr_amount_total=Sum("return_qr_amount"),
-            cs_count_total=Sum("cs_count"),
-            refugee_count_total=Sum("refugee_count"),
-        )
-    )
-    totals_map = {}
-    for row in rows:
-        totals_map[(row["member_id"], row["department_id"], row["target_date"])] = {
-            "result_count": int(row["result_count_total"] or 0),
-            "support_amount": int(row["support_amount_total"] or 0),
-            "return_postal_count": int(row["return_postal_count_total"] or 0),
-            "return_postal_amount": int(row["return_postal_amount_total"] or 0),
-            "return_qr_count": int(row["return_qr_count_total"] or 0),
-            "return_qr_amount": int(row["return_qr_amount_total"] or 0),
-            "cs_count": int(row["cs_count_total"] or 0),
-            "refugee_count": int(row["refugee_count_total"] or 0),
-        }
-    return totals_map
-
-
 def _count_text(entry, adjustment_totals):
     if entry.department.code == "WV":
         total_cs = int(entry.cs_count or 0) + int(adjustment_totals["cs_count"])
         total_refugee = int(entry.refugee_count or 0) + int(adjustment_totals["refugee_count"])
         return f"CS {total_cs} / 難民 {total_refugee}"
-    total_count = _entry_final_count_value(entry=entry, adjustment_totals=adjustment_totals)
+    total_count = entry_final_count_value(entry=entry, adjustment_totals=adjustment_totals)
     return f"{total_count}件"
 
 
 def _amount_text(entry, adjustment_totals):
-    total_amount = _entry_final_amount_value(entry=entry, adjustment_totals=adjustment_totals)
+    total_amount = entry_final_amount_value(entry=entry, adjustment_totals=adjustment_totals)
     return f"{total_amount:,}円"
-
-
-def _entry_final_count_value(*, entry, adjustment_totals):
-    if entry.department.code == "WV":
-        return (
-            int(entry.cs_count or 0)
-            + int(entry.refugee_count or 0)
-            + int(adjustment_totals["cs_count"])
-            + int(adjustment_totals["refugee_count"])
-        )
-    return (
-        int(entry.result_count or 0)
-        + int(adjustment_totals["result_count"])
-        + int(adjustment_totals["return_postal_count"])
-        + int(adjustment_totals["return_qr_count"])
-    )
-
-
-def _entry_final_amount_value(*, entry, adjustment_totals):
-    return (
-        int(entry.support_amount or 0)
-        + int(adjustment_totals["support_amount"])
-        + int(adjustment_totals["return_postal_amount"])
-        + int(adjustment_totals["return_qr_amount"])
-    )
 
 
 def _resolve_current_period(today):
@@ -247,141 +195,6 @@ def _resolve_current_period(today):
         .first()
         or Period.objects.order_by("-end_date", "-start_date", "-id").first()
     )
-
-
-def _resolve_month_target_amounts_by_code(*, departments, target_month):
-    target_codes = [department.code for department in departments]
-    metric_rows = (
-        MonthTargetMetricValue.objects.filter(
-            department__code__in=target_codes,
-            target_month=target_month,
-            metric__code="amount",
-        )
-        .values("department__code", "value")
-    )
-    target_map = {row["department__code"]: int(row["value"] or 0) for row in metric_rows}
-    fallback_rows = (
-        DepartmentMonthTarget.objects.filter(
-            department__code__in=target_codes,
-            target_month=target_month,
-        )
-        .values("department__code", "target_amount")
-    )
-    for row in fallback_rows:
-        target_map.setdefault(row["department__code"], int(row["target_amount"] or 0))
-    return target_map
-
-
-def _resolve_period_target_amounts_by_code(*, departments, period):
-    if not period:
-        return {}
-    target_codes = [department.code for department in departments]
-    metric_rows = (
-        PeriodTargetMetricValue.objects.filter(
-            department__code__in=target_codes,
-            period=period,
-            metric__code="amount",
-        )
-        .values("department__code", "value")
-    )
-    target_map = {row["department__code"]: int(row["value"] or 0) for row in metric_rows}
-    fallback_rows = (
-        DepartmentPeriodTarget.objects.filter(
-            department__code__in=target_codes,
-            period=period,
-        )
-        .values("department__code", "target_amount")
-    )
-    for row in fallback_rows:
-        target_map.setdefault(row["department__code"], int(row["target_amount"] or 0))
-    return target_map
-
-
-def _collect_adjustment_amounts_by_codes(*, target_codes, start_date, end_date):
-    if not target_codes:
-        return {}
-    rows = (
-        MetricAdjustment.objects.filter(
-            department__code__in=target_codes,
-            target_date__range=(start_date, end_date),
-        )
-        .values("department__code")
-        .annotate(
-            support_amount_total=Sum("support_amount"),
-            return_postal_amount_total=Sum("return_postal_amount"),
-            return_qr_amount_total=Sum("return_qr_amount"),
-        )
-    )
-    return {
-        row["department__code"]: (
-            int(row["support_amount_total"] or 0)
-            + int(row["return_postal_amount_total"] or 0)
-            + int(row["return_qr_amount_total"] or 0)
-        )
-        for row in rows
-    }
-
-
-def _progress_rate(actual, target):
-    if target <= 0:
-        return None
-    return round((actual / target) * 100, 1)
-
-
-def _build_progress_card(*, label, actual_amount, target_amount, summary_text, base_actual_amount=0, adjustment_amount=0):
-    rate = _progress_rate(actual_amount, target_amount)
-    remaining_amount = max(int(target_amount or 0) - int(actual_amount or 0), 0)
-    base_actual_amount = int(base_actual_amount or 0)
-    adjustment_amount = int(adjustment_amount or 0)
-    target_amount = int(target_amount or 0)
-    if target_amount > 0:
-        capped_base_amount = min(base_actual_amount, target_amount)
-        capped_adjustment_amount = min(adjustment_amount, max(target_amount - capped_base_amount, 0))
-        remaining_chart_amount = max(target_amount - capped_base_amount - capped_adjustment_amount, 0)
-        chart_values = [capped_base_amount, capped_adjustment_amount, remaining_chart_amount]
-    else:
-        chart_values = [0, 0, 100]
-    return {
-        "label": label,
-        "actual_amount": actual_amount,
-        "actual_amount_text": f"{actual_amount:,}円",
-        "base_actual_amount_text": f"{base_actual_amount:,}円",
-        "adjustment_amount_text": f"{adjustment_amount:,}円",
-        "target_amount": target_amount,
-        "target_amount_text": f"{target_amount:,}円",
-        "remaining_amount_text": f"{remaining_amount:,}円",
-        "rate": rate,
-        "rate_text": "-" if rate is None else f"{rate}%",
-        "chart_values": chart_values,
-        "summary_text": summary_text,
-    }
-
-
-def _build_contribution_summary(*, member_actual_amount, department_actual_amount):
-    department_amount = int(department_actual_amount or 0)
-    member_amount = int(member_actual_amount or 0)
-    if department_amount <= 0:
-        return {
-            "rate": None,
-            "rate_text": "-",
-            "detail_text": "全体実績がまだありません。",
-        }
-    rate = round((member_amount / department_amount) * 100, 1)
-    return {
-        "rate": rate,
-        "rate_text": f"{rate}%",
-        "detail_text": f"{member_amount:,}円 / {department_amount:,}円",
-    }
-
-
-def _build_member_target_progress(*, label, actual_amount, target_amount):
-    rate = _progress_rate(actual_amount, target_amount)
-    return {
-        "label": label,
-        "actual_amount_text": f"{actual_amount:,}円",
-        "target_amount_text": f"{target_amount:,}円",
-        "rate_text": "-" if rate is None else f"{rate}%",
-    }
 
 
 def _build_activity_member_rows(entries):
@@ -430,7 +243,7 @@ def _build_scoped_member_cards(*, members, selected_department, scope):
             .select_related("member", "department")
             .order_by("-entry_date", "-id")[:3]
         )
-        latest_adjustment_totals = _build_adjustment_totals_map(scoped_entries)
+        latest_adjustment_totals = build_adjustment_totals_map(scoped_entries)
         latest_final_counts = []
         for latest_entry in scoped_entries:
             latest_totals = latest_adjustment_totals.get(
@@ -446,7 +259,7 @@ def _build_scoped_member_cards(*, members, selected_department, scope):
                     "refugee_count": 0,
                 },
             )
-            latest_final_counts.append(_entry_final_count_value(entry=latest_entry, adjustment_totals=latest_totals))
+            latest_final_counts.append(entry_final_count_value(entry=latest_entry, adjustment_totals=latest_totals))
         zero_streak_warning = len(latest_final_counts) == 3 and all(count == 0 for count in latest_final_counts)
         active_streak_good = len(latest_final_counts) == 3 and all(count >= 1 for count in latest_final_counts)
         if scoped_entries:
@@ -616,7 +429,7 @@ def _resolve_performance_history_scope(*, today, scope_value, requested_month=No
         scope="month",
         label=month_start.strftime("%Y/%m"),
         start_date=month_start,
-        end_date=min(_month_end(month_start), today),
+        end_date=min(month_end(month_start), today),
         month_start=month_start,
     )
 
@@ -651,7 +464,7 @@ def _build_active_member_cards(*, members, today, target_month, target_period, s
             MemberDailyMetricEntry.objects.filter(member=member, department=department)
             .order_by("-entry_date", "-id")[:3]
         )
-        latest_adjustment_totals = _build_adjustment_totals_map(latest_entries)
+        latest_adjustment_totals = build_adjustment_totals_map(latest_entries)
         latest_final_counts = []
         for latest_entry in latest_entries:
             latest_totals = latest_adjustment_totals.get(
@@ -667,11 +480,11 @@ def _build_active_member_cards(*, members, today, target_month, target_period, s
                     "refugee_count": 0,
                 },
             )
-            latest_final_counts.append(_entry_final_count_value(entry=latest_entry, adjustment_totals=latest_totals))
+            latest_final_counts.append(entry_final_count_value(entry=latest_entry, adjustment_totals=latest_totals))
         zero_streak_warning = len(latest_final_counts) == 3 and all(count == 0 for count in latest_final_counts)
         active_streak_good = len(latest_final_counts) == 3 and all(count >= 1 for count in latest_final_counts)
         if entry is not None:
-            recent_totals = _build_adjustment_totals_map([entry]).get(
+            recent_totals = build_adjustment_totals_map([entry]).get(
                 (entry.member_id, entry.department_id, entry.entry_date),
                 {
                     "result_count": 0,
@@ -825,19 +638,19 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
         end_date=min(period.end_date, today) if period else today,
         include_adjustments=True,
     ) if target_codes else {}
-    month_adjustment_amounts = _collect_adjustment_amounts_by_codes(
+    month_adjustment_amounts = collect_adjustment_amounts_by_codes(
         target_codes=target_codes,
         start_date=target_month,
         end_date=today,
     )
-    period_adjustment_amounts = _collect_adjustment_amounts_by_codes(
+    period_adjustment_amounts = collect_adjustment_amounts_by_codes(
         target_codes=target_codes,
         start_date=period.start_date if period else today,
         end_date=min(period.end_date, today) if period else today,
     ) if target_codes else {}
 
-    month_target_amounts = _resolve_month_target_amounts_by_code(departments=departments, target_month=target_month)
-    period_target_amounts = _resolve_period_target_amounts_by_code(departments=departments, period=period)
+    month_target_amounts = resolve_month_target_amounts_by_code(departments=departments, target_month=target_month)
+    period_target_amounts = resolve_period_target_amounts_by_code(departments=departments, period=period)
 
     month_progress_cards = []
     period_progress_cards = []
@@ -845,7 +658,7 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
         month_totals = month_totals_by_code.get(current_department.code, {})
         period_totals = period_totals_by_code.get(current_department.code, {})
         month_progress_cards.append(
-            _build_progress_card(
+            build_progress_card(
                 label=current_department.code,
                 actual_amount=int(month_totals.get("support_amount") or 0)
                 + int(month_totals.get("return_postal_amount") or 0)
@@ -865,7 +678,7 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
             )
         )
         period_progress_cards.append(
-            _build_progress_card(
+            build_progress_card(
                 label=current_department.code,
                 actual_amount=int(period_totals.get("support_amount") or 0)
                 + int(period_totals.get("return_postal_amount") or 0)
@@ -900,7 +713,7 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
             count_target=today_target_count,
             amount_target=today_target_amount,
         ),
-        "overall_activity_trend": _build_overall_activity_trend(department=department),
+        "overall_activity_trend": build_overall_activity_trend(department=department),
         "activity_in_progress": _build_activity_member_rows(activity_in_progress),
         "activity_finished": _build_activity_member_rows(activity_finished),
         "active_member_cards": _build_active_member_cards(
@@ -925,7 +738,7 @@ def _build_performance_history_snapshot(*, department, scope):
         include_adjustments=True,
     )
     scoped_totals = scoped_totals_by_code.get(department.code, {})
-    scoped_adjustment_amounts = _collect_adjustment_amounts_by_codes(
+    scoped_adjustment_amounts = collect_adjustment_amounts_by_codes(
         target_codes=target_codes,
         start_date=scope.start_date,
         end_date=scope.end_date,
@@ -934,14 +747,14 @@ def _build_performance_history_snapshot(*, department, scope):
     period_progress_cards = []
     if scope.scope == "month" and scope.month_start:
         month_target_amount = int(
-            _resolve_month_target_amounts_by_code(
+            resolve_month_target_amounts_by_code(
                 departments=[department],
                 target_month=scope.month_start,
             ).get(department.code)
             or 0
         )
         month_progress_cards.append(
-            _build_progress_card(
+            build_progress_card(
                 label=department.code,
                 actual_amount=int(scoped_totals.get("support_amount") or 0)
                 + int(scoped_totals.get("return_postal_amount") or 0)
@@ -962,14 +775,14 @@ def _build_performance_history_snapshot(*, department, scope):
         )
     if scope.scope == "period" and scope.period:
         period_target_amount = int(
-            _resolve_period_target_amounts_by_code(
+            resolve_period_target_amounts_by_code(
                 departments=[department],
                 period=scope.period,
             ).get(department.code)
             or 0
         )
         period_progress_cards.append(
-            _build_progress_card(
+            build_progress_card(
                 label=department.code,
                 actual_amount=int(scoped_totals.get("support_amount") or 0)
                 + int(scoped_totals.get("return_postal_amount") or 0)
@@ -999,7 +812,7 @@ def _build_performance_history_snapshot(*, department, scope):
 
     return {
         "scope": scope,
-        "overall_activity_trend": _build_overall_activity_trend(
+        "overall_activity_trend": build_overall_activity_trend(
             department=department,
             start_date=scope.start_date,
             end_date=scope.end_date,
@@ -1023,19 +836,13 @@ def _parse_selected_month(value, *, default):
         return default.replace(day=1)
 
 
-def _month_end(month_start):
-    if month_start.month == 12:
-        return date(month_start.year + 1, 1, 1) - timezone.timedelta(days=1)
-    return date(month_start.year, month_start.month + 1, 1) - timezone.timedelta(days=1)
-
-
 def _build_member_dashboard_entry_rows(*, member, department, month_start, month_end):
     member_entries = MemberDailyMetricEntry.objects.select_related("member", "department").prefetch_related("transactions").filter(
         member=member,
         department=department,
     )
     entries = list(member_entries.filter(entry_date__range=(month_start, month_end)).order_by("-entry_date", "-id"))
-    adjustment_totals_map = _build_adjustment_totals_map(entries)
+    adjustment_totals_map = build_adjustment_totals_map(entries)
     entry_rows = []
     for entry in entries:
         adjustment_totals = adjustment_totals_map.get(
@@ -1063,317 +870,14 @@ def _build_member_dashboard_entry_rows(*, member, department, month_start, month
                     else ""
                 ),
             }
-        )
+    )
     return entry_rows
-
-
-def _sum_adjustment_amount(*, member=None, department=None, start_date, end_date):
-    queryset = MetricAdjustment.objects.filter(target_date__range=(start_date, end_date))
-    if member is not None:
-        queryset = queryset.filter(member=member)
-    if department is not None:
-        queryset = queryset.filter(department=department)
-    totals = queryset.aggregate(
-        support_amount_total=Sum("support_amount"),
-        return_postal_amount_total=Sum("return_postal_amount"),
-        return_qr_amount_total=Sum("return_qr_amount"),
-    )
-    return (
-        int(totals["support_amount_total"] or 0)
-        + int(totals["return_postal_amount_total"] or 0)
-        + int(totals["return_qr_amount_total"] or 0)
-    )
-
-
-def _adjustment_totals_dict_from_queryset(*, queryset):
-    totals = queryset.aggregate(
-        result_count_total=Sum("result_count"),
-        support_amount_total=Sum("support_amount"),
-        return_postal_count_total=Sum("return_postal_count"),
-        return_postal_amount_total=Sum("return_postal_amount"),
-        return_qr_count_total=Sum("return_qr_count"),
-        return_qr_amount_total=Sum("return_qr_amount"),
-        cs_count_total=Sum("cs_count"),
-        refugee_count_total=Sum("refugee_count"),
-    )
-    return {
-        "result_count": int(totals["result_count_total"] or 0),
-        "support_amount": int(totals["support_amount_total"] or 0),
-        "return_postal_count": int(totals["return_postal_count_total"] or 0),
-        "return_postal_amount": int(totals["return_postal_amount_total"] or 0),
-        "return_qr_count": int(totals["return_qr_count_total"] or 0),
-        "return_qr_amount": int(totals["return_qr_amount_total"] or 0),
-        "cs_count": int(totals["cs_count_total"] or 0),
-        "refugee_count": int(totals["refugee_count_total"] or 0),
-    }
-
-
-def _build_member_activity_trend(*, member, department, start_date=None, end_date=None):
-    entry_queryset = MemberDailyMetricEntry.objects.select_related("department").filter(member=member, department=department)
-    adjustment_queryset = MetricAdjustment.objects.filter(member=member, department=department)
-    if start_date is not None and end_date is not None:
-        entry_queryset = entry_queryset.filter(entry_date__range=(start_date, end_date))
-        adjustment_queryset = adjustment_queryset.filter(target_date__range=(start_date, end_date))
-        latest_entry_dates = list(entry_queryset.order_by("entry_date").values_list("entry_date", flat=True).distinct())
-        latest_adjustment_dates = list(adjustment_queryset.order_by("target_date").values_list("target_date", flat=True).distinct())
-    else:
-        latest_entry_dates = list(entry_queryset.order_by("-entry_date").values_list("entry_date", flat=True).distinct()[:120])
-        latest_entry_dates.reverse()
-        latest_adjustment_dates = list(adjustment_queryset.order_by("-target_date").values_list("target_date", flat=True).distinct()[:120])
-        latest_adjustment_dates.reverse()
-    latest_dates = sorted(set(latest_entry_dates) | set(latest_adjustment_dates))
-    if start_date is None and end_date is None and len(latest_dates) > 120:
-        latest_dates = latest_dates[-120:]
-    if not latest_dates:
-        return {
-            "labels": [],
-            "amounts": [],
-            "counts": [],
-            "has_data": False,
-            "count_label": "件数",
-            "default_visible_count": 0,
-        }
-    latest_entries = list(
-        entry_queryset.filter(entry_date__in=latest_dates)
-        .order_by("entry_date", "id")
-    )
-    entry_by_date = {}
-    for entry in latest_entries:
-        entry_by_date[entry.entry_date] = entry
-    adjustment_totals_map = _build_adjustment_totals_map(latest_entries)
-    adjustment_only_rows = (
-        adjustment_queryset.filter(target_date__in=latest_dates)
-        .values("target_date")
-        .annotate(
-            result_count_total=Sum("result_count"),
-            support_amount_total=Sum("support_amount"),
-            return_postal_count_total=Sum("return_postal_count"),
-            return_postal_amount_total=Sum("return_postal_amount"),
-            return_qr_count_total=Sum("return_qr_count"),
-            return_qr_amount_total=Sum("return_qr_amount"),
-            cs_count_total=Sum("cs_count"),
-            refugee_count_total=Sum("refugee_count"),
-        )
-    )
-    adjustment_only_map = {
-        row["target_date"]: {
-            "result_count": int(row["result_count_total"] or 0),
-            "support_amount": int(row["support_amount_total"] or 0),
-            "return_postal_count": int(row["return_postal_count_total"] or 0),
-            "return_postal_amount": int(row["return_postal_amount_total"] or 0),
-            "return_qr_count": int(row["return_qr_count_total"] or 0),
-            "return_qr_amount": int(row["return_qr_amount_total"] or 0),
-            "cs_count": int(row["cs_count_total"] or 0),
-            "refugee_count": int(row["refugee_count_total"] or 0),
-        }
-        for row in adjustment_only_rows
-    }
-    labels = []
-    amounts = []
-    counts = []
-    adjustment_amounts = []
-    adjustment_counts = []
-    approach_counts = []
-    communication_counts = []
-    target_amounts = []
-    rate_values = []
-    empty_adjustment_totals = {
-        "result_count": 0,
-        "support_amount": 0,
-        "return_postal_count": 0,
-        "return_postal_amount": 0,
-        "return_qr_count": 0,
-        "return_qr_amount": 0,
-        "cs_count": 0,
-        "refugee_count": 0,
-    }
-    for activity_date in latest_dates:
-        entry = entry_by_date.get(activity_date)
-        if entry is not None:
-            adjustment_totals = adjustment_totals_map.get(
-                (entry.member_id, entry.department_id, entry.entry_date),
-                empty_adjustment_totals,
-            )
-        else:
-            adjustment_totals = adjustment_only_map.get(activity_date, empty_adjustment_totals)
-        labels.append(activity_date.strftime("%m/%d"))
-        if entry is not None:
-            amount_value = _entry_final_amount_value(entry=entry, adjustment_totals=adjustment_totals)
-        else:
-            amount_value = (
-                int(adjustment_totals["support_amount"])
-                + int(adjustment_totals["return_postal_amount"])
-                + int(adjustment_totals["return_qr_amount"])
-            )
-        amounts.append(amount_value)
-        adjustment_amount_value = (
-            int(adjustment_totals["support_amount"])
-            + int(adjustment_totals["return_postal_amount"])
-            + int(adjustment_totals["return_qr_amount"])
-        )
-        adjustment_amounts.append(adjustment_amount_value)
-        if department.code == "WV":
-            adjustment_count_value = int(adjustment_totals["cs_count"]) + int(adjustment_totals["refugee_count"])
-        else:
-            adjustment_count_value = (
-                int(adjustment_totals["result_count"])
-                + int(adjustment_totals["return_postal_count"])
-                + int(adjustment_totals["return_qr_count"])
-            )
-        if entry is not None:
-            counts.append(_entry_final_count_value(entry=entry, adjustment_totals=adjustment_totals))
-            approach_counts.append(int(entry.approach_count or 0))
-            communication_counts.append(int(entry.communication_count or 0))
-            target_amount = int(entry.daily_target_amount or 0)
-        else:
-            counts.append(adjustment_count_value)
-            approach_counts.append(0)
-            communication_counts.append(0)
-            target_amount = 0
-        adjustment_counts.append(adjustment_count_value)
-        target_amounts.append(target_amount)
-        rate_values.append(round((amount_value / target_amount) * 100, 1) if target_amount > 0 else None)
-    return {
-        "labels": labels,
-        "amounts": amounts,
-        "counts": counts,
-        "adjustment_amounts": adjustment_amounts,
-        "adjustment_counts": adjustment_counts,
-        "approach_counts": approach_counts,
-        "communication_counts": communication_counts,
-        "target_amounts": target_amounts,
-        "rate_values": rate_values,
-        "has_data": True,
-        "count_label": "件数" if department.code != "WV" else "件数相当",
-        "default_visible_count": min(30, len(labels)),
-    }
-
-
-def _build_overall_activity_trend(*, department=None, start_date=None, end_date=None):
-    entry_queryset = MemberDailyMetricEntry.objects.all()
-    adjustment_queryset = MetricAdjustment.objects.all()
-    if department is not None:
-        entry_queryset = entry_queryset.filter(department=department)
-        adjustment_queryset = adjustment_queryset.filter(department=department)
-    if start_date is not None and end_date is not None:
-        entry_queryset = entry_queryset.filter(entry_date__range=(start_date, end_date))
-        adjustment_queryset = adjustment_queryset.filter(target_date__range=(start_date, end_date))
-        latest_dates = list(entry_queryset.order_by("entry_date").values_list("entry_date", flat=True).distinct())
-    else:
-        latest_dates = list(entry_queryset.order_by("-entry_date").values_list("entry_date", flat=True).distinct()[:120])
-        latest_dates.reverse()
-    if not latest_dates:
-        return {
-            "labels": [],
-            "amounts": [],
-            "counts": [],
-            "approach_counts": [],
-            "communication_counts": [],
-            "target_amounts": [],
-            "rate_values": [],
-            "has_data": False,
-            "count_label": "件数",
-            "default_visible_count": 0,
-        }
-    entry_totals = {
-        row["entry_date"]: row
-        for row in entry_queryset.filter(entry_date__in=latest_dates)
-        .values("entry_date")
-        .annotate(
-            result_count_total=Sum("result_count"),
-            support_amount_total=Sum("support_amount"),
-            approach_count_total=Sum("approach_count"),
-            communication_count_total=Sum("communication_count"),
-            cs_count_total=Sum("cs_count"),
-            refugee_count_total=Sum("refugee_count"),
-        )
-    }
-    adjustment_totals = {
-        row["target_date"]: row
-        for row in adjustment_queryset.filter(target_date__in=latest_dates)
-        .values("target_date")
-        .annotate(
-            result_count_total=Sum("result_count"),
-            support_amount_total=Sum("support_amount"),
-            return_postal_count_total=Sum("return_postal_count"),
-            return_postal_amount_total=Sum("return_postal_amount"),
-            return_qr_count_total=Sum("return_qr_count"),
-            return_qr_amount_total=Sum("return_qr_amount"),
-            cs_count_total=Sum("cs_count"),
-            refugee_count_total=Sum("refugee_count"),
-        )
-    }
-    summary_queryset = DepartmentDailyMetricSummary.objects.filter(entry_date__in=latest_dates)
-    if department is not None:
-        summary_queryset = summary_queryset.filter(department=department)
-    daily_target_totals = {
-        row["entry_date"]: int(row["daily_target_amount_total"] or 0)
-        for row in summary_queryset
-        .values("entry_date")
-        .annotate(daily_target_amount_total=Sum("daily_target_amount"))
-    }
-
-    labels = []
-    amounts = []
-    counts = []
-    approach_counts = []
-    communication_counts = []
-    target_amounts = []
-    rate_values = []
-    use_equivalent_count = department is None or department.code == "WV"
-    for activity_date in latest_dates:
-        entry_row = entry_totals.get(activity_date, {})
-        adjustment_row = adjustment_totals.get(activity_date, {})
-        labels.append(activity_date.strftime("%m/%d"))
-        amount_value = (
-            int(entry_row.get("support_amount_total") or 0)
-            + int(adjustment_row.get("support_amount_total") or 0)
-            + int(adjustment_row.get("return_postal_amount_total") or 0)
-            + int(adjustment_row.get("return_qr_amount_total") or 0)
-        )
-        amounts.append(amount_value)
-        if use_equivalent_count:
-            counts.append(
-                int(entry_row.get("result_count_total") or 0)
-                + int(entry_row.get("cs_count_total") or 0)
-                + int(entry_row.get("refugee_count_total") or 0)
-                + int(adjustment_row.get("result_count_total") or 0)
-                + int(adjustment_row.get("return_postal_count_total") or 0)
-                + int(adjustment_row.get("return_qr_count_total") or 0)
-                + int(adjustment_row.get("cs_count_total") or 0)
-                + int(adjustment_row.get("refugee_count_total") or 0)
-            )
-        else:
-            counts.append(
-                int(entry_row.get("result_count_total") or 0)
-                + int(adjustment_row.get("result_count_total") or 0)
-                + int(adjustment_row.get("return_postal_count_total") or 0)
-                + int(adjustment_row.get("return_qr_count_total") or 0)
-            )
-        approach_counts.append(int(entry_row.get("approach_count_total") or 0))
-        communication_counts.append(int(entry_row.get("communication_count_total") or 0))
-        target_amount = int(daily_target_totals.get(activity_date) or 0)
-        target_amounts.append(target_amount)
-        rate_values.append(round((amount_value / target_amount) * 100, 1) if target_amount > 0 else None)
-
-    return {
-        "labels": labels,
-        "amounts": amounts,
-        "counts": counts,
-        "approach_counts": approach_counts,
-        "communication_counts": communication_counts,
-        "target_amounts": target_amounts,
-        "rate_values": rate_values,
-        "has_data": True,
-        "count_label": "件数相当" if use_equivalent_count else "件数",
-        "default_visible_count": min(30, len(labels)),
-    }
 
 
 def _build_member_dashboard_context(*, request, member, department, is_admin=False):
     today = timezone.localdate()
     selected_month = _parse_selected_month(request.GET.get("month"), default=today)
-    selected_month_end = min(_month_end(selected_month), today)
+    selectedmonth_end = min(month_end(selected_month), today)
     current_period = _resolve_current_period(today)
     recent_start = today - timedelta(days=29)
     recent_end = today
@@ -1381,13 +885,13 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         member=member,
         department=department,
         month_start=selected_month,
-        month_end=selected_month_end,
+        month_end=selectedmonth_end,
     )
     adjustment_rows = list(
         MetricAdjustment.objects.filter(
             member=member,
             department=department,
-            target_date__range=(selected_month, selected_month_end),
+            target_date__range=(selected_month, selectedmonth_end),
         ).order_by("-target_date", "-created_at")
     )
     recent_entry_rows = _build_member_dashboard_entry_rows(
@@ -1403,7 +907,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
             target_date__range=(recent_start, recent_end),
         ).order_by("-target_date", "-created_at")
     )
-    activity_trend = _build_member_activity_trend(member=member, department=department)
+    activity_trend = build_member_activity_trend(member=member, department=department)
     recent_totals = collect_member_final_actual_totals(
         member,
         department,
@@ -1416,7 +920,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         department=department,
         target_date__range=(recent_start, recent_end),
     )
-    recent_adjustment_totals = _adjustment_totals_dict_from_queryset(queryset=recent_adjustment_queryset)
+    recent_adjustment_totals = adjustment_totals_dict_from_queryset(queryset=recent_adjustment_queryset)
     recent_active_days = (
         MemberDailyMetricEntry.objects.filter(
             member=member,
@@ -1432,7 +936,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         member,
         department,
         selected_month,
-        selected_month_end,
+        selectedmonth_end,
         include_adjustments=True,
     )
     member_period_totals = collect_member_final_actual_totals(
@@ -1445,7 +949,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
     department_month_totals = collect_department_final_actual_totals(
         department,
         selected_month,
-        selected_month_end,
+        selectedmonth_end,
         include_adjustments=True,
     )
     department_period_totals = collect_department_final_actual_totals(
@@ -1469,10 +973,10 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         else None
     )
     department_month_target_amount = int(
-        _resolve_month_target_amounts_by_code(departments=[department], target_month=selected_month).get(department.code) or 0
+        resolve_month_target_amounts_by_code(departments=[department], target_month=selected_month).get(department.code) or 0
     )
     department_period_target_amount = int(
-        _resolve_period_target_amounts_by_code(departments=[department], period=current_period).get(department.code) or 0
+        resolve_period_target_amounts_by_code(departments=[department], period=current_period).get(department.code) or 0
     )
     department_month_actual_amount = (
         int(department_month_totals.get("support_amount") or 0)
@@ -1497,7 +1001,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
     edit_month_target = request.GET.get("edit_month_target") == "1"
     edit_period_target = request.GET.get("edit_period_target") == "1"
 
-    department_month_progress = _build_progress_card(
+    department_month_progress = build_progress_card(
         label="全体の月目標",
         actual_amount=department_month_actual_amount,
         target_amount=department_month_target_amount,
@@ -1508,11 +1012,11 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
             + int(department_month_totals.get("return_qr_amount") or 0)
         ),
     )
-    department_month_progress["contribution"] = _build_contribution_summary(
+    department_month_progress["contribution"] = build_contribution_summary(
         member_actual_amount=member_month_actual_amount,
         department_actual_amount=department_month_actual_amount,
     )
-    department_period_progress = _build_progress_card(
+    department_period_progress = build_progress_card(
         label="全体の路程目標",
         actual_amount=department_period_actual_amount,
         target_amount=department_period_target_amount,
@@ -1523,7 +1027,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
             + int(department_period_totals.get("return_qr_amount") or 0)
         ),
     )
-    department_period_progress["contribution"] = _build_contribution_summary(
+    department_period_progress["contribution"] = build_contribution_summary(
         member_actual_amount=member_period_actual_amount,
         department_actual_amount=department_period_actual_amount,
     )
@@ -1560,7 +1064,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "activity_trend": activity_trend,
         "department_month_progress": department_month_progress,
         "department_period_progress": department_period_progress,
-        "member_month_progress": _build_progress_card(
+        "member_month_progress": build_progress_card(
             label="個人の月目標",
             actual_amount=member_month_actual_amount,
             target_amount=int(member_month_target.target_amount if member_month_target else 0),
@@ -1571,7 +1075,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
                 + int(member_month_totals.get("return_qr_amount") or 0)
             ),
         ),
-        "member_period_progress": _build_progress_card(
+        "member_period_progress": build_progress_card(
             label="個人の路程目標",
             actual_amount=member_period_actual_amount,
             target_amount=int(member_period_target.target_amount if member_period_target else 0),
@@ -1639,7 +1143,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
             target_date__range=(scope.start_date, scope.end_date),
         ).order_by("-target_date", "-created_at")
     )
-    activity_trend = _build_member_activity_trend(
+    activity_trend = build_member_activity_trend(
         member=member,
         department=department,
         start_date=scope.start_date,
@@ -1659,12 +1163,12 @@ def _build_member_history_context(*, request, member, department, is_admin=False
         scope.end_date,
         include_adjustments=True,
     )
-    department_adjustment_amount = _sum_adjustment_amount(
+    department_adjustment_amount = sum_adjustment_amount(
         department=department,
         start_date=scope.start_date,
         end_date=scope.end_date,
     )
-    member_adjustment_amount = _sum_adjustment_amount(
+    member_adjustment_amount = sum_adjustment_amount(
         member=member,
         department=department,
         start_date=scope.start_date,
@@ -1686,7 +1190,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
     member_progress_cards = []
     if scope.scope == "month" and scope.month_start:
         department_target_amount = int(
-            _resolve_month_target_amounts_by_code(
+            resolve_month_target_amounts_by_code(
                 departments=[department],
                 target_month=scope.month_start,
             ).get(department.code)
@@ -1697,7 +1201,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
             department=department,
             target_month=scope.month_start,
         ).first()
-        department_card = _build_progress_card(
+        department_card = build_progress_card(
             label="全体の月目標",
             actual_amount=department_actual_amount,
             target_amount=department_target_amount,
@@ -1705,13 +1209,13 @@ def _build_member_history_context(*, request, member, department, is_admin=False
             base_actual_amount=max(department_actual_amount - department_adjustment_amount, 0),
             adjustment_amount=department_adjustment_amount,
         )
-        department_card["contribution"] = _build_contribution_summary(
+        department_card["contribution"] = build_contribution_summary(
             member_actual_amount=member_actual_amount,
             department_actual_amount=department_actual_amount,
         )
         department_progress_cards.append(department_card)
         member_progress_cards.append(
-            _build_progress_card(
+            build_progress_card(
                 label="個人の月目標",
                 actual_amount=member_actual_amount,
                 target_amount=int(member_target.target_amount if member_target else 0),
@@ -1722,7 +1226,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
         )
     elif scope.scope == "period" and scope.period:
         department_target_amount = int(
-            _resolve_period_target_amounts_by_code(
+            resolve_period_target_amounts_by_code(
                 departments=[department],
                 period=scope.period,
             ).get(department.code)
@@ -1733,7 +1237,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
             department=department,
             period=scope.period,
         ).first()
-        department_card = _build_progress_card(
+        department_card = build_progress_card(
             label="全体の路程目標",
             actual_amount=department_actual_amount,
             target_amount=department_target_amount,
@@ -1741,13 +1245,13 @@ def _build_member_history_context(*, request, member, department, is_admin=False
             base_actual_amount=max(department_actual_amount - department_adjustment_amount, 0),
             adjustment_amount=department_adjustment_amount,
         )
-        department_card["contribution"] = _build_contribution_summary(
+        department_card["contribution"] = build_contribution_summary(
             member_actual_amount=member_actual_amount,
             department_actual_amount=department_actual_amount,
         )
         department_progress_cards.append(department_card)
         member_progress_cards.append(
-            _build_progress_card(
+            build_progress_card(
                 label="個人の路程目標",
                 actual_amount=member_actual_amount,
                 target_amount=int(member_target.target_amount if member_target else 0),
@@ -1794,7 +1298,7 @@ def performance_index(request: HttpRequest) -> HttpResponse:
     paginator = Paginator(entries_queryset, 20)
     page_obj = paginator.get_page(request.GET.get("page") or 1)
     entries = list(page_obj.object_list)
-    adjustment_totals_map = _build_adjustment_totals_map(entries)
+    adjustment_totals_map = build_adjustment_totals_map(entries)
     entry_rows = []
     for entry in entries:
         key = (entry.member_id, entry.department_id, entry.entry_date)
