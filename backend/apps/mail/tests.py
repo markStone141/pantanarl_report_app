@@ -61,6 +61,7 @@ class MailManagementTests(TestCase):
         self.assertEqual(setting.client_id, "client-id")
         self.assertEqual(setting.client_secret, "client-secret")
         self.assertEqual(setting.refresh_token, "refresh-token")
+        self.assertTrue(setting.is_active)
 
     def test_mail_group_create_saves_member_links(self):
         response = self.client.post(

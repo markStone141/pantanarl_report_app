@@ -85,6 +85,7 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
                     new_value = settings_form.cleaned_data.get(secret_field)
                     if not new_value:
                         setattr(updated_setting, secret_field, existing_secret_values[secret_field])
+                updated_setting.is_active = True
                 updated_setting.save()
                 setting = updated_setting
                 settings_form = MailIntegrationSettingForm(instance=setting)
