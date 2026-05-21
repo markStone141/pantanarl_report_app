@@ -5,6 +5,7 @@ from django.utils import timezone
 from unittest.mock import patch
 
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.common.test_helpers import AppTestMixin
 
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction
 
@@ -15,17 +16,17 @@ from .services import MailSendError, record_transaction_mail_failure, send_trans
 User = get_user_model()
 
 
-class MailManagementTests(TestCase):
+class MailManagementTests(AppTestMixin, TestCase):
+    DEFAULT_PASSWORD = "pass1234"
+
     def setUp(self):
-        self.user = User.objects.create_user(username="mail-admin", password="pass1234", is_staff=True)
-        self.client.force_login(self.user)
-        self.department = Department.objects.create(code="UN", name="UN")
-        self.other_department = Department.objects.create(code="WV", name="WV")
-        self.member_one = Member.objects.create(name="Alice", email="alice@example.com")
-        self.member_two = Member.objects.create(name="Bob", email="bob@example.com")
-        self.member_three = Member.objects.create(name="Carol", email="carol@example.com")
-        MemberDepartment.objects.create(member=self.member_one, department=self.department)
-        MemberDepartment.objects.create(member=self.member_two, department=self.other_department)
+        self.user = self.create_user("mail-admin", is_staff=True)
+        self.login(self.user)
+        self.department = self.create_department("UN")
+        self.other_department = self.create_department("WV")
+        self.member_one = self.create_member(name="Alice", email="alice@example.com", department=self.department)
+        self.member_two = self.create_member(name="Bob", email="bob@example.com", department=self.other_department)
+        self.member_three = self.create_member(name="Carol", email="carol@example.com")
         MemberDepartment.objects.create(member=self.member_three, department=self.department)
         MemberDepartment.objects.create(member=self.member_three, department=self.other_department)
 

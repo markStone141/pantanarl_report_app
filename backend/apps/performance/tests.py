@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.common.test_helpers import AppTestMixin
 from apps.dairymetrics.models import (
     DepartmentDailyMetricSummary,
     MemberDailyMetricEntry,
@@ -20,13 +21,14 @@ from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetr
 User = get_user_model()
 
 
-class PerformanceManagementTests(TestCase):
+class PerformanceManagementTests(AppTestMixin, TestCase):
+    DEFAULT_PASSWORD = "pass1234"
+
     def setUp(self):
-        self.user = User.objects.create_user(username="perf-admin", password="pass1234", is_staff=True)
-        self.client.force_login(self.user)
-        self.department = Department.objects.create(code="UN", name="UN")
-        self.member = Member.objects.create(name="Alice", default_department=self.department)
-        MemberDepartment.objects.create(member=self.member, department=self.department)
+        self.user = self.create_user("perf-admin", is_staff=True)
+        self.login(self.user)
+        self.department = self.create_department("UN")
+        self.member = self.create_member(name="Alice", department=self.department)
 
     def test_performance_index_renders_final_actual_rows_with_adjustment_totals(self):
         entry = MemberDailyMetricEntry.objects.create(

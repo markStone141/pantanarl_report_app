@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.common.test_helpers import AppTestMixin
 from apps.mail.models import MailSendHistory, MailRecipientGroup
 from apps.targets.models import (
     DepartmentMonthTarget,
@@ -30,14 +31,18 @@ from .models import (
 )
 
 
-class DairyMetricsLoginTests(TestCase):
+class DairyMetricsLoginTests(AppTestMixin, TestCase):
+    DEFAULT_PASSWORD = "pass123"
+
     def setUp(self):
-        user_model = get_user_model()
-        self.user = user_model.objects.create_user(username="member1", password="pass123")
-        self.admin = user_model.objects.create_user(username="dm_admin", password="pass123", is_staff=True)
-        self.member = Member.objects.create(name="Member One", user=self.user)
-        self.department = Department.objects.create(code="UN", name="UN")
-        MemberDepartment.objects.create(member=self.member, department=self.department)
+        self.department = self.create_department("UN")
+        self.user, self.member = self.create_member_user(
+            username="member1",
+            password="pass123",
+            name="Member One",
+            department=self.department,
+        )
+        self.admin = self.create_user("dm_admin", password="pass123", is_staff=True)
 
     def test_member_can_login(self):
         response = self.client.post(
@@ -47,7 +52,7 @@ class DairyMetricsLoginTests(TestCase):
         self.assertRedirects(response, reverse("dairymetrics_dashboard"))
 
     def test_non_member_user_is_rejected(self):
-        get_user_model().objects.create_user(username="outsider", password="pass123")
+        self.create_user("outsider", password="pass123")
         response = self.client.post(
             reverse("dairymetrics_login"),
             {"login_id": "outsider", "password": "pass123"},
@@ -68,13 +73,26 @@ class DairyMetricsLoginTests(TestCase):
         self.assertRedirects(response, reverse("dairymetrics_admin_overview"))
 
 
-class DairyMetricsDashboardTests(TestCase):
+class DairyMetricsDashboardTests(AppTestMixin, TestCase):
+    DEFAULT_PASSWORD = "pass123"
+
     def setUp(self):
-        user_model = get_user_model()
-        self.user = user_model.objects.create_user(username="member2", password="pass123")
-        self.member = Member.objects.create(name="Member Two", user=self.user)
-        self.department = Department.objects.create(code="WV", name="WV")
-        MemberDepartment.objects.create(member=self.member, department=self.department)
+        self.department = self.create_department("WV")
+        self.user, self.member = self.create_member_user(
+            username="member2",
+            password="pass123",
+            name="Member Two",
+            department=self.department,
+        )
+
+    def create_dashboard_member(self, *, username: str, name: str, department=None):
+        user, member = self.create_member_user(
+            username=username,
+            password="pass123",
+            name=name,
+            department=department or self.department,
+        )
+        return user, member
 
     def test_dashboard_aggregates_entries_and_adjustments(self):
         teammate_user = get_user_model().objects.create_user(username="member2b", password="pass123")
@@ -2304,16 +2322,15 @@ class DairyMetricsDashboardTests(TestCase):
         self.assertContains(response, "800")
 
 
-class DairyMetricsAdminTests(TestCase):
+class DairyMetricsAdminTests(AppTestMixin, TestCase):
+    DEFAULT_PASSWORD = "pass123"
+
     def setUp(self):
-        user_model = get_user_model()
-        self.admin = user_model.objects.create_user(username="admin_user", password="pass123", is_staff=True)
-        self.member = Member.objects.create(name="Member Three")
-        self.member_wv = Member.objects.create(name="Member Four")
-        self.department = Department.objects.create(code="UN", name="UN")
-        self.department_wv = Department.objects.create(code="WV", name="WV")
-        MemberDepartment.objects.create(member=self.member, department=self.department)
-        MemberDepartment.objects.create(member=self.member_wv, department=self.department_wv)
+        self.admin = self.create_user("admin_user", password="pass123", is_staff=True)
+        self.department = self.create_department("UN")
+        self.department_wv = self.create_department("WV")
+        self.member = self.create_member(name="Member Three", department=self.department)
+        self.member_wv = self.create_member(name="Member Four", department=self.department_wv)
 
     def test_admin_overview_requires_staff(self):
         response = self.client.get(reverse("dairymetrics_admin_overview"))
@@ -3499,16 +3516,19 @@ class DairyMetricsAdminTests(TestCase):
         self.assertContains(response, 'name="compare_month" value="2026-02"', html=False)
 
 
-class DairyMetricsV2DemoTests(TestCase):
+class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
+    DEFAULT_PASSWORD = "pass123"
+
     def setUp(self):
-        user_model = get_user_model()
-        self.user = user_model.objects.create_user(username="metrics_member", password="pass123")
-        self.admin = user_model.objects.create_user(username="metrics_admin", password="pass123", is_staff=True)
-        self.member = Member.objects.create(name="石井", user=self.user)
-        self.teammate = Member.objects.create(name="片山")
-        self.department = Department.objects.create(code="UN", name="UN")
-        MemberDepartment.objects.create(member=self.member, department=self.department)
-        MemberDepartment.objects.create(member=self.teammate, department=self.department)
+        self.department = self.create_department("UN")
+        self.user, self.member = self.create_member_user(
+            username="metrics_member",
+            password="pass123",
+            name="石井",
+            department=self.department,
+        )
+        self.admin = self.create_user("metrics_admin", password="pass123", is_staff=True)
+        self.teammate = self.create_member(name="片山", department=self.department)
         self.amount_metric = TargetMetric.objects.create(
             department=self.department,
             code="amount",
