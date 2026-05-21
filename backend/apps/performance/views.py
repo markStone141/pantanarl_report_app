@@ -904,6 +904,49 @@ def _build_member_dashboard_entry_rows(*, member, department, month_start, month
     return entry_rows
 
 
+def _build_member_dashboard_detail_context(
+    *,
+    member,
+    department,
+    entry_rows,
+    adjustment_rows,
+    is_admin=False,
+    readonly_member_view=False,
+    selected_date=None,
+    reset_url="",
+):
+    if selected_date is not None:
+        detail_heading = f"{selected_date:%Y/%m/%d} の実績"
+        detail_description = "グラフで選択した1日分の日次実績です。"
+        adjustment_heading = f"{selected_date:%Y/%m/%d} の補正実績"
+    else:
+        recent_start = timezone.localdate() - timedelta(days=29)
+        recent_end = timezone.localdate()
+        detail_heading = "直近30日の実績"
+        detail_description = f"{recent_start:%Y/%m/%d} - {recent_end:%Y/%m/%d} の日次実績です。それ以前は実績閲覧で確認します。"
+        adjustment_heading = "直近30日の補正実績"
+    if readonly_member_view:
+        history_url = reverse("performance_member_history_insight", args=[member.id, department.id])
+    elif is_admin:
+        history_url = reverse("performance_member_history_detail", args=[member.id, department.id])
+    else:
+        history_url = reverse("performance_member_history")
+    return {
+        "member": member,
+        "department": department,
+        "recent_entry_rows": entry_rows,
+        "recent_adjustment_rows": adjustment_rows,
+        "detail_heading": detail_heading,
+        "detail_description": detail_description,
+        "detail_adjustment_heading": adjustment_heading,
+        "detail_reset_url": reset_url,
+        "detail_history_url": history_url,
+        "show_reset_detail": selected_date is not None,
+        "is_admin_view": is_admin,
+        "readonly_member_view": readonly_member_view,
+    }
+
+
 def _build_member_dashboard_context(*, request, member, department, is_admin=False):
     today = timezone.localdate()
     selected_month = _parse_selected_month(request.GET.get("month"), default=today)
@@ -1062,6 +1105,20 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         department_actual_amount=department_period_actual_amount,
     )
 
+    detail_context = _build_member_dashboard_detail_context(
+        member=member,
+        department=department,
+        entry_rows=recent_entry_rows,
+        adjustment_rows=recent_adjustment_rows,
+        is_admin=is_admin,
+        readonly_member_view=False,
+        reset_url=(
+            reverse("performance_member_detail", args=[member.id, department.id])
+            if is_admin
+            else reverse("performance_member_dashboard")
+        ),
+    )
+
     return {
         "nav_items": _performance_member_nav_items(is_admin=is_admin),
         "member": member,
@@ -1134,6 +1191,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "edit_period_target": edit_period_target,
         "is_admin_view": is_admin,
         "readonly_member_view": False,
+        **detail_context,
     }
 
 
@@ -1522,6 +1580,57 @@ def performance_member_history_detail(request: HttpRequest, member_id: int, depa
     return render(request, "performance/member_history.html", context)
 
 
+def _render_member_day_detail_response(
+    *,
+    request: HttpRequest,
+    member,
+    department,
+    is_admin=False,
+    readonly_member_view=False,
+):
+    selected_date = _parse_selected_date(request.GET.get("date"))
+    if selected_date is None:
+        raise Http404
+    entry_rows = _build_member_dashboard_entry_rows(
+        member=member,
+        department=department,
+        month_start=selected_date,
+        month_end=selected_date,
+    )
+    adjustment_rows = list(
+        MetricAdjustment.objects.filter(
+            member=member,
+            department=department,
+            target_date=selected_date,
+        ).order_by("-target_date", "-created_at")
+    )
+    reset_url = (
+        reverse("performance_member_insight", args=[member.id, department.id])
+        if readonly_member_view
+        else reverse("performance_member_detail", args=[member.id, department.id])
+        if is_admin
+        else reverse("performance_member_dashboard")
+    )
+    context = _build_member_dashboard_detail_context(
+        member=member,
+        department=department,
+        entry_rows=entry_rows,
+        adjustment_rows=adjustment_rows,
+        is_admin=is_admin,
+        readonly_member_view=readonly_member_view,
+        selected_date=selected_date,
+        reset_url=reset_url,
+    )
+    return render(request, "performance/partials/member_day_detail_cards.html", context)
+
+
+@require_performance_roles(ROLE_ADMIN)
+def performance_member_detail_day_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
+    member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
+    department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
+    return _render_member_day_detail_response(request=request, member=member, department=department, is_admin=True)
+
+
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_insight(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
@@ -1533,7 +1642,21 @@ def performance_member_insight(request: HttpRequest, member_id: int, department_
         is_admin=request.user.is_staff or request.user.is_superuser,
     )
     context["readonly_member_view"] = True
+    context["detail_history_url"] = reverse("performance_member_history_insight", args=[member.id, department.id])
     return render(request, "performance/member_detail.html", context)
+
+
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
+def performance_member_insight_day_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
+    member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
+    department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
+    return _render_member_day_detail_response(
+        request=request,
+        member=member,
+        department=department,
+        is_admin=request.user.is_staff or request.user.is_superuser,
+        readonly_member_view=True,
+    )
 
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
@@ -1588,6 +1711,19 @@ def performance_member_dashboard(request: HttpRequest) -> HttpResponse:
                 return redirect(f"{reverse('performance_member_dashboard')}?month={selected_month:%Y-%m}&saved=target")
     context = _build_member_dashboard_context(request=request, member=member, department=department, is_admin=False)
     return render(request, "performance/member_detail.html", context)
+
+
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
+def performance_member_dashboard_day_detail(request: HttpRequest) -> HttpResponse:
+    if request.user.is_staff or request.user.is_superuser:
+        raise Http404
+    member = getattr(request.user, "member_profile", None)
+    if member is None:
+        raise Http404
+    department = _resolve_member_card_department(member=member)
+    if department is None:
+        raise Http404
+    return _render_member_day_detail_response(request=request, member=member, department=department, is_admin=False)
 
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)

@@ -1,0 +1,117 @@
+<section class="card mt-16">
+  <div class="row">
+    <div>
+      <h3>{{ detail_heading }}</h3>
+      <div class="muted">{{ detail_description }}</div>
+    </div>
+    {% if show_reset_detail %}
+    <a class="btn-inline" href="{{ detail_reset_url }}">直近30日に戻す</a>
+    {% else %}
+    <a class="btn-inline" href="{{ detail_history_url }}">実績閲覧へ</a>
+    {% endif %}
+  </div>
+  {% if recent_entry_rows %}
+  <div class="table-scroll mt-12">
+    <table class="mobile-card-table">
+      <thead>
+        <tr>
+          <th>日付</th>
+          <th>件数</th>
+          <th>金額</th>
+          <th>AP / CM</th>
+          <th>状態</th>
+          <th>詳細</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in recent_entry_rows %}
+        <tr>
+          <td data-label="日付">{{ row.entry.entry_date|date:"Y/m/d" }}</td>
+          <td data-label="件数">{{ row.count_text }}</td>
+          <td data-label="金額">{{ row.amount_text }}</td>
+          <td data-label="AP / CM">{{ row.entry.approach_count }} / {{ row.entry.communication_count }}</td>
+          <td data-label="状態">
+            <span class="badge">{% if row.entry.activity_closed %}活動終了{% else %}活動中{% endif %}</span>
+          </td>
+          <td data-label="詳細">
+            <details>
+              <summary>決済一覧</summary>
+              {% if row.transactions %}
+              <div class="grid mt-10">
+                {% for tx in row.transactions %}
+                <div class="metric-card">
+                  <div class="row">
+                    <strong>{{ tx.support_amount|floatformat:0 }}円</strong>
+                    <span class="muted">{{ tx.location|default:"場所未設定" }}</span>
+                  </div>
+                  <div class="muted mt-6">{{ tx.get_age_band_display }} / {{ tx.get_gender_display }} / {{ tx.get_nationality_type_display }}</div>
+                  {% if tx.comment %}
+                  <div class="mt-8">{{ tx.comment }}</div>
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <p class="muted mt-10">決済明細はありません。</p>
+              {% endif %}
+            </details>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted mt-12">表示できる日次実績はありません。</p>
+  {% endif %}
+</section>
+
+<section class="card mt-16">
+  <h3>{{ detail_adjustment_heading }}</h3>
+  {% if recent_adjustment_rows %}
+  <div class="table-scroll mt-12">
+    <table class="mobile-card-table">
+      <thead>
+        <tr>
+          <th>対象日</th>
+          <th>現場</th>
+          <th>種別</th>
+          <th>件数</th>
+          <th>金額</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for adjustment in recent_adjustment_rows %}
+        <tr>
+          <td data-label="対象日">{{ adjustment.target_date|date:"Y/m/d" }}</td>
+          <td data-label="現場">{{ adjustment.location_name|default:"-" }}</td>
+          <td data-label="種別">{{ adjustment.get_source_type_display }}</td>
+          <td data-label="件数">
+            {% if department.code == "WV" %}
+            CS {{ adjustment.cs_count }} / 難民 {{ adjustment.refugee_count }}
+            {% elif adjustment.source_type == "postal" %}
+            {{ adjustment.return_postal_count }}件
+            {% elif adjustment.source_type == "qr" %}
+            {{ adjustment.return_qr_count }}件
+            {% else %}
+            {{ adjustment.result_count }}件
+            {% endif %}
+          </td>
+          <td data-label="金額">
+            {% if adjustment.source_type == "postal" %}
+            {{ adjustment.return_postal_amount|default:0 }}円
+            {% elif adjustment.source_type == "qr" %}
+            {{ adjustment.return_qr_amount|default:0 }}円
+            {% else %}
+            {{ adjustment.support_amount|default:0 }}円
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted mt-12">表示できる補正実績はありません。</p>
+  {% endif %}
+</section>

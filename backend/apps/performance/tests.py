@@ -768,8 +768,122 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
             response.context["activity_trend"]["labels"],
             [adjustment_only_day.strftime("%m/%d"), entry_day.strftime("%m/%d")],
         )
+        self.assertEqual(
+            response.context["activity_trend"]["dates"],
+            [adjustment_only_day.isoformat(), entry_day.isoformat()],
+        )
         self.assertEqual(response.context["activity_trend"]["amounts"], [1500, 3000])
         self.assertEqual(response.context["activity_trend"]["counts"], [1, 1])
+
+    def test_performance_member_dashboard_day_detail_returns_selected_day_rows(self):
+        today = timezone.localdate()
+        selected_day = today - timedelta(days=1)
+        other_day = today - timedelta(days=2)
+        selected_entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=selected_day,
+            result_count=1,
+            support_amount=3000,
+            approach_count=5,
+            communication_count=2,
+            activity_closed=True,
+        )
+        other_entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=other_day,
+            result_count=2,
+            support_amount=6000,
+            approach_count=8,
+            communication_count=4,
+            activity_closed=True,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=selected_entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷",
+            comment="選択日の決済",
+        )
+        MemberMetricTransaction.objects.create(
+            entry=other_entry,
+            support_amount=6000,
+            age_band=MemberMetricTransaction.AGE_BAND_THIRTIES,
+            gender=MemberMetricTransaction.GENDER_MALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="池袋",
+            comment="別日の決済",
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=selected_day,
+            source_type=MetricAdjustment.SOURCE_QR,
+            return_qr_count=1,
+            return_qr_amount=1200,
+            location_name="現場A",
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=other_day,
+            source_type=MetricAdjustment.SOURCE_POSTAL,
+            return_postal_count=1,
+            return_postal_amount=700,
+            location_name="現場B",
+        )
+
+        response = self.client.get(
+            reverse("performance_member_detail_day_detail", args=[self.member.id, self.department.id]),
+            {"date": selected_day.isoformat()},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"{selected_day:%Y/%m/%d} の実績")
+        self.assertContains(response, "選択日の決済")
+        self.assertContains(response, "現場A")
+        self.assertContains(response, "1200円")
+        self.assertNotContains(response, "別日の決済")
+        self.assertNotContains(response, "現場B")
+
+    def test_performance_member_dashboard_day_detail_uses_logged_in_member(self):
+        self.client.logout()
+        report_user = User.objects.create_user(username="perf-member-day-detail", password="pass1234", is_staff=False)
+        self.member.user = report_user
+        self.member.save(update_fields=["user"])
+        selected_day = timezone.localdate() - timedelta(days=1)
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=selected_day,
+            result_count=1,
+            support_amount=2500,
+            activity_closed=True,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=2500,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="新宿",
+            comment="本人日次",
+        )
+        self.client.force_login(report_user)
+
+        response = self.client.get(
+            reverse("performance_member_dashboard_day_detail"),
+            {"date": selected_day.isoformat()},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "本人日次")
+        self.assertContains(response, reverse("performance_member_dashboard"))
 
     def test_performance_member_detail_shows_target_forms_when_edit_requested(self):
         today = timezone.localdate()

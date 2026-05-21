@@ -100,6 +100,7 @@ def build_member_activity_trend(*, member, department, start_date=None, end_date
         latest_dates = latest_dates[-120:]
     if not latest_dates:
         return {
+            "dates": [],
             "labels": [],
             "amounts": [],
             "counts": [],
@@ -193,6 +194,7 @@ def build_member_activity_trend(*, member, department, start_date=None, end_date
         target_amounts.append(target_amount)
         rate_values.append(round((amount_value / target_amount) * 100, 1) if target_amount > 0 else None)
     return {
+        "dates": [activity_date.isoformat() for activity_date in latest_dates],
         "labels": labels,
         "amounts": amounts,
         "counts": counts,
@@ -223,6 +225,7 @@ def build_overall_activity_trend(*, department=None, start_date=None, end_date=N
         latest_dates.reverse()
     if not latest_dates:
         return {
+            "dates": [],
             "labels": [],
             "amounts": [],
             "counts": [],
@@ -314,6 +317,7 @@ def build_overall_activity_trend(*, department=None, start_date=None, end_date=N
         rate_values.append(round((amount_value / target_amount) * 100, 1) if target_amount > 0 else None)
 
     return {
+        "dates": [activity_date.isoformat() for activity_date in latest_dates],
         "labels": labels,
         "amounts": amounts,
         "counts": counts,

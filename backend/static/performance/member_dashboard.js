@@ -102,6 +102,7 @@
   }
 
   const allLabels = trendData.labels.slice();
+  const allDates = (trendData.dates || []).slice();
   const allAmounts = trendData.amounts.slice();
   const allCounts = trendData.counts.slice();
   const allAdjustmentAmounts = (trendData.adjustment_amounts || []).slice();
@@ -113,6 +114,8 @@
   const minVisibleCount = Math.min(10, allLabels.length);
   let visibleCount = Math.min(trendData.default_visible_count || 30, allLabels.length);
   let currentMode = "amount";
+  const dayDetailContainer = document.getElementById("performance-day-detail-container");
+  let dayDetailRequestId = 0;
 
   const amountGradient = context.createLinearGradient(0, 0, 0, 240);
   amountGradient.addColorStop(0, "rgba(39, 123, 211, 0.92)");
@@ -120,6 +123,14 @@
 
   function sliceLatest(values) {
     return values.slice(Math.max(0, values.length - visibleCount));
+  }
+
+  function visibleDateAt(index) {
+    const visibleDates = sliceLatest(allDates);
+    if (index < 0 || index >= visibleDates.length) {
+      return "";
+    }
+    return visibleDates[index] || "";
   }
 
   function sumValues(values) {
@@ -310,6 +321,43 @@
             },
           },
         },
+      },
+      onClick(event, elements) {
+        if (!dayDetailContainer || !dayDetailContainer.dataset.dayDetailUrl || !elements.length) {
+          return;
+        }
+        const selectedDate = visibleDateAt(elements[0].index);
+        if (!selectedDate) {
+          return;
+        }
+        const requestId = dayDetailRequestId + 1;
+        dayDetailRequestId = requestId;
+        dayDetailContainer.classList.add("is-loading");
+        const separator = dayDetailContainer.dataset.dayDetailUrl.indexOf("?") === -1 ? "?" : "&";
+        fetch(dayDetailContainer.dataset.dayDetailUrl + separator + "date=" + encodeURIComponent(selectedDate), {
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          credentials: "same-origin",
+        })
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error("failed");
+            }
+            return response.text();
+          })
+          .then(function (html) {
+            if (requestId !== dayDetailRequestId) {
+              return;
+            }
+            dayDetailContainer.innerHTML = html;
+          })
+          .catch(function () {})
+          .finally(function () {
+            if (requestId === dayDetailRequestId) {
+              dayDetailContainer.classList.remove("is-loading");
+            }
+          });
       },
       scales: {
         x: {
