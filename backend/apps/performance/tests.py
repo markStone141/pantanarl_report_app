@@ -954,6 +954,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         )
         self.assertContains(response, reverse("performance_member_insight", args=[teammate.id, self.department.id]))
         self.assertContains(response, reverse("performance_member_history_insight", args=[teammate.id, self.department.id]))
+        self.assertNotContains(response, "このメンバーの Metrics V2")
         self.assertNotContains(response, "月目標を保存")
         self.assertNotContains(response, "路程目標を保存")
 
