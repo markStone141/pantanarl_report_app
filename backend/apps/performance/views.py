@@ -116,28 +116,42 @@ def _performance_member_nav_items(*, is_admin=False):
 
 
 def _performance_member_page_nav_links(*, member, department, is_admin=False, readonly_member_view=False):
-    if readonly_member_view:
-        return [
-            {
-                "href": reverse("performance_member_insight", args=[member.id, department.id]),
-                "label": "実績管理ダッシュボード",
-            },
-            {
-                "href": reverse("performance_member_history_insight", args=[member.id, department.id]),
-                "label": "実績閲覧",
-            },
-        ]
+    links = []
     if is_admin:
-        return [
+        links.append(
             {
-                "href": reverse("performance_member_detail", args=[member.id, department.id]),
-                "label": "実績管理ダッシュボード",
-            },
-            {
-                "href": reverse("performance_member_history_detail", args=[member.id, department.id]),
-                "label": "実績閲覧",
-            },
-        ]
+                "href": reverse("performance_index"),
+                "label": "管理者用ダッシュボード",
+            }
+        )
+    if readonly_member_view:
+        links.extend(
+            [
+                {
+                    "href": reverse("performance_member_insight", args=[member.id, department.id]),
+                    "label": "実績管理ダッシュボード",
+                },
+                {
+                    "href": reverse("performance_member_history_insight", args=[member.id, department.id]),
+                    "label": "実績閲覧",
+                },
+            ]
+        )
+        return links
+    if is_admin:
+        links.extend(
+            [
+                {
+                    "href": reverse("performance_member_detail", args=[member.id, department.id]),
+                    "label": "実績管理ダッシュボード",
+                },
+                {
+                    "href": reverse("performance_member_history_detail", args=[member.id, department.id]),
+                    "label": "実績閲覧",
+                },
+            ]
+        )
+        return links
     return [
         {
             "href": reverse("performance_member_dashboard"),

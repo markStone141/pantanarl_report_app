@@ -29,8 +29,13 @@
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       {% if is_admin %}
-      <a href="{% url 'performance_index' %}">実績管理ダッシュボード</a>
+      <a href="{% url 'performance_index' %}">管理者用ダッシュボード</a>
+      {% if selected_member %}
+      <a href="{% url 'performance_member_insight' selected_member.id selected_department.id %}">実績管理ダッシュボード</a>
+      <a href="{% url 'performance_member_history_insight' selected_member.id selected_department.id %}">実績閲覧</a>
+      {% else %}
       <a href="{% url 'performance_history' %}">過去実績閲覧</a>
+      {% endif %}
       <a href="{% url 'dairymetrics_metrics_v2_demo' %}">Metrics V2</a>
       <a href="{% url 'dashboard_index' %}">総合管理者ページ</a>
       {% else %}

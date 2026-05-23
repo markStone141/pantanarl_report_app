@@ -3668,7 +3668,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "UN の全体分析デモ")
         self.assertContains(response, "ランキングモード")
         self.assertContains(response, "属性別の平均金額")
-        self.assertContains(response, "実績管理ダッシュボード")
+        self.assertContains(response, "管理者用ダッシュボード")
         self.assertContains(response, "過去実績閲覧")
         self.assertContains(response, "総合管理者ページ")
         self.assertNotContains(response, "決済入力")
@@ -3685,6 +3685,9 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["selected_member"], self.member)
         self.assertContains(response, f"{self.member.name}さん / {self.department.name} の分析デモ")
+        self.assertContains(response, reverse("performance_index"))
+        self.assertContains(response, reverse("performance_member_insight", args=[self.member.id, self.department.id]))
+        self.assertContains(response, reverse("performance_member_history_insight", args=[self.member.id, self.department.id]))
 
     def test_metrics_v2_demo_defaults_admin_department_to_un(self):
         other_department = Department.objects.create(code="WV", name="WV")

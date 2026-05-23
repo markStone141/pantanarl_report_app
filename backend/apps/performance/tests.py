@@ -961,6 +961,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         response = self.client.get(reverse("performance_member_detail", args=[self.member.id, self.department.id]))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("performance_index"))
         self.assertContains(response, reverse("performance_member_detail", args=[self.member.id, self.department.id]))
         self.assertContains(response, reverse("performance_member_history_detail", args=[self.member.id, self.department.id]))
 
