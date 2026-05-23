@@ -54,18 +54,58 @@ class MemberDailyMetricEntry(models.Model):
         totals = self.transactions.aggregate(
             total_count=models.Count("id"),
             total_amount=models.Sum("support_amount"),
+            total_cs=models.Sum(
+                models.Case(
+                    models.When(
+                        wv_result_type=MemberMetricTransaction.WV_RESULT_CS,
+                        then=1,
+                    ),
+                    default=0,
+                    output_field=models.IntegerField(),
+                )
+            ),
+            total_refugee=models.Sum(
+                models.Case(
+                    models.When(
+                        wv_result_type=MemberMetricTransaction.WV_RESULT_REFUGEE,
+                        then=1,
+                    ),
+                    default=0,
+                    output_field=models.IntegerField(),
+                )
+            ),
         )
         self.result_count = int(totals["total_count"] or 0)
         self.support_amount = int(totals["total_amount"] or 0)
+        if self.department.code == "WV":
+            self.cs_count = int(totals["total_cs"] or 0)
+            self.refugee_count = int(totals["total_refugee"] or 0)
         if save:
-            self.save(update_fields=["result_count", "support_amount", "updated_at"])
+            update_fields = ["result_count", "support_amount", "updated_at"]
+            if self.department.code == "WV":
+                update_fields.extend(["cs_count", "refugee_count"])
+            self.save(update_fields=update_fields)
         return self.result_count, self.support_amount
 
-    def apply_transaction_delta(self, *, count_delta: int = 0, amount_delta: int = 0, save: bool = True) -> tuple[int, int]:
+    def apply_transaction_delta(
+        self,
+        *,
+        count_delta: int = 0,
+        amount_delta: int = 0,
+        cs_delta: int = 0,
+        refugee_delta: int = 0,
+        save: bool = True,
+    ) -> tuple[int, int]:
         self.result_count = max(int(self.result_count or 0) + int(count_delta or 0), 0)
         self.support_amount = max(int(self.support_amount or 0) + int(amount_delta or 0), 0)
+        if self.department.code == "WV":
+            self.cs_count = max(int(self.cs_count or 0) + int(cs_delta or 0), 0)
+            self.refugee_count = max(int(self.refugee_count or 0) + int(refugee_delta or 0), 0)
         if save:
-            self.save(update_fields=["result_count", "support_amount", "updated_at"])
+            update_fields = ["result_count", "support_amount", "updated_at"]
+            if self.department.code == "WV":
+                update_fields.extend(["cs_count", "refugee_count"])
+            self.save(update_fields=update_fields)
         return self.result_count, self.support_amount
 
 
@@ -205,6 +245,12 @@ class MemberMetricTransaction(models.Model):
         (NATIONALITY_DOMESTIC, "国内"),
         (NATIONALITY_OVERSEAS, "海外"),
     ]
+    WV_RESULT_CS = "cs"
+    WV_RESULT_REFUGEE = "refugee"
+    WV_RESULT_TYPE_CHOICES = [
+        (WV_RESULT_CS, "CS"),
+        (WV_RESULT_REFUGEE, "難民"),
+    ]
 
     entry = models.ForeignKey(
         MemberDailyMetricEntry,
@@ -216,6 +262,7 @@ class MemberMetricTransaction(models.Model):
     is_student = models.BooleanField(default=False)
     gender = models.CharField(max_length=16, choices=GENDER_CHOICES)
     nationality_type = models.CharField(max_length=16, choices=NATIONALITY_CHOICES)
+    wv_result_type = models.CharField(max_length=16, choices=WV_RESULT_TYPE_CHOICES, blank=True)
     location = models.CharField(max_length=128, blank=True)
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -228,8 +275,28 @@ class MemberMetricTransaction(models.Model):
         return f"{self.entry} #{self.pk or 'new'}"
 
     @staticmethod
-    def _apply_entry_delta(*, entry, count_delta, amount_delta):
-        entry.apply_transaction_delta(count_delta=count_delta, amount_delta=amount_delta)
+    def _wv_count_deltas(*, entry, result_type, count_delta):
+        if entry.department.code != "WV":
+            return 0, 0
+        if result_type == MemberMetricTransaction.WV_RESULT_CS:
+            return count_delta, 0
+        if result_type == MemberMetricTransaction.WV_RESULT_REFUGEE:
+            return 0, count_delta
+        return 0, 0
+
+    @classmethod
+    def _apply_entry_delta(cls, *, entry, count_delta, amount_delta, result_type):
+        cs_delta, refugee_delta = cls._wv_count_deltas(
+            entry=entry,
+            result_type=result_type,
+            count_delta=count_delta,
+        )
+        entry.apply_transaction_delta(
+            count_delta=count_delta,
+            amount_delta=amount_delta,
+            cs_delta=cs_delta,
+            refugee_delta=refugee_delta,
+        )
         summary = DepartmentDailyMetricSummary.get_or_create_for_entry(entry=entry)
         summary.apply_transaction_delta(
             count_delta=count_delta,
@@ -240,35 +307,81 @@ class MemberMetricTransaction(models.Model):
     def save(self, *args, **kwargs):
         old_entry_id = None
         old_support_amount = 0
+        old_result_type = ""
         if self.pk:
             previous = type(self).objects.filter(pk=self.pk).select_related("entry", "entry__member", "entry__department").first()
             if previous:
                 old_entry_id = previous.entry_id
                 old_support_amount = int(previous.support_amount or 0)
+                old_result_type = previous.wv_result_type or ""
 
         with transaction.atomic():
             super().save(*args, **kwargs)
             new_support_amount = int(self.support_amount or 0)
+            new_result_type = self.wv_result_type or ""
             if old_entry_id is None:
-                self._apply_entry_delta(entry=self.entry, count_delta=1, amount_delta=new_support_amount)
+                self._apply_entry_delta(
+                    entry=self.entry,
+                    count_delta=1,
+                    amount_delta=new_support_amount,
+                    result_type=new_result_type,
+                )
                 return
 
             if old_entry_id == self.entry_id:
                 amount_delta = new_support_amount - old_support_amount
-                if amount_delta:
-                    self._apply_entry_delta(entry=self.entry, count_delta=0, amount_delta=amount_delta)
+                if amount_delta or old_result_type != new_result_type:
+                    old_cs_delta, old_refugee_delta = self._wv_count_deltas(
+                        entry=self.entry,
+                        result_type=old_result_type,
+                        count_delta=-1,
+                    )
+                    new_cs_delta, new_refugee_delta = self._wv_count_deltas(
+                        entry=self.entry,
+                        result_type=new_result_type,
+                        count_delta=1,
+                    )
+                    self.entry.apply_transaction_delta(
+                        count_delta=0,
+                        amount_delta=amount_delta,
+                        cs_delta=old_cs_delta + new_cs_delta,
+                        refugee_delta=old_refugee_delta + new_refugee_delta,
+                    )
+                    if amount_delta:
+                        summary = DepartmentDailyMetricSummary.get_or_create_for_entry(entry=self.entry)
+                        summary.apply_transaction_delta(
+                            count_delta=0,
+                            amount_delta=amount_delta,
+                            updated_by=self.entry.member,
+                        )
                 return
 
             old_entry = MemberDailyMetricEntry.objects.select_related("member", "department").get(pk=old_entry_id)
-            self._apply_entry_delta(entry=old_entry, count_delta=-1, amount_delta=-old_support_amount)
-            self._apply_entry_delta(entry=self.entry, count_delta=1, amount_delta=new_support_amount)
+            self._apply_entry_delta(
+                entry=old_entry,
+                count_delta=-1,
+                amount_delta=-old_support_amount,
+                result_type=old_result_type,
+            )
+            self._apply_entry_delta(
+                entry=self.entry,
+                count_delta=1,
+                amount_delta=new_support_amount,
+                result_type=new_result_type,
+            )
 
     def delete(self, *args, **kwargs):
         entry = self.entry
         support_amount = int(self.support_amount or 0)
+        result_type = self.wv_result_type or ""
         with transaction.atomic():
             super().delete(*args, **kwargs)
-            self._apply_entry_delta(entry=entry, count_delta=-1, amount_delta=-support_amount)
+            self._apply_entry_delta(
+                entry=entry,
+                count_delta=-1,
+                amount_delta=-support_amount,
+                result_type=result_type,
+            )
 
 
 class MetricAdjustment(models.Model):

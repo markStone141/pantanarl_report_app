@@ -76,6 +76,46 @@ def get_or_create_department_daily_summary(*, department, entry_date, member):
     return summary
 
 
+def is_wv_department(department_or_code) -> bool:
+    if not department_or_code:
+        return False
+    if hasattr(department_or_code, "code"):
+        return department_or_code.code == "WV"
+    return department_or_code == "WV"
+
+
+def entry_total_count(entry) -> int:
+    if not entry:
+        return 0
+    if is_wv_department(entry.department):
+        total_count = int(entry.cs_count or 0) + int(entry.refugee_count or 0)
+        return total_count or int(entry.result_count or 0)
+    return int(entry.result_count or 0)
+
+
+def entry_count_breakdown_text(entry) -> str:
+    if not entry:
+        return "0件"
+    if is_wv_department(entry.department):
+        cs_count = int(entry.cs_count or 0)
+        refugee_count = int(entry.refugee_count or 0)
+        total_count = cs_count + refugee_count
+        if total_count == 0 and int(entry.result_count or 0) > 0:
+            total_count = int(entry.result_count or 0)
+        return f"CS {cs_count} / 難民 {refugee_count} / 合計 {total_count}"
+    return f"{int(entry.result_count or 0)}件"
+
+
+def transaction_result_type_label(transaction_obj) -> str:
+    if not transaction_obj or not is_wv_department(transaction_obj.entry.department):
+        return "会員"
+    if transaction_obj.wv_result_type == transaction_obj.WV_RESULT_REFUGEE:
+        return "難民"
+    if transaction_obj.wv_result_type == transaction_obj.WV_RESULT_CS:
+        return "CS"
+    return "未分類"
+
+
 def transaction_mail_status(transaction_obj):
     latest_history = transaction_obj.mail_send_histories.order_by("-last_attempt_at", "-sent_at", "-created_at", "-id").first()
     if latest_history and latest_history.status == MailSendHistory.STATUS_FAILED:
@@ -104,11 +144,7 @@ def build_v2_department_activity_rows(*, department, entry_date):
         .order_by("-updated_at", "member__name")
     )
     for today_entry in entries:
-        count_value = (
-            int(today_entry.cs_count or 0) + int(today_entry.refugee_count or 0)
-            if department.code == "WV"
-            else int(today_entry.result_count or 0)
-        )
+        count_value = entry_total_count(today_entry)
         rows.append(
             {
                 "member_name": today_entry.member.name,
@@ -119,6 +155,7 @@ def build_v2_department_activity_rows(*, department, entry_date):
                 "updated_label": timezone.localtime(today_entry.updated_at).strftime("%H:%M"),
                 "department_name": department.name,
                 "count_value": count_value,
+                "count_label": entry_count_breakdown_text(today_entry),
                 "amount_value": int(today_entry.support_amount or 0),
                 "location_name": today_entry.location_name or "",
             }
@@ -211,14 +248,20 @@ def get_month_target_amount(*, target_month, department):
 
 def build_transaction_mail_preview(*, member, department_code, transaction_obj, progress_cards):
     personal_card, department_card, period_card, month_card = progress_cards
+    result_type_label = transaction_result_type_label(transaction_obj)
     subject = (
         f"{transaction_obj.entry.entry_date.month}/{transaction_obj.entry.entry_date.day}"
         f"{member.name}です({department_code or 'UN①'})"
     )
+    result_line = (
+        f"{result_type_label}1件 {transaction_obj.support_amount:,}円"
+        if is_wv_department(transaction_obj.entry.department)
+        else f"会員1名 {transaction_obj.support_amount:,}円"
+    )
     body = "\n".join(
         [
             department_code or "",
-            f"会員1名 {transaction_obj.support_amount:,}円",
+            result_line,
             f"日目まで {department_card['remaining_amount']:,}円",
             f"路目まで {period_card['remaining_amount']:,}円",
             f"月目まで {month_card['remaining_amount']:,}円",

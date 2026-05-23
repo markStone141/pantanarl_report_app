@@ -32,12 +32,16 @@ from .services.entry_v2 import (
     build_transaction_mail_preview,
     build_v2_department_activity_rows,
     build_v2_redirect_url,
+    entry_count_breakdown_text,
+    entry_total_count,
     get_default_mail_group,
     get_month_target_amount,
     get_or_create_department_daily_summary,
     get_period_target_amount,
     get_previous_department_target_amount,
     get_previous_personal_targets,
+    is_wv_department,
+    transaction_result_type_label,
     transaction_mail_status,
 )
 from .services.metrics_v2 import build_metrics_v2_dashboard_payload, resolve_metrics_v2_scope
@@ -164,10 +168,7 @@ def _build_entry_v2_demo_context(*, member, selected_department, entry_date):
     initial_count = 0
     initial_amount = 0
     if existing_entry:
-        if existing_entry.department.code == "WV":
-            initial_count = int(existing_entry.cs_count or 0) + int(existing_entry.refugee_count or 0)
-        else:
-            initial_count = int(existing_entry.result_count or 0)
+        initial_count = entry_total_count(existing_entry)
         initial_amount = int(existing_entry.support_amount or 0)
     return {
         "member": member,
@@ -271,7 +272,7 @@ def _build_entry_v2_transaction_demo_context(
 
     personal_target_count = int(getattr(existing_entry, "daily_target_count", 0) or 0)
     personal_target_amount = int(getattr(existing_entry, "daily_target_amount", 0) or 0)
-    personal_total_count = int(getattr(existing_entry, "result_count", 0) or 0)
+    personal_total_count = entry_total_count(existing_entry)
     personal_total_amount = int(getattr(existing_entry, "support_amount", 0) or 0)
     current_location_name = getattr(existing_entry, "location_name", "") or ""
     department_day_total = int(getattr(department_summary, "support_amount", 0) or 0)
@@ -405,6 +406,8 @@ def _build_entry_v2_transaction_demo_context(
                     "gender_value": tx.gender,
                     "nationality": tx.get_nationality_type_display(),
                     "nationality_value": tx.nationality_type,
+                    "result_type_label": transaction_result_type_label(tx),
+                    "result_type_value": tx.wv_result_type,
                     "location": tx.location,
                     "comment": tx.comment,
                     "mail_status": mail_status,
@@ -481,8 +484,10 @@ def _build_entry_v2_transaction_demo_context(
         }
     )
     transaction_form = transaction_form or DairymetricsV2TransactionForm(
+        department=selected_department_obj,
         initial={
             "support_amount": 3000,
+            "wv_result_type": MemberMetricTransaction.WV_RESULT_CS,
             "location": current_location_name,
             "age_band": MemberMetricTransaction.AGE_BAND_SEVENTIES,
             "gender": MemberMetricTransaction.GENDER_FEMALE,
@@ -525,6 +530,8 @@ def _build_entry_v2_transaction_demo_context(
         "selected_department_name": getattr(selected_department_obj, "name", selected_department_code),
         "department_summary": department_summary,
         "entry": existing_entry,
+        "selected_department_is_wv": is_wv_department(selected_department_obj),
+        "entry_count_breakdown_text": entry_count_breakdown_text(existing_entry),
         "has_personal_target": bool(personal_target_amount or personal_target_count),
         "has_department_target": bool(department_day_target),
         "department_target_entry_date": entry_date,
@@ -1432,7 +1439,11 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                         .select_related("entry")
                         .first()
                     )
-                transaction_form = DairymetricsV2TransactionForm(request.POST, instance=transaction_instance)
+                transaction_form = DairymetricsV2TransactionForm(
+                    request.POST,
+                    instance=transaction_instance,
+                    department=selected_department_obj,
+                )
                 if transaction_form.is_valid():
                     entry, _ = MemberDailyMetricEntry.objects.get_or_create(
                         member=member,

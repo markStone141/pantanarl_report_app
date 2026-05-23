@@ -459,6 +459,52 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[active_member.id]))
         self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[closed_member.id]))
 
+    def test_entry_v2_transaction_demo_shows_wv_count_breakdown_and_type_field(self):
+        self.department.code = "WV"
+        self.department.name = "WV"
+        self.department.save(update_fields=["code", "name"])
+        entry_date = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+            result_count=2,
+            cs_count=1,
+            refugee_count=1,
+            support_amount=3000,
+            location_name="新宿駅前",
+            activity_closed=False,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+        )
+        teammate_user = get_user_model().objects.create_user(username="member_v2_wv", password="pass123")
+        teammate = Member.objects.create(name="Member WV", user=teammate_user)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=teammate,
+            department=self.department,
+            entry_date=entry_date,
+            result_count=3,
+            cs_count=2,
+            refugee_count=1,
+            support_amount=4500,
+            location_name="池袋駅前",
+            activity_closed=True,
+            input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "区分")
+        self.assertContains(response, "件数 CS 1 / 難民 1 / 合計 2")
+        self.assertContains(response, "件数 CS 2 / 難民 1 / 合計 3")
+
     def test_entry_v2_transaction_demo_shows_separate_department_target_setup_when_missing(self):
         self.department.code = "UN"
         self.department.name = "UN"
@@ -643,6 +689,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
                 "department_code": self.department.code,
                 "entry_date": entry_date.strftime("%Y-%m-%d"),
                 "support_amount": "1500",
+                "wv_result_type": MemberMetricTransaction.WV_RESULT_CS,
                 "location": "渋谷駅前",
                 "age_band": MemberMetricTransaction.AGE_BAND_SEVENTIES,
                 "gender": MemberMetricTransaction.GENDER_FEMALE,
@@ -657,6 +704,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
         entry = MemberDailyMetricEntry.objects.get(member=self.member, department=self.department, entry_date=entry_date)
         self.assertEqual(entry.result_count, 1)
+        self.assertEqual(entry.cs_count, 1)
+        self.assertEqual(entry.refugee_count, 0)
         self.assertEqual(entry.support_amount, 1500)
         summary = DepartmentDailyMetricSummary.objects.get(department=self.department, entry_date=entry_date)
         self.assertEqual(summary.result_count, 1)
@@ -692,7 +741,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
             transaction=transaction,
             recipient_group=recipient_group,
             subject_snapshot="5/14Memberです(WV)",
-            body_snapshot="会員1名 2,000円",
+            body_snapshot="CS1件 2,000円",
             status=MailSendHistory.STATUS_SENT,
             sent_at=timezone.now(),
         )
@@ -724,7 +773,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
         self.assertContains(response, self.member.name)
         self.assertContains(response, "2,000円")
-        self.assertContains(response, "会員1名 2,000円")
+        self.assertContains(response, "CS1件 2,000円")
 
     def test_entry_v2_transaction_demo_mock_send_creates_mail_history_and_shows_it(self):
         entry_date = timezone.localdate()
@@ -976,6 +1025,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
                 "department_code": self.department.code,
                 "entry_date": entry_date.strftime("%Y-%m-%d"),
                 "support_amount": "2500",
+                "wv_result_type": MemberMetricTransaction.WV_RESULT_CS,
                 "location": "渋谷駅前",
                 "age_band": MemberMetricTransaction.AGE_BAND_TWENTIES,
                 "gender": MemberMetricTransaction.GENDER_FEMALE,

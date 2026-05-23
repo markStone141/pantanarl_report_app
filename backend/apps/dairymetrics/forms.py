@@ -338,12 +338,22 @@ class DairymetricsV2DepartmentTargetForm(forms.ModelForm):
 class DairymetricsV2TransactionForm(forms.ModelForm):
     class Meta:
         model = MemberMetricTransaction
-        fields = ["support_amount", "location", "age_band", "is_student", "gender", "nationality_type", "comment"]
+        fields = [
+            "support_amount",
+            "wv_result_type",
+            "location",
+            "age_band",
+            "is_student",
+            "gender",
+            "nationality_type",
+            "comment",
+        ]
         widgets = {
             "comment": forms.Textarea(attrs={"rows": 4}),
         }
         labels = {
             "support_amount": "決済金額",
+            "wv_result_type": "区分",
             "location": "場所",
             "age_band": "年代",
             "is_student": "学生",
@@ -352,9 +362,18 @@ class DairymetricsV2TransactionForm(forms.ModelForm):
             "comment": "コメント",
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, department=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.department = department
         self.fields["support_amount"].min_value = 0
+        if not department or department.code != "WV":
+            self.fields.pop("wv_result_type", None)
+        else:
+            self.fields["wv_result_type"].required = True
+            self.fields["wv_result_type"].initial = self.initial.get(
+                "wv_result_type",
+                MemberMetricTransaction.WV_RESULT_CS,
+            )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -364,6 +383,11 @@ class DairymetricsV2TransactionForm(forms.ModelForm):
             MemberMetricTransaction.AGE_BAND_TWENTIES,
         }:
             cleaned_data["is_student"] = False
+        if self.department and self.department.code == "WV":
+            if not cleaned_data.get("wv_result_type"):
+                self.add_error("wv_result_type", "区分を選択してください。")
+        else:
+            cleaned_data["wv_result_type"] = ""
         return cleaned_data
 
 
