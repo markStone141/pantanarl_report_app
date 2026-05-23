@@ -258,9 +258,16 @@ def _build_entry_v2_transaction_demo_context(
 
     previous_personal_target_count = 1
     previous_personal_target_amount = 3000
+    previous_personal_target_cs_count = 0
+    previous_personal_target_refugee_count = 1
     previous_department_target_amount = 10000
     if selected_department_obj:
-        previous_personal_target_count, previous_personal_target_amount = get_previous_personal_targets(
+        (
+            previous_personal_target_count,
+            previous_personal_target_amount,
+            previous_personal_target_cs_count,
+            previous_personal_target_refugee_count,
+        ) = get_previous_personal_targets(
             member=member,
             department=selected_department_obj,
             entry_date=entry_date,
@@ -272,6 +279,8 @@ def _build_entry_v2_transaction_demo_context(
 
     personal_target_count = int(getattr(existing_entry, "daily_target_count", 0) or 0)
     personal_target_amount = int(getattr(existing_entry, "daily_target_amount", 0) or 0)
+    personal_target_cs_count = int(getattr(existing_entry, "daily_target_cs_count", 0) or 0)
+    personal_target_refugee_count = int(getattr(existing_entry, "daily_target_refugee_count", 0) or 0)
     personal_total_count = entry_total_count(existing_entry)
     personal_total_amount = int(getattr(existing_entry, "support_amount", 0) or 0)
     current_location_name = getattr(existing_entry, "location_name", "") or ""
@@ -408,6 +417,8 @@ def _build_entry_v2_transaction_demo_context(
                     "nationality_value": tx.nationality_type,
                     "result_type_label": transaction_result_type_label(tx),
                     "result_type_value": tx.wv_result_type,
+                    "wv_cs_count": int(tx.wv_cs_count or 0),
+                    "wv_refugee_amount": int(tx.wv_refugee_amount or 0),
                     "location": tx.location,
                     "comment": tx.comment,
                     "mail_status": mail_status,
@@ -474,6 +485,8 @@ def _build_entry_v2_transaction_demo_context(
             "entry_date": entry_date,
             "location_name": current_location_name,
             "daily_target_count": personal_target_count or previous_personal_target_count,
+            "daily_target_cs_count": personal_target_cs_count or previous_personal_target_cs_count,
+            "daily_target_refugee_count": personal_target_refugee_count or previous_personal_target_refugee_count,
             "daily_target_amount": personal_target_amount or previous_personal_target_amount,
         },
     )
@@ -488,6 +501,8 @@ def _build_entry_v2_transaction_demo_context(
         initial={
             "support_amount": 3000,
             "wv_result_type": MemberMetricTransaction.WV_RESULT_CS,
+            "wv_cs_count": 1,
+            "wv_refugee_amount": 0,
             "location": current_location_name,
             "age_band": MemberMetricTransaction.AGE_BAND_SEVENTIES,
             "gender": MemberMetricTransaction.GENDER_FEMALE,
@@ -513,10 +528,29 @@ def _build_entry_v2_transaction_demo_context(
         )
 
     personal_target_count_value = str(personal_setup_form["daily_target_count"].value() or previous_personal_target_count)
+    if "daily_target_cs_count" in personal_setup_form.fields:
+        personal_target_cs_count_value = str(
+            personal_setup_form["daily_target_cs_count"].value() or previous_personal_target_cs_count
+        )
+        personal_target_refugee_count_value = str(
+            personal_setup_form["daily_target_refugee_count"].value() or previous_personal_target_refugee_count
+        )
+    else:
+        personal_target_cs_count_value = "0"
+        personal_target_refugee_count_value = "0"
     personal_target_amount_value = str(personal_setup_form["daily_target_amount"].value() or previous_personal_target_amount)
     personal_location_name_value = str(personal_setup_form["location_name"].value() or current_location_name)
     department_target_amount_value = str(department_target_form["daily_target_amount"].value() or previous_department_target_amount)
     transaction_amount_value = str(transaction_form["support_amount"].value() or "3000")
+    transaction_wv_result_type_value = (
+        transaction_form["wv_result_type"].value() if "wv_result_type" in transaction_form.fields else ""
+    ) or MemberMetricTransaction.WV_RESULT_CS
+    transaction_wv_cs_count_value = str(
+        (transaction_form["wv_cs_count"].value() if "wv_cs_count" in transaction_form.fields else 1) or 1
+    )
+    transaction_wv_refugee_amount_value = str(
+        (transaction_form["wv_refugee_amount"].value() if "wv_refugee_amount" in transaction_form.fields else 0) or 0
+    )
     transaction_age_band_value = transaction_form["age_band"].value() or MemberMetricTransaction.AGE_BAND_SEVENTIES
     personal_entry_date_value = str(personal_setup_form["entry_date"].value() or entry_date.strftime("%Y-%m-%d"))
     department_entry_date_value = str(department_target_form["entry_date"].value() or entry_date.strftime("%Y-%m-%d"))
@@ -552,10 +586,15 @@ def _build_entry_v2_transaction_demo_context(
         "target_amount_options": ENTRY_V2_TARGET_AMOUNT_OPTIONS,
         "transaction_amount_options": ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS,
         "personal_target_count_value": personal_target_count_value,
+        "personal_target_cs_count_value": personal_target_cs_count_value,
+        "personal_target_refugee_count_value": personal_target_refugee_count_value,
         "personal_target_amount_value": personal_target_amount_value,
         "personal_location_name_value": personal_location_name_value,
         "department_target_amount_value": department_target_amount_value,
         "transaction_amount_value": transaction_amount_value,
+        "transaction_wv_result_type_value": transaction_wv_result_type_value,
+        "transaction_wv_cs_count_value": transaction_wv_cs_count_value,
+        "transaction_wv_refugee_amount_value": transaction_wv_refugee_amount_value,
         "personal_entry_date_value": personal_entry_date_value,
         "department_entry_date_value": department_entry_date_value,
         "current_location_name": current_location_name,
@@ -1365,12 +1404,16 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                     defaults={"input_source": MemberDailyMetricEntry.SOURCE_MEMBER},
                 )
                 entry.daily_target_count = personal_setup_form.cleaned_data["daily_target_count"]
+                entry.daily_target_cs_count = personal_setup_form.cleaned_data.get("daily_target_cs_count") or 0
+                entry.daily_target_refugee_count = personal_setup_form.cleaned_data.get("daily_target_refugee_count") or 0
                 entry.daily_target_amount = personal_setup_form.cleaned_data["daily_target_amount"]
                 entry.location_name = personal_setup_form.cleaned_data["location_name"]
                 entry.input_source = MemberDailyMetricEntry.SOURCE_MEMBER
                 entry.save(
                     update_fields=[
                         "daily_target_count",
+                        "daily_target_cs_count",
+                        "daily_target_refugee_count",
                         "daily_target_amount",
                         "location_name",
                         "input_source",

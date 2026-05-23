@@ -307,6 +307,8 @@ class DairymetricsV2PersonalSetupForm(forms.Form):
     )
     location_name = forms.CharField(label="今日の活動現場", max_length=128, required=False)
     daily_target_count = forms.IntegerField(label="個人の件数目標", min_value=0, initial=0)
+    daily_target_cs_count = forms.IntegerField(label="個人のCS件数目標", min_value=0, initial=0, required=False)
+    daily_target_refugee_count = forms.IntegerField(label="個人の難民件数目標", min_value=0, initial=0, required=False)
     daily_target_amount = forms.IntegerField(label="個人の金額目標", min_value=0, initial=0)
 
     def __init__(self, *args, member=None, **kwargs):
@@ -315,6 +317,33 @@ class DairymetricsV2PersonalSetupForm(forms.Form):
         if member is not None:
             departments = departments.filter(member_links__member=member).distinct()
         self.fields["department"].queryset = departments.order_by("code")
+        department_code = self._resolve_department_code()
+        if department_code == "WV":
+            self.fields["daily_target_count"].required = False
+        else:
+            self.fields.pop("daily_target_cs_count", None)
+            self.fields.pop("daily_target_refugee_count", None)
+
+    def _resolve_department_code(self):
+        if self.is_bound:
+            department = self.data.get(self.add_prefix("department")) or self.data.get("department")
+            if department and str(department).isdigit():
+                department_obj = self.fields["department"].queryset.filter(pk=department).first()
+                return department_obj.code if department_obj else ""
+        initial_department = self.initial.get("department")
+        if hasattr(initial_department, "code"):
+            return initial_department.code
+        return ""
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self._resolve_department_code() == "WV":
+            cleaned_data["daily_target_cs_count"] = cleaned_data.get("daily_target_cs_count") or 0
+            cleaned_data["daily_target_refugee_count"] = cleaned_data.get("daily_target_refugee_count") or 0
+            cleaned_data["daily_target_count"] = (
+                cleaned_data["daily_target_cs_count"] + cleaned_data["daily_target_refugee_count"]
+            )
+        return cleaned_data
 
 
 class DairymetricsV2DepartmentTargetForm(forms.ModelForm):
@@ -341,6 +370,8 @@ class DairymetricsV2TransactionForm(forms.ModelForm):
         fields = [
             "support_amount",
             "wv_result_type",
+            "wv_cs_count",
+            "wv_refugee_amount",
             "location",
             "age_band",
             "is_student",
@@ -353,7 +384,9 @@ class DairymetricsV2TransactionForm(forms.ModelForm):
         }
         labels = {
             "support_amount": "決済金額",
-            "wv_result_type": "区分",
+            "wv_result_type": "決済区分",
+            "wv_cs_count": "CS口数",
+            "wv_refugee_amount": "難民支援金額",
             "location": "場所",
             "age_band": "年代",
             "is_student": "学生",
@@ -368,12 +401,19 @@ class DairymetricsV2TransactionForm(forms.ModelForm):
         self.fields["support_amount"].min_value = 0
         if not department or department.code != "WV":
             self.fields.pop("wv_result_type", None)
+            self.fields.pop("wv_cs_count", None)
+            self.fields.pop("wv_refugee_amount", None)
         else:
+            self.fields["support_amount"].required = False
             self.fields["wv_result_type"].required = True
             self.fields["wv_result_type"].initial = self.initial.get(
                 "wv_result_type",
                 MemberMetricTransaction.WV_RESULT_CS,
             )
+            self.fields["wv_cs_count"].required = False
+            self.fields["wv_refugee_amount"].required = False
+            self.fields["wv_cs_count"].min_value = 0
+            self.fields["wv_refugee_amount"].min_value = 0
 
     def clean(self):
         cleaned_data = super().clean()
@@ -384,10 +424,33 @@ class DairymetricsV2TransactionForm(forms.ModelForm):
         }:
             cleaned_data["is_student"] = False
         if self.department and self.department.code == "WV":
-            if not cleaned_data.get("wv_result_type"):
+            result_type = cleaned_data.get("wv_result_type")
+            cs_count = cleaned_data.get("wv_cs_count") or 0
+            refugee_amount = cleaned_data.get("wv_refugee_amount") or 0
+            if not result_type:
                 self.add_error("wv_result_type", "区分を選択してください。")
+            if result_type in {
+                MemberMetricTransaction.WV_RESULT_CS,
+                MemberMetricTransaction.WV_RESULT_BOTH,
+            } and cs_count <= 0:
+                self.add_error("wv_cs_count", "CS口数を入力してください。")
+            if result_type in {
+                MemberMetricTransaction.WV_RESULT_REFUGEE,
+                MemberMetricTransaction.WV_RESULT_BOTH,
+            } and refugee_amount <= 0:
+                self.add_error("wv_refugee_amount", "難民支援金額を入力してください。")
+            if result_type == MemberMetricTransaction.WV_RESULT_REFUGEE:
+                cleaned_data["wv_cs_count"] = 0
+            if result_type == MemberMetricTransaction.WV_RESULT_CS:
+                cleaned_data["wv_refugee_amount"] = 0
+            cleaned_data["support_amount"] = (
+                (cleaned_data.get("wv_cs_count") or 0) * MemberMetricTransaction.WV_CS_UNIT_AMOUNT
+                + (cleaned_data.get("wv_refugee_amount") or 0)
+            )
         else:
             cleaned_data["wv_result_type"] = ""
+            cleaned_data["wv_cs_count"] = 0
+            cleaned_data["wv_refugee_amount"] = 0
         return cleaned_data
 
 

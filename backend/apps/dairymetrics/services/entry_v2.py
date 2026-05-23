@@ -36,14 +36,21 @@ def get_previous_personal_targets(*, member, department, entry_date):
             department=department,
             entry_date=entry_date - timedelta(days=1),
         )
-        .only("daily_target_count", "daily_target_amount")
+        .only(
+            "daily_target_count",
+            "daily_target_amount",
+            "daily_target_cs_count",
+            "daily_target_refugee_count",
+        )
         .first()
     )
     if not previous_entry:
-        return 1, 3000
+        return 1, 3000, 0, 1
     return (
         int(previous_entry.daily_target_count or 1),
         int(previous_entry.daily_target_amount or 3000),
+        int(previous_entry.daily_target_cs_count or 0),
+        int(previous_entry.daily_target_refugee_count or 0),
     )
 
 
@@ -110,9 +117,11 @@ def transaction_result_type_label(transaction_obj) -> str:
     if not transaction_obj or not is_wv_department(transaction_obj.entry.department):
         return "会員"
     if transaction_obj.wv_result_type == transaction_obj.WV_RESULT_REFUGEE:
-        return "難民"
+        return "難民のみ"
     if transaction_obj.wv_result_type == transaction_obj.WV_RESULT_CS:
-        return "CS"
+        return "CSのみ"
+    if transaction_obj.wv_result_type == transaction_obj.WV_RESULT_BOTH:
+        return "両方"
     return "未分類"
 
 
@@ -253,11 +262,17 @@ def build_transaction_mail_preview(*, member, department_code, transaction_obj, 
         f"{transaction_obj.entry.entry_date.month}/{transaction_obj.entry.entry_date.day}"
         f"{member.name}です({department_code or 'UN①'})"
     )
-    result_line = (
-        f"{result_type_label}1件 {transaction_obj.support_amount:,}円"
-        if is_wv_department(transaction_obj.entry.department)
-        else f"会員1名 {transaction_obj.support_amount:,}円"
-    )
+    if is_wv_department(transaction_obj.entry.department):
+        cs_count = int(transaction_obj.wv_cs_count or 0)
+        refugee_amount = int(transaction_obj.wv_refugee_amount or 0)
+        parts = []
+        if cs_count:
+            parts.append(f"CS{cs_count}口 {cs_count * transaction_obj.WV_CS_UNIT_AMOUNT:,}円")
+        if refugee_amount:
+            parts.append(f"難民1件 {refugee_amount:,}円")
+        result_line = " / ".join(parts) or f"{result_type_label} {transaction_obj.support_amount:,}円"
+    else:
+        result_line = f"会員1名 {transaction_obj.support_amount:,}円"
     body = "\n".join(
         [
             department_code or "",

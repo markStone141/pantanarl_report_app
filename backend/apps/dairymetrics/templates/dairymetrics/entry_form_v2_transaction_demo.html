@@ -73,6 +73,18 @@
               <input id="v2-personal-location" type="text" name="location_name" value="{{ personal_location_name_value }}">
               {% if personal_setup_form.location_name.errors %}<div class="error-text">{{ personal_setup_form.location_name.errors|striptags }}</div>{% endif %}
             </div>
+            {% if selected_department_is_wv %}
+            <div class="dairymetrics-field">
+              <label for="v2-personal-target-cs-count">個人のCS件数目標</label>
+              <input id="v2-personal-target-cs-count" type="number" min="0" step="1" name="daily_target_cs_count" value="{{ personal_target_cs_count_value }}">
+              {% if personal_setup_form.daily_target_cs_count.errors %}<div class="error-text">{{ personal_setup_form.daily_target_cs_count.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="dairymetrics-field">
+              <label for="v2-personal-target-refugee-count">個人の難民件数目標</label>
+              <input id="v2-personal-target-refugee-count" type="number" min="0" step="1" name="daily_target_refugee_count" value="{{ personal_target_refugee_count_value }}">
+              {% if personal_setup_form.daily_target_refugee_count.errors %}<div class="error-text">{{ personal_setup_form.daily_target_refugee_count.errors|striptags }}</div>{% endif %}
+            </div>
+            {% else %}
             <div class="dairymetrics-field">
               <label for="v2-personal-target-count-select">個人の件数目標</label>
               <select id="v2-personal-target-count-select" data-target-select data-target-custom="#v2-personal-target-count-wrap" data-target-hidden="#v2-personal-target-count-hidden">
@@ -88,6 +100,7 @@
               <label for="v2-personal-target-count-custom">個人の件数目標を直接入力</label>
               <input id="v2-personal-target-count-custom" type="number" min="0" step="1" value="{{ personal_setup_form.daily_target_count.value|default:1 }}">
             </div>
+            {% endif %}
             <div class="dairymetrics-field">
               <label for="v2-personal-target-amount-select">個人の金額目標</label>
               <select id="v2-personal-target-amount-select" data-target-select data-target-custom="#v2-personal-target-amount-wrap" data-target-hidden="#v2-personal-target-amount-hidden">
@@ -174,6 +187,29 @@
           <input type="hidden" name="department_code" value="{{ selected_department_code }}">
           <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
           <div class="dairymetrics-v2-transaction-form">
+            {% if selected_department_is_wv %}
+            <input type="hidden" name="support_amount" id="v2-transaction-amount-hidden" value="{{ transaction_form.support_amount.value|default:0 }}">
+            <div class="dairymetrics-field">
+              <label for="v2-transaction-result-type">区分</label>
+              <select id="v2-transaction-result-type" name="wv_result_type">
+                {% for value, label in transaction_form.fields.wv_result_type.choices %}
+                <option value="{{ value }}" {% if transaction_wv_result_type_value == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              {% if transaction_form.wv_result_type.errors %}<div class="error-text">{{ transaction_form.wv_result_type.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="dairymetrics-field" id="v2-transaction-cs-count-wrap">
+              <label for="v2-transaction-cs-count">CS口数</label>
+              <input id="v2-transaction-cs-count" type="number" min="0" step="1" name="wv_cs_count" value="{{ transaction_wv_cs_count_value }}">
+              <div class="dairymetrics-subtext">CSは1口 4,500円です。</div>
+              {% if transaction_form.wv_cs_count.errors %}<div class="error-text">{{ transaction_form.wv_cs_count.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="dairymetrics-field" id="v2-transaction-refugee-amount-wrap">
+              <label for="v2-transaction-refugee-amount">難民支援金額</label>
+              <input id="v2-transaction-refugee-amount" type="number" min="0" step="100" name="wv_refugee_amount" value="{{ transaction_wv_refugee_amount_value }}">
+              {% if transaction_form.wv_refugee_amount.errors %}<div class="error-text">{{ transaction_form.wv_refugee_amount.errors|striptags }}</div>{% endif %}
+            </div>
+            {% else %}
             <div class="dairymetrics-field">
               <label for="v2-transaction-amount-select">決済金額</label>
               <select id="v2-transaction-amount-select" data-target-select data-target-custom="#v2-transaction-amount-wrap" data-target-hidden="#v2-transaction-amount-hidden">
@@ -188,16 +224,6 @@
             <div class="dairymetrics-field" id="v2-transaction-amount-wrap" hidden>
               <label for="v2-transaction-amount-custom">直接入力金額</label>
               <input id="v2-transaction-amount-custom" type="number" min="0" step="100" value="{{ transaction_form.support_amount.value|default:1000 }}">
-            </div>
-            {% if transaction_form.wv_result_type %}
-            <div class="dairymetrics-field">
-              <label for="v2-transaction-result-type">区分</label>
-              <select id="v2-transaction-result-type" name="wv_result_type">
-                {% for value, label in transaction_form.fields.wv_result_type.choices %}
-                <option value="{{ value }}" {% if transaction_form.wv_result_type.value == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-              </select>
-              {% if transaction_form.wv_result_type.errors %}<div class="error-text">{{ transaction_form.wv_result_type.errors|striptags }}</div>{% endif %}
             </div>
             {% endif %}
             <div class="dairymetrics-field">
@@ -316,6 +342,18 @@
                 <label for="v2-inline-personal-location">今日の活動現場</label>
                 <input id="v2-inline-personal-location" type="text" name="location_name" value="{{ personal_location_name_value }}">
               </div>
+              {% if selected_department_is_wv %}
+              <div class="dairymetrics-field">
+                <label for="v2-inline-personal-cs-count">個人のCS件数目標</label>
+                <input id="v2-inline-personal-cs-count" type="number" min="0" step="1" name="daily_target_cs_count" value="{{ personal_target_cs_count_value }}">
+                {% if personal_setup_form.daily_target_cs_count.errors %}<div class="error-text">{{ personal_setup_form.daily_target_cs_count.errors|striptags }}</div>{% endif %}
+              </div>
+              <div class="dairymetrics-field">
+                <label for="v2-inline-personal-refugee-count">個人の難民件数目標</label>
+                <input id="v2-inline-personal-refugee-count" type="number" min="0" step="1" name="daily_target_refugee_count" value="{{ personal_target_refugee_count_value }}">
+                {% if personal_setup_form.daily_target_refugee_count.errors %}<div class="error-text">{{ personal_setup_form.daily_target_refugee_count.errors|striptags }}</div>{% endif %}
+              </div>
+              {% else %}
               <div class="dairymetrics-field">
                 <label for="v2-inline-personal-count-select">個人の件数目標</label>
                 <select id="v2-inline-personal-count-select" data-target-select data-target-custom="#v2-inline-personal-count-wrap" data-target-hidden="#v2-inline-personal-count-hidden">
@@ -330,6 +368,7 @@
                 <label for="v2-inline-personal-count-custom">個人の件数目標を直接入力</label>
                 <input id="v2-inline-personal-count-custom" type="number" min="0" step="1" value="{{ personal_target_count_value }}">
               </div>
+              {% endif %}
               <div class="dairymetrics-field">
                 <label for="v2-inline-personal-amount-select">個人の金額目標</label>
                 <select id="v2-inline-personal-amount-select" data-target-select data-target-custom="#v2-inline-personal-amount-wrap" data-target-hidden="#v2-inline-personal-amount-hidden">
@@ -504,6 +543,8 @@
                   data-transaction-gender="{{ transaction.gender_value }}"
                   data-transaction-nationality="{{ transaction.nationality_value }}"
                   data-transaction-result-type="{{ transaction.result_type_value }}"
+                  data-transaction-cs-count="{{ transaction.wv_cs_count|default:0 }}"
+                  data-transaction-refugee-amount="{{ transaction.wv_refugee_amount|default:0 }}"
                   data-transaction-comment="{{ transaction.comment|escapejs }}"
                   data-transaction-has-sent="{% if transaction.has_mail_history %}1{% else %}0{% endif %}"
                 >
@@ -690,6 +731,10 @@
     const transactionGenderSelect = document.getElementById("v2-transaction-gender");
     const transactionNationalitySelect = document.getElementById("v2-transaction-nationality");
     const transactionResultTypeSelect = document.getElementById("v2-transaction-result-type");
+    const transactionCsCountWrap = document.getElementById("v2-transaction-cs-count-wrap");
+    const transactionCsCountInput = document.getElementById("v2-transaction-cs-count");
+    const transactionRefugeeAmountWrap = document.getElementById("v2-transaction-refugee-amount-wrap");
+    const transactionRefugeeAmountInput = document.getElementById("v2-transaction-refugee-amount");
     const transactionCommentInput = document.getElementById("v2-transaction-comment");
     const transactionPreviewButton = document.getElementById("v2-transaction-preview-button");
     const transactionSaveButton = document.getElementById("v2-transaction-save-button");
@@ -737,6 +782,33 @@
       }
     }
 
+    function syncWvTransactionFields() {
+      if (!transactionResultTypeSelect) return;
+      const mode = transactionResultTypeSelect.value;
+      const showCs = mode === "cs" || mode === "both";
+      const showRefugee = mode === "refugee" || mode === "both";
+      if (transactionCsCountWrap) {
+        transactionCsCountWrap.hidden = !showCs;
+      }
+      if (transactionCsCountInput) {
+        transactionCsCountInput.disabled = !showCs;
+        if (!showCs) {
+          transactionCsCountInput.value = "0";
+        } else if (!transactionCsCountInput.value || transactionCsCountInput.value === "0") {
+          transactionCsCountInput.value = "1";
+        }
+      }
+      if (transactionRefugeeAmountWrap) {
+        transactionRefugeeAmountWrap.hidden = !showRefugee;
+      }
+      if (transactionRefugeeAmountInput) {
+        transactionRefugeeAmountInput.disabled = !showRefugee;
+        if (!showRefugee) {
+          transactionRefugeeAmountInput.value = "0";
+        }
+      }
+    }
+
     function openSection(section) {
       if (!section) return;
       section.hidden = false;
@@ -770,7 +842,7 @@
         transactionAmountSelect.value = "3000";
       }
       if (transactionAmountHidden) {
-        transactionAmountHidden.value = "3000";
+        transactionAmountHidden.value = "{{ selected_department_is_wv|yesno:'0,3000' }}";
       }
       if (transactionAmountCustom) {
         transactionAmountCustom.value = "";
@@ -780,6 +852,12 @@
       }
       if (transactionResultTypeSelect) {
         transactionResultTypeSelect.value = "cs";
+      }
+      if (transactionCsCountInput) {
+        transactionCsCountInput.value = "1";
+      }
+      if (transactionRefugeeAmountInput) {
+        transactionRefugeeAmountInput.value = "0";
       }
       if (transactionAgeSelect) {
         transactionAgeSelect.value = "{{ transaction_age_band_value|escapejs }}";
@@ -802,7 +880,10 @@
       if (transactionSaveButton) {
         transactionSaveButton.textContent = "登録して閉じる";
       }
-      syncTargetFieldState(transactionAmountSelect);
+      if (transactionAmountSelect) {
+        syncTargetFieldState(transactionAmountSelect);
+      }
+      syncWvTransactionFields();
       syncStudentField();
     }
 
@@ -829,6 +910,12 @@
       if (transactionResultTypeSelect) {
         transactionResultTypeSelect.value = button.dataset.transactionResultType || "cs";
       }
+      if (transactionCsCountInput) {
+        transactionCsCountInput.value = button.dataset.transactionCsCount || "1";
+      }
+      if (transactionRefugeeAmountInput) {
+        transactionRefugeeAmountInput.value = button.dataset.transactionRefugeeAmount || "0";
+      }
       if (transactionAgeSelect) {
         transactionAgeSelect.value = button.dataset.transactionAge || "{{ transaction_age_band_value|escapejs }}";
       }
@@ -850,7 +937,10 @@
       if (transactionSaveButton) {
         transactionSaveButton.textContent = "修正して閉じる";
       }
-      syncTargetFieldState(transactionAmountSelect);
+      if (transactionAmountSelect) {
+        syncTargetFieldState(transactionAmountSelect);
+      }
+      syncWvTransactionFields();
       syncStudentField();
       entryPanel.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -1012,7 +1102,9 @@
     });
 
     ageSelect?.addEventListener("change", syncStudentField);
+    transactionResultTypeSelect?.addEventListener("change", syncWvTransactionFields);
     syncStudentField();
+    syncWvTransactionFields();
     closeSection(transactionListPanel);
     closeSection(sentMailListPanel);
     const autoOpenMailButton = document.querySelector("[data-auto-open-mail-modal]");

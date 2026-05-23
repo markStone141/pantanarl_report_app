@@ -502,6 +502,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "区分")
+        self.assertContains(response, "個人のCS件数目標")
+        self.assertContains(response, "個人の難民件数目標")
         self.assertContains(response, "件数 CS 1 / 難民 1 / 合計 2")
         self.assertContains(response, "件数 CS 2 / 難民 1 / 合計 3")
 
@@ -535,6 +537,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
             department=self.department,
             entry_date=previous_date,
             daily_target_count=4,
+            daily_target_cs_count=1,
+            daily_target_refugee_count=3,
             daily_target_amount=3500,
         )
         DepartmentDailyMetricSummary.objects.create(
@@ -551,7 +555,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'id="v2-personal-target-count-hidden" value="4"', html=False)
+        self.assertContains(response, 'id="v2-personal-target-cs-count" type="number" min="0" step="1" name="daily_target_cs_count" value="1"', html=False)
+        self.assertContains(response, 'id="v2-personal-target-refugee-count" type="number" min="0" step="1" name="daily_target_refugee_count" value="3"', html=False)
         self.assertContains(response, 'id="v2-personal-target-amount-hidden" value="3500"', html=False)
         self.assertContains(response, 'id="v2-dept-target-amount-hidden" value="15500"', html=False)
 
@@ -567,7 +572,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f'id="v2-personal-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{entry_date.strftime("%Y-%m-%d")}"', html=False)
         self.assertContains(response, f'id="v2-dept-target-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{entry_date.strftime("%Y-%m-%d")}"', html=False)
-        self.assertContains(response, 'id="v2-personal-target-count-hidden" value="1"', html=False)
+        self.assertContains(response, 'id="v2-personal-target-cs-count" type="number" min="0" step="1" name="daily_target_cs_count" value="0"', html=False)
+        self.assertContains(response, 'id="v2-personal-target-refugee-count" type="number" min="0" step="1" name="daily_target_refugee_count" value="1"', html=False)
         self.assertContains(response, 'id="v2-personal-target-amount-hidden" value="3000"', html=False)
         self.assertContains(response, 'id="v2-dept-target-amount-hidden" value="10000"', html=False)
 
@@ -582,7 +588,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
                 "department": self.department.id,
                 "entry_date": entry_date.strftime("%Y-%m-%d"),
                 "location_name": "渋谷駅前",
-                "daily_target_count": "3",
+                "daily_target_cs_count": "2",
+                "daily_target_refugee_count": "1",
                 "daily_target_amount": "6000",
             },
         )
@@ -593,6 +600,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
         entry = MemberDailyMetricEntry.objects.get(member=self.member, department=self.department, entry_date=entry_date)
         self.assertEqual(entry.daily_target_count, 3)
+        self.assertEqual(entry.daily_target_cs_count, 2)
+        self.assertEqual(entry.daily_target_refugee_count, 1)
         self.assertEqual(entry.daily_target_amount, 6000)
         self.assertEqual(entry.location_name, "渋谷駅前")
 
@@ -614,7 +623,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
                 "department": self.department.id,
                 "entry_date": entry_date.strftime("%Y-%m-%d"),
                 "location_name": "池袋駅前",
-                "daily_target_count": "5",
+                "daily_target_cs_count": "3",
+                "daily_target_refugee_count": "2",
                 "daily_target_amount": "9000",
             },
         )
@@ -625,6 +635,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
         entry = MemberDailyMetricEntry.objects.get(member=self.member, department=self.department, entry_date=entry_date)
         self.assertEqual(entry.daily_target_count, 5)
+        self.assertEqual(entry.daily_target_cs_count, 3)
+        self.assertEqual(entry.daily_target_refugee_count, 2)
         self.assertEqual(entry.daily_target_amount, 9000)
         self.assertEqual(entry.location_name, "池袋駅前")
 
@@ -688,8 +700,9 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
                 "action": "save_transaction",
                 "department_code": self.department.code,
                 "entry_date": entry_date.strftime("%Y-%m-%d"),
-                "support_amount": "1500",
-                "wv_result_type": MemberMetricTransaction.WV_RESULT_CS,
+                "wv_result_type": MemberMetricTransaction.WV_RESULT_BOTH,
+                "wv_cs_count": "2",
+                "wv_refugee_amount": "1800",
                 "location": "渋谷駅前",
                 "age_band": MemberMetricTransaction.AGE_BAND_SEVENTIES,
                 "gender": MemberMetricTransaction.GENDER_FEMALE,
@@ -703,13 +716,13 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
             f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=transaction",
         )
         entry = MemberDailyMetricEntry.objects.get(member=self.member, department=self.department, entry_date=entry_date)
-        self.assertEqual(entry.result_count, 1)
-        self.assertEqual(entry.cs_count, 1)
-        self.assertEqual(entry.refugee_count, 0)
-        self.assertEqual(entry.support_amount, 1500)
+        self.assertEqual(entry.result_count, 3)
+        self.assertEqual(entry.cs_count, 2)
+        self.assertEqual(entry.refugee_count, 1)
+        self.assertEqual(entry.support_amount, 10800)
         summary = DepartmentDailyMetricSummary.objects.get(department=self.department, entry_date=entry_date)
-        self.assertEqual(summary.result_count, 1)
-        self.assertEqual(summary.support_amount, 1500)
+        self.assertEqual(summary.result_count, 3)
+        self.assertEqual(summary.support_amount, 10800)
 
     def test_entry_v2_transaction_demo_closeout_updates_entry_and_shows_department_mail_history(self):
         entry_date = timezone.localdate()
@@ -724,7 +737,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.member.save(update_fields=["email"])
         transaction = MemberMetricTransaction.objects.create(
             entry=entry,
-            support_amount=2000,
+            wv_result_type=MemberMetricTransaction.WV_RESULT_CS,
+            wv_cs_count=1,
             age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
             is_student=True,
             gender=MemberMetricTransaction.GENDER_FEMALE,
@@ -741,7 +755,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
             transaction=transaction,
             recipient_group=recipient_group,
             subject_snapshot="5/14Memberです(WV)",
-            body_snapshot="CS1件 2,000円",
+            body_snapshot="CS1口 4,500円",
             status=MailSendHistory.STATUS_SENT,
             sent_at=timezone.now(),
         )
@@ -772,8 +786,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
             {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
         )
         self.assertContains(response, self.member.name)
-        self.assertContains(response, "2,000円")
-        self.assertContains(response, "CS1件 2,000円")
+        self.assertContains(response, "4,500円")
+        self.assertContains(response, "CS1口 4,500円")
 
     def test_entry_v2_transaction_demo_mock_send_creates_mail_history_and_shows_it(self):
         entry_date = timezone.localdate()
@@ -786,7 +800,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
         transaction = MemberMetricTransaction.objects.create(
             entry=entry,
-            support_amount=1500,
+            wv_result_type=MemberMetricTransaction.WV_RESULT_REFUGEE,
+            wv_refugee_amount=1500,
             age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
             is_student=True,
             gender=MemberMetricTransaction.GENDER_FEMALE,
@@ -837,7 +852,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
         transaction = MemberMetricTransaction.objects.create(
             entry=entry,
-            support_amount=3000,
+            wv_result_type=MemberMetricTransaction.WV_RESULT_REFUGEE,
+            wv_refugee_amount=3000,
             age_band=MemberMetricTransaction.AGE_BAND_SEVENTIES,
             gender=MemberMetricTransaction.GENDER_FEMALE,
             nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
@@ -885,7 +901,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
         transaction = MemberMetricTransaction.objects.create(
             entry=entry,
-            support_amount=3000,
+            wv_result_type=MemberMetricTransaction.WV_RESULT_REFUGEE,
+            wv_refugee_amount=3000,
             age_band=MemberMetricTransaction.AGE_BAND_SEVENTIES,
             gender=MemberMetricTransaction.GENDER_FEMALE,
             nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
@@ -933,7 +950,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
         transaction = MemberMetricTransaction.objects.create(
             entry=entry,
-            support_amount=2500,
+            wv_result_type=MemberMetricTransaction.WV_RESULT_REFUGEE,
+            wv_refugee_amount=2500,
             age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
             gender=MemberMetricTransaction.GENDER_FEMALE,
             nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
@@ -997,7 +1015,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
         transaction = MemberMetricTransaction.objects.create(
             entry=entry,
-            support_amount=2000,
+            wv_result_type=MemberMetricTransaction.WV_RESULT_REFUGEE,
+            wv_refugee_amount=2000,
             age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
             gender=MemberMetricTransaction.GENDER_FEMALE,
             nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
@@ -1024,8 +1043,9 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
                 "transaction_id": str(transaction.id),
                 "department_code": self.department.code,
                 "entry_date": entry_date.strftime("%Y-%m-%d"),
-                "support_amount": "2500",
-                "wv_result_type": MemberMetricTransaction.WV_RESULT_CS,
+                "wv_result_type": MemberMetricTransaction.WV_RESULT_BOTH,
+                "wv_cs_count": "2",
+                "wv_refugee_amount": "2500",
                 "location": "渋谷駅前",
                 "age_band": MemberMetricTransaction.AGE_BAND_TWENTIES,
                 "gender": MemberMetricTransaction.GENDER_FEMALE,

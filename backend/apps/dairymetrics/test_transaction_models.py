@@ -202,7 +202,7 @@ class DairymetricsTransactionModelTests(TestCase):
 
         cs_tx = MemberMetricTransaction.objects.create(
             entry=entry,
-            support_amount=1500,
+            wv_cs_count=2,
             wv_result_type=MemberMetricTransaction.WV_RESULT_CS,
             age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
             gender=MemberMetricTransaction.GENDER_FEMALE,
@@ -210,7 +210,7 @@ class DairymetricsTransactionModelTests(TestCase):
         )
         refugee_tx = MemberMetricTransaction.objects.create(
             entry=entry,
-            support_amount=1800,
+            wv_refugee_amount=1800,
             wv_result_type=MemberMetricTransaction.WV_RESULT_REFUGEE,
             age_band=MemberMetricTransaction.AGE_BAND_THIRTIES,
             gender=MemberMetricTransaction.GENDER_MALE,
@@ -222,25 +222,27 @@ class DairymetricsTransactionModelTests(TestCase):
             department=self.department,
             entry_date=entry.entry_date,
         )
-        self.assertEqual(entry.result_count, 2)
-        self.assertEqual(entry.cs_count, 1)
+        self.assertEqual(entry.result_count, 3)
+        self.assertEqual(entry.cs_count, 2)
         self.assertEqual(entry.refugee_count, 1)
-        self.assertEqual(entry.support_amount, 3300)
-        self.assertEqual(summary.result_count, 2)
-        self.assertEqual(summary.support_amount, 3300)
+        self.assertEqual(entry.support_amount, 10800)
+        self.assertEqual(summary.result_count, 3)
+        self.assertEqual(summary.support_amount, 10800)
 
-        refugee_tx.wv_result_type = MemberMetricTransaction.WV_RESULT_CS
+        refugee_tx.wv_result_type = MemberMetricTransaction.WV_RESULT_BOTH
+        refugee_tx.wv_cs_count = 1
+        refugee_tx.wv_refugee_amount = 1200
         refugee_tx.save()
 
         entry.refresh_from_db()
-        self.assertEqual(entry.result_count, 2)
-        self.assertEqual(entry.cs_count, 2)
-        self.assertEqual(entry.refugee_count, 0)
+        self.assertEqual(entry.result_count, 4)
+        self.assertEqual(entry.cs_count, 3)
+        self.assertEqual(entry.refugee_count, 1)
 
         cs_tx.delete()
         entry.refresh_from_db()
         summary.refresh_from_db()
-        self.assertEqual(entry.result_count, 1)
+        self.assertEqual(entry.result_count, 2)
         self.assertEqual(entry.cs_count, 1)
-        self.assertEqual(entry.refugee_count, 0)
-        self.assertEqual(summary.result_count, 1)
+        self.assertEqual(entry.refugee_count, 1)
+        self.assertEqual(summary.result_count, 2)
