@@ -14,8 +14,8 @@
       <i class="fa-solid fa-bars" aria-hidden="true"></i>
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
-      {% for url_name, label in nav_items %}
-      <a href="{% url url_name %}">{{ label }}</a>
+      {% for item in nav_items %}
+      <a href="{{ item.href }}">{{ item.label }}</a>
       {% endfor %}
       {% if not is_admin_view %}
       <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
@@ -67,14 +67,6 @@
     </div>
     <div class="performance-chart-card mt-12">
       <canvas id="performance-activity-trend-chart" aria-label="直近稼働の実績推移"></canvas>
-    </div>
-    <div class="performance-trend-date-links-wrap mt-12">
-      <div class="muted">日付を押すとその日の実績を表示します。</div>
-      <div id="performance-trend-date-links" class="performance-trend-date-links mt-8" aria-label="日付から実績を表示">
-        {% for item in trend_date_links %}
-        <button type="button" class="performance-trend-date-link" data-date="{{ item.date }}">{{ item.label }}</button>
-        {% endfor %}
-      </div>
     </div>
     {% else %}
     <p class="muted mt-12">表示できる稼働実績はまだありません。</p>
@@ -290,14 +282,10 @@
     </div>
   </section>
 
-  <div
-    id="performance-day-detail-container"
-    data-day-detail-url="{% if readonly_member_view %}{% url 'performance_member_insight_day_detail' member.id department.id %}{% elif is_admin_view %}{% url 'performance_member_detail_day_detail' member.id department.id %}{% else %}{% url 'performance_member_dashboard_day_detail' %}{% endif %}"
-  >
-    {% include "performance/partials/member_day_detail_cards.html" %}
-  </div>
+  {% include "performance/partials/member_day_detail_cards.html" with detail_heading="直近30日の実績" detail_adjustment_heading="直近30日の補正実績" detail_description=recent_range_label show_reset_detail=False %}
+
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'performance/member_dashboard.js' %}?v=13"></script>
+<script src="{% static 'performance/member_dashboard.js' %}?v=14"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 {% endblock %}

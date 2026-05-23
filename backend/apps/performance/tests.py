@@ -775,7 +775,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(response.context["activity_trend"]["amounts"], [1500, 3000])
         self.assertEqual(response.context["activity_trend"]["counts"], [1, 1])
 
-    def test_performance_member_dashboard_day_detail_returns_selected_day_rows(self):
+    def test_performance_member_history_day_detail_returns_selected_day_rows(self):
         today = timezone.localdate()
         selected_day = today - timedelta(days=1)
         other_day = today - timedelta(days=2)
@@ -837,20 +837,20 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         )
 
         response = self.client.get(
-            reverse("performance_member_detail_day_detail", args=[self.member.id, self.department.id]),
+            reverse("performance_member_history_detail_day_detail", args=[self.member.id, self.department.id]),
             {"date": selected_day.isoformat()},
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, f"{selected_day:%Y/%m/%d} の実績")
+        self.assertContains(response, f"{selected_day:%Y/%m/%d} の日次実績")
         self.assertContains(response, "選択日の決済")
         self.assertContains(response, "現場A")
         self.assertContains(response, "1200円")
         self.assertNotContains(response, "別日の決済")
         self.assertNotContains(response, "現場B")
 
-    def test_performance_member_dashboard_day_detail_uses_logged_in_member(self):
+    def test_performance_member_history_day_detail_uses_logged_in_member(self):
         self.client.logout()
         report_user = User.objects.create_user(username="perf-member-day-detail", password="pass1234", is_staff=False)
         self.member.user = report_user
@@ -876,14 +876,14 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.client.force_login(report_user)
 
         response = self.client.get(
-            reverse("performance_member_dashboard_day_detail"),
+            reverse("performance_member_history_day_detail"),
             {"date": selected_day.isoformat()},
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "本人日次")
-        self.assertContains(response, reverse("performance_member_dashboard"))
+        self.assertContains(response, reverse("performance_member_history"))
 
     def test_performance_member_detail_shows_target_forms_when_edit_requested(self):
         today = timezone.localdate()
@@ -952,8 +952,17 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
             response,
             f'{reverse("dairymetrics_metrics_v2_demo")}?department={self.department.code}&member={teammate.id}',
         )
+        self.assertContains(response, reverse("performance_member_insight", args=[teammate.id, self.department.id]))
+        self.assertContains(response, reverse("performance_member_history_insight", args=[teammate.id, self.department.id]))
         self.assertNotContains(response, "月目標を保存")
         self.assertNotContains(response, "路程目標を保存")
+
+    def test_admin_member_detail_menu_links_to_that_members_history(self):
+        response = self.client.get(reverse("performance_member_detail", args=[self.member.id, self.department.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("performance_member_detail", args=[self.member.id, self.department.id]))
+        self.assertContains(response, reverse("performance_member_history_detail", args=[self.member.id, self.department.id]))
 
     def test_performance_member_history_uses_logged_in_member_profile(self):
         self.client.logout()

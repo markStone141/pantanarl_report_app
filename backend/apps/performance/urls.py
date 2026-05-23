@@ -14,8 +14,11 @@ from .views import (
     performance_member_insight,
     performance_member_insight_day_detail,
     performance_member_history,
+    performance_member_history_day_detail,
     performance_member_history_insight,
+    performance_member_history_insight_day_detail,
     performance_member_history_detail,
+    performance_member_history_detail_day_detail,
 )
 
 urlpatterns = [
@@ -25,13 +28,16 @@ urlpatterns = [
     path("member/", performance_member_dashboard, name="performance_member_dashboard"),
     path("member/day-detail/", performance_member_dashboard_day_detail, name="performance_member_dashboard_day_detail"),
     path("member/history/", performance_member_history, name="performance_member_history"),
+    path("member/history/day-detail/", performance_member_history_day_detail, name="performance_member_history_day_detail"),
     path("entries/<int:entry_id>/", performance_entry_edit, name="performance_entry_edit"),
     path("members/<int:member_id>/<int:department_id>/", performance_member_detail, name="performance_member_detail"),
     path("members/<int:member_id>/<int:department_id>/day-detail/", performance_member_detail_day_detail, name="performance_member_detail_day_detail"),
     path("members/<int:member_id>/<int:department_id>/history/", performance_member_history_detail, name="performance_member_history_detail"),
+    path("members/<int:member_id>/<int:department_id>/history/day-detail/", performance_member_history_detail_day_detail, name="performance_member_history_detail_day_detail"),
     path("insight/<int:member_id>/<int:department_id>/", performance_member_insight, name="performance_member_insight"),
     path("insight/<int:member_id>/<int:department_id>/day-detail/", performance_member_insight_day_detail, name="performance_member_insight_day_detail"),
     path("insight/<int:member_id>/<int:department_id>/history/", performance_member_history_insight, name="performance_member_history_insight"),
+    path("insight/<int:member_id>/<int:department_id>/history/day-detail/", performance_member_history_insight_day_detail, name="performance_member_history_insight_day_detail"),
     path("adjustments/", performance_adjustments, name="performance_adjustments"),
     path("adjustments/<int:adjustment_id>/delete/", performance_adjustment_delete, name="performance_adjustment_delete"),
 ]

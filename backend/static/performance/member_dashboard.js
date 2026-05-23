@@ -116,6 +116,7 @@
   let visibleCount = Math.min(trendData.default_visible_count || 30, allLabels.length);
   let currentMode = "amount";
   const dayDetailContainer = document.getElementById("performance-day-detail-container");
+  const dayDetailUrl = (dateLinksNode && dateLinksNode.dataset.dayDetailUrl) || (dayDetailContainer && dayDetailContainer.dataset.dayDetailUrl) || "";
   let dayDetailRequestId = 0;
 
   const amountGradient = context.createLinearGradient(0, 0, 0, 240);
@@ -255,14 +256,14 @@
   }
 
   function loadDayDetail(selectedDate) {
-    if (!dayDetailContainer || !dayDetailContainer.dataset.dayDetailUrl || !selectedDate) {
+    if (!dayDetailContainer || !dayDetailUrl || !selectedDate) {
       return;
     }
     const requestId = dayDetailRequestId + 1;
     dayDetailRequestId = requestId;
     dayDetailContainer.classList.add("is-loading");
-    const separator = dayDetailContainer.dataset.dayDetailUrl.indexOf("?") === -1 ? "?" : "&";
-    fetch(dayDetailContainer.dataset.dayDetailUrl + separator + "date=" + encodeURIComponent(selectedDate), {
+    const separator = dayDetailUrl.indexOf("?") === -1 ? "?" : "&";
+    fetch(dayDetailUrl + separator + "date=" + encodeURIComponent(selectedDate), {
       headers: {
         "X-Requested-With": "XMLHttpRequest",
       },

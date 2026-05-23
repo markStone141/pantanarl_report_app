@@ -14,8 +14,8 @@
       <i class="fa-solid fa-bars" aria-hidden="true"></i>
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
-      {% for url_name, label in nav_items %}
-      <a href="{% url url_name %}">{{ label }}</a>
+      {% for item in nav_items %}
+      <a href="{{ item.href }}">{{ item.label }}</a>
       {% endfor %}
       {% if not is_admin_view %}
       <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
@@ -196,127 +196,29 @@
     <div class="performance-chart-card mt-12">
       <canvas id="performance-activity-trend-chart" aria-label="{{ history_scope.label }} の実績推移"></canvas>
     </div>
+    <div class="performance-trend-date-links-wrap mt-12">
+      <div class="muted">日付を押すとその日の実績を表示します。</div>
+      <div
+        id="performance-trend-date-links"
+        class="performance-trend-date-links mt-8"
+        aria-label="日付から実績を表示"
+        data-day-detail-url="{% if readonly_member_view %}{% url 'performance_member_history_insight_day_detail' member.id department.id %}{% elif is_admin_view %}{% url 'performance_member_history_detail_day_detail' member.id department.id %}{% else %}{% url 'performance_member_history_day_detail' %}{% endif %}"
+      >
+        {% for item in trend_date_links %}
+        <button type="button" class="performance-trend-date-link" data-date="{{ item.date }}">{{ item.label }}</button>
+        {% endfor %}
+      </div>
+    </div>
     {% else %}
     <p class="muted mt-12">表示できる実績はまだありません。</p>
     {% endif %}
   </section>
-
-  <section class="card mt-16">
-    <h3>{{ history_scope.label }} の日次実績</h3>
-    {% if entry_rows %}
-    <div class="table-scroll">
-      <table class="mobile-card-table">
-        <thead>
-          <tr>
-            <th>日付</th>
-            <th>件数</th>
-            <th>金額</th>
-            <th>AP / CM</th>
-            <th>修正</th>
-            <th>詳細</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in entry_rows %}
-          <tr>
-            <td data-label="日付">{{ row.entry.entry_date|date:"Y/m/d" }}</td>
-            <td data-label="件数">{{ row.count_text }}</td>
-            <td data-label="金額">{{ row.amount_text }}</td>
-            <td data-label="AP / CM">{{ row.entry.approach_count }} / {{ row.entry.communication_count }}</td>
-            <td data-label="修正">
-              {% if not readonly_member_view %}
-              <a class="icon-btn" href="{{ row.edit_url }}" aria-label="過去の実績を修正">
-                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-              </a>
-              {% else %}
-              <span class="muted">-</span>
-              {% endif %}
-            </td>
-            <td data-label="詳細">
-              <details>
-                <summary>決済一覧</summary>
-                {% if row.transactions %}
-                <div class="grid mt-10">
-                  {% for tx in row.transactions %}
-                  <div class="metric-card">
-                    <div class="row">
-                      <strong>{{ tx.support_amount|floatformat:0 }}円</strong>
-                      <span class="muted">{{ tx.location|default:"場所未設定" }}</span>
-                    </div>
-                    <div class="muted mt-6">{{ tx.get_age_band_display }} / {{ tx.get_gender_display }} / {{ tx.get_nationality_type_display }}</div>
-                    {% if tx.comment %}
-                    <div class="mt-8">{{ tx.comment }}</div>
-                    {% endif %}
-                  </div>
-                  {% endfor %}
-                </div>
-                {% else %}
-                <p class="muted mt-10">決済明細はありません。</p>
-                {% endif %}
-              </details>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="muted">対象期間の日次実績はありません。</p>
-    {% endif %}
-  </section>
-
-  <section class="card mt-16">
-    <h3>{{ history_scope.label }} の補正実績</h3>
-    {% if adjustment_rows %}
-    <div class="table-scroll">
-      <table class="mobile-card-table">
-        <thead>
-          <tr>
-            <th>対象日</th>
-            <th>現場</th>
-            <th>種別</th>
-            <th>件数</th>
-            <th>金額</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for adjustment in adjustment_rows %}
-          <tr>
-            <td data-label="対象日">{{ adjustment.target_date|date:"Y/m/d" }}</td>
-            <td data-label="現場">{{ adjustment.location_name|default:"-" }}</td>
-            <td data-label="種別">{{ adjustment.get_source_type_display }}</td>
-            <td data-label="件数">
-              {% if department.code == "WV" %}
-              CS {{ adjustment.cs_count }} / 難民 {{ adjustment.refugee_count }}
-              {% elif adjustment.source_type == "postal" %}
-              {{ adjustment.return_postal_count }}件
-              {% elif adjustment.source_type == "qr" %}
-              {{ adjustment.return_qr_count }}件
-              {% else %}
-              {{ adjustment.result_count }}件
-              {% endif %}
-            </td>
-            <td data-label="金額">
-              {% if adjustment.source_type == "postal" %}
-              {{ adjustment.return_postal_amount|default:0 }}円
-              {% elif adjustment.source_type == "qr" %}
-              {{ adjustment.return_qr_amount|default:0 }}円
-              {% else %}
-              {{ adjustment.support_amount|default:0 }}円
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="muted">対象期間の補正実績はありません。</p>
-    {% endif %}
-  </section>
+  <div id="performance-day-detail-container">
+    {% include "performance/partials/member_history_day_detail_cards.html" with detail_heading=history_scope.label|add:" の日次実績" detail_adjustment_heading=history_scope.label|add:" の補正実績" detail_description="対象期間の日次実績と補正実績です。" show_reset_detail=False %}
+  </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'performance/member_dashboard.js' %}?v=7"></script>
+<script src="{% static 'performance/member_dashboard.js' %}?v=15"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 <script>
   (function () {
