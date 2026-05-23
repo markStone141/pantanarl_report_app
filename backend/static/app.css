@@ -398,9 +398,10 @@ a {
 }
 
 .performance-trend-date-links {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
   gap: 8px;
+  align-items: start;
 }
 
 .performance-trend-date-link {
@@ -408,15 +409,29 @@ a {
   background: #fff;
   color: var(--brand);
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 6px 10px;
   font: inherit;
   cursor: pointer;
   transition: background-color 0.16s ease, border-color 0.16s ease;
+  width: 100%;
+  text-align: center;
 }
 
 .performance-trend-date-link:hover {
   background: rgba(39, 123, 211, 0.08);
   border-color: rgba(39, 123, 211, 0.28);
+}
+
+@media (max-width: 1200px) {
+  .performance-trend-date-links {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .performance-trend-date-links {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .performance-trend-controls .btn-inline[disabled] {
