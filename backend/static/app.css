@@ -969,21 +969,93 @@ th {
   min-height: 40px;
 }
 
-.member-settings-active-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+.member-settings-toggle-btn {
   min-height: 40px;
-  padding: 0 10px;
-  border: 1px solid var(--line);
+  padding: 0 14px;
   border-radius: 12px;
+  border: 1px solid var(--line);
   background: #fff;
   color: var(--ink);
   white-space: nowrap;
 }
 
-.member-settings-active-toggle input {
-  min-height: auto;
+.member-settings-toggle-btn.is-active {
+  border-color: rgba(24, 126, 255, 0.25);
+  background: rgba(24, 126, 255, 0.1);
+  color: var(--brand-deep);
+}
+
+.selection-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.selection-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 72px;
+  padding: 12px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(109, 123, 141, 0.2);
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+}
+
+.selection-card__input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.selection-card__title {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.selection-card__meta {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.selection-card:has(.selection-card__input:checked) {
+  border-color: rgba(24, 126, 255, 0.3);
+  background: rgba(24, 126, 255, 0.1);
+  box-shadow: 0 12px 24px rgba(14, 42, 74, 0.08);
+}
+
+.member-auth-confirm {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 20, 36, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1200;
+}
+
+.member-auth-confirm__card {
+  width: min(560px, 94vw);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 22px 60px rgba(13, 36, 67, 0.22);
+  padding: 18px 18px 16px;
+}
+
+.member-auth-confirm__summary {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+  max-height: 45vh;
+  overflow-y: auto;
+  color: var(--ink-soft);
 }
 
 .report-bulk-actions {

@@ -16,6 +16,7 @@
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dashboard_index' %}">ダッシュボード</a>
       <a href="{% url 'member_settings' %}">メンバー管理</a>
+      <a href="{% url 'member_create' %}">新規メンバー追加</a>
       <a href="{% url 'member_auth_bulk_settings' %}">ID/PW一括管理</a>
       <a href="{% url 'department_settings' %}">部署管理</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
@@ -25,6 +26,9 @@
 
   <section class="mt-16">
     <article class="card">
+      {% if status_message %}
+      <div class="note mb-10">{{ status_message }}</div>
+      {% endif %}
       <form method="post">
         {% csrf_token %}
 
@@ -34,28 +38,21 @@
         <div class="error-text">{{ form.name.errors|striptags }}</div>
         {% endif %}
 
-        <label for="id_email">{{ form.email.label }}</label>
-        {{ form.email }}
-        {% if form.email.errors %}
-        <div class="error-text">{{ form.email.errors|striptags }}</div>
-        {% endif %}
-
         <label>{{ form.departments.label }}</label>
-        <div id="department_choices" class="checkbox-list">
+        <div id="department_choices" class="selection-card-grid">
           {% for department in department_choices %}
-          <div class="checkbox-row">
-            <label class="checkbox-label" for="dept_choice_{{ department.id }}">
+            <label class="selection-card" for="dept_choice_{{ department.id }}">
               <input
-                class="checkbox-input"
+                class="selection-card__input"
                 type="checkbox"
                 name="departments"
                 value="{{ department.id }}"
                 id="dept_choice_{{ department.id }}"
                 {% if department.id|stringformat:"s" in selected_department_ids %}checked{% endif %}
               />
-              {{ department.name }} ({{ department.code }})
+              <span class="selection-card__title">{{ department.name }}</span>
+              <span class="selection-card__meta">{{ department.code }}</span>
             </label>
-          </div>
           {% empty %}
           <div class="muted">有効な部署がありません。</div>
           {% endfor %}
@@ -80,6 +77,12 @@
         {{ form.auth_password }}
         {% if form.auth_password.errors %}
         <div class="error-text">{{ form.auth_password.errors|striptags }}</div>
+        {% endif %}
+
+        <label for="id_email">{{ form.email.label }}</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+        <div class="error-text">{{ form.email.errors|striptags }}</div>
         {% endif %}
 
         <div class="inline-row mt-12">

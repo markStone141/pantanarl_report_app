@@ -15,6 +15,7 @@
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dashboard_index' %}">ダッシュボード</a>
+      <a href="{% url 'member_create' %}">新規メンバー追加</a>
       <a href="{% url 'member_auth_bulk_settings' %}">ID/PW一括管理</a>
       <a href="{% url 'department_settings' %}">部署管理</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
@@ -24,7 +25,7 @@
 
   <section class="mt-16">
     <article class="card">
-      <h3>現在のメンバー</h3>
+      <h3>メンバー一覧</h3>
       <div class="dashboard-toolbar mt-12">
         <form method="get" class="member-settings-filter-form" id="member-settings-filter-form" action="{% url 'member_settings' %}">
           <input type="search" name="q" value="{{ query }}" placeholder="名前・メール・部署で検索">
@@ -32,17 +33,15 @@
             <option value="name" {% if sort == "name" %}selected{% endif %}>名前順</option>
             <option value="newest" {% if sort == "newest" %}selected{% endif %}>新しい順</option>
             <option value="oldest" {% if sort == "oldest" %}selected{% endif %}>古い順</option>
-            <option value="department" {% if sort == "department" %}selected{% endif %}>部署順</option>
           </select>
-          <label class="member-settings-active-toggle">
-            <input type="checkbox" name="active_only" value="1" {% if active_only %}checked{% endif %}>
-            <span>有効なメンバーのみ表示</span>
-          </label>
+          <input type="hidden" name="active_only" value="{% if active_only %}1{% else %}0{% endif %}" id="member-settings-active-only-input">
+          <button type="button" class="member-settings-toggle-btn{% if active_only %} is-active{% endif %}" id="member-settings-active-toggle-btn" aria-pressed="{% if active_only %}true{% else %}false{% endif %}">
+            有効なメンバーのみ表示
+          </button>
           {% if query or sort != "name" or not active_only %}
           <a href="{% url 'member_settings' %}" class="btn-inline">リセット</a>
           {% endif %}
         </form>
-        <a href="{% url 'member_create' %}" class="btn-inline">新規メンバー追加</a>
       </div>
       {% if status_message %}
       <div class="note" style="margin-bottom: 10px;">
@@ -66,12 +65,11 @@
     }
 
     let debounceTimer = null;
+    const activeOnlyInput = document.getElementById("member-settings-active-only-input");
+    const activeToggleButton = document.getElementById("member-settings-active-toggle-btn");
 
     async function fetchMembers(page) {
       const params = new URLSearchParams(new FormData(form));
-      if (!form.querySelector('input[name="active_only"]').checked) {
-        params.set("active_only", "0");
-      }
       if (page) {
         params.set("page", String(page));
       }
@@ -95,10 +93,20 @@
     });
 
     form.addEventListener("change", function (event) {
-      if (event.target.name === "sort" || event.target.name === "active_only") {
+      if (event.target.name === "sort") {
         fetchMembers();
       }
     });
+
+    if (activeToggleButton && activeOnlyInput) {
+      activeToggleButton.addEventListener("click", function () {
+        const isActive = activeOnlyInput.value !== "0";
+        activeOnlyInput.value = isActive ? "0" : "1";
+        activeToggleButton.classList.toggle("is-active", !isActive);
+        activeToggleButton.setAttribute("aria-pressed", (!isActive).toString());
+        fetchMembers();
+      });
+    }
 
     listContainer.addEventListener("click", function (event) {
       const link = event.target.closest("[data-member-page]");

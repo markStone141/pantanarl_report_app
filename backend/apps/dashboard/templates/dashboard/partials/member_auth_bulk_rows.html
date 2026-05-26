@@ -1,0 +1,43 @@
+{% if member_rows %}
+  {% for row in member_rows %}
+    <tr>
+      <td>{{ row.member.name }}</td>
+      <td>
+        <input
+          type="email"
+          name="email_{{ row.member.id }}"
+          value="{{ row.email_input }}"
+          placeholder="未設定"
+          data-original-email="{{ row.member.email|default:'' }}"
+          data-member-name="{{ row.member.name }}"
+        >
+        {% if row.errors %}
+          <div class="error-text">{{ row.errors|join:" " }}</div>
+        {% endif %}
+      </td>
+      <td>
+        <input
+          type="text"
+          name="login_id_{{ row.member.id }}"
+          value="{{ row.login_input }}"
+          placeholder="{% if row.member.user %}現在: {{ row.member.user.username }}{% else %}未連携{% endif %}"
+          data-original-login="{% if row.member.user %}{{ row.member.user.username }}{% endif %}"
+          data-member-name="{{ row.member.name }}"
+        >
+      </td>
+      <td>
+        <input
+          type="password"
+          name="password_{{ row.member.id }}"
+          value=""
+          placeholder="変更時のみ入力"
+          data-member-name="{{ row.member.name }}"
+        >
+      </td>
+    </tr>
+  {% endfor %}
+{% else %}
+  <tr>
+    <td colspan="4">メンバーが存在しません。</td>
+  </tr>
+{% endif %}

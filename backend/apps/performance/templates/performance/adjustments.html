@@ -168,6 +168,7 @@
   </section>
 </div>
 {{ member_options|json_script:"performance-adjustment-member-options" }}
+{{ department_code_map|json_script:"performance-adjustment-department-codes" }}
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 <script>
   (function () {
@@ -178,16 +179,18 @@
     const directAmountField = document.getElementById("performance-adjustment-direct-amount-field");
     const directAmountInput = document.getElementById("{{ form.amount.id_for_label }}");
     const dataNode = document.getElementById("performance-adjustment-member-options");
-    if (!departmentSelect || !memberSelect || !dataNode) {
+    const departmentCodeNode = document.getElementById("performance-adjustment-department-codes");
+    if (!departmentSelect || !memberSelect || !dataNode || !departmentCodeNode) {
       return;
     }
-    const wvDepartmentCodes = ["WV"];
     const sourceTypeLabel = document.querySelector('label[for="{{ form.source_type.id_for_label }}"]');
     const amountChoiceLabel = document.querySelector('label[for="{{ form.amount_choice.id_for_label }}"]');
     const directAmountLabel = document.querySelector('label[for="{{ form.amount.id_for_label }}"]');
     let memberOptions = {};
+    let departmentCodeMap = {};
     try {
       memberOptions = JSON.parse(dataNode.textContent || "{}");
+      departmentCodeMap = JSON.parse(departmentCodeNode.textContent || "{}");
     } catch (error) {
       return;
     }
@@ -213,15 +216,11 @@
     }
 
     function selectedDepartmentCode() {
-      const selectedOption = departmentSelect.options[departmentSelect.selectedIndex];
-      if (!selectedOption) {
-        return "";
-      }
-      return String(selectedOption.textContent || "").trim();
+      return String(departmentCodeMap[departmentSelect.value] || "");
     }
 
     function isWvSelected() {
-      return wvDepartmentCodes.indexOf(selectedDepartmentCode()) >= 0;
+      return selectedDepartmentCode() === "WV";
     }
 
     function renderSourceTypeOptions() {

@@ -16,6 +16,7 @@
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dashboard_index' %}">ダッシュボード</a>
       <a href="{% url 'member_settings' %}">メンバー管理</a>
+      <a href="{% url 'member_create' %}">新規メンバー追加</a>
       <a href="{% url 'department_settings' %}">部署管理</a>
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>
@@ -27,7 +28,13 @@
       <div class="note mb-10">{{ status_message }}</div>
     {% endif %}
 
-    <form method="post">
+    <div class="dashboard-toolbar mb-10">
+      <form method="get" id="member-auth-search-form" class="member-settings-filter-form" action="{% url 'member_auth_bulk_settings' %}">
+        <input type="search" name="q" value="{{ query }}" placeholder="名前・メール・ログインIDで検索">
+      </form>
+    </div>
+
+    <form method="post" id="member-auth-bulk-form">
       {% csrf_token %}
       <input type="hidden" name="page" value="{{ current_page_number }}">
       <div class="table-scroll">
@@ -40,70 +47,145 @@
               <th>パスワード</th>
             </tr>
           </thead>
-          <tbody>
-            {% for row in member_rows %}
-              <tr>
-                <td>{{ row.member.name }}</td>
-                <td>
-                  <input
-                    type="email"
-                    name="email_{{ row.member.id }}"
-                    value="{{ row.email_input }}"
-                    placeholder="未設定"
-                  >
-                  {% if row.errors %}
-                    <div class="error-text">{{ row.errors|join:" " }}</div>
-                  {% endif %}
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    name="login_id_{{ row.member.id }}"
-                    value="{{ row.login_input }}"
-                    placeholder="{% if row.member.user %}現在: {{ row.member.user.username }}{% else %}未連携{% endif %}"
-                  >
-                </td>
-                <td>
-                  <input
-                    type="password"
-                    name="password_{{ row.member.id }}"
-                    value=""
-                    placeholder="変更時のみ入力"
-                  >
-                </td>
-              </tr>
-            {% empty %}
-              <tr>
-                <td colspan="4">メンバーが存在しません。</td>
-              </tr>
-            {% endfor %}
+          <tbody id="member-auth-bulk-rows">
+            {% include "dashboard/partials/member_auth_bulk_rows.html" %}
           </tbody>
         </table>
       </div>
-      <button type="submit" class="mt-12">変更を適用</button>
+      <div class="inline-row mt-12">
+        <button type="submit">変更を適用</button>
+        <button type="button" class="btn-inline" id="member-auth-load-more-btn" {% if not page_obj.has_next %}hidden{% endif %} data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% endif %}">さらに20件表示</button>
+      </div>
     </form>
 
-    <div class="inline-row mt-14">
-      {% if page_obj.has_previous %}
-        <a class="btn-inline" href="?page={{ page_obj.previous_page_number }}">前へ</a>
-      {% endif %}
-      {% for num in paginator.page_range %}
-        {% if num == page_obj.number %}
-          <span class="badge">{{ num }}</span>
-        {% elif num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
-          <a class="btn-inline" href="?page={{ num }}">{{ num }}</a>
-        {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
-          <span class="muted">…</span>
-        {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
-          <span class="muted">…</span>
-        {% endif %}
-      {% endfor %}
-      {% if page_obj.has_next %}
-        <a class="btn-inline" href="?page={{ page_obj.next_page_number }}">次へ</a>
-      {% endif %}
-      <span class="muted ml-auto">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
+    <div class="member-auth-confirm" id="member-auth-confirm" hidden>
+      <div class="member-auth-confirm__card">
+        <strong>この内容で更新しますか？</strong>
+        <div class="member-auth-confirm__summary" id="member-auth-confirm-summary"></div>
+        <div class="inline-row mt-12">
+          <button type="button" class="btn-inline" id="member-auth-confirm-cancel">戻る</button>
+          <button type="button" id="member-auth-confirm-submit">更新する</button>
+        </div>
+      </div>
     </div>
   </section>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+<script>
+  (function () {
+    const searchForm = document.getElementById("member-auth-search-form");
+    const bulkForm = document.getElementById("member-auth-bulk-form");
+    const rowsWrap = document.getElementById("member-auth-bulk-rows");
+    const loadMoreButton = document.getElementById("member-auth-load-more-btn");
+    const confirmWrap = document.getElementById("member-auth-confirm");
+    const confirmSummary = document.getElementById("member-auth-confirm-summary");
+    const confirmCancel = document.getElementById("member-auth-confirm-cancel");
+    const confirmSubmit = document.getElementById("member-auth-confirm-submit");
+    if (!searchForm || !bulkForm || !rowsWrap || !loadMoreButton || !confirmWrap || !confirmSummary || !confirmCancel || !confirmSubmit) {
+      return;
+    }
+
+    let debounceTimer = null;
+    let confirmedSubmit = false;
+
+    function updateLoadMore(meta) {
+      if (!meta.has_next) {
+        loadMoreButton.hidden = true;
+        loadMoreButton.dataset.nextPage = "";
+        return;
+      }
+      loadMoreButton.hidden = false;
+      loadMoreButton.dataset.nextPage = String(meta.next_page || "");
+    }
+
+    async function fetchRows(page, append) {
+      const params = new URLSearchParams(new FormData(searchForm));
+      if (page) {
+        params.set("page", String(page));
+      }
+      const response = await fetch(`${searchForm.action}?${params.toString()}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      if (!response.ok) {
+        return;
+      }
+      const payload = await response.json();
+      if (append) {
+        rowsWrap.insertAdjacentHTML("beforeend", payload.rows_html || "");
+      } else {
+        rowsWrap.innerHTML = payload.rows_html || "";
+      }
+      bulkForm.querySelector('input[name="page"]').value = String(payload.page_number || 1);
+      updateLoadMore(payload);
+    }
+
+    function collectChanges() {
+      const changes = [];
+      rowsWrap.querySelectorAll("tr").forEach(function (row) {
+        const emailInput = row.querySelector('input[name^="email_"]');
+        const loginInput = row.querySelector('input[name^="login_id_"]');
+        const passwordInput = row.querySelector('input[name^="password_"]');
+        if (!emailInput || !loginInput || !passwordInput) {
+          return;
+        }
+        const memberName = emailInput.dataset.memberName || loginInput.dataset.memberName || passwordInput.dataset.memberName || "メンバー";
+        const originalEmail = emailInput.dataset.originalEmail || "";
+        const originalLogin = loginInput.dataset.originalLogin || "";
+        if ((emailInput.value || "") !== originalEmail) {
+          changes.push(`${memberName}: メールアドレス -> ${emailInput.value || "未設定"}`);
+        }
+        if ((loginInput.value || "") !== originalLogin && (loginInput.value || "")) {
+          changes.push(`${memberName}: ログインID -> ${loginInput.value}`);
+        }
+        if (passwordInput.value) {
+          changes.push(`${memberName}: パスワードを変更`);
+        }
+      });
+      return changes;
+    }
+
+    searchForm.addEventListener("input", function (event) {
+      if (event.target.name !== "q") {
+        return;
+      }
+      window.clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(function () {
+        fetchRows(1, false);
+      }, 180);
+    });
+
+    loadMoreButton.addEventListener("click", function () {
+      const nextPage = loadMoreButton.dataset.nextPage;
+      if (!nextPage) {
+        return;
+      }
+      fetchRows(nextPage, true);
+    });
+
+    bulkForm.addEventListener("submit", function (event) {
+      if (confirmedSubmit) {
+        return;
+      }
+      event.preventDefault();
+      const changes = collectChanges();
+      if (!changes.length) {
+        window.alert("変更内容がありません。");
+        return;
+      }
+      confirmSummary.innerHTML = changes.map(function (item) {
+        return `<div>${item}</div>`;
+      }).join("");
+      confirmWrap.hidden = false;
+    });
+
+    confirmCancel.addEventListener("click", function () {
+      confirmWrap.hidden = true;
+    });
+
+    confirmSubmit.addEventListener("click", function () {
+      confirmedSubmit = true;
+      bulkForm.submit();
+    });
+  })();
+</script>
 {% endblock %}

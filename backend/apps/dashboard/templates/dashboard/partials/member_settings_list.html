@@ -20,7 +20,9 @@
         </td>
         <td data-label="メイン部署">{% if member.default_department %}{{ member.default_department.name }}{% else %}-{% endif %}</td>
         <td data-label="操作">
-          <a class="btn-inline" href="{% url 'member_edit' member.id %}">編集</a>
+          <a class="icon-btn" href="{% url 'member_edit' member.id %}" aria-label="{{ member.name }}を編集">
+            <i class="fa-solid fa-pen"></i>
+          </a>
           <form method="post" action="{% url 'member_delete' member.id %}" style="display:inline;" onsubmit="return confirm('{% if member.is_active %}このメンバーを無効化します。よろしいですか？{% else %}このメンバーを再有効化します。よろしいですか？{% endif %}');">
             {% csrf_token %}
             <button class="btn-inline {% if member.is_active %}btn-danger{% endif %}" type="submit">{% if member.is_active %}無効化{% else %}再有効化{% endif %}</button>

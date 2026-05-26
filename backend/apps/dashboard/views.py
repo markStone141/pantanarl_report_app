@@ -7,9 +7,10 @@ from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db.models import Q
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth import get_user_model
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 
@@ -433,6 +434,7 @@ def _member_form(*, data=None, initial=None) -> MemberRegistrationForm:
     active_departments = Department.objects.filter(is_active=True)
     form.fields["departments"].queryset = active_departments
     form.fields["default_department"].queryset = active_departments
+    form.fields["auth_login_id"].widget.attrs["placeholder"] = ""
     return form
 
 
@@ -556,6 +558,39 @@ def _build_member_settings_queryset(*, query: str, sort: str, active_only: bool)
 
 def _member_settings_redirect(status_message: str) -> HttpResponse:
     return redirect(f"{reverse('member_settings')}?{urlencode({'status': status_message})}")
+
+
+def _build_member_row_payload(member: Member, *, login_input: str = "", email_input: str | None = None, errors: list[str] | None = None):
+    return {
+        "member": member,
+        "login_input": login_input,
+        "email_input": member.email if email_input is None else email_input,
+        "errors": errors or [],
+    }
+
+
+def _build_member_bulk_queryset(*, query: str):
+    members_qs = Member.objects.select_related("user").order_by("name", "id")
+    if query:
+        members_qs = members_qs.filter(
+            Q(name__icontains=query)
+            | Q(email__icontains=query)
+            | Q(user__username__icontains=query)
+        ).distinct()
+    return members_qs
+
+
+def _extract_bulk_member_ids(post_data) -> list[int]:
+    member_ids = set()
+    prefixes = ("login_id_", "password_", "email_")
+    for key in post_data.keys():
+        for prefix in prefixes:
+            if key.startswith(prefix):
+                raw_id = key[len(prefix):]
+                if raw_id.isdigit():
+                    member_ids.add(int(raw_id))
+                break
+    return sorted(member_ids)
 
 
 def _department_form(*, data=None, initial=None, edit_department=None) -> DepartmentForm:
@@ -829,11 +864,12 @@ def member_settings(request: HttpRequest) -> HttpResponse:
 
 @require_roles(ROLE_ADMIN)
 def member_create(request: HttpRequest) -> HttpResponse:
+    status_message = ""
     if request.method == "POST":
         form = _member_form(data=request.POST)
         member, status_message = _save_member_form(form=form)
         if member and not form.errors:
-            return _member_settings_redirect(status_message)
+            form = _member_form()
     else:
         form = _member_form()
     selected_department_ids = {str(dept_id) for dept_id in (form["departments"].value() or [])}
@@ -849,6 +885,7 @@ def member_create(request: HttpRequest) -> HttpResponse:
             "page_title": "新規メンバー追加",
             "page_subtitle": "名前・所属部署・ログイン情報を設定します。",
             "submit_label": "メンバーを登録",
+            "status_message": status_message,
         },
     )
 
@@ -882,7 +919,8 @@ def member_edit(request: HttpRequest, member_id: int) -> HttpResponse:
 
 @require_roles(ROLE_ADMIN)
 def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
-    members_qs = Member.objects.select_related("user").order_by("name", "id")
+    query = (request.GET.get("q") or "").strip()
+    members_qs = _build_member_bulk_queryset(query=query)
     paginator = Paginator(members_qs, 20)
     current_page_number = request.GET.get("page") or "1"
     page_obj = paginator.get_page(current_page_number)
@@ -892,11 +930,17 @@ def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
     row_email_inputs = {}
 
     if request.method == "POST":
-        posted_page = request.POST.get("page") or "1"
-        page_obj = paginator.get_page(posted_page)
         updated_count = 0
+        member_ids = _extract_bulk_member_ids(request.POST)
+        target_members = {
+            member.id: member
+            for member in Member.objects.select_related("user").filter(id__in=member_ids).order_by("name", "id")
+        }
 
-        for member in page_obj.object_list:
+        for member_id in member_ids:
+            member = target_members.get(member_id)
+            if member is None:
+                continue
             login_key = f"login_id_{member.id}"
             password_key = f"password_{member.id}"
             email_key = f"email_{member.id}"
@@ -960,30 +1004,35 @@ def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
                 updated_count += 1
 
         if not row_errors:
-            status_message = f"{updated_count}件のログイン情報を更新しました。"
+            return _member_settings_redirect(f"{updated_count}件のログイン情報を更新しました。")
         else:
             status_message = "入力内容にエラーがあります。該当行を修正してください。"
-        current_page_number = str(page_obj.number)
+        page_obj = paginator.get_page(request.POST.get("page") or "1")
 
     member_rows = []
     for member in page_obj.object_list:
-        member_rows.append(
+        member_rows.append(_build_member_row_payload(
+            member,
+            login_input=row_login_inputs.get(member.id, ""),
+            email_input=row_email_inputs.get(member.id, member.email or ""),
+            errors=row_errors.get(member.id, []),
+        ))
+
+    context = {
+        "page_obj": page_obj,
+        "paginator": paginator,
+        "status_message": status_message,
+        "member_rows": member_rows,
+        "current_page_number": str(page_obj.number),
+        "query": query,
+    }
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse(
             {
-                "member": member,
-                "login_input": row_login_inputs.get(member.id, ""),
-                "email_input": row_email_inputs.get(member.id, member.email or ""),
-                "errors": row_errors.get(member.id, []),
+                "rows_html": render_to_string("dashboard/partials/member_auth_bulk_rows.html", context, request=request),
+                "has_next": page_obj.has_next(),
+                "next_page": page_obj.next_page_number() if page_obj.has_next() else None,
+                "page_number": page_obj.number,
             }
         )
-
-    return render(
-        request,
-        "dashboard/member_auth_bulk_settings.html",
-        {
-            "page_obj": page_obj,
-            "paginator": paginator,
-            "status_message": status_message,
-            "member_rows": member_rows,
-            "current_page_number": str(current_page_number),
-        },
-    )
+    return render(request, "dashboard/member_auth_bulk_settings.html", context)

@@ -36,8 +36,9 @@ class MemberSettingsViewTests(TestCase):
                 "name": "Test Member",
             },
         )
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(Member.objects.filter(name="Test Member").exists())
+        self.assertContains(response, "を登録しました。")
 
     def test_register_member_saves_email(self):
         response = self.client.post(
@@ -47,7 +48,7 @@ class MemberSettingsViewTests(TestCase):
                 "email": "mail.member@example.com",
             },
         )
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
         member = Member.objects.get(name="Mail Member")
         self.assertEqual(member.email, "mail.member@example.com")
 
@@ -98,7 +99,7 @@ class MemberSettingsViewTests(TestCase):
                 "default_department": self.depts["UN"].id,
             },
         )
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
         member = Member.objects.get(name="Dept User")
         self.assertEqual(
             set(member.department_links.values_list("department_id", flat=True)),
@@ -155,6 +156,7 @@ class MemberSettingsViewTests(TestCase):
         response = self.client.get(reverse("member_create"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "新規メンバー追加")
+        self.assertContains(response, "メールアドレス")
 
     def test_member_settings_filters_by_query(self):
         Member.objects.create(name="Alpha User", email="alpha@example.com")
@@ -208,6 +210,18 @@ class MemberSettingsViewTests(TestCase):
         self.assertContains(response, "Ajax Alpha")
         self.assertNotContains(response, "<html")
 
+    def test_member_settings_ajax_can_include_inactive_members(self):
+        Member.objects.create(name="Ajax Inactive", is_active=False)
+
+        response = self.client.get(
+            reverse("member_settings"),
+            {"active_only": "0"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ajax Inactive")
+
     def test_member_settings_paginates_members_by_twenty(self):
         for index in range(21):
             Member.objects.create(
@@ -236,7 +250,7 @@ class MemberSettingsViewTests(TestCase):
                 "auth_password": "AuthPass123",
             },
         )
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
         member = Member.objects.get(name="Auth Member")
         self.assertIsNotNone(member.user)
         self.assertEqual(member.user.username, "auth_member_1")
@@ -274,10 +288,11 @@ class MemberSettingsViewTests(TestCase):
                 f"password_{member.id}": "NewPass123",
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         member.refresh_from_db()
         self.assertEqual(member.user.username, "bulk_user_new")
         self.assertTrue(member.user.check_password("NewPass123"))
+        self.assertTrue(response["Location"].startswith(reverse("member_settings")))
 
     def test_member_auth_bulk_settings_updates_member_email(self):
         member = Member.objects.create(name="Bulk Mail User", email="old@example.com")
@@ -288,7 +303,7 @@ class MemberSettingsViewTests(TestCase):
                 f"email_{member.id}": "new@example.com",
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         member.refresh_from_db()
         self.assertEqual(member.email, "new@example.com")
 
@@ -305,6 +320,18 @@ class MemberSettingsViewTests(TestCase):
         self.assertContains(response, "メールアドレスの形式が正しくありません。")
         member.refresh_from_db()
         self.assertEqual(member.email, "")
+
+    def test_member_auth_bulk_settings_ajax_returns_rows(self):
+        Member.objects.create(name="Ajax Bulk User", email="bulk@example.com")
+
+        response = self.client.get(
+            reverse("member_auth_bulk_settings"),
+            {"q": "Ajax"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("rows_html", response.json())
 
 
 class DepartmentSettingsViewTests(TestCase):
