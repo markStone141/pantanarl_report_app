@@ -32,34 +32,6 @@
       {% endif %}
     </div>
 
-    <section class="dairymetrics-v2-demo-card">
-      <div class="dairymetrics-v2-demo-head">
-        <h3>入力対象</h3>
-        <p class="muted">部署を切り替えると、入力項目とメール本文プレビューもその部署向けに切り替わります。</p>
-      </div>
-      <form method="get" class="dairymetrics-v2-transaction-form" id="v2-context-switch-form">
-        <div class="dairymetrics-field">
-          <label for="v2-context-department">部署</label>
-          <select id="v2-context-department" name="department">
-            {% for department in departments %}
-            <option value="{{ department.code }}" {% if selected_department_code == department.code %}selected{% endif %}>{{ department.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="dairymetrics-field">
-          <label for="v2-context-date">活動日</label>
-          <div class="dairymetrics-date-wrap">
-            <div class="dairymetrics-date-field">
-              <input id="v2-context-date" class="dairymetrics-date-input" type="date" name="date" value="{{ entry_date|date:'Y-m-d' }}">
-            </div>
-          </div>
-        </div>
-        <div class="dairymetrics-v2-transaction-actions">
-          <button type="submit" class="btn-inline dairymetrics-secondary-btn">表示を切り替える</button>
-        </div>
-      </form>
-    </section>
-
     {% if not has_personal_target or not has_department_target %}
     <section class="dairymetrics-v2-setup-card">
       <div class="dairymetrics-v2-setup-head">
@@ -755,9 +727,6 @@
     const closeoutPanel = document.getElementById("dairymetrics-v2-closeout-panel");
     const mailPreviewModal = document.getElementById("dairymetrics-v2-mail-preview");
     const mailPreviewBackdrop = document.getElementById("dairymetrics-v2-mail-backdrop");
-    const contextSwitchForm = document.getElementById("v2-context-switch-form");
-    const contextDepartmentSelect = document.getElementById("v2-context-department");
-    const contextDateInput = document.getElementById("v2-context-date");
     const transactionIdInput = document.getElementById("v2-transaction-id");
     const transactionAmountSelect = document.getElementById("v2-transaction-amount-select");
     const transactionAmountHidden = document.getElementById("v2-transaction-amount-hidden");
@@ -1152,13 +1121,6 @@
       });
     });
     mailPreviewBackdrop?.addEventListener("click", closeMailModal);
-    contextDepartmentSelect?.addEventListener("change", function () {
-      contextSwitchForm?.requestSubmit();
-    });
-    contextDateInput?.addEventListener("change", function () {
-      contextSwitchForm?.requestSubmit();
-    });
-
     document.querySelectorAll("[data-clear-on-focus]").forEach(function (input) {
       input.addEventListener("focus", function () {
         if (input.value === "0") {
