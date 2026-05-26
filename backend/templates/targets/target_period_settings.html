@@ -23,12 +23,15 @@
   </header>
 
   <section class="card" style="margin-top: 16px;">
-    <h3>路程期間・状態</h3>
+    <h3>路程期間・目標設定</h3>
     {% if form_error %}
     <div class="error-text" style="margin: 10px 0;">{{ form_error }}</div>
     {% endif %}
     {% if period_saved %}
     <div class="notice" style="margin: 10px 0;">路程を保存しました。</div>
+    {% endif %}
+    {% if target_saved %}
+    <div class="notice" style="margin: 10px 0;">路程目標を保存しました。</div>
     {% endif %}
     <form method="post">
       {% csrf_token %}
@@ -53,6 +56,10 @@
           <label>状態（自動）</label>
           <div class="badge" style="margin-top: 8px; display: inline-block;">{{ form_status }}</div>
         </div>
+        <div>
+          <label>対象路程</label>
+          <div class="badge" style="margin-top: 8px; display: inline-block;">{{ selected_period_label }}</div>
+        </div>
       </div>
       <div class="grid grid-2">
         <div>
@@ -64,35 +71,6 @@
           <input type="date" name="end_date" value="{{ form_end_date }}" required />
         </div>
       </div>
-      <div style="margin-top: 10px;"><button type="submit">路程を保存</button></div>
-    </form>
-  </section>
-
-  <section class="card" style="margin-top: 16px;">
-    <h3>路程目標入力</h3>
-    {% if target_saved %}
-    <div class="notice" style="margin: 10px 0;">路程目標を保存しました。</div>
-    {% endif %}
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="save_period_targets" />
-      <div class="grid grid-2">
-        <div>
-          <label>対象路程</label>
-          <select name="selected_period_id" required>
-            <option value="">選択してください</option>
-            {% for option in period_options %}
-            <option value="{{ option.id }}" {% if selected_period and selected_period.id == option.id %}selected{% endif %}>
-              {{ option.label }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <span class="badge" style="margin-top: 24px; display: inline-block;">{{ selected_period_label }}</span>
-        </div>
-      </div>
-
       {% for row in rows %}
       <div style="margin-top: 12px; padding: 10px; border: 1px solid #d4e2ea; border-radius: 8px;">
         <strong>{{ row.label }}</strong>
@@ -108,7 +86,7 @@
       </div>
       {% endfor %}
 
-      <div style="margin-top: 12px;"><button type="submit">路程目標を保存</button></div>
+      <div style="margin-top: 12px;"><button type="submit">路程と目標を保存</button></div>
     </form>
   </section>
 

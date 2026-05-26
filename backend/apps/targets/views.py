@@ -735,6 +735,8 @@ def target_period_settings(request: HttpRequest) -> HttpResponse:
             saved_period, period_saved, form_error = _save_period_definition(post_data=request.POST)
             if saved_period is not None:
                 selected_period = saved_period
+                _save_period_targets(selected_period=selected_period, configs=configs, post_data=request.POST)
+                target_saved = True
             posted_edit_id = request.POST.get("edit_period_id")
             is_edit_mode = bool(posted_edit_id and posted_edit_id.isdigit())
 
