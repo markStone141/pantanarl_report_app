@@ -658,7 +658,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'id="v2-transaction-location" type="text" name="location" value="新宿駅前"', html=False)
+        self.assertContains(response, 'id="v2-transaction-location" type="hidden" name="location" value="新宿駅前"', html=False)
 
     def test_entry_v2_transaction_demo_saves_department_daily_target_summary(self):
         self.client.force_login(self.user)

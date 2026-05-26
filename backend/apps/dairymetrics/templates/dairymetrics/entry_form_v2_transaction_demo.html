@@ -226,11 +226,7 @@
               <input id="v2-transaction-amount-custom" type="number" min="0" step="100" value="{{ transaction_form.support_amount.value|default:1000 }}">
             </div>
             {% endif %}
-            <div class="dairymetrics-field">
-              <label for="v2-transaction-location">場所</label>
-              <input id="v2-transaction-location" type="text" name="location" value="{{ transaction_form.location.value|default:'' }}">
-              {% if transaction_form.location.errors %}<div class="error-text">{{ transaction_form.location.errors|striptags }}</div>{% endif %}
-            </div>
+            <input id="v2-transaction-location" type="hidden" name="location" value="{{ transaction_form.location.value|default:'' }}">
             <div class="dairymetrics-field">
               <label for="v2-transaction-age">年代</label>
               <select id="v2-transaction-age" name="age_band" data-student-age>
