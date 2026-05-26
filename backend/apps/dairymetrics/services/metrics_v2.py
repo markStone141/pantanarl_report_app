@@ -49,6 +49,8 @@ RANKING_METRIC_OPTIONS = [
     {"key": "return_amount", "label": "戻り金額", "unit": "円"},
 ]
 
+WV_ONLY_RANKING_METRIC_KEYS = {"cs_count", "refugee_count"}
+
 
 @dataclass(frozen=True)
 class MetricsV2Scope:
@@ -498,8 +500,13 @@ def _member_metric_row(*, member, department, scope: MetricsV2Scope):
 def _build_ranking_payload(*, department, scope: MetricsV2Scope):
     members = list(Member.objects.active().filter(department_links__department=department).distinct().order_by("name"))
     rows = [_member_metric_row(member=member, department=department, scope=scope) for member in members]
+    ranking_options = [
+        option
+        for option in RANKING_METRIC_OPTIONS
+        if department.code == "WV" or option["key"] not in WV_ONLY_RANKING_METRIC_KEYS
+    ]
     metric_map = {}
-    for option in RANKING_METRIC_OPTIONS:
+    for option in ranking_options:
         ranked_rows = sorted(rows, key=lambda item: item["metrics"][option["key"]], reverse=True)
         metric_map[option["key"]] = {
             "label": option["label"],
@@ -525,7 +532,7 @@ def _build_ranking_payload(*, department, scope: MetricsV2Scope):
         }
     return {
         "default_metric": "support_amount",
-        "options": RANKING_METRIC_OPTIONS,
+        "options": ranking_options,
         "metric_map": metric_map,
     }
 
