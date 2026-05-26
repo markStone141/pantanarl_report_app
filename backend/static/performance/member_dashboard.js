@@ -174,10 +174,7 @@
       if (summaryCards.count_total.subtextNode && trendData.is_wv) {
         const csTotal = sumValues(sliceLatest(allCsCounts));
         const refugeeTotal = sumValues(sliceLatest(allRefugeeCounts));
-        const total = csTotal + refugeeTotal;
-        const nextText = total > 0
-          ? "CS " + ((csTotal / total) * 100).toFixed(1) + "% / 難民 " + ((refugeeTotal / total) * 100).toFixed(1) + "%"
-          : "CS 0.0% / 難民 0.0%";
+        const nextText = "CS " + csTotal.toLocaleString("ja-JP") + "件 / 難民 " + refugeeTotal.toLocaleString("ja-JP") + "件";
         summaryCards.count_total.subtextNode.hidden = false;
         summaryCards.count_total.subtextNode.textContent = nextText;
       }
@@ -190,10 +187,7 @@
       if (summaryCards.adjustment_count_total.subtextNode && trendData.is_wv) {
         const csTotal = sumValues(sliceLatest(allAdjustmentCsCounts));
         const refugeeTotal = sumValues(sliceLatest(allAdjustmentRefugeeCounts));
-        const total = csTotal + refugeeTotal;
-        const nextText = total > 0
-          ? "CS " + ((csTotal / total) * 100).toFixed(1) + "% / 難民 " + ((refugeeTotal / total) * 100).toFixed(1) + "%"
-          : "CS 0.0% / 難民 0.0%";
+        const nextText = "CS " + csTotal.toLocaleString("ja-JP") + "件 / 難民 " + refugeeTotal.toLocaleString("ja-JP") + "件";
         summaryCards.adjustment_count_total.subtextNode.hidden = false;
         summaryCards.adjustment_count_total.subtextNode.textContent = nextText;
       }

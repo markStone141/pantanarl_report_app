@@ -234,13 +234,8 @@ def _count_text(entry, adjustment_totals):
     return f"{total_count}件"
 
 
-def _wv_ratio_text(*, cs_count: int, refugee_count: int) -> str:
-    total = int(cs_count or 0) + int(refugee_count or 0)
-    if total <= 0:
-        return "CS 0.0% / 難民 0.0%"
-    cs_rate = round((int(cs_count or 0) / total) * 100, 1)
-    refugee_rate = round((int(refugee_count or 0) / total) * 100, 1)
-    return f"CS {cs_rate}% / 難民 {refugee_rate}%"
+def _wv_count_detail_text(*, cs_count: int, refugee_count: int) -> str:
+    return f"CS {int(cs_count or 0)}件 / 難民 {int(refugee_count or 0)}件"
 
 
 def _amount_text(entry, adjustment_totals):
@@ -375,7 +370,7 @@ def _build_scoped_member_cards(*, members, selected_department, scope):
                 "recent_amount_text": recent_amount_text,
                 "recent_count_text": recent_count_text,
                 "recent_count_subtext": (
-                    _wv_ratio_text(
+                    _wv_count_detail_text(
                         cs_count=int(latest_entry.cs_count or 0) + int(latest_totals["cs_count"]),
                         refugee_count=int(latest_entry.refugee_count or 0) + int(latest_totals["refugee_count"]),
                     )
@@ -417,7 +412,7 @@ def _final_count_text(*, department_code, totals):
 def _final_count_subtext(*, department_code, totals):
     if department_code != "WV":
         return ""
-    return _wv_ratio_text(
+    return _wv_count_detail_text(
         cs_count=int(totals.get("cs_count") or 0),
         refugee_count=int(totals.get("refugee_count") or 0),
     )
@@ -628,7 +623,7 @@ def _build_active_member_cards(*, members, today, target_month, target_period, s
                 "recent_amount_text": recent_amount_text,
                 "recent_count_text": recent_count_text,
                 "recent_count_subtext": (
-                    _wv_ratio_text(
+                    _wv_count_detail_text(
                         cs_count=int(entry.cs_count or 0) + int(recent_totals["cs_count"]),
                         refugee_count=int(entry.refugee_count or 0) + int(recent_totals["refugee_count"]),
                     )

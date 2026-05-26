@@ -1056,3 +1056,69 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         )
         self.assertEqual(target.target_count, 3)
         self.assertEqual(target.target_amount, 12000)
+
+    def test_performance_member_detail_can_save_wv_month_target_with_split_counts(self):
+        today = timezone.localdate()
+        wv_department = self.create_department("WV")
+        wv_member = self.create_member(name="Wv Member", department=wv_department)
+
+        response = self.client.post(
+            f"{reverse('performance_member_detail', args=[wv_member.id, wv_department.id])}?month={today:%Y-%m}",
+            {
+                "action": "save_month_target",
+                "department": wv_department.id,
+                "target_cs_count": 4,
+                "target_refugee_count": 3,
+                "target_amount": 28000,
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('performance_member_detail', args=[wv_member.id, wv_department.id])}?month={today:%Y-%m}&saved=target",
+        )
+        target = MemberMonthMetricTarget.objects.get(
+            member=wv_member,
+            department=wv_department,
+            target_month=today.replace(day=1),
+        )
+        self.assertEqual(target.target_cs_count, 4)
+        self.assertEqual(target.target_refugee_count, 3)
+        self.assertEqual(target.target_count, 7)
+        self.assertEqual(target.target_amount, 28000)
+
+    def test_performance_member_detail_can_save_wv_period_target_with_split_counts(self):
+        today = timezone.localdate()
+        wv_department = self.create_department("WV")
+        wv_member = self.create_member(name="Wv Period Member", department=wv_department)
+        current_period = Period.objects.create(
+            name="2026年5月 第4次路程",
+            month=today.replace(day=1),
+            start_date=today - timedelta(days=2),
+            end_date=today + timedelta(days=2),
+        )
+
+        response = self.client.post(
+            f"{reverse('performance_member_detail', args=[wv_member.id, wv_department.id])}?month={today:%Y-%m}",
+            {
+                "action": "save_period_target",
+                "department": wv_department.id,
+                "target_cs_count": 5,
+                "target_refugee_count": 2,
+                "target_amount": 32000,
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('performance_member_detail', args=[wv_member.id, wv_department.id])}?month={today:%Y-%m}&saved=target",
+        )
+        target = MemberPeriodMetricTarget.objects.get(
+            member=wv_member,
+            department=wv_department,
+            period=current_period,
+        )
+        self.assertEqual(target.target_cs_count, 5)
+        self.assertEqual(target.target_refugee_count, 2)
+        self.assertEqual(target.target_count, 7)
+        self.assertEqual(target.target_amount, 32000)

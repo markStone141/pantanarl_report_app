@@ -175,7 +175,11 @@
         {% if member_month_target %}
         <div class="metric-card mt-12 performance-target-config-card">
           <div class="performance-target-config-values">
+            {% if department.code == "WV" %}
+            <div>CS {{ member_month_target.target_cs_count }}件 / 難民 {{ member_month_target.target_refugee_count }}件</div>
+            {% else %}
             <div>件数 {{ member_month_target.target_count }}件</div>
+            {% endif %}
             <div class="muted">金額 {{ member_month_target.target_amount|floatformat:0 }}円</div>
           </div>
         </div>
@@ -186,7 +190,11 @@
         <div class="metric-card mt-12 performance-target-config-card">
           <div class="row">
             <div class="performance-target-config-values">
+              {% if department.code == "WV" %}
+              <div>CS {{ member_month_target.target_cs_count }}件 / 難民 {{ member_month_target.target_refugee_count }}件</div>
+              {% else %}
               <div>件数 {{ member_month_target.target_count }}件</div>
+              {% endif %}
               <div class="muted">金額 {{ member_month_target.target_amount|floatformat:0 }}円</div>
             </div>
             <a class="btn-inline performance-target-edit-btn" href="?month={{ selected_month|date:'Y-m' }}&edit_month_target=1">修正</a>
@@ -240,7 +248,11 @@
         {% if member_period_target %}
         <div class="metric-card mt-12 performance-target-config-card">
           <div class="performance-target-config-values">
+            {% if department.code == "WV" %}
+            <div>CS {{ member_period_target.target_cs_count }}件 / 難民 {{ member_period_target.target_refugee_count }}件</div>
+            {% else %}
             <div>件数 {{ member_period_target.target_count }}件</div>
+            {% endif %}
             <div class="muted">金額 {{ member_period_target.target_amount|floatformat:0 }}円</div>
           </div>
         </div>
@@ -251,7 +263,11 @@
         <div class="metric-card mt-12 performance-target-config-card">
           <div class="row">
             <div class="performance-target-config-values">
+              {% if department.code == "WV" %}
+              <div>CS {{ member_period_target.target_cs_count }}件 / 難民 {{ member_period_target.target_refugee_count }}件</div>
+              {% else %}
               <div>件数 {{ member_period_target.target_count }}件</div>
+              {% endif %}
               <div class="muted">金額 {{ member_period_target.target_amount|floatformat:0 }}円</div>
             </div>
             <a class="btn-inline performance-target-edit-btn" href="?month={{ selected_month|date:'Y-m' }}&edit_period_target=1">修正</a>

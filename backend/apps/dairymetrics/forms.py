@@ -229,6 +229,8 @@ class MetricAdjustmentForm(forms.ModelForm):
 class MemberScopeTargetForm(forms.Form):
     department = forms.ModelChoiceField(queryset=Department.objects.none(), label="部署")
     target_count = forms.IntegerField(label="目標 件数", min_value=0, required=False, initial=0)
+    target_cs_count = forms.IntegerField(label="目標 CS件数", min_value=0, required=False, initial=0)
+    target_refugee_count = forms.IntegerField(label="目標 難民件数", min_value=0, required=False, initial=0)
     target_amount = forms.IntegerField(label="目標 金額", min_value=0, required=False, initial=0)
 
     def __init__(self, *args, member=None, scope="month", department=None, period=None, target_month=None, **kwargs):
@@ -242,12 +244,13 @@ class MemberScopeTargetForm(forms.Form):
         self.period = period
         self.target_month = target_month or timezone.localdate().replace(day=1)
         self.target_instance = None
+        self.department_code = department.code if department is not None else self.initial.get("department_code", "")
 
         if department is not None:
             self.initial.setdefault("department", department)
         if scope == "period":
             self.fields["period_name"] = forms.CharField(label="対象路程", required=False, disabled=True)
-            self.order_fields(["department", "period_name", "target_count", "target_amount"])
+            self.order_fields(["department", "period_name", "target_count", "target_cs_count", "target_refugee_count", "target_amount"])
             if period is not None:
                 self.initial.setdefault("period_name", period.name)
                 if member and department:
@@ -258,7 +261,7 @@ class MemberScopeTargetForm(forms.Form):
                     ).first()
         else:
             self.fields["target_month_label"] = forms.CharField(label="対象月", required=False, disabled=True)
-            self.order_fields(["department", "target_month_label", "target_count", "target_amount"])
+            self.order_fields(["department", "target_month_label", "target_count", "target_cs_count", "target_refugee_count", "target_amount"])
             self.initial.setdefault("target_month_label", self.target_month.strftime("%Y/%m"))
             if member and department:
                 self.target_instance = MemberMonthMetricTarget.objects.filter(
@@ -269,12 +272,41 @@ class MemberScopeTargetForm(forms.Form):
 
         if self.target_instance:
             self.initial.setdefault("target_count", self.target_instance.target_count)
+            self.initial.setdefault("target_cs_count", getattr(self.target_instance, "target_cs_count", 0))
+            self.initial.setdefault("target_refugee_count", getattr(self.target_instance, "target_refugee_count", 0))
             self.initial.setdefault("target_amount", self.target_instance.target_amount)
+
+        department_code = self._resolve_department_code()
+        if department_code == "WV":
+            self.fields.pop("target_count", None)
+        else:
+            self.fields.pop("target_cs_count", None)
+            self.fields.pop("target_refugee_count", None)
+
+    def _resolve_department_code(self):
+        if self.is_bound:
+            department_id = self.data.get(self.add_prefix("department")) or self.data.get("department")
+            if department_id:
+                department = Department.objects.filter(pk=department_id).only("code").first()
+                if department is not None:
+                    return department.code
+        initial_department = self.initial.get("department")
+        if isinstance(initial_department, Department):
+            return initial_department.code
+        if self.department_code:
+            return self.department_code
+        return ""
 
     def clean(self):
         cleaned_data = super().clean()
+        department = cleaned_data.get("department")
+        department_code = department.code if department is not None else self._resolve_department_code()
         cleaned_data["target_count"] = cleaned_data.get("target_count") or 0
+        cleaned_data["target_cs_count"] = cleaned_data.get("target_cs_count") or 0
+        cleaned_data["target_refugee_count"] = cleaned_data.get("target_refugee_count") or 0
         cleaned_data["target_amount"] = cleaned_data.get("target_amount") or 0
+        if department_code == "WV":
+            cleaned_data["target_count"] = cleaned_data["target_cs_count"] + cleaned_data["target_refugee_count"]
         return cleaned_data
 
     def save(self):
@@ -294,6 +326,10 @@ class MemberScopeTargetForm(forms.Form):
         instance.member = self.member
         instance.department = department
         instance.target_count = self.cleaned_data["target_count"]
+        if hasattr(instance, "target_cs_count"):
+            instance.target_cs_count = self.cleaned_data.get("target_cs_count") or 0
+        if hasattr(instance, "target_refugee_count"):
+            instance.target_refugee_count = self.cleaned_data.get("target_refugee_count") or 0
         instance.target_amount = self.cleaned_data["target_amount"]
         instance.save()
         return instance
