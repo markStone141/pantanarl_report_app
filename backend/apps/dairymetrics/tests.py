@@ -3791,3 +3791,95 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         stale_entry.refresh_from_db()
         self.assertTrue(stale_entry.activity_closed)
         self.assertIsNotNone(stale_entry.activity_closed_at)
+
+    def test_metrics_v2_demo_shows_wv_count_breakdowns_and_cs_only_distribution_cards(self):
+        wv_department = self.create_department("WV")
+        wv_user, wv_member = self.create_member_user(
+            username="wv_metrics_member",
+            password="pass123",
+            name="WV石井",
+            department=wv_department,
+        )
+        wv_teammate = self.create_member(name="WV片山", department=wv_department)
+        wv_amount_metric = TargetMetric.objects.create(
+            department=wv_department,
+            code="amount",
+            label="金額",
+            unit="円",
+            display_order=1,
+        )
+        today = timezone.localdate()
+        MonthTargetMetricValue.objects.create(
+            department=wv_department,
+            target_month=today.replace(day=1),
+            metric=wv_amount_metric,
+            value=40000,
+        )
+        wv_entry_one = MemberDailyMetricEntry.objects.create(
+            member=wv_member,
+            department=wv_department,
+            entry_date=today - timedelta(days=2),
+            approach_count=10,
+            communication_count=5,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=wv_entry_one,
+            support_amount=9000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷",
+            comment="WV-CS",
+            wv_result_type=MemberMetricTransaction.WV_RESULT_CS,
+            wv_cs_count=2,
+            wv_refugee_amount=0,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=wv_entry_one,
+            support_amount=2000,
+            age_band=MemberMetricTransaction.AGE_BAND_THIRTIES,
+            gender=MemberMetricTransaction.GENDER_MALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_OVERSEAS,
+            location="渋谷",
+            comment="WV-Refugee",
+            wv_result_type=MemberMetricTransaction.WV_RESULT_REFUGEE,
+            wv_cs_count=0,
+            wv_refugee_amount=2000,
+        )
+        wv_entry_two = MemberDailyMetricEntry.objects.create(
+            member=wv_teammate,
+            department=wv_department,
+            entry_date=today - timedelta(days=1),
+            approach_count=8,
+            communication_count=4,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=wv_entry_two,
+            support_amount=6500,
+            age_band=MemberMetricTransaction.AGE_BAND_FORTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="新宿",
+            comment="WV-Both",
+            wv_result_type=MemberMetricTransaction.WV_RESULT_BOTH,
+            wv_cs_count=1,
+            wv_refugee_amount=2000,
+        )
+        self.client.force_login(wv_user)
+
+        response = self.client.get(reverse("dairymetrics_metrics_v2_demo"), {"department": wv_department.code})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.context["metrics_v2_payload"]
+        self.assertEqual(payload["overall_summary"]["totals"]["decision_count"], 5)
+        self.assertEqual(payload["overall_summary"]["totals"]["cs_count"], 3)
+        self.assertEqual(payload["overall_summary"]["totals"]["refugee_count"], 2)
+        self.assertEqual(payload["personal_summary"]["totals"]["decision_count"], 3)
+        self.assertContains(response, "件数 5 / CM 9（CS 3件 / 難民 2件）")
+        self.assertContains(response, "CS 3件 / 難民 2件")
+        self.assertIn("cs_count", payload["ranking"]["metric_map"])
+        self.assertIn("refugee_count", payload["ranking"]["metric_map"])
+        self.assertEqual(payload["ranking"]["metric_map"]["decision_count"]["values"], [3, 2])
+        self.assertContains(response, "CS限定の年代別決済比率")
+        self.assertContains(response, "CS限定の男女比")
+        self.assertContains(response, "CS限定の国籍比")

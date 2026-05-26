@@ -126,6 +126,9 @@
           <div class="metric-card">
             <div class="muted">{{ item.label }}</div>
             <strong>{{ item.value }}</strong>
+            {% if item.helper %}
+            <div class="muted mt-6">{{ item.helper }}</div>
+            {% endif %}
           </div>
           {% endfor %}
         </div>
@@ -156,6 +159,9 @@
           <div class="metric-card">
             <div class="muted">{{ item.label }}</div>
             <strong>{{ item.value }}</strong>
+            {% if item.helper %}
+            <div class="muted mt-6">{{ item.helper }}</div>
+            {% endif %}
           </div>
           {% endfor %}
         </div>
@@ -258,6 +264,6 @@
   </section>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=5"></script>
+<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=6"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 {% endblock %}

@@ -217,6 +217,28 @@
           mode: "index",
           intersect: false,
         },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function (tooltipItem) {
+                if (tooltipItem.dataset.label === "件数" && chartPayload.is_wv) {
+                  const index = tooltipItem.dataIndex;
+                  const totalCount = Number(chartPayload.counts[index] || 0);
+                  const csCount = Number((chartPayload.cs_counts || [])[index] || 0);
+                  const refugeeCount = Number((chartPayload.refugee_counts || [])[index] || 0);
+                  return [
+                    "件数 " + totalCount.toLocaleString("ja-JP") + "件",
+                    "CS " + csCount.toLocaleString("ja-JP") + "件 / 難民 " + refugeeCount.toLocaleString("ja-JP") + "件",
+                  ];
+                }
+                if (tooltipItem.dataset.label === "件数") {
+                  return "件数 " + Number(tooltipItem.raw || 0).toLocaleString("ja-JP") + "件";
+                }
+                return "金額 " + Number(tooltipItem.raw || 0).toLocaleString("ja-JP") + "円";
+              },
+            },
+          },
+        },
         scales: {
           yAmount: {
             beginAtZero: true,
@@ -297,11 +319,18 @@
             callbacks: {
               label: function (tooltipItem) {
                 const value = tooltipItem.raw;
+                const detailText = metricPayload.detail_texts ? metricPayload.detail_texts[tooltipItem.dataIndex] : "";
                 if (metricPayload.unit === "%") {
                   return tooltipItem.dataset.label + " " + Number(value || 0).toFixed(1) + "%";
                 }
                 if (metricPayload.unit === "円") {
                   return tooltipItem.dataset.label + " " + Number(value || 0).toLocaleString("ja-JP") + "円";
+                }
+                if (detailText) {
+                  return [
+                    tooltipItem.dataset.label + " " + Number(value || 0).toLocaleString("ja-JP") + "件",
+                    detailText,
+                  ];
                 }
                 return tooltipItem.dataset.label + " " + Number(value || 0).toLocaleString("ja-JP");
               },

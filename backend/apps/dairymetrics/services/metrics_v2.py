@@ -41,6 +41,8 @@ RANKING_METRIC_OPTIONS = [
     {"key": "average_amount_per_decision", "label": "1決済あたりの平均金額", "unit": "円"},
     {"key": "support_amount", "label": "合計決済金額", "unit": "円"},
     {"key": "decision_count", "label": "合計件数", "unit": ""},
+    {"key": "cs_count", "label": "CS件数", "unit": ""},
+    {"key": "refugee_count", "label": "難民件数", "unit": ""},
     {"key": "increase_count", "label": "増額件数", "unit": ""},
     {"key": "increase_amount", "label": "増額金額", "unit": "円"},
     {"key": "return_count", "label": "戻り件数", "unit": ""},
@@ -60,8 +62,25 @@ class MetricsV2Scope:
 
 def _count_value(department_code: str, totals: dict) -> int:
     if department_code == "WV":
-        return int(totals.get("cs_count") or 0) + int(totals.get("refugee_count") or 0) + int(totals.get("result_count") or 0)
+        return int(totals.get("cs_count") or 0) + int(totals.get("refugee_count") or 0)
     return int(totals.get("result_count") or 0)
+
+
+def _cs_count_value(totals: dict) -> int:
+    return int(totals.get("cs_count") or 0)
+
+
+def _refugee_count_value(totals: dict) -> int:
+    return int(totals.get("refugee_count") or 0)
+
+
+def _wv_count_breakdown_text(totals: dict, *, include_total: bool = False) -> str:
+    cs_count = _cs_count_value(totals)
+    refugee_count = _refugee_count_value(totals)
+    if include_total:
+        total_count = cs_count + refugee_count
+        return f"合計 {total_count:,}件 / CS {cs_count:,}件 / 難民 {refugee_count:,}件"
+    return f"CS {cs_count:,}件 / 難民 {refugee_count:,}件"
 
 
 def _return_count_value(totals: dict) -> int:
@@ -243,6 +262,10 @@ def _build_summary_cards(*, title_prefix: str, department_code: str, totals: dic
     communication_count = int(totals.get("communication_count") or 0)
     conversion_rate = _percentage(decision_count, communication_count)
     communication_rate = _percentage(communication_count, approach_count)
+    count_breakdown_text = _wv_count_breakdown_text(totals) if department_code == "WV" else ""
+    conversion_helper = f"件数 {decision_count:,} / CM {communication_count:,}"
+    if count_breakdown_text:
+        conversion_helper = f"{conversion_helper}（{count_breakdown_text}）"
     return {
         "title_prefix": title_prefix,
         "rates": [
@@ -250,7 +273,7 @@ def _build_summary_cards(*, title_prefix: str, department_code: str, totals: dic
                 "key": "conversion",
                 "label": "決済率",
                 "value": _format_percentage(conversion_rate),
-                "helper": f"件数 {decision_count:,} / CM {communication_count:,}",
+                "helper": conversion_helper,
                 "chart_data": [decision_count, max(communication_count - decision_count, 0)],
             },
             {
@@ -264,7 +287,11 @@ def _build_summary_cards(*, title_prefix: str, department_code: str, totals: dic
         "averages": [
             {"label": "1稼働あたりの平均AP", "value": _format_number(_safe_average(approach_count, active_days))},
             {"label": "1稼働あたりの平均CM", "value": _format_number(_safe_average(communication_count, active_days))},
-            {"label": "1稼働あたりの平均件数", "value": _format_number(_safe_average(decision_count, active_days))},
+            {
+                "label": "1稼働あたりの平均件数",
+                "value": _format_number(_safe_average(decision_count, active_days)),
+                "helper": count_breakdown_text,
+            },
             {"label": "1稼働あたりの平均金額", "value": _format_number(_safe_average(support_amount, active_days), "円")},
             {"label": "1決済あたりの平均金額", "value": _format_number(_safe_average(support_amount, decision_count), "円")},
             {"label": "目標進捗", "value": _format_percentage(_percentage(support_amount, target_amount))},
@@ -272,6 +299,8 @@ def _build_summary_cards(*, title_prefix: str, department_code: str, totals: dic
         "totals": {
             "support_amount": support_amount,
             "decision_count": decision_count,
+            "cs_count": _cs_count_value(totals),
+            "refugee_count": _refugee_count_value(totals),
             "approach_count": approach_count,
             "communication_count": communication_count,
             "return_count": _return_count_value(totals),
@@ -280,7 +309,7 @@ def _build_summary_cards(*, title_prefix: str, department_code: str, totals: dic
     }
 
 
-def _build_distribution_cards(*, transaction_queryset):
+def _build_distribution_cards(*, department_code: str, transaction_queryset):
     age_labels = dict(MemberMetricTransaction.AGE_BAND_CHOICES)
     gender_labels = dict(MemberMetricTransaction.GENDER_CHOICES)
     nationality_labels = dict(MemberMetricTransaction.NATIONALITY_CHOICES)
@@ -338,6 +367,36 @@ def _build_distribution_cards(*, transaction_queryset):
         pack("男女比", gender_labels, gender_counts, gender_amounts),
         pack("国籍比", nationality_labels, nationality_counts, nationality_amounts),
     ]
+    if department_code == "WV":
+        cs_transactions = [
+            tx
+            for tx in transaction_queryset
+            if tx.wv_result_type in {MemberMetricTransaction.WV_RESULT_CS, MemberMetricTransaction.WV_RESULT_BOTH}
+            or (not tx.wv_result_type and int(tx.wv_cs_count or 0) > 0)
+        ]
+        cs_age_counts = defaultdict(int)
+        cs_age_amounts = defaultdict(int)
+        cs_gender_counts = defaultdict(int)
+        cs_gender_amounts = defaultdict(int)
+        cs_nationality_counts = defaultdict(int)
+        cs_nationality_amounts = defaultdict(int)
+
+        for tx in cs_transactions:
+            amount = int(tx.support_amount or 0)
+            cs_age_counts[tx.age_band] += 1
+            cs_age_amounts[tx.age_band] += amount
+            cs_gender_counts[tx.gender] += 1
+            cs_gender_amounts[tx.gender] += amount
+            cs_nationality_counts[tx.nationality_type] += 1
+            cs_nationality_amounts[tx.nationality_type] += amount
+
+        cards.extend(
+            [
+                pack("CS限定の年代別決済比率", age_labels, cs_age_counts, cs_age_amounts),
+                pack("CS限定の男女比", gender_labels, cs_gender_counts, cs_gender_amounts),
+                pack("CS限定の国籍比", nationality_labels, cs_nationality_counts, cs_nationality_amounts),
+            ]
+        )
     average_amount_comparison = {
         "age": {"title": "年代別の平均金額", "labels": cards[0]["labels"], "values": cards[0]["avg_amounts"]},
         "gender": {"title": "男女別の平均金額", "labels": cards[1]["labels"], "values": cards[1]["avg_amounts"]},
@@ -350,6 +409,8 @@ def _build_period_totals_series(*, department, member=None, periods):
     labels = []
     amounts = []
     counts = []
+    cs_counts = []
+    refugee_counts = []
     for period in periods:
         if member is None:
             totals = collect_department_final_actual_totals(department, period.start_date, period.end_date, include_adjustments=True)
@@ -358,7 +419,17 @@ def _build_period_totals_series(*, department, member=None, periods):
         labels.append(period.name)
         amounts.append(int(totals.get("support_amount") or 0))
         counts.append(_count_value(department.code, totals))
-    return {"labels": labels, "amounts": amounts, "counts": counts, "has_data": any(amounts) or any(counts)}
+        cs_counts.append(_cs_count_value(totals))
+        refugee_counts.append(_refugee_count_value(totals))
+    return {
+        "labels": labels,
+        "amounts": amounts,
+        "counts": counts,
+        "cs_counts": cs_counts,
+        "refugee_counts": refugee_counts,
+        "is_wv": department.code == "WV",
+        "has_data": any(amounts) or any(counts),
+    }
 
 
 def _build_month_totals_series(*, department, member=None, reference_month: date):
@@ -373,6 +444,8 @@ def _build_month_totals_series(*, department, member=None, reference_month: date
     labels = []
     amounts = []
     counts = []
+    cs_counts = []
+    refugee_counts = []
     for month_start in month_starts:
         month_end = month_start.replace(day=monthrange(month_start.year, month_start.month)[1])
         if member is None:
@@ -382,7 +455,17 @@ def _build_month_totals_series(*, department, member=None, reference_month: date
         labels.append(month_start.strftime("%Y/%m"))
         amounts.append(int(totals.get("support_amount") or 0))
         counts.append(_count_value(department.code, totals))
-    return {"labels": labels, "amounts": amounts, "counts": counts, "has_data": any(amounts) or any(counts)}
+        cs_counts.append(_cs_count_value(totals))
+        refugee_counts.append(_refugee_count_value(totals))
+    return {
+        "labels": labels,
+        "amounts": amounts,
+        "counts": counts,
+        "cs_counts": cs_counts,
+        "refugee_counts": refugee_counts,
+        "is_wv": department.code == "WV",
+        "has_data": any(amounts) or any(counts),
+    }
 
 
 def _member_metric_row(*, member, department, scope: MetricsV2Scope):
@@ -402,6 +485,8 @@ def _member_metric_row(*, member, department, scope: MetricsV2Scope):
             "average_amount_per_decision": _safe_average(support_amount, decision_count) or 0,
             "support_amount": support_amount,
             "decision_count": decision_count,
+            "cs_count": _cs_count_value(totals),
+            "refugee_count": _refugee_count_value(totals),
             "increase_count": increase_totals["count"],
             "increase_amount": increase_totals["amount"],
             "return_count": _return_count_value(totals),
@@ -421,6 +506,12 @@ def _build_ranking_payload(*, department, scope: MetricsV2Scope):
             "unit": option["unit"],
             "labels": [row["member"].name for row in ranked_rows],
             "values": [row["metrics"][option["key"]] for row in ranked_rows],
+            "detail_texts": [
+                _wv_count_breakdown_text(row["metrics"], include_total=True)
+                if department.code == "WV" and option["key"] in {"decision_count", "cs_count", "refugee_count"}
+                else ""
+                for row in ranked_rows
+            ],
             "detail_urls": [reverse("dairymetrics_member_dashboard", args=[row["member"].id]) for row in ranked_rows],
             "rows": [
                 {
@@ -464,7 +555,10 @@ def build_metrics_v2_dashboard_payload(
     if member is not None:
         transaction_queryset = transaction_queryset.filter(entry__member=member)
 
-    distributions, average_amount_comparison = _build_distribution_cards(transaction_queryset=transaction_queryset)
+    distributions, average_amount_comparison = _build_distribution_cards(
+        department_code=department.code,
+        transaction_queryset=transaction_queryset,
+    )
 
     reference_month = scope.month_start or scope.end_date.replace(day=1)
     available_periods = list(Period.objects.filter(end_date__lte=scope.end_date).order_by("-end_date", "-start_date", "-id")[:6])
