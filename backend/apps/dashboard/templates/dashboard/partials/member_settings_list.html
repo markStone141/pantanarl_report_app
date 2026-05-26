@@ -2,13 +2,12 @@
 <div class="table-scroll">
   <table class="mobile-card-table">
     <thead>
-      <tr><th>名前</th><th>状態</th><th>メール</th><th>ログインID</th><th>所属部署</th><th>メイン部署</th><th>操作</th></tr>
+      <tr><th>名前</th><th>メール</th><th>ログインID</th><th>所属部署</th><th>メイン部署</th><th>操作</th></tr>
     </thead>
     <tbody>
       {% for member in members %}
       <tr>
         <td data-label="名前">{{ member.name }}</td>
-        <td data-label="状態">{% if member.is_active %}有効{% else %}無効{% endif %}</td>
         <td data-label="メール">{% if member.email %}{{ member.email }}{% else %}-{% endif %}</td>
         <td data-label="ログインID">{% if member.user %}{{ member.user.username }}{% else %}-{% endif %}</td>
         <td data-label="所属部署">
@@ -25,12 +24,16 @@
           </a>
           <form method="post" action="{% url 'member_delete' member.id %}" style="display:inline;" onsubmit="return confirm('{% if member.is_active %}このメンバーを無効化します。よろしいですか？{% else %}このメンバーを再有効化します。よろしいですか？{% endif %}');">
             {% csrf_token %}
-            <button class="btn-inline {% if member.is_active %}btn-danger{% endif %}" type="submit">{% if member.is_active %}無効化{% else %}再有効化{% endif %}</button>
+            <button class="icon-btn{% if member.is_active %} icon-btn-danger{% endif %}" type="submit" aria-label="{% if member.is_active %}{{ member.name }}を無効化{% else %}{{ member.name }}を再有効化{% endif %}">
+              <i class="fa-solid {% if member.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+            </button>
           </form>
           {% if not member.is_active %}
           <form method="post" action="{% url 'member_purge' member.id %}" style="display:inline;" onsubmit="return confirm('このメンバーを完全に削除します。元に戻せません。よろしいですか？');">
             {% csrf_token %}
-            <button class="btn-inline btn-danger" type="submit">削除</button>
+            <button class="icon-btn icon-btn-danger" type="submit" aria-label="{{ member.name }}を完全削除">
+              <i class="fa-solid fa-trash"></i>
+            </button>
           </form>
           {% endif %}
         </td>
