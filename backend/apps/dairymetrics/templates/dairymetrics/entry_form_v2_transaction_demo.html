@@ -32,6 +32,34 @@
       {% endif %}
     </div>
 
+    <section class="dairymetrics-v2-demo-card">
+      <div class="dairymetrics-v2-demo-head">
+        <h3>入力対象</h3>
+        <p class="muted">部署を切り替えると、入力項目とメール本文プレビューもその部署向けに切り替わります。</p>
+      </div>
+      <form method="get" class="dairymetrics-v2-transaction-form">
+        <div class="dairymetrics-field">
+          <label for="v2-context-department">部署</label>
+          <select id="v2-context-department" name="department">
+            {% for department in departments %}
+            <option value="{{ department.code }}" {% if selected_department_code == department.code %}selected{% endif %}>{{ department.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="dairymetrics-field">
+          <label for="v2-context-date">活動日</label>
+          <div class="dairymetrics-date-wrap">
+            <div class="dairymetrics-date-field">
+              <input id="v2-context-date" class="dairymetrics-date-input" type="date" name="date" value="{{ entry_date|date:'Y-m-d' }}">
+            </div>
+          </div>
+        </div>
+        <div class="dairymetrics-v2-transaction-actions">
+          <button type="submit" class="btn-inline dairymetrics-secondary-btn">表示を切り替える</button>
+        </div>
+      </form>
+    </section>
+
     {% if not has_personal_target or not has_department_target %}
     <section class="dairymetrics-v2-setup-card">
       <div class="dairymetrics-v2-setup-head">
@@ -455,7 +483,7 @@
             </div>
             {% if department_activity_rows.active %}
               {% for row in department_activity_rows.active %}
-              <a class="dairymetrics-v2-activity-item" href="{% url 'dairymetrics_member_dashboard' row.member_id %}?department={{ selected_department_code }}&scope=today">
+              <a class="dairymetrics-v2-activity-item" href="{% url 'performance_member_insight' row.member_id selected_department_id %}">
                 <div class="dairymetrics-v2-activity-top">
                   <strong>{{ row.member_name }}</strong>
                   <span class="dairymetrics-v2-mail-badge is-unsent">{{ row.status_label }}</span>
@@ -483,7 +511,7 @@
             </div>
             {% if department_activity_rows.closed %}
               {% for row in department_activity_rows.closed %}
-              <a class="dairymetrics-v2-activity-item" href="{% url 'dairymetrics_member_dashboard' row.member_id %}?department={{ selected_department_code }}&scope=today">
+              <a class="dairymetrics-v2-activity-item" href="{% url 'performance_member_insight' row.member_id selected_department_id %}">
                 <div class="dairymetrics-v2-activity-top">
                   <strong>{{ row.member_name }}</strong>
                   <span class="dairymetrics-v2-mail-badge is-sent">{{ row.status_label }}</span>
@@ -628,12 +656,12 @@
 
     <div class="dairymetrics-v2-modal-backdrop" id="dairymetrics-v2-mail-backdrop" hidden></div>
     <section class="dairymetrics-v2-mail-preview-card card dairymetrics-v2-modal" id="dairymetrics-v2-mail-preview" hidden>
-      <div class="dairymetrics-v2-demo-head">
+        <div class="dairymetrics-v2-demo-head">
         <h3>送信本文プレビュー</h3>
         {% if default_mail_group %}
         <p class="muted">送信先グループ: {{ default_mail_group.name }}</p>
         {% else %}
-        <p class="muted">送信先グループ未設定のため、今回はモック送信として履歴だけ保存します。</p>
+        <p class="muted">送信先グループ未設定のため、送信は失敗として記録されます。</p>
         {% endif %}
       </div>
       <form method="post" class="dairymetrics-v2-mail-form" id="dairymetrics-v2-mail-form">
@@ -647,13 +675,13 @@
           <textarea id="dairymetrics-v2-mail-body-input" class="dairymetrics-v2-mail-body-textarea" rows="10" name="preview_body"></textarea>
         </div>
         <div class="dairymetrics-v2-transaction-actions">
-        <input type="hidden" name="action" value="send_transaction_mock">
+        <input type="hidden" name="action" value="send_transaction_mail">
         <input type="hidden" name="department_code" value="{{ selected_department_code }}">
         <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
         <input type="hidden" name="preview_transaction_id" id="dairymetrics-v2-mail-transaction-id" value="">
         <input type="hidden" name="preview_history_id" id="dairymetrics-v2-mail-history-id" value="">
         <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-mail-modal>閉じる</button>
-        <button type="submit" class="btn-inline dairymetrics-save-btn" id="dairymetrics-v2-mail-submit-button">送信（モック）</button>
+        <button type="submit" class="btn-inline dairymetrics-save-btn" id="dairymetrics-v2-mail-submit-button">送信</button>
         </div>
       </form>
     </section>
@@ -1002,7 +1030,7 @@
         mailPreviewHistoryId.value = button.dataset.previewHistoryId || "";
       }
       if (mailPreviewSubmitButton) {
-        mailPreviewSubmitButton.textContent = button.dataset.previewMode === "resend" ? "再送信（モック）" : "送信（モック）";
+        mailPreviewSubmitButton.textContent = button.dataset.previewMode === "resend" ? "再送信" : "送信";
       }
       const viewportCenter = window.scrollY + (window.innerHeight / 2);
       mailPreviewBackdrop.style.top = "0px";

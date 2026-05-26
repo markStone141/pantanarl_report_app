@@ -323,6 +323,69 @@ def send_transaction_mail_mock(
     return history
 
 
+def send_transaction_mail(
+    *,
+    sender_member,
+    transaction,
+    recipient_group=None,
+    subject,
+    body,
+    existing_history: MailSendHistory | None = None,
+) -> MailSendHistory:
+    setting = _active_setting()
+    if recipient_group is None:
+        raise MailSendError("送信先グループが未設定です。", code="missing_recipient_group")
+
+    members = list(recipient_group.members.exclude(email="").order_by("name"))
+    recipient_snapshot = _members_recipient_snapshot(members)
+    to_recipients = [setting.sender_email] if setting and setting.sender_email else []
+    cc_recipients = [member.email for member in members]
+    if not _integration_is_ready(setting):
+        raise MailSendError("Gmail連携設定が未完了です。", code="missing_setting")
+
+    history = existing_history
+    if history is None:
+        history = (
+            transaction.mail_send_histories.filter(is_test=False)
+            .order_by("-last_attempt_at", "-sent_at", "-created_at", "-id")
+            .first()
+        )
+    now = timezone.now()
+    is_resend = bool(history)
+    final_subject = subject
+    if is_resend and final_subject and not final_subject.endswith("（再送）"):
+        final_subject = f"{final_subject}（再送）"
+    provider_message_id = _send_via_gmail(
+        setting=setting,
+        to_recipients=to_recipients,
+        cc_recipients=cc_recipients,
+        subject=final_subject,
+        body=body,
+    )
+    if history is None:
+        history = MailSendHistory(transaction=transaction)
+    history.integration_setting = setting
+    history.department = transaction.entry.department
+    history.activity_date = transaction.entry.entry_date
+    history.sender_member = sender_member
+    history.transaction = transaction
+    history.recipient_group = recipient_group
+    history.subject_snapshot = final_subject
+    history.body_snapshot = body
+    history.sent_to_snapshot = recipient_snapshot
+    history.provider_message_id = provider_message_id
+    history.error_code = ""
+    history.error_message = ""
+    history.status = MailSendHistory.STATUS_SENT
+    history.is_test = False
+    history.is_resend = is_resend
+    history.sent_at = now
+    history.last_attempt_at = now
+    history.save()
+    transaction.mail_send_histories.exclude(id=history.id).filter(is_test=False).delete()
+    return history
+
+
 def record_transaction_mail_failure(
     *,
     sender_member,

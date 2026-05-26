@@ -13,7 +13,7 @@ from django.utils.dateparse import parse_date
 
 from apps.accounts.models import Department, Member
 from apps.mail.models import MailRecipientGroup, MailSendHistory
-from apps.mail.services import record_transaction_mail_failure, send_transaction_mail_mock
+from apps.mail.services import MailSendError, record_transaction_mail_failure, send_transaction_mail
 from apps.targets.models import Period
 
 from .auth import get_member_profile, require_dairymetrics_admin, require_dairymetrics_member
@@ -155,6 +155,10 @@ def _build_entry_v2_demo_context(*, member, selected_department, entry_date):
         departments=departments,
         selected_department=selected_department,
     )
+    selected_department_obj = next(
+        (department for department in departments if department.code == selected_department_code),
+        None,
+    )
     existing_entry = None
     if selected_department_code:
         existing_entry = (
@@ -175,6 +179,7 @@ def _build_entry_v2_demo_context(*, member, selected_department, entry_date):
         "member": member,
         "departments": departments,
         "selected_department_code": selected_department_code,
+        "selected_department_id": selected_department_obj.id if selected_department_obj else "",
         "entry_date": entry_date,
         "initial_total_count": initial_count,
         "initial_total_amount": initial_amount,
@@ -567,6 +572,7 @@ def _build_entry_v2_transaction_demo_context(
         "sent_mail_histories": sent_mail_histories,
         "department_activity_rows": department_activity_rows,
         "selected_department_name": getattr(selected_department_obj, "name", selected_department_code),
+        "selected_department_id": selected_department_obj.id if selected_department_obj else "",
         "department_summary": department_summary,
         "entry": existing_entry,
         "selected_department_is_wv": is_wv_department(selected_department_obj),
@@ -1515,7 +1521,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                     )
                 status_message = "決済明細を確認してください。"
                 open_entry_panel = True
-        elif action == "send_transaction_mock":
+        elif action in {"send_transaction_mock", "send_transaction_mail"}:
             preview_tx_id = (request.POST.get("preview_transaction_id") or "").strip()
             preview_history_id = (request.POST.get("preview_history_id") or "").strip()
             edited_subject = (request.POST.get("preview_subject") or "").strip()
@@ -1578,7 +1584,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                     subject = edited_subject or preview_payload["subject"]
                     body = edited_body or preview_payload["body"]
                     try:
-                        send_transaction_mail_mock(
+                        send_transaction_mail(
                             sender_member=member,
                             transaction=preview_transaction,
                             recipient_group=recipient_group,
@@ -1587,6 +1593,8 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                             existing_history=existing_history,
                         )
                     except Exception as exc:
+                        error_code = exc.code if isinstance(exc, MailSendError) else exc.__class__.__name__
+                        error_message = exc.detail if isinstance(exc, MailSendError) else str(exc)
                         record_transaction_mail_failure(
                             sender_member=member,
                             transaction=preview_transaction,
@@ -1594,8 +1602,8 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                             subject=subject,
                             body=body,
                             existing_history=existing_history,
-                            error_code=exc.__class__.__name__,
-                            error_message=str(exc),
+                            error_code=error_code,
+                            error_message=error_message,
                         )
                         return redirect(
                             build_v2_redirect_url(

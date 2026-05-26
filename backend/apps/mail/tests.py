@@ -10,7 +10,7 @@ from apps.common.test_helpers import AppTestMixin
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction
 
 from .models import MailDepartmentRouting, MailIntegrationSetting, MailRecipientGroup, MailSendHistory
-from .services import MailSendError, record_transaction_mail_failure, send_transaction_mail_mock
+from .services import MailSendError, record_transaction_mail_failure, send_transaction_mail, send_transaction_mail_mock
 
 
 User = get_user_model()
@@ -257,6 +257,55 @@ class MailManagementTests(AppTestMixin, TestCase):
         self.assertEqual(history.recipient_group, group)
         self.assertIn("alice@example.com", history.sent_to_snapshot)
         self.assertIn("bob@example.com", history.sent_to_snapshot)
+
+    @patch("apps.mail.services._send_via_gmail", return_value="gmail-transaction-1")
+    def test_send_transaction_mail_creates_sent_history(self, mocked_send):
+        MailIntegrationSetting.objects.create(
+            sender_email="sender@example.com",
+            sender_name="Sender",
+            client_id="client-id",
+            client_secret="client-secret",
+            refresh_token="refresh-token",
+            token_uri="https://oauth2.googleapis.com/token",
+            is_active=True,
+        )
+        group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)
+        group.members.set([self.member_one, self.member_two])
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member_one,
+            department=self.department,
+            entry_date=timezone.localdate(),
+            daily_target_count=1,
+            daily_target_amount=3000,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=1000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            is_student=True,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+            comment="テスト",
+        )
+
+        history = send_transaction_mail(
+            sender_member=self.member_one,
+            transaction=transaction,
+            recipient_group=group,
+            subject="件名",
+            body="本文",
+        )
+
+        self.assertEqual(history.status, MailSendHistory.STATUS_SENT)
+        self.assertEqual(history.provider_message_id, "gmail-transaction-1")
+        self.assertEqual(history.recipient_group, group)
+        mocked_send.assert_called_once()
+        self.assertEqual(mocked_send.call_args.kwargs["to_recipients"], ["sender@example.com"])
+        self.assertEqual(
+            mocked_send.call_args.kwargs["cc_recipients"],
+            ["alice@example.com", "bob@example.com"],
+        )
 
     def test_record_transaction_mail_failure_saves_failed_history(self):
         entry = MemberDailyMetricEntry.objects.create(

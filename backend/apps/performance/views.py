@@ -1968,7 +1968,12 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
         if request.GET.get("saved") == "1":
             status_message = "補正実績を保存しました。"
 
-    list_filter_form = PerformanceAdjustmentListFilterForm(request.GET or None)
+    list_filter_data = request.GET.copy()
+    if "department" not in list_filter_data:
+        list_filter_data["department"] = ""
+    if "q" not in list_filter_data:
+        list_filter_data["q"] = ""
+    list_filter_form = PerformanceAdjustmentListFilterForm(list_filter_data)
     if list_filter_form.is_valid():
         adjustments_queryset = _filtered_adjustments_list_queryset(list_filter_form.cleaned_data)
     else:

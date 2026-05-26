@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
 from apps.common.test_helpers import AppTestMixin
-from apps.mail.models import MailSendHistory, MailRecipientGroup
+from apps.mail.models import MailDepartmentRouting, MailIntegrationSetting, MailSendHistory, MailRecipientGroup
 from apps.targets.models import (
     DepartmentMonthTarget,
     DepartmentPeriodTarget,
@@ -102,6 +102,20 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
             response,
             f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=transaction",
         )
+
+    def test_entry_v2_transaction_demo_hides_wv_fields_for_un_department(self):
+        entry_date = timezone.localdate()
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "CS口数")
+        self.assertNotContains(response, "難民支援金額")
+        self.assertNotContains(response, "区分")
 
 
 class DairyMetricsDashboardTests(AppTestMixin, TestCase):
@@ -487,8 +501,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertContains(response, "Member Closed V2")
         self.assertContains(response, "新宿駅前")
         self.assertContains(response, "池袋駅前")
-        self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[active_member.id]))
-        self.assertContains(response, reverse("dairymetrics_member_dashboard", args=[closed_member.id]))
+        self.assertContains(response, reverse("performance_member_insight", args=[active_member.id, self.department.id]))
+        self.assertContains(response, reverse("performance_member_insight", args=[closed_member.id, self.department.id]))
 
     def test_entry_v2_transaction_demo_shows_wv_count_breakdown_and_type_field(self):
         self.department.code = "WV"
@@ -820,7 +834,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertContains(response, "4,500円")
         self.assertContains(response, "CS1口 4,500円")
 
-    def test_entry_v2_transaction_demo_mock_send_creates_mail_history_and_shows_it(self):
+    @patch("apps.mail.services._send_via_gmail", return_value="gmail-transaction-1")
+    def test_entry_v2_transaction_demo_mock_send_creates_mail_history_and_shows_it(self, mocked_send):
         entry_date = timezone.localdate()
         entry = MemberDailyMetricEntry.objects.create(
             member=self.member,
@@ -842,13 +857,25 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
         entry.recalculate_from_transactions()
         self.client.force_login(self.user)
+        self.member.email = "member@example.com"
+        self.member.save(update_fields=["email"])
+        MailIntegrationSetting.objects.create(
+            sender_email="sender@example.com",
+            sender_name="Sender",
+            client_id="client-id",
+            client_secret="client-secret",
+            refresh_token="refresh-token",
+            token_uri="https://oauth2.googleapis.com/token",
+            is_active=True,
+        )
         recipient_group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)
         recipient_group.members.add(self.member)
+        MailDepartmentRouting.objects.create(department=self.department, recipient_group=recipient_group)
 
         response = self.client.post(
             reverse("dairymetrics_entry_v2_transaction_demo"),
             {
-                "action": "send_transaction_mock",
+                "action": "send_transaction_mail",
                 "department_code": self.department.code,
                 "entry_date": entry_date.strftime("%Y-%m-%d"),
                 "preview_transaction_id": str(transaction.id),
@@ -863,6 +890,9 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertEqual(history.status, MailSendHistory.STATUS_SENT)
         self.assertEqual(history.sender_member, self.member)
         self.assertIn(self.member.email, history.sent_to_snapshot)
+        mocked_send.assert_called_once()
+        self.assertEqual(mocked_send.call_args.kwargs["to_recipients"], ["sender@example.com"])
+        self.assertEqual(mocked_send.call_args.kwargs["cc_recipients"], [self.member.email])
 
         response = self.client.get(
             reverse("dairymetrics_entry_v2_transaction_demo"),
@@ -897,7 +927,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         response = self.client.post(
             reverse("dairymetrics_entry_v2_transaction_demo"),
             {
-                "action": "send_transaction_mock",
+                "action": "send_transaction_mail",
                 "department_code": self.department.code,
                 "entry_date": entry_date.strftime("%Y-%m-%d"),
                 "preview_transaction_id": str(transaction.id),
@@ -906,20 +936,21 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
 
         self.assertRedirects(
             response,
-            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=mail_sent",
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=mail_failed",
         )
         history = MailSendHistory.objects.get(transaction=transaction)
-        self.assertEqual(history.status, MailSendHistory.STATUS_SENT)
+        self.assertEqual(history.status, MailSendHistory.STATUS_FAILED)
         self.assertIsNone(history.recipient_group)
-        self.assertEqual(history.sent_to_snapshot, "未設定（モック送信）")
+        self.assertEqual(history.error_code, "missing_recipient_group")
+        self.assertEqual(history.error_message, "送信先グループが未設定です。")
 
         response = self.client.get(
             reverse("dairymetrics_entry_v2_transaction_demo"),
             {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
         )
         self.assertContains(response, self.member.name)
-        self.assertContains(response, "3,000円")
-        self.assertContains(response, history.body_snapshot)
+        self.assertContains(response, "送信失敗")
+        self.assertContains(response, "送信先グループが未設定です。")
 
     def test_entry_v2_transaction_demo_mail_failure_creates_failed_history_and_badge(self):
         entry_date = timezone.localdate()
@@ -942,11 +973,11 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
         self.client.force_login(self.user)
 
-        with patch("apps.dairymetrics.views.send_transaction_mail_mock", side_effect=RuntimeError("gmail timeout")):
+        with patch("apps.dairymetrics.views.send_transaction_mail", side_effect=RuntimeError("gmail timeout")):
             response = self.client.post(
                 reverse("dairymetrics_entry_v2_transaction_demo"),
                 {
-                    "action": "send_transaction_mock",
+                    "action": "send_transaction_mail",
                     "department_code": self.department.code,
                     "entry_date": entry_date.strftime("%Y-%m-%d"),
                     "preview_transaction_id": str(transaction.id),
@@ -1001,18 +1032,33 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
             sent_at=timezone.now(),
         )
         self.client.force_login(self.user)
-
-        response = self.client.post(
-            reverse("dairymetrics_entry_v2_transaction_demo"),
-            {
-                "action": "send_transaction_mock",
-                "department_code": self.department.code,
-                "entry_date": entry_date.strftime("%Y-%m-%d"),
-                "preview_history_id": str(first_history.id),
-                "preview_subject": "修正版件名",
-                "preview_body": "修正版本文",
-            },
+        self.member.email = "member@example.com"
+        self.member.save(update_fields=["email"])
+        MailIntegrationSetting.objects.create(
+            sender_email="sender@example.com",
+            sender_name="Sender",
+            client_id="client-id",
+            client_secret="client-secret",
+            refresh_token="refresh-token",
+            token_uri="https://oauth2.googleapis.com/token",
+            is_active=True,
         )
+        recipient_group = MailRecipientGroup.objects.create(name="共有C", department=self.department, is_active=True)
+        recipient_group.members.add(self.member)
+        MailDepartmentRouting.objects.create(department=self.department, recipient_group=recipient_group)
+
+        with patch("apps.mail.services._send_via_gmail", return_value="gmail-transaction-2"):
+            response = self.client.post(
+                reverse("dairymetrics_entry_v2_transaction_demo"),
+                {
+                    "action": "send_transaction_mail",
+                    "department_code": self.department.code,
+                    "entry_date": entry_date.strftime("%Y-%m-%d"),
+                    "preview_history_id": str(first_history.id),
+                    "preview_subject": "修正版件名",
+                    "preview_body": "修正版本文",
+                },
+            )
 
         self.assertRedirects(
             response,
