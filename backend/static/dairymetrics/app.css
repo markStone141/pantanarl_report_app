@@ -2380,6 +2380,10 @@
   gap: 16px;
 }
 
+.metrics-v2-distribution-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .metrics-v2-summary-card {
   display: grid;
   gap: 8px;
@@ -2505,9 +2509,12 @@
 
 @media (max-width: 900px) {
   .metrics-v2-summary-grid,
-  .metrics-v2-history-grid,
-  .metrics-v2-distribution-grid {
+  .metrics-v2-history-grid {
     grid-template-columns: 1fr;
+  }
+
+  .metrics-v2-distribution-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .metrics-v2-chart-frame,
@@ -2520,5 +2527,11 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 2px;
+  }
+}
+
+@media (max-width: 640px) {
+  .metrics-v2-distribution-grid {
+    grid-template-columns: 1fr;
   }
 }
