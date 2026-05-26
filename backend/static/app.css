@@ -958,7 +958,7 @@ th {
 
 .member-settings-filter-form {
   display: grid;
-  grid-template-columns: minmax(220px, 1.4fr) minmax(180px, 220px) auto auto;
+  grid-template-columns: minmax(220px, 1.3fr) minmax(150px, 180px) max-content max-content max-content auto;
   gap: 8px;
   align-items: end;
   flex: 1 1 640px;
@@ -1088,6 +1088,10 @@ th {
   z-index: 1200;
 }
 
+.member-auth-confirm[hidden] {
+  display: none !important;
+}
+
 .member-auth-confirm__card {
   width: min(560px, 94vw);
   border-radius: 18px;
@@ -1103,6 +1107,18 @@ th {
   max-height: 45vh;
   overflow-y: auto;
   color: var(--ink-soft);
+}
+
+@media (max-width: 1180px) {
+  .member-settings-filter-form {
+    grid-template-columns: minmax(220px, 1fr) minmax(150px, 180px) max-content max-content;
+  }
+}
+
+@media (max-width: 900px) {
+  .member-settings-filter-form {
+    grid-template-columns: minmax(220px, 1fr) minmax(150px, 180px);
+  }
 }
 
 .report-bulk-actions {

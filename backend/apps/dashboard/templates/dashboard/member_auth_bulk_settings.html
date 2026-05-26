@@ -88,6 +88,15 @@
     let debounceTimer = null;
     let confirmedSubmit = false;
 
+    function resetConfirmState() {
+      confirmedSubmit = false;
+      confirmWrap.hidden = true;
+      confirmSummary.innerHTML = "";
+    }
+
+    resetConfirmState();
+    window.addEventListener("pageshow", resetConfirmState);
+
     function updateLoadMore(meta) {
       if (!meta.has_next) {
         loadMoreButton.hidden = true;
@@ -179,7 +188,7 @@
     });
 
     confirmCancel.addEventListener("click", function () {
-      confirmWrap.hidden = true;
+      resetConfirmState();
     });
 
     confirmSubmit.addEventListener("click", function () {
