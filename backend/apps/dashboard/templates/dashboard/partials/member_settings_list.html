@@ -42,26 +42,9 @@
     </tbody>
   </table>
 </div>
-{% if paginator.num_pages > 1 %}
-<div class="target-history-pagination">
-  {% if page_obj.has_previous %}
-  <a class="btn-inline" href="?page={{ page_obj.previous_page_number }}{% if base_query_string %}&{{ base_query_string }}{% endif %}" data-member-page="{{ page_obj.previous_page_number }}">前へ</a>
-  {% endif %}
-  {% for num in paginator.page_range %}
-    {% if num == page_obj.number %}
-    <span class="badge">{{ num }}</span>
-    {% elif num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
-    <a class="btn-inline" href="?page={{ num }}{% if base_query_string %}&{{ base_query_string }}{% endif %}" data-member-page="{{ num }}">{{ num }}</a>
-    {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
-    <span class="muted">…</span>
-    {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
-    <span class="muted">…</span>
-    {% endif %}
-  {% endfor %}
-  {% if page_obj.has_next %}
-  <a class="btn-inline" href="?page={{ page_obj.next_page_number }}{% if base_query_string %}&{{ base_query_string }}{% endif %}" data-member-page="{{ page_obj.next_page_number }}">次へ</a>
-  {% endif %}
-  <span class="muted ml-auto">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
+{% if page_obj.has_next %}
+<div class="inline-row mt-12">
+  <button type="button" class="btn-inline" id="member-settings-load-more-btn" data-next-page="{{ page_obj.next_page_number }}">さらに20件表示</button>
 </div>
 {% endif %}
 {% else %}

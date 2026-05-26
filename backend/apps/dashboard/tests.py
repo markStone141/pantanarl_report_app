@@ -207,8 +207,9 @@ class MemberSettingsViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Ajax Alpha")
-        self.assertNotContains(response, "<html")
+        payload = response.json()
+        self.assertIn("list_html", payload)
+        self.assertIn("Ajax Alpha", payload["list_html"])
 
     def test_member_settings_ajax_can_include_inactive_members(self):
         Member.objects.create(name="Ajax Inactive", is_active=False)
@@ -220,7 +221,7 @@ class MemberSettingsViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Ajax Inactive")
+        self.assertIn("Ajax Inactive", response.json()["list_html"])
 
     def test_member_settings_paginates_members_by_twenty(self):
         for index in range(21):
@@ -235,7 +236,7 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context["members"]), 20)
         self.assertEqual(response.context["paginator"].count, 21)
-        self.assertContains(response, "1 / 2 ページ")
+        self.assertContains(response, "さらに20件表示")
 
         response_page_2 = self.client.get(reverse("member_settings"), {"page": 2})
         self.assertEqual(response_page_2.status_code, 200)

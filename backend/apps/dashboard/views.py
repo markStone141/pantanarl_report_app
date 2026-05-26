@@ -858,7 +858,14 @@ def member_settings(request: HttpRequest) -> HttpResponse:
         "base_query_string": base_query_string,
     }
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        return render(request, "dashboard/partials/member_settings_list.html", context)
+        return JsonResponse(
+            {
+                "list_html": render_to_string("dashboard/partials/member_settings_list.html", context, request=request),
+                "has_next": page_obj.has_next(),
+                "next_page": page_obj.next_page_number() if page_obj.has_next() else None,
+                "page_number": page_obj.number,
+            }
+        )
     return render(request, "dashboard/member_settings.html", context)
 
 

@@ -68,7 +68,21 @@
     const activeOnlyInput = document.getElementById("member-settings-active-only-input");
     const activeToggleButton = document.getElementById("member-settings-active-toggle-btn");
 
-    async function fetchMembers(page) {
+    function bindLoadMoreButton() {
+      const loadMoreButton = document.getElementById("member-settings-load-more-btn");
+      if (!loadMoreButton) {
+        return;
+      }
+      loadMoreButton.addEventListener("click", function () {
+        const nextPage = loadMoreButton.dataset.nextPage;
+        if (!nextPage) {
+          return;
+        }
+        fetchMembers(nextPage, true);
+      });
+    }
+
+    async function fetchMembers(page, append) {
       const params = new URLSearchParams(new FormData(form));
       if (page) {
         params.set("page", String(page));
@@ -79,7 +93,28 @@
       if (!response.ok) {
         return;
       }
-      listContainer.innerHTML = await response.text();
+      const payload = await response.json();
+      if (append) {
+        const nextDoc = document.createElement("div");
+        nextDoc.innerHTML = payload.list_html || "";
+        const currentBody = listContainer.querySelector("tbody");
+        const nextRows = nextDoc.querySelectorAll("tbody tr");
+        nextRows.forEach(function (row) {
+          currentBody.appendChild(row);
+        });
+        const currentButton = listContainer.querySelector("#member-settings-load-more-btn");
+        if (currentButton) {
+          currentButton.remove();
+        }
+        const nextButton = nextDoc.querySelector("#member-settings-load-more-btn");
+        if (nextButton) {
+          const tableWrap = listContainer.querySelector(".table-scroll");
+          tableWrap.insertAdjacentElement("afterend", nextButton.parentElement);
+        }
+      } else {
+        listContainer.innerHTML = payload.list_html || "";
+      }
+      bindLoadMoreButton();
     }
 
     form.addEventListener("input", function (event) {
@@ -108,14 +143,7 @@
       });
     }
 
-    listContainer.addEventListener("click", function (event) {
-      const link = event.target.closest("[data-member-page]");
-      if (!link) {
-        return;
-      }
-      event.preventDefault();
-      fetchMembers(link.dataset.memberPage);
-    });
+    bindLoadMoreButton();
   })();
 </script>
 {% endblock %}
