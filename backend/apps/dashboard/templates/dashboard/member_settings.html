@@ -35,10 +35,18 @@
             <option value="oldest" {% if sort == "oldest" %}selected{% endif %}>古い順</option>
           </select>
           <input type="hidden" name="active_only" value="{% if active_only %}1{% else %}0{% endif %}" id="member-settings-active-only-input">
+          <input type="hidden" name="missing_email" value="{% if missing_email_only %}1{% else %}0{% endif %}" id="member-settings-missing-email-input">
+          <input type="hidden" name="missing_login" value="{% if missing_login_only %}1{% else %}0{% endif %}" id="member-settings-missing-login-input">
           <button type="button" class="member-settings-toggle-btn{% if active_only %} is-active{% endif %}" id="member-settings-active-toggle-btn" aria-pressed="{% if active_only %}true{% else %}false{% endif %}">
             有効なメンバーのみ表示
           </button>
-          {% if query or sort != "name" or not active_only %}
+          <button type="button" class="member-settings-toggle-btn{% if missing_email_only %} is-active{% endif %}" id="member-settings-missing-email-btn" aria-pressed="{% if missing_email_only %}true{% else %}false{% endif %}">
+            アドレス未登録
+          </button>
+          <button type="button" class="member-settings-toggle-btn{% if missing_login_only %} is-active{% endif %}" id="member-settings-missing-login-btn" aria-pressed="{% if missing_login_only %}true{% else %}false{% endif %}">
+            ID未登録
+          </button>
+          {% if query or sort != "name" or not active_only or missing_email_only or missing_login_only %}
           <a href="{% url 'member_settings' %}" class="btn-inline">リセット</a>
           {% endif %}
         </form>
@@ -67,6 +75,10 @@
     let debounceTimer = null;
     const activeOnlyInput = document.getElementById("member-settings-active-only-input");
     const activeToggleButton = document.getElementById("member-settings-active-toggle-btn");
+    const missingEmailInput = document.getElementById("member-settings-missing-email-input");
+    const missingEmailButton = document.getElementById("member-settings-missing-email-btn");
+    const missingLoginInput = document.getElementById("member-settings-missing-login-input");
+    const missingLoginButton = document.getElementById("member-settings-missing-login-btn");
 
     function bindLoadMoreButton() {
       const loadMoreButton = document.getElementById("member-settings-load-more-btn");
@@ -139,6 +151,26 @@
         activeOnlyInput.value = isActive ? "0" : "1";
         activeToggleButton.classList.toggle("is-active", !isActive);
         activeToggleButton.setAttribute("aria-pressed", (!isActive).toString());
+        fetchMembers();
+      });
+    }
+
+    if (missingEmailButton && missingEmailInput) {
+      missingEmailButton.addEventListener("click", function () {
+        const enabled = missingEmailInput.value === "1";
+        missingEmailInput.value = enabled ? "0" : "1";
+        missingEmailButton.classList.toggle("is-active", !enabled);
+        missingEmailButton.setAttribute("aria-pressed", (!enabled).toString());
+        fetchMembers();
+      });
+    }
+
+    if (missingLoginButton && missingLoginInput) {
+      missingLoginButton.addEventListener("click", function () {
+        const enabled = missingLoginInput.value === "1";
+        missingLoginInput.value = enabled ? "0" : "1";
+        missingLoginButton.classList.toggle("is-active", !enabled);
+        missingLoginButton.setAttribute("aria-pressed", (!enabled).toString());
         fetchMembers();
       });
     }

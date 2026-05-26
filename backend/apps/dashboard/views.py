@@ -526,7 +526,7 @@ def _save_member_form(*, form: MemberRegistrationForm, member: Member | None = N
     return member, status_message
 
 
-def _build_member_settings_queryset(*, query: str, sort: str, active_only: bool):
+def _build_member_settings_queryset(*, query: str, sort: str, active_only: bool, missing_email_only: bool, missing_login_only: bool):
     members_qs = (
         Member.objects.prefetch_related("department_links__department")
         .select_related("default_department")
@@ -534,6 +534,10 @@ def _build_member_settings_queryset(*, query: str, sort: str, active_only: bool)
     )
     if active_only:
         members_qs = members_qs.filter(is_active=True)
+    if missing_email_only:
+        members_qs = members_qs.filter(Q(email__isnull=True) | Q(email=""))
+    if missing_login_only:
+        members_qs = members_qs.filter(user__isnull=True)
     if query:
         members_qs = members_qs.filter(
             Q(name__icontains=query)
@@ -840,7 +844,15 @@ def member_settings(request: HttpRequest) -> HttpResponse:
     query = (request.GET.get("q") or "").strip()
     sort = (request.GET.get("sort") or "name").strip()
     active_only = request.GET.get("active_only", "1") != "0"
-    members_qs = _build_member_settings_queryset(query=query, sort=sort, active_only=active_only)
+    missing_email_only = request.GET.get("missing_email", "0") == "1"
+    missing_login_only = request.GET.get("missing_login", "0") == "1"
+    members_qs = _build_member_settings_queryset(
+        query=query,
+        sort=sort,
+        active_only=active_only,
+        missing_email_only=missing_email_only,
+        missing_login_only=missing_login_only,
+    )
     paginator = Paginator(members_qs, 20)
     page_number = request.GET.get("page") or "1"
     page_obj = paginator.get_page(page_number)
@@ -855,6 +867,8 @@ def member_settings(request: HttpRequest) -> HttpResponse:
         "query": query,
         "sort": sort,
         "active_only": active_only,
+        "missing_email_only": missing_email_only,
+        "missing_login_only": missing_login_only,
         "base_query_string": base_query_string,
     }
     if request.headers.get("x-requested-with") == "XMLHttpRequest":

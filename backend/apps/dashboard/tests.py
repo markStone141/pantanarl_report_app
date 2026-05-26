@@ -199,6 +199,29 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Inactive User")
 
+    def test_member_settings_can_filter_missing_email(self):
+        Member.objects.create(name="No Email", email="")
+        Member.objects.create(name="Has Email", email="has@example.com")
+
+        response = self.client.get(reverse("member_settings"), {"missing_email": "1", "active_only": "0"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No Email")
+        self.assertNotContains(response, "Has Email")
+
+    def test_member_settings_can_filter_missing_login(self):
+        Member.objects.create(name="No Login")
+        member = Member.objects.create(name="Has Login")
+        user = User.objects.create_user(username="has_login", password="Password123")
+        member.user = user
+        member.save(update_fields=["user"])
+
+        response = self.client.get(reverse("member_settings"), {"missing_login": "1", "active_only": "0"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No Login")
+        self.assertNotContains(response, "Has Login")
+
     def test_member_settings_ajax_returns_partial_list(self):
         Member.objects.create(name="Ajax Alpha", is_active=True)
 
