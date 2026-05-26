@@ -37,7 +37,7 @@
         <h3>入力対象</h3>
         <p class="muted">部署を切り替えると、入力項目とメール本文プレビューもその部署向けに切り替わります。</p>
       </div>
-      <form method="get" class="dairymetrics-v2-transaction-form">
+      <form method="get" class="dairymetrics-v2-transaction-form" id="v2-context-switch-form">
         <div class="dairymetrics-field">
           <label for="v2-context-department">部署</label>
           <select id="v2-context-department" name="department">
@@ -755,6 +755,9 @@
     const closeoutPanel = document.getElementById("dairymetrics-v2-closeout-panel");
     const mailPreviewModal = document.getElementById("dairymetrics-v2-mail-preview");
     const mailPreviewBackdrop = document.getElementById("dairymetrics-v2-mail-backdrop");
+    const contextSwitchForm = document.getElementById("v2-context-switch-form");
+    const contextDepartmentSelect = document.getElementById("v2-context-department");
+    const contextDateInput = document.getElementById("v2-context-date");
     const transactionIdInput = document.getElementById("v2-transaction-id");
     const transactionAmountSelect = document.getElementById("v2-transaction-amount-select");
     const transactionAmountHidden = document.getElementById("v2-transaction-amount-hidden");
@@ -1149,6 +1152,12 @@
       });
     });
     mailPreviewBackdrop?.addEventListener("click", closeMailModal);
+    contextDepartmentSelect?.addEventListener("change", function () {
+      contextSwitchForm?.requestSubmit();
+    });
+    contextDateInput?.addEventListener("change", function () {
+      contextSwitchForm?.requestSubmit();
+    });
 
     document.querySelectorAll("[data-clear-on-focus]").forEach(function (input) {
       input.addEventListener("focus", function () {
