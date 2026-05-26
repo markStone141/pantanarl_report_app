@@ -816,6 +816,17 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
             cs_count=1,
             refugee_count=2,
         )
+        MetricAdjustment.objects.create(
+            member=wv_member,
+            department=self.depts["WV"],
+            target_date=today,
+            source_type="cs_plus_refugee",
+            support_amount=1500,
+            result_count=2,
+            cs_count=1,
+            refugee_count=1,
+            location_name="WV補正現場",
+        )
         style_report = DailyDepartmentReport.objects.create(
             department=self.depts["STYLE1"],
             report_date=today,
@@ -844,12 +855,19 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         wv_progress = next(row for row in response.context["target_progress_rows"] if row["label"] == "WV")
         self.assertIn("10", wv_progress["month_target"])
         self.assertIn("20", wv_progress["month_target"])
-        self.assertIn("1", wv_progress["month_actual"])
-        self.assertIn("2", wv_progress["month_actual"])
+        self.assertIn("CS 2件", wv_progress["month_actual"])
+        self.assertIn("難民 3件", wv_progress["month_actual"])
+        self.assertIn("金額 6,500円", wv_progress["month_actual"])
+        self.assertIn("補正 CS1件 / 難民1件 / 金額1,500円込み", wv_progress["month_actual"])
         payload_map = response.context["mail_template_payload_map"]
         wv_mail_section = next(s for s in payload_map["today"]["sections"] if s["code"] == "WV")
-        self.assertEqual(wv_mail_section["month_remaining_text"], "27件/0円")
-        self.assertEqual(wv_mail_section["month_remaining_split_text"], "CS9件 難民18件/0円")
+        self.assertEqual(wv_mail_section["month_remaining_text"], "25件/0円")
+        self.assertEqual(wv_mail_section["month_remaining_split_text"], "CS8件 難民17件/0円")
+        self.assertEqual(wv_mail_section["daily_cs_count"], 2)
+        self.assertEqual(wv_mail_section["daily_refugee_count"], 3)
+        self.assertIn("CS 2件 / 難民 3件 / 金額 6,500円", wv_mail_section["month_lines"])
+        self.assertIn("補正 CS1件 / 難民1件 / 金額1,500円", wv_mail_section["month_lines"])
+        self.assertIn("CS 2件 / 難民 3件 / 金額 6,500円", wv_mail_section["period_lines"])
 
         style_progress = next(row for row in response.context["target_progress_rows"] if row["label"] == "Style1")
         self.assertIn("10000", style_progress["month_target"])

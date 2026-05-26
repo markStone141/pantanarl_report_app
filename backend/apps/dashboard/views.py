@@ -65,6 +65,59 @@ def _append_adjustment_note(*, base_text: str, code: str, totals: dict) -> str:
     return f"{base_text}（{note}込み）"
 
 
+def _format_wv_actual_summary(*, totals: dict) -> str:
+    cs_count = int(totals.get("cs_count") or 0)
+    refugee_count = int(totals.get("refugee_count") or 0)
+    amount = int(totals.get("amount") or 0)
+    return f"CS {cs_count}件 / 難民 {refugee_count}件 / 金額 {amount:,}円"
+
+
+def _build_target_actual_text(
+    *,
+    code: str,
+    metrics,
+    target_values: dict,
+    actual_totals: dict,
+    adjustment_totals: dict,
+) -> str:
+    _, actual_text, _ = format_metric_triples(
+        metrics=metrics,
+        target_values=target_values,
+        actual_totals=actual_totals,
+    )
+    if code == "WV":
+        return _append_adjustment_note(
+            base_text=_format_wv_actual_summary(totals=actual_totals),
+            code=code,
+            totals=adjustment_totals,
+        )
+    return _append_adjustment_note(
+        base_text=actual_text,
+        code=code,
+        totals=adjustment_totals,
+    )
+
+
+def _build_mail_metric_lines(
+    *,
+    code: str,
+    detail_rows: list[dict],
+    actual_totals: dict,
+    adjustment_totals: dict,
+) -> list[str]:
+    lines = []
+    if code == "WV":
+        lines.append(_format_wv_actual_summary(totals=actual_totals))
+    lines.extend(
+        f"{row['label']} {row['actual_text']}/{row['target_text']}{row['unit']} 達成率{row['rate']}"
+        for row in detail_rows
+    )
+    adjustment_note = _format_adjustment_breakdown(code=code, totals=adjustment_totals)
+    if adjustment_note:
+        lines.append(adjustment_note)
+    return lines
+
+
 def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
     real_today = timezone.localdate()
     selected_mode = "prev" if request.GET.get("mode") == "prev" else "today"
@@ -103,12 +156,12 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
 
     target_progress_rows = []
     for code, label in target_departments:
-        month_target_text, month_actual_text, month_rate_text = format_metric_triples(
+        month_target_text, _, month_rate_text = format_metric_triples(
             metrics=metrics_by_code[code],
             target_values=month_target_values_by_code.get(code, {}),
             actual_totals=month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
         )
-        period_target_text, period_actual_text, period_rate_text = format_metric_triples(
+        period_target_text, _, period_rate_text = format_metric_triples(
             metrics=metrics_by_code[code],
             target_values=period_target_values_by_code.get(code, {}),
             actual_totals=period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
@@ -117,17 +170,21 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
             {
                 "label": label,
                 "month_target": month_target_text,
-                "month_actual": _append_adjustment_note(
-                    base_text=month_actual_text,
+                "month_actual": _build_target_actual_text(
                     code=code,
-                    totals=month_adjustment_totals_by_code.get(code, {}),
+                    metrics=metrics_by_code[code],
+                    target_values=month_target_values_by_code.get(code, {}),
+                    actual_totals=month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+                    adjustment_totals=month_adjustment_totals_by_code.get(code, {}),
                 ),
                 "month_rate": month_rate_text,
                 "period_target": period_target_text,
-                "period_actual": _append_adjustment_note(
-                    base_text=period_actual_text,
+                "period_actual": _build_target_actual_text(
                     code=code,
-                    totals=period_adjustment_totals_by_code.get(code, {}),
+                    metrics=metrics_by_code[code],
+                    target_values=period_target_values_by_code.get(code, {}),
+                    actual_totals=period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+                    adjustment_totals=period_adjustment_totals_by_code.get(code, {}),
                 ),
                 "period_rate": period_rate_text,
             }
@@ -292,26 +349,18 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                 }
                 for row in build_member_rows(member_totals=base_member_totals, codes=[code])
             ]
-            month_metric_lines = [
-                f"{row['label']} {row['actual_text']}/{row['target_text']}{row['unit']} 達成率{row['rate']}"
-                for row in base_metric_detail_by_code.get(code, {}).get("month", [])
-            ]
-            month_adjustment_note = _format_adjustment_breakdown(
+            month_metric_lines = _build_mail_metric_lines(
                 code=code,
-                totals=base_month_adjustment_totals_by_code.get(code, {}),
+                detail_rows=base_metric_detail_by_code.get(code, {}).get("month", []),
+                actual_totals=base_month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+                adjustment_totals=base_month_adjustment_totals_by_code.get(code, {}),
             )
-            if month_adjustment_note:
-                month_metric_lines.append(month_adjustment_note)
-            period_metric_lines = [
-                f"{row['label']} {row['actual_text']}/{row['target_text']}{row['unit']} 達成率{row['rate']}"
-                for row in base_metric_detail_by_code.get(code, {}).get("period", [])
-            ]
-            period_adjustment_note = _format_adjustment_breakdown(
+            period_metric_lines = _build_mail_metric_lines(
                 code=code,
-                totals=base_period_adjustment_totals_by_code.get(code, {}),
+                detail_rows=base_metric_detail_by_code.get(code, {}).get("period", []),
+                actual_totals=base_period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+                adjustment_totals=base_period_adjustment_totals_by_code.get(code, {}),
             )
-            if period_adjustment_note:
-                period_metric_lines.append(period_adjustment_note)
             month_remaining = build_remaining_values(base_metric_detail_by_code.get(code, {}).get("month", []))
             period_remaining = build_remaining_values(base_metric_detail_by_code.get(code, {}).get("period", []))
             has_daily_actual = any(
