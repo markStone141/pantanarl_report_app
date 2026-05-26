@@ -40,6 +40,20 @@ class PerformanceEntryFilterForm(forms.Form):
             self.initial.setdefault("date_from", today.replace(day=1))
 
 
+class PerformanceAdjustmentListFilterForm(forms.Form):
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.none(),
+        required=False,
+        label="部署",
+        empty_label="すべての部署",
+    )
+    q = forms.CharField(required=False, label="検索")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["department"].queryset = Department.objects.filter(is_active=True).order_by("code")
+
+
 class PerformanceMemberDailyMetricEntryForm(MemberDailyMetricEntryForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, member=None, **kwargs)

@@ -6,8 +6,9 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
-from django.http import Http404, HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils import timezone
@@ -52,7 +53,12 @@ from apps.targets.models import (
     Period,
 )
 
-from .forms import PerformanceEntryFilterForm, PerformanceMemberDailyMetricEntryForm, PerformanceMetricAdjustmentForm
+from .forms import (
+    PerformanceAdjustmentListFilterForm,
+    PerformanceEntryFilterForm,
+    PerformanceMemberDailyMetricEntryForm,
+    PerformanceMetricAdjustmentForm,
+)
 
 
 User = get_user_model()
@@ -214,6 +220,7 @@ def _filtered_adjustments_queryset(cleaned_data):
     member = cleaned_data.get("member")
     date_from = cleaned_data.get("date_from")
     date_to = cleaned_data.get("date_to")
+    query = (cleaned_data.get("q") or "").strip()
     if department:
         queryset = queryset.filter(department=department)
     if member:
@@ -222,6 +229,29 @@ def _filtered_adjustments_queryset(cleaned_data):
         queryset = queryset.filter(target_date__gte=date_from)
     if date_to:
         queryset = queryset.filter(target_date__lte=date_to)
+    if query:
+        queryset = queryset.filter(
+            Q(member__name__icontains=query)
+            | Q(location_name__icontains=query)
+            | Q(source_type__icontains=query)
+            | Q(department__code__icontains=query)
+        )
+    return queryset
+
+
+def _filtered_adjustments_list_queryset(cleaned_data):
+    queryset = MetricAdjustment.objects.select_related("member", "department", "created_by").order_by("-target_date", "-created_at")
+    department = cleaned_data.get("department")
+    query = (cleaned_data.get("q") or "").strip()
+    if department:
+        queryset = queryset.filter(department=department)
+    if query:
+        queryset = queryset.filter(
+            Q(member__name__icontains=query)
+            | Q(location_name__icontains=query)
+            | Q(source_type__icontains=query)
+            | Q(department__code__icontains=query)
+        )
     return queryset
 
 
@@ -1938,6 +1968,12 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
         if request.GET.get("saved") == "1":
             status_message = "補正実績を保存しました。"
 
+    list_filter_form = PerformanceAdjustmentListFilterForm(request.GET or None)
+    if list_filter_form.is_valid():
+        adjustments_queryset = _filtered_adjustments_list_queryset(list_filter_form.cleaned_data)
+    else:
+        adjustments_queryset = MetricAdjustment.objects.none()
+
     paginator = Paginator(adjustments_queryset, 20)
     page_obj = paginator.get_page(request.GET.get("page") or 1)
     member_options = {}
@@ -1958,9 +1994,26 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
             member_options.setdefault(str(link.department_id), []).append(
                 {"id": member.id, "name": member.name}
             )
+    list_context = {
+        "adjustments": page_obj.object_list,
+        "page_obj": page_obj,
+        "paginator": paginator,
+    }
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "list_html": render_to_string(
+                    "performance/partials/adjustment_list.html",
+                    list_context,
+                    request=request,
+                )
+            }
+        )
+
     context = {
         "nav_items": _performance_nav_items(),
         "filter_form": filter_form,
+        "list_filter_form": list_filter_form,
         "form": form,
         "edit_adjustment": edit_adjustment,
         "status_message": status_message,

@@ -357,6 +357,67 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(adjustment.support_amount, MemberMetricTransaction.WV_CS_UNIT_AMOUNT + 1500)
         self.assertEqual(adjustment.location_name, "川崎駅前")
 
+    def test_performance_adjustments_ajax_filters_by_department(self):
+        other_department = self.create_department("WV")
+        other_member = self.create_member(name="Bob", department=other_department)
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 5, 10),
+            source_type=MetricAdjustment.SOURCE_QR,
+            return_qr_count=1,
+            return_qr_amount=1500,
+            location_name="渋谷駅前",
+        )
+        MetricAdjustment.objects.create(
+            member=other_member,
+            department=other_department,
+            target_date=date(2026, 5, 11),
+            source_type=MetricAdjustment.SOURCE_CS,
+            support_amount=MemberMetricTransaction.WV_CS_UNIT_AMOUNT,
+            result_count=1,
+            cs_count=1,
+            location_name="横浜駅前",
+        )
+
+        response = self.client.get(
+            reverse("performance_adjustments"),
+            {"department": other_department.id},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn("list_html", payload)
+        self.assertIn("Bob", payload["list_html"])
+        self.assertIn("WV", payload["list_html"])
+        self.assertNotIn("Alice", payload["list_html"])
+        self.assertNotIn("UN", payload["list_html"])
+
+    def test_performance_adjustments_ajax_returns_load_more_button(self):
+        for index in range(21):
+            MetricAdjustment.objects.create(
+                member=self.member,
+                department=self.department,
+                target_date=date(2026, 5, 1) + timedelta(days=index),
+                source_type=MetricAdjustment.SOURCE_INCREASE,
+                result_count=1,
+                support_amount=1000 + index,
+                location_name=f"現場{index:02d}",
+            )
+
+        response = self.client.get(
+            reverse("performance_adjustments"),
+            {"page": 2},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn("list_html", payload)
+        self.assertIn("現場00", payload["list_html"] or "")
+        self.assertNotIn("performance-adjustments-load-more-btn", payload["list_html"])
+
     def test_performance_index_shows_activity_lists_and_progress_with_adjustments(self):
         today = timezone.localdate()
         other_member = Member.objects.create(name="Bob", default_department=self.department)

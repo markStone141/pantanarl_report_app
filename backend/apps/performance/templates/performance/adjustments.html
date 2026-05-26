@@ -93,78 +93,23 @@
 
   <section class="card mt-16">
     <h3>補正実績一覧</h3>
-    {% if adjustments %}
-    <div class="table-scroll">
-      <table class="mobile-card-table">
-        <thead>
-          <tr>
-            <th>対象日</th>
-            <th>メンバー</th>
-            <th>部署</th>
-            <th>種別</th>
-            <th>内容</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for adjustment in adjustments %}
-          <tr>
-            <td data-label="対象日">{{ adjustment.target_date|date:"Y/m/d" }}</td>
-            <td data-label="メンバー">{{ adjustment.member.name }}</td>
-            <td data-label="部署">{{ adjustment.department.code }}</td>
-            <td data-label="種別">{{ adjustment.get_source_type_display }}</td>
-            <td data-label="内容">
-              {% if adjustment.location_name %}
-              <div>{{ adjustment.location_name }}</div>
-              {% endif %}
-              {% if adjustment.department.code == "WV" %}
-              <div class="muted">CS {{ adjustment.cs_count }} / 難民 {{ adjustment.refugee_count }}</div>
-              {{ adjustment.support_amount }}円
-              {% elif adjustment.source_type == "postal" %}
-              {{ adjustment.return_postal_amount }}円
-              {% elif adjustment.source_type == "qr" %}
-              {{ adjustment.return_qr_amount }}円
-              {% else %}
-              {{ adjustment.support_amount }}円
-              {% endif %}
-            </td>
-            <td data-label="操作">
-              <a class="btn-inline" href="{% url 'performance_adjustments' %}?edit={{ adjustment.id }}">編集</a>
-              <form method="post" action="{% url 'performance_adjustment_delete' adjustment.id %}" style="display:inline;" onsubmit="return confirm('この補正実績を削除します。よろしいですか？');">
-                {% csrf_token %}
-                <button class="btn-inline btn-danger" type="submit">削除</button>
-              </form>
-            </td>
-          </tr>
+    <div class="dashboard-toolbar mt-12">
+      <form method="get" id="performance-adjustments-filter-form" action="{% url 'performance_adjustments' %}" class="member-settings-filter-form">
+        <input type="search" name="q" value="{{ list_filter_form.q.value|default:'' }}" placeholder="メンバー・現場・種別で検索">
+        <select name="department" id="performance-adjustments-department-filter">
+          <option value="">すべての部署</option>
+          {% for department in list_filter_form.fields.department.queryset %}
+          <option value="{{ department.id }}"{% if list_filter_form.cleaned_data.department and list_filter_form.cleaned_data.department.id == department.id %} selected{% endif %}>{{ department.code }}</option>
           {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% if paginator.num_pages > 1 %}
-    <div class="target-history-pagination">
-      {% if page_obj.has_previous %}
-      <a class="btn-inline" href="?page={{ page_obj.previous_page_number }}">前へ</a>
-      {% endif %}
-      {% for num in paginator.page_range %}
-        {% if num == page_obj.number %}
-        <span class="badge">{{ num }}</span>
-        {% elif num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
-        <a class="btn-inline" href="?page={{ num }}">{{ num }}</a>
-        {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
-        <span class="muted">…</span>
-        {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
-        <span class="muted">…</span>
+        </select>
+        {% if list_filter_form.q.value or list_filter_form.cleaned_data.department %}
+        <a href="{% url 'performance_adjustments' %}" class="btn-inline">リセット</a>
         {% endif %}
-      {% endfor %}
-      {% if page_obj.has_next %}
-      <a class="btn-inline" href="?page={{ page_obj.next_page_number }}">次へ</a>
-      {% endif %}
-      <span class="muted ml-auto">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
+      </form>
     </div>
-    {% endif %}
-    {% else %}
-    <p class="muted">補正実績はまだありません。</p>
-    {% endif %}
+    <div id="performance-adjustments-list" class="mt-12">
+      {% include "performance/partials/adjustment_list.html" %}
+    </div>
   </section>
 </div>
 {{ member_options|json_script:"performance-adjustment-member-options" }}
@@ -186,6 +131,8 @@
     const sourceTypeLabel = document.querySelector('label[for="{{ form.source_type.id_for_label }}"]');
     const amountChoiceLabel = document.querySelector('label[for="{{ form.amount_choice.id_for_label }}"]');
     const directAmountLabel = document.querySelector('label[for="{{ form.amount.id_for_label }}"]');
+    const listForm = document.getElementById("performance-adjustments-filter-form");
+    const listContainer = document.getElementById("performance-adjustments-list");
     let memberOptions = {};
     let departmentCodeMap = {};
     try {
@@ -298,6 +245,79 @@
       }
     }
     toggleDirectAmount();
+
+    if (!listForm || !listContainer) {
+      return;
+    }
+
+    let debounceTimer = null;
+
+    function bindLoadMoreButton() {
+      const loadMoreButton = document.getElementById("performance-adjustments-load-more-btn");
+      if (!loadMoreButton) {
+        return;
+      }
+      loadMoreButton.addEventListener("click", function () {
+        const nextPage = loadMoreButton.dataset.nextPage;
+        if (!nextPage) {
+          return;
+        }
+        fetchAdjustments(nextPage, true);
+      });
+    }
+
+    async function fetchAdjustments(page, append) {
+      const params = new URLSearchParams(new FormData(listForm));
+      if (page) {
+        params.set("page", String(page));
+      }
+      const response = await fetch(`${listForm.action}?${params.toString()}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      if (!response.ok) {
+        return;
+      }
+      const payload = await response.json();
+      if (append) {
+        const nextDoc = document.createElement("div");
+        nextDoc.innerHTML = payload.list_html || "";
+        const currentBody = listContainer.querySelector("tbody");
+        const nextRows = nextDoc.querySelectorAll("tbody tr");
+        nextRows.forEach(function (row) {
+          currentBody.appendChild(row);
+        });
+        const currentButton = listContainer.querySelector("#performance-adjustments-load-more-btn");
+        if (currentButton) {
+          currentButton.remove();
+        }
+        const nextButton = nextDoc.querySelector("#performance-adjustments-load-more-btn");
+        if (nextButton) {
+          listContainer.appendChild(nextButton.parentElement);
+        }
+      } else {
+        listContainer.innerHTML = payload.list_html || "";
+      }
+      bindLoadMoreButton();
+    }
+
+    listForm.addEventListener("input", function (event) {
+      if (event.target.name !== "q") {
+        return;
+      }
+      window.clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(function () {
+        fetchAdjustments();
+      }, 180);
+    });
+
+    listForm.addEventListener("change", function (event) {
+      if (event.target.name !== "department") {
+        return;
+      }
+      fetchAdjustments();
+    });
+
+    bindLoadMoreButton();
   })();
 </script>
 {% endblock %}
