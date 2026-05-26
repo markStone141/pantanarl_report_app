@@ -81,6 +81,7 @@ ENTRY_V2_NATIONALITY_BANDS = [
 ENTRY_V2_TARGET_COUNT_OPTIONS = [1, 2, 3, 4, 5]
 ENTRY_V2_TARGET_AMOUNT_OPTIONS = list(range(1000, 10001, 500))
 ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS = list(range(1000, 5001, 500))
+ENTRY_V2_WV_REFUGEE_AMOUNT_OPTIONS = list(range(500, 4001, 500))
 
 
 def _build_entry_form(*, member, data=None, department_code="", entry_date=None):
@@ -585,6 +586,7 @@ def _build_entry_v2_transaction_demo_context(
         "target_count_options": ENTRY_V2_TARGET_COUNT_OPTIONS,
         "target_amount_options": ENTRY_V2_TARGET_AMOUNT_OPTIONS,
         "transaction_amount_options": ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS,
+        "wv_refugee_amount_options": ENTRY_V2_WV_REFUGEE_AMOUNT_OPTIONS,
         "personal_target_count_value": personal_target_count_value,
         "personal_target_cs_count_value": personal_target_cs_count_value,
         "personal_target_refugee_count_value": personal_target_refugee_count_value,

@@ -206,8 +206,18 @@
             </div>
             <div class="dairymetrics-field" id="v2-transaction-refugee-amount-wrap">
               <label for="v2-transaction-refugee-amount">難民支援金額</label>
-              <input id="v2-transaction-refugee-amount" type="number" min="0" step="100" name="wv_refugee_amount" value="{{ transaction_wv_refugee_amount_value }}">
+              <select id="v2-transaction-refugee-amount-select" data-target-select data-target-custom="#v2-transaction-refugee-amount-custom-wrap" data-target-hidden="#v2-transaction-refugee-amount-hidden">
+                {% for amount in wv_refugee_amount_options %}
+                <option value="{{ amount }}" {% if transaction_wv_refugee_amount_value == amount|stringformat:"s" %}selected{% endif %}>{{ amount|intcomma }}円</option>
+                {% endfor %}
+                <option value="custom" {% if transaction_wv_refugee_amount_value != "500" and transaction_wv_refugee_amount_value != "1000" and transaction_wv_refugee_amount_value != "1500" and transaction_wv_refugee_amount_value != "2000" and transaction_wv_refugee_amount_value != "2500" and transaction_wv_refugee_amount_value != "3000" and transaction_wv_refugee_amount_value != "3500" and transaction_wv_refugee_amount_value != "4000" %}selected{% endif %}>直接入力</option>
+              </select>
+              <input type="hidden" name="wv_refugee_amount" id="v2-transaction-refugee-amount-hidden" value="{{ transaction_wv_refugee_amount_value }}">
               {% if transaction_form.wv_refugee_amount.errors %}<div class="error-text">{{ transaction_form.wv_refugee_amount.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="dairymetrics-field" id="v2-transaction-refugee-amount-custom-wrap" hidden>
+              <label for="v2-transaction-refugee-amount">難民支援金額を直接入力</label>
+              <input id="v2-transaction-refugee-amount" type="number" min="0" step="100" value="{{ transaction_wv_refugee_amount_value }}">
             </div>
             {% else %}
             <div class="dairymetrics-field">
@@ -730,6 +740,9 @@
     const transactionCsCountWrap = document.getElementById("v2-transaction-cs-count-wrap");
     const transactionCsCountInput = document.getElementById("v2-transaction-cs-count");
     const transactionRefugeeAmountWrap = document.getElementById("v2-transaction-refugee-amount-wrap");
+    const transactionRefugeeAmountSelect = document.getElementById("v2-transaction-refugee-amount-select");
+    const transactionRefugeeAmountHidden = document.getElementById("v2-transaction-refugee-amount-hidden");
+    const transactionRefugeeAmountCustomWrap = document.getElementById("v2-transaction-refugee-amount-custom-wrap");
     const transactionRefugeeAmountInput = document.getElementById("v2-transaction-refugee-amount");
     const transactionCommentInput = document.getElementById("v2-transaction-comment");
     const transactionPreviewButton = document.getElementById("v2-transaction-preview-button");
@@ -800,8 +813,20 @@
       if (transactionRefugeeAmountInput) {
         transactionRefugeeAmountInput.disabled = !showRefugee;
         if (!showRefugee) {
+          if (transactionRefugeeAmountSelect) {
+            transactionRefugeeAmountSelect.value = "500";
+          }
+          if (transactionRefugeeAmountHidden) {
+            transactionRefugeeAmountHidden.value = "0";
+          }
           transactionRefugeeAmountInput.value = "0";
         }
+      }
+      if (transactionRefugeeAmountSelect) {
+        transactionRefugeeAmountSelect.disabled = !showRefugee;
+      }
+      if (transactionRefugeeAmountCustomWrap && !showRefugee) {
+        transactionRefugeeAmountCustomWrap.hidden = true;
       }
     }
 
@@ -879,6 +904,10 @@
       if (transactionAmountSelect) {
         syncTargetFieldState(transactionAmountSelect);
       }
+      if (transactionRefugeeAmountSelect) {
+        transactionRefugeeAmountSelect.value = "500";
+        syncTargetFieldState(transactionRefugeeAmountSelect);
+      }
       syncWvTransactionFields();
       syncStudentField();
     }
@@ -912,6 +941,14 @@
       if (transactionRefugeeAmountInput) {
         transactionRefugeeAmountInput.value = button.dataset.transactionRefugeeAmount || "0";
       }
+      if (transactionRefugeeAmountSelect) {
+        const refugeeAmountValue = button.dataset.transactionRefugeeAmount || "0";
+        const hasPreset = Array.from(transactionRefugeeAmountSelect.options).some((option) => option.value === refugeeAmountValue);
+        transactionRefugeeAmountSelect.value = hasPreset ? refugeeAmountValue : "custom";
+      }
+      if (transactionRefugeeAmountHidden) {
+        transactionRefugeeAmountHidden.value = button.dataset.transactionRefugeeAmount || "0";
+      }
       if (transactionAgeSelect) {
         transactionAgeSelect.value = button.dataset.transactionAge || "{{ transaction_age_band_value|escapejs }}";
       }
@@ -935,6 +972,9 @@
       }
       if (transactionAmountSelect) {
         syncTargetFieldState(transactionAmountSelect);
+      }
+      if (transactionRefugeeAmountSelect) {
+        syncTargetFieldState(transactionRefugeeAmountSelect);
       }
       syncWvTransactionFields();
       syncStudentField();
