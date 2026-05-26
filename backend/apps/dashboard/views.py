@@ -1,13 +1,16 @@
 import logging
 import re
+from urllib.parse import urlencode
 from datetime import timedelta
 
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, require_roles
@@ -433,6 +436,130 @@ def _member_form(*, data=None, initial=None) -> MemberRegistrationForm:
     return form
 
 
+def _member_form_initial(member: Member) -> dict:
+    return {
+        "name": member.name,
+        "email": member.email,
+        "departments": list(member.department_links.values_list("department_id", flat=True)),
+        "default_department": member.default_department_id,
+        "auth_login_id": member.user.username if member.user else "",
+    }
+
+
+def _save_member_form(*, form: MemberRegistrationForm, member: Member | None = None) -> tuple[Member | None, str | None]:
+    if not form.is_valid():
+        return None, None
+
+    departments = form.cleaned_data["departments"]
+    default_department = form.cleaned_data["default_department"]
+    member_name = form.cleaned_data["name"].strip()
+    member_email = (form.cleaned_data.get("email") or "").strip()
+    auth_login_id = (form.cleaned_data.get("auth_login_id") or "").strip()
+    auth_password = (form.cleaned_data.get("auth_password") or "").strip()
+    linked_user = member.user if member else None
+
+    if default_department and default_department not in departments:
+        form.add_error("default_department", "メイン部署は所属部署から選択してください。")
+        return None, None
+
+    if member:
+        member.name = member_name
+        member.email = member_email
+        member.default_department = default_department
+        if auth_password and not auth_login_id and not linked_user:
+            form.add_error("auth_login_id", "パスワードを設定する場合はログインIDを入力してください。")
+            return None, None
+        if auth_login_id:
+            duplicate_user = User.objects.filter(username=auth_login_id)
+            if linked_user:
+                duplicate_user = duplicate_user.exclude(id=linked_user.id)
+            if duplicate_user.exists():
+                form.add_error("auth_login_id", "このログインIDはすでに使用されています。")
+                return None, None
+            if not linked_user:
+                if not auth_password:
+                    form.add_error("auth_password", "新規連携時はパスワードを入力してください。")
+                    return None, None
+                linked_user = User.objects.create_user(
+                    username=auth_login_id,
+                    password=auth_password,
+                )
+            else:
+                linked_user.username = auth_login_id
+                linked_user.save(update_fields=["username"])
+        if linked_user and auth_password:
+            linked_user.set_password(auth_password)
+            linked_user.save(update_fields=["password"])
+        member.user = linked_user
+        member.save(update_fields=["name", "email", "user", "default_department"])
+        status_message = f"{member.name} を更新しました。"
+    else:
+        if auth_login_id and not auth_password:
+            form.add_error("auth_password", "新規作成時、ログインIDを設定する場合はパスワードが必要です。")
+            return None, None
+        if auth_password and not auth_login_id:
+            form.add_error("auth_login_id", "パスワードを設定する場合はログインIDを入力してください。")
+            return None, None
+        if auth_login_id and User.objects.filter(username=auth_login_id).exists():
+            form.add_error("auth_login_id", "このログインIDはすでに使用されています。")
+            return None, None
+        if auth_login_id:
+            linked_user = User.objects.create_user(
+                username=auth_login_id,
+                password=auth_password,
+            )
+        member = Member.objects.create(
+            name=member_name,
+            email=member_email,
+            user=linked_user,
+            default_department=default_department,
+        )
+        status_message = f"{member.name} を登録しました。"
+
+    MemberDepartment.objects.filter(member=member).exclude(department__in=departments).delete()
+    existing_departments = set(MemberDepartment.objects.filter(member=member).values_list("department_id", flat=True))
+    for dept in departments:
+        if dept.id not in existing_departments:
+            MemberDepartment.objects.create(member=member, department=dept)
+    return member, status_message
+
+
+def _build_member_settings_queryset(*, query: str, sort: str):
+    members_qs = (
+        Member.objects.prefetch_related("department_links__department")
+        .select_related("default_department")
+        .select_related("user")
+    )
+    if query:
+        members_qs = members_qs.filter(
+            Q(name__icontains=query)
+            | Q(email__icontains=query)
+            | Q(user__username__icontains=query)
+            | Q(default_department__name__icontains=query)
+            | Q(default_department__code__icontains=query)
+            | Q(department_links__department__name__icontains=query)
+            | Q(department_links__department__code__icontains=query)
+        ).distinct()
+
+    if sort == "name_desc":
+        ordering = ("-name", "-id")
+    elif sort == "oldest":
+        ordering = ("id",)
+    elif sort == "newest":
+        ordering = ("-id",)
+    elif sort == "main_department":
+        ordering = ("default_department__code", "name", "id")
+    elif sort == "inactive_first":
+        ordering = ("is_active", "name", "id")
+    else:
+        ordering = ("-is_active", "name", "id")
+    return members_qs.order_by(*ordering)
+
+
+def _member_settings_redirect(status_message: str) -> HttpResponse:
+    return redirect(f"{reverse('member_settings')}?{urlencode({'status': status_message})}")
+
+
 def _department_form(*, data=None, initial=None, edit_department=None) -> DepartmentForm:
     form = DepartmentForm(data=data, initial=initial)
     if edit_department:
@@ -676,135 +803,80 @@ def department_delete(request: HttpRequest, department_id: int) -> HttpResponse:
 
 @require_roles(ROLE_ADMIN)
 def member_settings(request: HttpRequest) -> HttpResponse:
-    status_message = None
-    edit_member = None
-
-    edit_id = request.GET.get("edit")
-    if edit_id and edit_id.isdigit():
-        edit_member = Member.objects.filter(id=int(edit_id)).first()
-
-    if request.method == "POST":
-        edit_member_id = request.POST.get("edit_member_id")
-        form = _member_form(data=request.POST)
-        if form.is_valid():
-            departments = form.cleaned_data["departments"]
-            default_department = form.cleaned_data["default_department"]
-            member_name = form.cleaned_data["name"].strip()
-            member_email = (form.cleaned_data.get("email") or "").strip()
-            auth_login_id = (form.cleaned_data.get("auth_login_id") or "").strip()
-            auth_password = (form.cleaned_data.get("auth_password") or "").strip()
-            linked_user = None
-
-            if default_department and default_department not in departments:
-                form.add_error("default_department", "メイン部署は所属部署から選択してください。")
-
-            if not form.errors and edit_member_id and edit_member_id.isdigit():
-                member = get_object_or_404(Member, id=int(edit_member_id))
-                member.name = member_name
-                member.email = member_email
-                member.default_department = default_department
-                linked_user = member.user
-                if auth_password and not auth_login_id and not linked_user:
-                    form.add_error("auth_login_id", "パスワードを設定する場合はログインIDを入力してください。")
-                if auth_login_id:
-                    duplicate_user = User.objects.filter(username=auth_login_id)
-                    if linked_user:
-                        duplicate_user = duplicate_user.exclude(id=linked_user.id)
-                    if duplicate_user.exists():
-                        form.add_error("auth_login_id", "このログインIDはすでに使用されています。")
-                    else:
-                        if not linked_user:
-                            if not auth_password:
-                                form.add_error("auth_password", "新規連携時はパスワードを入力してください。")
-                                linked_user = None
-                            else:
-                                linked_user = User.objects.create_user(
-                                    username=auth_login_id,
-                                    password=auth_password,
-                                )
-                        else:
-                            linked_user.username = auth_login_id
-                            linked_user.save(update_fields=["username"])
-                if not form.errors:
-                    if linked_user and auth_password:
-                        linked_user.set_password(auth_password)
-                        linked_user.save(update_fields=["password"])
-                    member.user = linked_user
-                    member.save(update_fields=["name", "email", "user", "default_department"])
-                    status_message = f"{member.name} を更新しました。"
-            elif not form.errors:
-                if auth_login_id and not auth_password:
-                    form.add_error("auth_password", "新規作成時、ログインIDを設定する場合はパスワードが必要です。")
-                elif auth_password and not auth_login_id:
-                    form.add_error("auth_login_id", "パスワードを設定する場合はログインIDを入力してください。")
-                else:
-                    if auth_login_id:
-                        if User.objects.filter(username=auth_login_id).exists():
-                            form.add_error("auth_login_id", "このログインIDはすでに使用されています。")
-                    if not form.errors:
-                        if auth_login_id:
-                            linked_user = User.objects.create_user(
-                                username=auth_login_id,
-                                password=auth_password,
-                            )
-                        member = Member.objects.create(
-                            name=member_name,
-                            email=member_email,
-                            user=linked_user,
-                            default_department=default_department,
-                        )
-                        status_message = f"{member.name} を登録しました。"
-
-            if not form.errors:
-                MemberDepartment.objects.filter(member=member).exclude(department__in=departments).delete()
-                existing_departments = set(
-                    MemberDepartment.objects.filter(member=member).values_list("department_id", flat=True)
-                )
-                for dept in departments:
-                    if dept.id not in existing_departments:
-                        MemberDepartment.objects.create(member=member, department=dept)
-
-                form = _member_form()
-                edit_member = None
-    else:
-        if edit_member:
-            form = _member_form(
-                initial={
-                    "name": edit_member.name,
-                    "email": edit_member.email,
-                    "departments": list(edit_member.department_links.values_list("department_id", flat=True)),
-                    "default_department": edit_member.default_department_id,
-                    "auth_login_id": edit_member.user.username if edit_member.user else "",
-                }
-            )
-        else:
-            form = _member_form()
-
-    members_qs = (
-        Member.objects.prefetch_related("department_links__department")
-        .select_related("default_department")
-        .select_related("user")
-        .order_by("-is_active", "name")
-    )
+    status_message = request.GET.get("status") or None
+    query = (request.GET.get("q") or "").strip()
+    sort = (request.GET.get("sort") or "active_name").strip()
+    members_qs = _build_member_settings_queryset(query=query, sort=sort)
     paginator = Paginator(members_qs, 20)
     page_number = request.GET.get("page") or "1"
     page_obj = paginator.get_page(page_number)
-    selected_department_ids = {
-        str(dept_id) for dept_id in (form["departments"].value() or [])
-    }
-    department_choices = Department.objects.filter(is_active=True).order_by("code")
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+    base_query_string = query_params.urlencode()
     return render(
         request,
         "dashboard/member_settings.html",
         {
-            "form": form,
             "members": page_obj.object_list,
             "page_obj": page_obj,
             "paginator": paginator,
-            "edit_member": edit_member,
             "status_message": status_message,
+            "query": query,
+            "sort": sort,
+            "base_query_string": base_query_string,
+        },
+    )
+
+
+@require_roles(ROLE_ADMIN)
+def member_create(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST":
+        form = _member_form(data=request.POST)
+        member, status_message = _save_member_form(form=form)
+        if member and not form.errors:
+            return _member_settings_redirect(status_message)
+    else:
+        form = _member_form()
+    selected_department_ids = {str(dept_id) for dept_id in (form["departments"].value() or [])}
+    department_choices = Department.objects.filter(is_active=True).order_by("code")
+    return render(
+        request,
+        "dashboard/member_form.html",
+        {
+            "form": form,
+            "edit_member": None,
             "department_choices": department_choices,
             "selected_department_ids": selected_department_ids,
+            "page_title": "新規メンバー追加",
+            "page_subtitle": "名前・所属部署・ログイン情報を設定します。",
+            "submit_label": "メンバーを登録",
+        },
+    )
+
+
+@require_roles(ROLE_ADMIN)
+def member_edit(request: HttpRequest, member_id: int) -> HttpResponse:
+    member = get_object_or_404(Member, id=member_id)
+    if request.method == "POST":
+        form = _member_form(data=request.POST)
+        saved_member, status_message = _save_member_form(form=form, member=member)
+        if saved_member and not form.errors:
+            return _member_settings_redirect(status_message)
+    else:
+        form = _member_form(initial=_member_form_initial(member))
+    selected_department_ids = {str(dept_id) for dept_id in (form["departments"].value() or [])}
+    department_choices = Department.objects.filter(is_active=True).order_by("code")
+    return render(
+        request,
+        "dashboard/member_form.html",
+        {
+            "form": form,
+            "edit_member": member,
+            "department_choices": department_choices,
+            "selected_department_ids": selected_department_ids,
+            "page_title": "メンバー編集",
+            "page_subtitle": "名前・所属部署・ログイン情報を更新します。",
+            "submit_label": "メンバーを更新",
         },
     )
 

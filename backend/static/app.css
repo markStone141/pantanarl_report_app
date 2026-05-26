@@ -948,6 +948,27 @@ th {
   align-items: end;
 }
 
+.dashboard-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.member-settings-filter-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(180px, 220px) auto auto;
+  gap: 8px;
+  align-items: end;
+  flex: 1 1 640px;
+}
+
+.member-settings-filter-form input,
+.member-settings-filter-form select {
+  min-height: 40px;
+}
+
 .report-bulk-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1441,6 +1462,16 @@ th {
 
   .report-filter-search-form {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .member-settings-filter-form {
+    grid-template-columns: 1fr;
+    flex: 1 1 auto;
   }
 
   .report-filter-search-form .inline-row {

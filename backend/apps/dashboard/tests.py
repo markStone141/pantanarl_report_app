@@ -31,50 +31,48 @@ class MemberSettingsViewTests(TestCase):
 
     def test_register_member_creates_record(self):
         response = self.client.post(
-            reverse("member_settings"),
+            reverse("member_create"),
             {
                 "name": "Test Member",
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         self.assertTrue(Member.objects.filter(name="Test Member").exists())
 
     def test_register_member_saves_email(self):
         response = self.client.post(
-            reverse("member_settings"),
+            reverse("member_create"),
             {
                 "name": "Mail Member",
                 "email": "mail.member@example.com",
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         member = Member.objects.get(name="Mail Member")
         self.assertEqual(member.email, "mail.member@example.com")
 
     def test_edit_member_updates_name(self):
         member = Member.objects.create(name="Old Name", login_id="old", password="")
         response = self.client.post(
-            reverse("member_settings"),
+            reverse("member_edit", args=[member.id]),
             {
-                "edit_member_id": str(member.id),
                 "name": "New Name",
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         member.refresh_from_db()
         self.assertEqual(member.name, "New Name")
 
     def test_edit_member_updates_email(self):
         member = Member.objects.create(name="Mail Edit", email="old@example.com")
         response = self.client.post(
-            reverse("member_settings"),
+            reverse("member_edit", args=[member.id]),
             {
-                "edit_member_id": str(member.id),
                 "name": "Mail Edit",
                 "email": "new@example.com",
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         member.refresh_from_db()
         self.assertEqual(member.email, "new@example.com")
 
@@ -93,14 +91,14 @@ class MemberSettingsViewTests(TestCase):
 
     def test_register_member_with_departments_creates_links(self):
         response = self.client.post(
-            reverse("member_settings"),
+            reverse("member_create"),
             {
                 "name": "Dept User",
                 "departments": [self.depts["UN"].id, self.depts["STYLE1"].id],
                 "default_department": self.depts["UN"].id,
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         member = Member.objects.get(name="Dept User")
         self.assertEqual(
             set(member.department_links.values_list("department_id", flat=True)),
@@ -112,15 +110,14 @@ class MemberSettingsViewTests(TestCase):
         member = Member.objects.create(name="Move User", login_id="move_user", password="")
         MemberDepartment.objects.create(member=member, department=self.depts["UN"])
         response = self.client.post(
-            reverse("member_settings"),
+            reverse("member_edit", args=[member.id]),
             {
-                "edit_member_id": str(member.id),
                 "name": "Move User",
                 "departments": [self.depts["WV"].id],
                 "default_department": self.depts["WV"].id,
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         member.refresh_from_db()
         self.assertEqual(
             set(member.department_links.values_list("department_id", flat=True)),
@@ -130,7 +127,7 @@ class MemberSettingsViewTests(TestCase):
 
     def test_member_settings_rejects_default_department_outside_assigned_departments(self):
         response = self.client.post(
-            reverse("member_settings"),
+            reverse("member_create"),
             {
                 "name": "Default Dept User",
                 "departments": [self.depts["UN"].id],
@@ -154,6 +151,32 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "show@example.com")
 
+    def test_member_create_page_renders(self):
+        response = self.client.get(reverse("member_create"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "新規メンバー追加")
+
+    def test_member_settings_filters_by_query(self):
+        Member.objects.create(name="Alpha User", email="alpha@example.com")
+        Member.objects.create(name="Beta User", email="beta@example.com")
+
+        response = self.client.get(reverse("member_settings"), {"q": "Alpha"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Alpha User")
+        self.assertNotContains(response, "Beta User")
+
+    def test_member_settings_sorts_by_name_desc(self):
+        Member.objects.create(name="Alpha User")
+        Member.objects.create(name="Zulu User")
+
+        response = self.client.get(reverse("member_settings"), {"sort": "name_desc"})
+
+        self.assertEqual(response.status_code, 200)
+        members = list(response.context["members"])
+        self.assertGreaterEqual(len(members), 2)
+        self.assertEqual(members[0].name, "Zulu User")
+
     def test_member_settings_paginates_members_by_twenty(self):
         for index in range(21):
             Member.objects.create(
@@ -175,14 +198,14 @@ class MemberSettingsViewTests(TestCase):
 
     def test_register_member_with_auth_credentials_links_user(self):
         response = self.client.post(
-            reverse("member_settings"),
+            reverse("member_create"),
             {
                 "name": "Auth Member",
                 "auth_login_id": "auth_member_1",
                 "auth_password": "AuthPass123",
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         member = Member.objects.get(name="Auth Member")
         self.assertIsNotNone(member.user)
         self.assertEqual(member.user.username, "auth_member_1")
@@ -192,15 +215,14 @@ class MemberSettingsViewTests(TestCase):
         user = User.objects.create_user(username="edit_user_1", password="OldPass123")
         member = Member.objects.create(name="Edit User", login_id="edit_user_1", password="", user=user)
         response = self.client.post(
-            reverse("member_settings"),
+            reverse("member_edit", args=[member.id]),
             {
-                "edit_member_id": str(member.id),
                 "name": "Edit User",
                 "auth_login_id": "edit_user_1",
                 "auth_password": "NewPass123",
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         member.refresh_from_db()
         self.assertTrue(member.user.check_password("NewPass123"))
 
