@@ -244,9 +244,9 @@ class MemberMetricTransaction(models.Model):
     WV_RESULT_REFUGEE = "refugee"
     WV_RESULT_BOTH = "both"
     WV_RESULT_TYPE_CHOICES = [
-        (WV_RESULT_CS, "CSのみ"),
-        (WV_RESULT_REFUGEE, "難民のみ"),
-        (WV_RESULT_BOTH, "両方"),
+        (WV_RESULT_CS, "CS"),
+        (WV_RESULT_REFUGEE, "難民"),
+        (WV_RESULT_BOTH, "CS+難民"),
     ]
     WV_CS_UNIT_AMOUNT = 4500
 

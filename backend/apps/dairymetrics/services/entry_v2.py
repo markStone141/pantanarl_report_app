@@ -117,11 +117,11 @@ def transaction_result_type_label(transaction_obj) -> str:
     if not transaction_obj or not is_wv_department(transaction_obj.entry.department):
         return "会員"
     if transaction_obj.wv_result_type == transaction_obj.WV_RESULT_REFUGEE:
-        return "難民のみ"
+        return "難民"
     if transaction_obj.wv_result_type == transaction_obj.WV_RESULT_CS:
-        return "CSのみ"
+        return "CS"
     if transaction_obj.wv_result_type == transaction_obj.WV_RESULT_BOTH:
-        return "両方"
+        return "CS+難民"
     return "未分類"
 
 
