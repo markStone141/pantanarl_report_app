@@ -273,13 +273,19 @@ def build_transaction_mail_preview(*, member, department_code, transaction_obj, 
         result_line = " / ".join(parts) or f"{result_type_label} {transaction_obj.support_amount:,}円"
     else:
         result_line = f"会員1名 {transaction_obj.support_amount:,}円"
+    def format_gap(card):
+        gap_amount = int(card.get("signed_gap_amount") or 0)
+        if gap_amount < 0:
+            return f"+{abs(gap_amount):,}円"
+        return f"{gap_amount:,}円"
+
     body = "\n".join(
         [
             department_code or "",
             result_line,
-            f"日目まで {department_card['remaining_amount']:,}円",
-            f"路目まで {period_card['remaining_amount']:,}円",
-            f"月目まで {month_card['remaining_amount']:,}円",
+            f"日目まで {format_gap(department_card)}",
+            f"路目まで {format_gap(period_card)}",
+            f"月目まで {format_gap(month_card)}",
             "",
             " ".join(
                 filter(

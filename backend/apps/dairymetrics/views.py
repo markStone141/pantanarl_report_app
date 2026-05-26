@@ -194,6 +194,7 @@ def _build_entry_v2_demo_context(*, member, selected_department, entry_date):
 def _build_demo_progress_card(*, label, current_amount, target_amount, helper_text="", target_source=""):
     current_amount = int(current_amount or 0)
     target_amount = int(target_amount or 0)
+    signed_gap_amount = target_amount - current_amount if target_amount else 0
     remaining_amount = max(target_amount - current_amount, 0) if target_amount else 0
     achievement_rate = round((current_amount / target_amount) * 100, 1) if target_amount else None
     return {
@@ -201,6 +202,7 @@ def _build_demo_progress_card(*, label, current_amount, target_amount, helper_te
         "current_amount": current_amount,
         "target_amount": target_amount,
         "remaining_amount": remaining_amount,
+        "signed_gap_amount": signed_gap_amount,
         "achievement_rate": achievement_rate,
         "helper_text": helper_text,
         "target_source": target_source,

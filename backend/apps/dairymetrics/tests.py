@@ -1081,6 +1081,44 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertContains(response, "修正版本文")
         self.assertNotContains(response, "初回本文")
 
+    def test_entry_v2_transaction_demo_preview_body_uses_plus_after_target_is_exceeded(self):
+        entry_date = timezone.localdate()
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=1,
+            daily_target_amount=3000,
+            support_amount=0,
+        )
+        DepartmentDailyMetricSummary.objects.create(
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_amount=10000,
+            support_amount=12000,
+            created_by=self.member,
+            updated_by=self.member,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=3500,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+            comment="プラス確認",
+        )
+        entry.recalculate_from_transactions()
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "日目まで +5,500円")
+
     def test_entry_v2_transaction_demo_shows_modified_unsent_after_editing_sent_transaction(self):
         entry_date = timezone.localdate()
         entry = MemberDailyMetricEntry.objects.create(
