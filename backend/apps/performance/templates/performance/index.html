@@ -44,6 +44,7 @@
       <article class="metric-card performance-today-total-card">
         <span class="muted">今日の合計件数</span>
         <strong class="mt-6">{{ dashboard_snapshot.today_total_count_text }}</strong>
+        {% if dashboard_snapshot.today_total_count_subtext %}<div class="muted mt-4">{{ dashboard_snapshot.today_total_count_subtext }}</div>{% endif %}
       </article>
       <article class="metric-card performance-today-total-card">
         <span class="muted">今日の合計金額</span>
@@ -225,6 +226,7 @@
       <button type="button" id="performance-trend-mode-amount" class="btn-inline is-active">金額/件数</button>
       <button type="button" id="performance-trend-mode-rate" class="btn-inline">日目達成率</button>
       <button type="button" id="performance-trend-mode-activity" class="btn-inline">AP/CM</button>
+      {% if dashboard_snapshot.overall_activity_trend.is_wv %}<button type="button" id="performance-trend-mode-wv" class="btn-inline">CS/難民</button>{% endif %}
     </div>
     <div class="performance-chart-card mt-12">
       <canvas id="performance-activity-trend-chart" aria-label="直近稼働の全体実績推移"></canvas>
@@ -263,16 +265,19 @@
             <span class="muted">今月累計</span>
             <strong>{{ card.month_amount_text }}</strong>
             <div class="muted">{{ card.month_count_text }}</div>
+            {% if card.month_count_subtext %}<div class="muted">{{ card.month_count_subtext }}</div>{% endif %}
           </div>
           <div class="metric-card performance-member-card-metric">
             <span class="muted">路程累計</span>
             <strong>{{ card.period_amount_text }}</strong>
             <div class="muted">{{ card.period_count_text }}</div>
+            {% if card.period_count_subtext %}<div class="muted">{{ card.period_count_subtext }}</div>{% endif %}
           </div>
           <div class="metric-card performance-member-card-metric">
             <span class="muted">直近の実績</span>
             <strong>{{ card.recent_amount_text }}</strong>
             <div class="muted">{{ card.recent_date_text }} / {{ card.recent_count_text }}</div>
+            {% if card.recent_count_subtext %}<div class="muted">{{ card.recent_count_subtext }}</div>{% endif %}
           </div>
         </div>
       </a>

@@ -34,6 +34,7 @@
       <div class="metric-card" data-performance-summary-card="{{ item.key }}">
         <span class="muted">{{ item.label }}</span>
         <strong class="mt-6" data-performance-summary-value>{{ item.value }}</strong>
+        <div class="muted mt-4"{% if not item.subtext %} hidden{% endif %} data-performance-summary-subtext>{{ item.subtext }}</div>
       </div>
       {% endfor %}
     </div>
@@ -58,6 +59,7 @@
       <button type="button" id="performance-trend-mode-amount" class="btn-inline is-active">金額/件数</button>
       <button type="button" id="performance-trend-mode-rate" class="btn-inline">日目達成率</button>
       <button type="button" id="performance-trend-mode-activity" class="btn-inline">AP/CM</button>
+      {% if activity_trend.is_wv %}<button type="button" id="performance-trend-mode-wv" class="btn-inline">CS/難民</button>{% endif %}
     </div>
     <div class="performance-chart-card mt-12">
       <canvas id="performance-activity-trend-chart" aria-label="直近稼働の実績推移"></canvas>

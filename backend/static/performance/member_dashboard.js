@@ -66,6 +66,7 @@
   const modeAmountButton = document.getElementById("performance-trend-mode-amount");
   const modeRateButton = document.getElementById("performance-trend-mode-rate");
   const modeActivityButton = document.getElementById("performance-trend-mode-activity");
+  const modeWvButton = document.getElementById("performance-trend-mode-wv");
   const dateLinksNode = document.getElementById("performance-trend-date-links");
   const descriptionNode = document.getElementById("performance-trend-description");
   const primaryLegendNode = document.getElementById("performance-trend-primary-legend");
@@ -82,8 +83,9 @@
   document.querySelectorAll("[data-performance-summary-card]").forEach(function (node) {
     const key = node.dataset.performanceSummaryCard;
     const valueNode = node.querySelector("[data-performance-summary-value]");
+    const subtextNode = node.querySelector("[data-performance-summary-subtext]");
     if (key && valueNode) {
-      summaryCards[key] = valueNode;
+      summaryCards[key] = { valueNode: valueNode, subtextNode: subtextNode };
     }
   });
 
@@ -106,8 +108,12 @@
   const allDates = (trendData.dates || []).slice();
   const allAmounts = trendData.amounts.slice();
   const allCounts = trendData.counts.slice();
+  const allCsCounts = (trendData.cs_counts || []).slice();
+  const allRefugeeCounts = (trendData.refugee_counts || []).slice();
   const allAdjustmentAmounts = (trendData.adjustment_amounts || []).slice();
   const allAdjustmentCounts = (trendData.adjustment_counts || []).slice();
+  const allAdjustmentCsCounts = (trendData.adjustment_cs_counts || []).slice();
+  const allAdjustmentRefugeeCounts = (trendData.adjustment_refugee_counts || []).slice();
   const allApproachCounts = (trendData.approach_counts || []).slice();
   const allCommunicationCounts = (trendData.communication_counts || []).slice();
   const allTargetAmounts = (trendData.target_amounts || []).slice();
@@ -158,25 +164,45 @@
     }
     const visibleLabels = sliceLatest(allLabels);
     if (summaryCards.approach_total) {
-      summaryCards.approach_total.textContent = sumValues(sliceLatest(allApproachCounts)).toLocaleString("ja-JP");
+      summaryCards.approach_total.valueNode.textContent = sumValues(sliceLatest(allApproachCounts)).toLocaleString("ja-JP");
     }
     if (summaryCards.communication_total) {
-      summaryCards.communication_total.textContent = sumValues(sliceLatest(allCommunicationCounts)).toLocaleString("ja-JP");
+      summaryCards.communication_total.valueNode.textContent = sumValues(sliceLatest(allCommunicationCounts)).toLocaleString("ja-JP");
     }
     if (summaryCards.count_total) {
-      summaryCards.count_total.textContent = formatCount(sumValues(sliceLatest(allCounts)));
+      summaryCards.count_total.valueNode.textContent = formatCount(sumValues(sliceLatest(allCounts)));
+      if (summaryCards.count_total.subtextNode && trendData.is_wv) {
+        const csTotal = sumValues(sliceLatest(allCsCounts));
+        const refugeeTotal = sumValues(sliceLatest(allRefugeeCounts));
+        const total = csTotal + refugeeTotal;
+        const nextText = total > 0
+          ? "CS " + ((csTotal / total) * 100).toFixed(1) + "% / 難民 " + ((refugeeTotal / total) * 100).toFixed(1) + "%"
+          : "CS 0.0% / 難民 0.0%";
+        summaryCards.count_total.subtextNode.hidden = false;
+        summaryCards.count_total.subtextNode.textContent = nextText;
+      }
     }
     if (summaryCards.amount_total) {
-      summaryCards.amount_total.textContent = formatAmount(sumValues(sliceLatest(allAmounts)));
+      summaryCards.amount_total.valueNode.textContent = formatAmount(sumValues(sliceLatest(allAmounts)));
     }
     if (summaryCards.adjustment_count_total) {
-      summaryCards.adjustment_count_total.textContent = formatCount(sumValues(sliceLatest(allAdjustmentCounts)));
+      summaryCards.adjustment_count_total.valueNode.textContent = formatCount(sumValues(sliceLatest(allAdjustmentCounts)));
+      if (summaryCards.adjustment_count_total.subtextNode && trendData.is_wv) {
+        const csTotal = sumValues(sliceLatest(allAdjustmentCsCounts));
+        const refugeeTotal = sumValues(sliceLatest(allAdjustmentRefugeeCounts));
+        const total = csTotal + refugeeTotal;
+        const nextText = total > 0
+          ? "CS " + ((csTotal / total) * 100).toFixed(1) + "% / 難民 " + ((refugeeTotal / total) * 100).toFixed(1) + "%"
+          : "CS 0.0% / 難民 0.0%";
+        summaryCards.adjustment_count_total.subtextNode.hidden = false;
+        summaryCards.adjustment_count_total.subtextNode.textContent = nextText;
+      }
     }
     if (summaryCards.adjustment_amount_total) {
-      summaryCards.adjustment_amount_total.textContent = formatAmount(sumValues(sliceLatest(allAdjustmentAmounts)));
+      summaryCards.adjustment_amount_total.valueNode.textContent = formatAmount(sumValues(sliceLatest(allAdjustmentAmounts)));
     }
     if (summaryCards.active_days) {
-      summaryCards.active_days.textContent = visibleLabels.length.toLocaleString("ja-JP") + "日";
+      summaryCards.active_days.valueNode.textContent = visibleLabels.length.toLocaleString("ja-JP") + "日";
     }
   }
 
@@ -189,6 +215,9 @@
     }
     if (modeActivityButton) {
       modeActivityButton.classList.toggle("is-active", currentMode === "activity");
+    }
+    if (modeWvButton) {
+      modeWvButton.classList.toggle("is-active", currentMode === "wv");
     }
     if (currentMode === "amount") {
       if (descriptionNode) {
@@ -229,6 +258,30 @@
       }
       if (secondaryLegendNode) {
         secondaryLegendNode.hidden = true;
+      }
+      return;
+    }
+    if (currentMode === "wv") {
+      if (descriptionNode) {
+        descriptionNode.textContent = "1稼働 = 実績が登録された1日です。CS件数と難民件数を折れ線で表示します。";
+      }
+      if (primaryLegendNode) {
+        primaryLegendNode.hidden = false;
+      }
+      if (primarySwatchNode) {
+        primarySwatchNode.className = "performance-trend-legend-swatch performance-trend-legend-swatch-line-primary";
+      }
+      if (primaryLabelNode) {
+        primaryLabelNode.textContent = "CS件数";
+      }
+      if (lineLabelNode) {
+        lineLabelNode.textContent = "難民件数";
+      }
+      if (secondaryLegendNode) {
+        secondaryLegendNode.hidden = false;
+      }
+      if (secondarySwatchNode) {
+        secondarySwatchNode.className = "performance-trend-legend-swatch performance-trend-legend-swatch-line-secondary";
       }
       return;
     }
@@ -367,6 +420,9 @@
               if (currentMode === "activity") {
                 return (tooltipItem.dataset.label || "") + " " + Number(tooltipItem.raw || 0).toLocaleString("ja-JP");
               }
+              if (currentMode === "wv") {
+                return (tooltipItem.dataset.label || "") + " " + Number(tooltipItem.raw || 0).toLocaleString("ja-JP") + "件";
+              }
               if (tooltipItem.dataset.type === "bar") {
                 return "金額 " + Number(tooltipItem.raw || 0).toLocaleString("ja-JP") + "円";
               }
@@ -478,6 +534,36 @@
       chart.options.scales.yAmount.display = false;
       chart.options.scales.yCount.display = true;
       delete chart.options.scales.yRate;
+    } else if (currentMode === "wv") {
+      chart.data.datasets = [
+        {
+          type: "line",
+          label: "CS件数",
+          data: sliceLatest(allCsCounts),
+          yAxisID: "yCount",
+          borderColor: "#277bd3",
+          backgroundColor: "#277bd3",
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 4,
+          tension: 0.28,
+        },
+        {
+          type: "line",
+          label: "難民件数",
+          data: sliceLatest(allRefugeeCounts),
+          yAxisID: "yCount",
+          borderColor: "#ef7d32",
+          backgroundColor: "#ef7d32",
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 4,
+          tension: 0.28,
+        },
+      ];
+      chart.options.scales.yAmount.display = false;
+      chart.options.scales.yCount.display = true;
+      delete chart.options.scales.yRate;
     } else {
       chart.data.datasets = [
         {
@@ -556,6 +642,11 @@
   if (modeActivityButton) {
     modeActivityButton.addEventListener("click", function () {
       setMode("activity");
+    });
+  }
+  if (modeWvButton) {
+    modeWvButton.addEventListener("click", function () {
+      setMode("wv");
     });
   }
   if (dateLinksNode) {

@@ -234,6 +234,15 @@ def _count_text(entry, adjustment_totals):
     return f"{total_count}件"
 
 
+def _wv_ratio_text(*, cs_count: int, refugee_count: int) -> str:
+    total = int(cs_count or 0) + int(refugee_count or 0)
+    if total <= 0:
+        return "CS 0.0% / 難民 0.0%"
+    cs_rate = round((int(cs_count or 0) / total) * 100, 1)
+    refugee_rate = round((int(refugee_count or 0) / total) * 100, 1)
+    return f"CS {cs_rate}% / 難民 {refugee_rate}%"
+
+
 def _amount_text(entry, adjustment_totals):
     total_amount = entry_final_amount_value(entry=entry, adjustment_totals=adjustment_totals)
     return f"{total_amount:,}円"
@@ -361,9 +370,18 @@ def _build_scoped_member_cards(*, members, selected_department, scope):
                 "scope_label": scope_metric_label,
                 "scope_amount_text": _final_amount_text(totals=scoped_totals),
                 "scope_count_text": _final_count_text(department_code=department.code, totals=scoped_totals),
+                "scope_count_subtext": _final_count_subtext(department_code=department.code, totals=scoped_totals),
                 "recent_date_text": recent_date_text,
                 "recent_amount_text": recent_amount_text,
                 "recent_count_text": recent_count_text,
+                "recent_count_subtext": (
+                    _wv_ratio_text(
+                        cs_count=int(latest_entry.cs_count or 0) + int(latest_totals["cs_count"]),
+                        refugee_count=int(latest_entry.refugee_count or 0) + int(latest_totals["refugee_count"]),
+                    )
+                    if scoped_entries and department.code == "WV"
+                    else ""
+                ),
                 "recent_sort_date": recent_sort_date,
                 "zero_streak_warning": zero_streak_warning,
                 "zero_streak_text": "3稼働連続0件" if zero_streak_warning else "",
@@ -394,6 +412,15 @@ def _final_count_text(*, department_code, totals):
         + int(totals.get("return_qr_count") or 0)
     )
     return f"{total_count}件"
+
+
+def _final_count_subtext(*, department_code, totals):
+    if department_code != "WV":
+        return ""
+    return _wv_ratio_text(
+        cs_count=int(totals.get("cs_count") or 0),
+        refugee_count=int(totals.get("refugee_count") or 0),
+    )
 
 
 def _final_count_value(*, department_code, totals):
@@ -593,11 +620,21 @@ def _build_active_member_cards(*, members, today, target_month, target_period, s
                 "updated_at": updated_at_text,
                 "month_amount_text": _final_amount_text(totals=month_totals),
                 "month_count_text": _final_count_text(department_code=department.code, totals=month_totals),
+                "month_count_subtext": _final_count_subtext(department_code=department.code, totals=month_totals),
                 "period_amount_text": _final_amount_text(totals=period_totals),
                 "period_count_text": _final_count_text(department_code=department.code, totals=period_totals),
+                "period_count_subtext": _final_count_subtext(department_code=department.code, totals=period_totals),
                 "recent_date_text": recent_date_text,
                 "recent_amount_text": recent_amount_text,
                 "recent_count_text": recent_count_text,
+                "recent_count_subtext": (
+                    _wv_ratio_text(
+                        cs_count=int(entry.cs_count or 0) + int(recent_totals["cs_count"]),
+                        refugee_count=int(entry.refugee_count or 0) + int(recent_totals["refugee_count"]),
+                    )
+                    if latest_entries and department.code == "WV"
+                    else ""
+                ),
                 "recent_sort_date": recent_sort_date,
                 "zero_streak_warning": zero_streak_warning,
                 "zero_streak_text": "3稼働連続0件" if zero_streak_warning else "",
@@ -785,6 +822,11 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
     return {
         "today": today,
         "today_total_count_text": _totals_count_text_for_dashboard(department=department, totals=today_totals),
+        "today_total_count_subtext": (
+            _final_count_subtext(department_code=department.code, totals=today_totals)
+            if department is not None
+            else ""
+        ),
         "today_total_amount_text": _final_amount_text(totals=today_totals),
         "today_target_text": _today_target_text_for_dashboard(
             department=department,
@@ -1148,12 +1190,18 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "recent_summary_items": [
             {"key": "approach_total", "label": "合計AP", "value": f"{int(recent_totals.get('approach_count') or 0):,}"},
             {"key": "communication_total", "label": "合計CM", "value": f"{int(recent_totals.get('communication_count') or 0):,}"},
-            {"key": "count_total", "label": "合計件数", "value": _final_count_text(department_code=department.code, totals=recent_totals)},
+            {
+                "key": "count_total",
+                "label": "合計件数",
+                "value": _final_count_text(department_code=department.code, totals=recent_totals),
+                "subtext": _final_count_subtext(department_code=department.code, totals=recent_totals),
+            },
             {"key": "amount_total", "label": "合計金額", "value": _final_amount_text(totals=recent_totals)},
             {
                 "key": "adjustment_count_total",
                 "label": "補正実績件数",
                 "value": _final_count_text(department_code=department.code, totals=recent_adjustment_totals),
+                "subtext": _final_count_subtext(department_code=department.code, totals=recent_adjustment_totals),
             },
             {
                 "key": "adjustment_amount_total",

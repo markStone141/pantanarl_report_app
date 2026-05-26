@@ -104,8 +104,11 @@ def build_member_activity_trend(*, member, department, start_date=None, end_date
             "labels": [],
             "amounts": [],
             "counts": [],
+            "cs_counts": [],
+            "refugee_counts": [],
             "has_data": False,
             "count_label": "件数",
+            "is_wv": department.code == "WV",
             "default_visible_count": 0,
         }
     latest_entries = list(entry_queryset.filter(entry_date__in=latest_dates).order_by("entry_date", "id"))
@@ -141,8 +144,12 @@ def build_member_activity_trend(*, member, department, start_date=None, end_date
     labels = []
     amounts = []
     counts = []
+    cs_counts = []
+    refugee_counts = []
     adjustment_amounts = []
     adjustment_counts = []
+    adjustment_cs_counts = []
+    adjustment_refugee_counts = []
     approach_counts = []
     communication_counts = []
     target_amounts = []
@@ -174,19 +181,27 @@ def build_member_activity_trend(*, member, department, start_date=None, end_date
         adjustment_amounts.append(adjustment_amount_value)
         if department.code == "WV":
             adjustment_count_value = int(adjustment_totals["cs_count"]) + int(adjustment_totals["refugee_count"])
+            adjustment_cs_counts.append(int(adjustment_totals["cs_count"]))
+            adjustment_refugee_counts.append(int(adjustment_totals["refugee_count"]))
         else:
             adjustment_count_value = (
                 int(adjustment_totals["result_count"])
                 + int(adjustment_totals["return_postal_count"])
                 + int(adjustment_totals["return_qr_count"])
             )
+            adjustment_cs_counts.append(0)
+            adjustment_refugee_counts.append(0)
         if entry is not None:
             counts.append(entry_final_count_value(entry=entry, adjustment_totals=adjustment_totals))
+            cs_counts.append(int(entry.cs_count or 0) + int(adjustment_totals["cs_count"]))
+            refugee_counts.append(int(entry.refugee_count or 0) + int(adjustment_totals["refugee_count"]))
             approach_counts.append(int(entry.approach_count or 0))
             communication_counts.append(int(entry.communication_count or 0))
             target_amount = int(entry.daily_target_amount or 0)
         else:
             counts.append(adjustment_count_value)
+            cs_counts.append(int(adjustment_totals["cs_count"]))
+            refugee_counts.append(int(adjustment_totals["refugee_count"]))
             approach_counts.append(0)
             communication_counts.append(0)
             target_amount = 0
@@ -198,14 +213,19 @@ def build_member_activity_trend(*, member, department, start_date=None, end_date
         "labels": labels,
         "amounts": amounts,
         "counts": counts,
+        "cs_counts": cs_counts,
+        "refugee_counts": refugee_counts,
         "adjustment_amounts": adjustment_amounts,
         "adjustment_counts": adjustment_counts,
+        "adjustment_cs_counts": adjustment_cs_counts,
+        "adjustment_refugee_counts": adjustment_refugee_counts,
         "approach_counts": approach_counts,
         "communication_counts": communication_counts,
         "target_amounts": target_amounts,
         "rate_values": rate_values,
         "has_data": True,
         "count_label": "件数" if department.code != "WV" else "件数相当",
+        "is_wv": department.code == "WV",
         "default_visible_count": min(30, len(labels)),
     }
 
@@ -229,12 +249,17 @@ def build_overall_activity_trend(*, department=None, start_date=None, end_date=N
             "labels": [],
             "amounts": [],
             "counts": [],
+            "cs_counts": [],
+            "refugee_counts": [],
+            "adjustment_cs_counts": [],
+            "adjustment_refugee_counts": [],
             "approach_counts": [],
             "communication_counts": [],
             "target_amounts": [],
             "rate_values": [],
             "has_data": False,
             "count_label": "件数",
+            "is_wv": department is not None and department.code == "WV",
             "default_visible_count": 0,
         }
     entry_totals = {
@@ -276,6 +301,10 @@ def build_overall_activity_trend(*, department=None, start_date=None, end_date=N
     labels = []
     amounts = []
     counts = []
+    cs_counts = []
+    refugee_counts = []
+    adjustment_cs_counts = []
+    adjustment_refugee_counts = []
     approach_counts = []
     communication_counts = []
     target_amounts = []
@@ -293,17 +322,25 @@ def build_overall_activity_trend(*, department=None, start_date=None, end_date=N
         )
         amounts.append(amount_value)
         if use_equivalent_count:
+            cs_count_value = int(entry_row.get("cs_count_total") or 0) + int(adjustment_row.get("cs_count_total") or 0)
+            refugee_count_value = int(entry_row.get("refugee_count_total") or 0) + int(adjustment_row.get("refugee_count_total") or 0)
+            adjustment_cs_counts.append(int(adjustment_row.get("cs_count_total") or 0))
+            adjustment_refugee_counts.append(int(adjustment_row.get("refugee_count_total") or 0))
+            cs_counts.append(cs_count_value)
+            refugee_counts.append(refugee_count_value)
             counts.append(
                 int(entry_row.get("result_count_total") or 0)
-                + int(entry_row.get("cs_count_total") or 0)
-                + int(entry_row.get("refugee_count_total") or 0)
+                + cs_count_value
+                + refugee_count_value
                 + int(adjustment_row.get("result_count_total") or 0)
                 + int(adjustment_row.get("return_postal_count_total") or 0)
                 + int(adjustment_row.get("return_qr_count_total") or 0)
-                + int(adjustment_row.get("cs_count_total") or 0)
-                + int(adjustment_row.get("refugee_count_total") or 0)
             )
         else:
+            cs_counts.append(0)
+            refugee_counts.append(0)
+            adjustment_cs_counts.append(0)
+            adjustment_refugee_counts.append(0)
             counts.append(
                 int(entry_row.get("result_count_total") or 0)
                 + int(adjustment_row.get("result_count_total") or 0)
@@ -321,11 +358,16 @@ def build_overall_activity_trend(*, department=None, start_date=None, end_date=N
         "labels": labels,
         "amounts": amounts,
         "counts": counts,
+        "cs_counts": cs_counts,
+        "refugee_counts": refugee_counts,
+        "adjustment_cs_counts": adjustment_cs_counts,
+        "adjustment_refugee_counts": adjustment_refugee_counts,
         "approach_counts": approach_counts,
         "communication_counts": communication_counts,
         "target_amounts": target_amounts,
         "rate_values": rate_values,
         "has_data": True,
         "count_label": "件数相当" if use_equivalent_count else "件数",
+        "is_wv": department is not None and department.code == "WV",
         "default_visible_count": min(30, len(labels)),
     }
