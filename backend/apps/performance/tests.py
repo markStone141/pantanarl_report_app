@@ -303,6 +303,60 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(adjustment.support_amount, 6200)
         self.assertEqual(adjustment.location_name, "池袋駅前")
 
+    def test_performance_adjustment_create_wv_cs_sets_fixed_amount_and_count(self):
+        self.department.code = "WV"
+        self.department.name = "WV"
+        self.department.save(update_fields=["code", "name"])
+
+        response = self.client.post(
+            reverse("performance_adjustments"),
+            {
+                "department": self.department.id,
+                "member": self.member.id,
+                "target_date": "2026-05-16",
+                "source_type": MetricAdjustment.SOURCE_CS,
+                "location_name": "横浜駅前",
+                "amount_choice": "500",
+                "amount": "",
+            },
+        )
+
+        self.assertRedirects(response, reverse("performance_adjustments") + "?saved=1")
+        adjustment = MetricAdjustment.objects.get(member=self.member, department=self.department, target_date=date(2026, 5, 16))
+        self.assertEqual(adjustment.source_type, MetricAdjustment.SOURCE_CS)
+        self.assertEqual(adjustment.result_count, 1)
+        self.assertEqual(adjustment.cs_count, 1)
+        self.assertEqual(adjustment.refugee_count, 0)
+        self.assertEqual(adjustment.support_amount, MemberMetricTransaction.WV_CS_UNIT_AMOUNT)
+        self.assertEqual(adjustment.location_name, "横浜駅前")
+
+    def test_performance_adjustment_create_wv_cs_plus_refugee_sets_split_counts(self):
+        self.department.code = "WV"
+        self.department.name = "WV"
+        self.department.save(update_fields=["code", "name"])
+
+        response = self.client.post(
+            reverse("performance_adjustments"),
+            {
+                "department": self.department.id,
+                "member": self.member.id,
+                "target_date": "2026-05-17",
+                "source_type": MetricAdjustment.SOURCE_CS_PLUS_REFUGEE,
+                "location_name": "川崎駅前",
+                "amount_choice": "1500",
+                "amount": "",
+            },
+        )
+
+        self.assertRedirects(response, reverse("performance_adjustments") + "?saved=1")
+        adjustment = MetricAdjustment.objects.get(member=self.member, department=self.department, target_date=date(2026, 5, 17))
+        self.assertEqual(adjustment.source_type, MetricAdjustment.SOURCE_CS_PLUS_REFUGEE)
+        self.assertEqual(adjustment.result_count, 2)
+        self.assertEqual(adjustment.cs_count, 1)
+        self.assertEqual(adjustment.refugee_count, 1)
+        self.assertEqual(adjustment.support_amount, MemberMetricTransaction.WV_CS_UNIT_AMOUNT + 1500)
+        self.assertEqual(adjustment.location_name, "川崎駅前")
+
     def test_performance_index_shows_activity_lists_and_progress_with_adjustments(self):
         today = timezone.localdate()
         other_member = Member.objects.create(name="Bob", default_department=self.department)

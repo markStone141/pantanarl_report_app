@@ -3,7 +3,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Department, Member
 from apps.dairymetrics.forms import MemberDailyMetricEntryForm
-from apps.dairymetrics.models import MetricAdjustment
+from apps.dairymetrics.models import MemberMetricTransaction, MetricAdjustment
 
 
 class PerformanceEntryFilterForm(forms.Form):
@@ -52,10 +52,15 @@ class PerformanceMemberDailyMetricEntryForm(MemberDailyMetricEntryForm):
 
 
 class PerformanceMetricAdjustmentForm(forms.ModelForm):
-    SOURCE_CHOICES = [
+    UN_SOURCE_CHOICES = [
         (MetricAdjustment.SOURCE_POSTAL, "郵送"),
         (MetricAdjustment.SOURCE_QR, "QR"),
         (MetricAdjustment.SOURCE_INCREASE, "増額"),
+    ]
+    WV_SOURCE_CHOICES = [
+        (MetricAdjustment.SOURCE_CS, "CS"),
+        (MetricAdjustment.SOURCE_REFUGEE, "難民"),
+        (MetricAdjustment.SOURCE_CS_PLUS_REFUGEE, "CS+難民"),
     ]
     AMOUNT_DIRECT = "direct"
     AMOUNT_CHOICES = [(str(value), f"{value:,}円") for value in range(500, 5001, 500)]
@@ -77,13 +82,21 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
             "target_date": forms.DateInput(attrs={"type": "date", "class": "dairymetrics-native-date dairymetrics-date-input"}),
         }
 
+    @staticmethod
+    def _is_wv_department(department):
+        return bool(department and getattr(department, "code", "") == "WV")
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["department"].queryset = Department.objects.filter(is_active=True).order_by("code")
         self.fields["department"].label = "部署"
         self.fields["member"].label = "メンバー"
-        self.fields["source_type"] = forms.ChoiceField(label="種別", choices=self.SOURCE_CHOICES)
         selected_department = self._resolve_department()
+        is_wv_department = self._is_wv_department(selected_department)
+        self.fields["source_type"] = forms.ChoiceField(
+            label="種別",
+            choices=self.WV_SOURCE_CHOICES if is_wv_department else self.UN_SOURCE_CHOICES,
+        )
         member_queryset = Member.objects.active().filter(department_links__department__is_active=True).distinct()
         if selected_department is not None:
             member_queryset = member_queryset.filter(department_links__department=selected_department).distinct()
@@ -95,6 +108,9 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
         self.fields["target_date"].label = "対象日"
         self.fields["location_name"].label = "現場"
         self.fields["location_name"].required = False
+        if is_wv_department:
+            self.fields["amount_choice"].label = "難民支援金額"
+            self.fields["amount"].label = "難民支援金額を直接入力"
         self.fields["target_date"].initial = self.initial.get("target_date") or timezone.localdate()
         self.fields["amount"].widget.attrs.update({"inputmode": "numeric", "min": "0"})
         self.order_fields(["department", "member", "target_date", "source_type", "location_name", "amount_choice", "amount"])
@@ -105,12 +121,18 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
                 self.fields["amount_choice"].initial = str(initial_amount)
             else:
                 self.fields["amount_choice"].initial = self.AMOUNT_DIRECT
-            if self.instance.source_type in {choice[0] for choice in self.SOURCE_CHOICES}:
+            allowed_choices = self.WV_SOURCE_CHOICES if is_wv_department else self.UN_SOURCE_CHOICES
+            if self.instance.source_type in {choice[0] for choice in allowed_choices}:
                 self.fields["source_type"].initial = self.instance.source_type
             else:
-                self.fields["source_type"].initial = MetricAdjustment.SOURCE_INCREASE
+                self.fields["source_type"].initial = (
+                    MetricAdjustment.SOURCE_CS if is_wv_department else MetricAdjustment.SOURCE_INCREASE
+                )
         elif not self.is_bound:
             self.fields["amount_choice"].initial = "500"
+            self.fields["source_type"].initial = (
+                MetricAdjustment.SOURCE_CS if is_wv_department else MetricAdjustment.SOURCE_INCREASE
+            )
 
     def _resolve_department(self):
         if self.is_bound:
@@ -126,6 +148,12 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
 
     @staticmethod
     def _resolve_instance_amount(instance):
+        if instance.source_type == MetricAdjustment.SOURCE_CS:
+            return 0
+        if instance.source_type == MetricAdjustment.SOURCE_CS_PLUS_REFUGEE:
+            return max(int(instance.support_amount or 0) - MemberMetricTransaction.WV_CS_UNIT_AMOUNT, 0)
+        if instance.source_type == MetricAdjustment.SOURCE_REFUGEE:
+            return int(instance.support_amount or 0)
         if instance.source_type == MetricAdjustment.SOURCE_POSTAL:
             return int(instance.return_postal_amount or 0)
         if instance.source_type == MetricAdjustment.SOURCE_QR:
@@ -136,21 +164,32 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
         cleaned_data = super().clean()
         amount_choice = cleaned_data.get("amount_choice")
         direct_amount = cleaned_data.get("amount")
-        if amount_choice == self.AMOUNT_DIRECT:
-            if direct_amount is None:
-                self.add_error("amount", "直接入力の金額を入れてください。")
-            else:
-                cleaned_data["resolved_amount"] = int(direct_amount)
-        elif amount_choice:
-            cleaned_data["resolved_amount"] = int(amount_choice)
+        source_type = cleaned_data.get("source_type")
+        is_wv_department = self._is_wv_department(cleaned_data.get("department"))
+        if is_wv_department and source_type == MetricAdjustment.SOURCE_CS:
+            cleaned_data["resolved_amount"] = 0
         else:
-            self.add_error("amount_choice", "金額を選択してください。")
+            if amount_choice == self.AMOUNT_DIRECT:
+                if direct_amount is None:
+                    self.add_error("amount", "直接入力の金額を入れてください。")
+                else:
+                    cleaned_data["resolved_amount"] = int(direct_amount)
+            elif amount_choice:
+                cleaned_data["resolved_amount"] = int(amount_choice)
+            else:
+                self.add_error("amount_choice", "金額を選択してください。")
+            if is_wv_department and source_type in {
+                MetricAdjustment.SOURCE_REFUGEE,
+                MetricAdjustment.SOURCE_CS_PLUS_REFUGEE,
+            } and int(cleaned_data.get("resolved_amount") or 0) <= 0:
+                self.add_error("amount_choice", "難民支援金額を入力してください。")
         return cleaned_data
 
     def save(self, commit=True):
         adjustment = super().save(commit=False)
         amount = int(self.cleaned_data.get("resolved_amount") or 0)
         source_type = self.cleaned_data["source_type"]
+        is_wv_department = self._is_wv_department(adjustment.department)
         adjustment.source_type = source_type
         adjustment.approach_count = 0
         adjustment.communication_count = 0
@@ -163,7 +202,21 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
         adjustment.cs_count = 0
         adjustment.refugee_count = 0
         adjustment.note = ""
-        if source_type == MetricAdjustment.SOURCE_POSTAL:
+        if is_wv_department:
+            if source_type == MetricAdjustment.SOURCE_CS:
+                adjustment.result_count = 1
+                adjustment.support_amount = MemberMetricTransaction.WV_CS_UNIT_AMOUNT
+                adjustment.cs_count = 1
+            elif source_type == MetricAdjustment.SOURCE_REFUGEE:
+                adjustment.result_count = 1 if amount > 0 else 0
+                adjustment.support_amount = amount
+                adjustment.refugee_count = 1 if amount > 0 else 0
+            elif source_type == MetricAdjustment.SOURCE_CS_PLUS_REFUGEE:
+                adjustment.result_count = 2 if amount > 0 else 1
+                adjustment.support_amount = MemberMetricTransaction.WV_CS_UNIT_AMOUNT + amount
+                adjustment.cs_count = 1
+                adjustment.refugee_count = 1 if amount > 0 else 0
+        elif source_type == MetricAdjustment.SOURCE_POSTAL:
             adjustment.return_postal_count = 1 if amount > 0 else 0
             adjustment.return_postal_amount = amount
         elif source_type == MetricAdjustment.SOURCE_QR:

@@ -458,11 +458,17 @@ class MetricAdjustment(models.Model):
     SOURCE_POSTAL = "postal"
     SOURCE_QR = "qr"
     SOURCE_INCREASE = "increase"
+    SOURCE_CS = "cs"
+    SOURCE_REFUGEE = "refugee"
+    SOURCE_CS_PLUS_REFUGEE = "cs_plus_refugee"
     SOURCE_OTHER = "other"
     SOURCE_CHOICES = [
         (SOURCE_POSTAL, "郵送"),
         (SOURCE_QR, "QR"),
         (SOURCE_INCREASE, "増額"),
+        (SOURCE_CS, "CS"),
+        (SOURCE_REFUGEE, "難民"),
+        (SOURCE_CS_PLUS_REFUGEE, "CS+難民"),
         (SOURCE_OTHER, "その他"),
     ]
 
