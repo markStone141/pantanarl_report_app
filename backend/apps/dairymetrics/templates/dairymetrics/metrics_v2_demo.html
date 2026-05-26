@@ -198,6 +198,9 @@
         <div class="muted">他メンバーとの比較を客観的に確認できます。</div>
       </div>
     </div>
+    <div class="metrics-v2-chart-frame metrics-v2-chart-frame-ranking mt-12">
+      <canvas id="metrics-v2-ranking-chart" class="metrics-v2-ranking-chart" aria-label="ランキング"></canvas>
+    </div>
     <div class="mt-12">
       <label for="metrics-v2-ranking-metric">指標</label>
       <select id="metrics-v2-ranking-metric" data-metrics-v2-ranking-select>
@@ -205,9 +208,6 @@
         <option value="{{ option.key }}" {% if option.key == metrics_v2_payload.ranking.default_metric %}selected{% endif %}>{{ option.label }}</option>
         {% endfor %}
       </select>
-    </div>
-    <div class="metrics-v2-chart-frame metrics-v2-chart-frame-ranking mt-12">
-      <canvas id="metrics-v2-ranking-chart" class="metrics-v2-ranking-chart" aria-label="ランキング"></canvas>
     </div>
   </section>
 

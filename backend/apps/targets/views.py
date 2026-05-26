@@ -35,7 +35,7 @@ DEFAULT_METRICS_BY_DEPT = {
     "STYLE2": [("amount", "金額", "円")],
 }
 
-PERIOD_SEQUENCE_OPTIONS = list(range(1, 11))
+PERIOD_SEQUENCE_OPTIONS = list(range(1, 6))
 STATUS_OPTIONS = [{"value": value, "label": value} for value, _ in TARGET_STATUS_CHOICES]
 STATUS_LABELS = {
     TARGET_STATUS_ACTIVE: "進行中",
