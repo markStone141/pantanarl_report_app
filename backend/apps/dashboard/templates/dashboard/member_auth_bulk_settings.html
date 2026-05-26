@@ -94,6 +94,17 @@
       confirmSummary.innerHTML = "";
     }
 
+    function revealConfirmState() {
+      const confirmCard = confirmWrap.querySelector(".member-auth-confirm__card");
+      confirmWrap.hidden = false;
+      window.requestAnimationFrame(function () {
+        if (confirmCard) {
+          confirmCard.scrollIntoView({ block: "center", behavior: "smooth" });
+        }
+        confirmSubmit.focus();
+      });
+    }
+
     resetConfirmState();
     window.addEventListener("pageshow", resetConfirmState);
 
@@ -147,7 +158,7 @@
           changes.push(`${memberName}: ログインID -> ${loginInput.value}`);
         }
         if (passwordInput.value) {
-          changes.push(`${memberName}: パスワードを変更`);
+          changes.push(`${memberName}: パスワード -> ${passwordInput.value}`);
         }
       });
       return changes;
@@ -184,7 +195,7 @@
       confirmSummary.innerHTML = changes.map(function (item) {
         return `<div>${item}</div>`;
       }).join("");
-      confirmWrap.hidden = false;
+      revealConfirmState();
     });
 
     confirmCancel.addEventListener("click", function () {

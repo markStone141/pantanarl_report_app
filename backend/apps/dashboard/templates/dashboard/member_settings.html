@@ -29,11 +29,6 @@
       <div class="dashboard-toolbar mt-12">
         <form method="get" class="member-settings-filter-form" id="member-settings-filter-form" action="{% url 'member_settings' %}">
           <input type="search" name="q" value="{{ query }}" placeholder="名前・メール・部署で検索">
-          <select name="sort" aria-label="ソート順">
-            <option value="name" {% if sort == "name" %}selected{% endif %}>名前順</option>
-            <option value="newest" {% if sort == "newest" %}selected{% endif %}>新しい順</option>
-            <option value="oldest" {% if sort == "oldest" %}selected{% endif %}>古い順</option>
-          </select>
           <input type="hidden" name="active_only" value="{% if active_only %}1{% else %}0{% endif %}" id="member-settings-active-only-input">
           <input type="hidden" name="missing_email" value="{% if missing_email_only %}1{% else %}0{% endif %}" id="member-settings-missing-email-input">
           <input type="hidden" name="missing_login" value="{% if missing_login_only %}1{% else %}0{% endif %}" id="member-settings-missing-login-input">
@@ -46,7 +41,7 @@
           <button type="button" class="member-settings-toggle-btn{% if missing_login_only %} is-active{% endif %}" id="member-settings-missing-login-btn" aria-pressed="{% if missing_login_only %}true{% else %}false{% endif %}">
             ID未登録
           </button>
-          {% if query or sort != "name" or not active_only or missing_email_only or missing_login_only %}
+          {% if query or not active_only or missing_email_only or missing_login_only %}
           <a href="{% url 'member_settings' %}" class="btn-inline">リセット</a>
           {% endif %}
         </form>
@@ -138,13 +133,6 @@
         fetchMembers();
       }, 180);
     });
-
-    form.addEventListener("change", function (event) {
-      if (event.target.name === "sort") {
-        fetchMembers();
-      }
-    });
-
     if (activeToggleButton && activeOnlyInput) {
       activeToggleButton.addEventListener("click", function () {
         const isActive = activeOnlyInput.value !== "0";

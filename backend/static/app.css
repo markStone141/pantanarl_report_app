@@ -958,14 +958,13 @@ th {
 
 .member-settings-filter-form {
   display: grid;
-  grid-template-columns: minmax(220px, 1.3fr) minmax(150px, 180px) max-content max-content max-content auto;
+  grid-template-columns: minmax(240px, 1fr) max-content max-content max-content auto;
   gap: 8px;
   align-items: end;
   flex: 1 1 640px;
 }
 
-.member-settings-filter-form input,
-.member-settings-filter-form select {
+.member-settings-filter-form input {
   min-height: 40px;
 }
 
@@ -1111,7 +1110,7 @@ th {
 
 @media (max-width: 1180px) {
   .member-settings-filter-form {
-    grid-template-columns: minmax(220px, 1fr) minmax(150px, 180px) max-content max-content;
+    grid-template-columns: minmax(220px, 1fr) max-content max-content;
   }
 }
 
