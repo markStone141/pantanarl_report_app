@@ -146,11 +146,13 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "UN")
 
-    def test_member_list_shows_email(self):
-        member = Member.objects.create(name="Mail Show", email="show@example.com")
+    def test_member_list_shows_missing_account_badges(self):
+        Member.objects.create(name="Mail Show", email="show@example.com")
+        Member.objects.create(name="No Email", email="")
         response = self.client.get(reverse("member_settings"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "show@example.com")
+        self.assertContains(response, "ID未登録")
+        self.assertContains(response, "アドレス未登録")
 
     def test_member_create_page_renders(self):
         response = self.client.get(reverse("member_create"))

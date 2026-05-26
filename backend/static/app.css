@@ -998,6 +998,40 @@ th {
   transform: translateY(-1px);
 }
 
+.member-list-name-cell {
+  display: grid;
+  gap: 6px;
+}
+
+.member-list-name {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.member-list-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.member-list-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(24, 126, 255, 0.1);
+  color: var(--brand-deep);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.member-list-badge--inactive {
+  background: rgba(194, 57, 52, 0.1);
+  color: #a62e2b;
+}
+
 .selection-card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));

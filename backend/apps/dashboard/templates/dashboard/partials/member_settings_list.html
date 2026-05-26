@@ -2,14 +2,27 @@
 <div class="table-scroll">
   <table class="mobile-card-table">
     <thead>
-      <tr><th>名前</th><th>メール</th><th>ログインID</th><th>所属部署</th><th>メイン部署</th><th>操作</th></tr>
+      <tr><th>名前</th><th>所属部署</th><th>メイン部署</th><th>操作</th></tr>
     </thead>
     <tbody>
       {% for member in members %}
       <tr>
-        <td data-label="名前">{{ member.name }}</td>
-        <td data-label="メール">{% if member.email %}{{ member.email }}{% else %}-{% endif %}</td>
-        <td data-label="ログインID">{% if member.user %}{{ member.user.username }}{% else %}-{% endif %}</td>
+        <td data-label="名前">
+          <div class="member-list-name-cell">
+            <span class="member-list-name">{{ member.name }}</span>
+            <div class="member-list-badges">
+              {% if not member.email %}
+              <span class="member-list-badge">アドレス未登録</span>
+              {% endif %}
+              {% if not member.user %}
+              <span class="member-list-badge">ID未登録</span>
+              {% endif %}
+              {% if not member.is_active %}
+              <span class="member-list-badge member-list-badge--inactive">非アクティブ</span>
+              {% endif %}
+            </div>
+          </div>
+        </td>
         <td data-label="所属部署">
           {% for link in member.department_links.all %}
             {{ link.department.name }}{% if not forloop.last %}, {% endif %}
