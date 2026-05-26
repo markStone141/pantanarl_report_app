@@ -969,6 +969,23 @@ th {
   min-height: 40px;
 }
 
+.member-settings-active-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.member-settings-active-toggle input {
+  min-height: auto;
+}
+
 .report-bulk-actions {
   display: flex;
   flex-wrap: wrap;

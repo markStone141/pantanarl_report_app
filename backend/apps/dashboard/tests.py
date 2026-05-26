@@ -160,22 +160,53 @@ class MemberSettingsViewTests(TestCase):
         Member.objects.create(name="Alpha User", email="alpha@example.com")
         Member.objects.create(name="Beta User", email="beta@example.com")
 
-        response = self.client.get(reverse("member_settings"), {"q": "Alpha"})
+        response = self.client.get(reverse("member_settings"), {"q": "Alpha", "active_only": "0"})
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Alpha User")
         self.assertNotContains(response, "Beta User")
 
-    def test_member_settings_sorts_by_name_desc(self):
+    def test_member_settings_sorts_by_name(self):
         Member.objects.create(name="Alpha User")
         Member.objects.create(name="Zulu User")
 
-        response = self.client.get(reverse("member_settings"), {"sort": "name_desc"})
+        response = self.client.get(reverse("member_settings"), {"sort": "name", "active_only": "0"})
 
         self.assertEqual(response.status_code, 200)
         members = list(response.context["members"])
         self.assertGreaterEqual(len(members), 2)
-        self.assertEqual(members[0].name, "Zulu User")
+        self.assertEqual(members[0].name, "Alpha User")
+
+    def test_member_settings_defaults_to_active_members_only(self):
+        Member.objects.create(name="Active User", is_active=True)
+        Member.objects.create(name="Inactive User", is_active=False)
+
+        response = self.client.get(reverse("member_settings"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Active User")
+        self.assertNotContains(response, "Inactive User")
+
+    def test_member_settings_can_include_inactive_members(self):
+        Member.objects.create(name="Inactive User", is_active=False)
+
+        response = self.client.get(reverse("member_settings"), {"active_only": "0"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Inactive User")
+
+    def test_member_settings_ajax_returns_partial_list(self):
+        Member.objects.create(name="Ajax Alpha", is_active=True)
+
+        response = self.client.get(
+            reverse("member_settings"),
+            {"q": "Ajax"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ajax Alpha")
+        self.assertNotContains(response, "<html")
 
     def test_member_settings_paginates_members_by_twenty(self):
         for index in range(21):

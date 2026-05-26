@@ -524,12 +524,14 @@ def _save_member_form(*, form: MemberRegistrationForm, member: Member | None = N
     return member, status_message
 
 
-def _build_member_settings_queryset(*, query: str, sort: str):
+def _build_member_settings_queryset(*, query: str, sort: str, active_only: bool):
     members_qs = (
         Member.objects.prefetch_related("department_links__department")
         .select_related("default_department")
         .select_related("user")
     )
+    if active_only:
+        members_qs = members_qs.filter(is_active=True)
     if query:
         members_qs = members_qs.filter(
             Q(name__icontains=query)
@@ -541,18 +543,14 @@ def _build_member_settings_queryset(*, query: str, sort: str):
             | Q(department_links__department__code__icontains=query)
         ).distinct()
 
-    if sort == "name_desc":
-        ordering = ("-name", "-id")
-    elif sort == "oldest":
+    if sort == "oldest":
         ordering = ("id",)
     elif sort == "newest":
         ordering = ("-id",)
-    elif sort == "main_department":
+    elif sort == "department":
         ordering = ("default_department__code", "name", "id")
-    elif sort == "inactive_first":
-        ordering = ("is_active", "name", "id")
     else:
-        ordering = ("-is_active", "name", "id")
+        ordering = ("name", "id")
     return members_qs.order_by(*ordering)
 
 
@@ -805,27 +803,28 @@ def department_delete(request: HttpRequest, department_id: int) -> HttpResponse:
 def member_settings(request: HttpRequest) -> HttpResponse:
     status_message = request.GET.get("status") or None
     query = (request.GET.get("q") or "").strip()
-    sort = (request.GET.get("sort") or "active_name").strip()
-    members_qs = _build_member_settings_queryset(query=query, sort=sort)
+    sort = (request.GET.get("sort") or "name").strip()
+    active_only = request.GET.get("active_only", "1") != "0"
+    members_qs = _build_member_settings_queryset(query=query, sort=sort, active_only=active_only)
     paginator = Paginator(members_qs, 20)
     page_number = request.GET.get("page") or "1"
     page_obj = paginator.get_page(page_number)
     query_params = request.GET.copy()
     query_params.pop("page", None)
     base_query_string = query_params.urlencode()
-    return render(
-        request,
-        "dashboard/member_settings.html",
-        {
-            "members": page_obj.object_list,
-            "page_obj": page_obj,
-            "paginator": paginator,
-            "status_message": status_message,
-            "query": query,
-            "sort": sort,
-            "base_query_string": base_query_string,
-        },
-    )
+    context = {
+        "members": page_obj.object_list,
+        "page_obj": page_obj,
+        "paginator": paginator,
+        "status_message": status_message,
+        "query": query,
+        "sort": sort,
+        "active_only": active_only,
+        "base_query_string": base_query_string,
+    }
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return render(request, "dashboard/partials/member_settings_list.html", context)
+    return render(request, "dashboard/member_settings.html", context)
 
 
 @require_roles(ROLE_ADMIN)

@@ -26,18 +26,19 @@
     <article class="card">
       <h3>現在のメンバー</h3>
       <div class="dashboard-toolbar mt-12">
-        <form method="get" class="member-settings-filter-form">
+        <form method="get" class="member-settings-filter-form" id="member-settings-filter-form" action="{% url 'member_settings' %}">
           <input type="search" name="q" value="{{ query }}" placeholder="名前・メール・部署で検索">
           <select name="sort" aria-label="ソート順">
-            <option value="active_name" {% if sort == "active_name" %}selected{% endif %}>有効順 / 名前順</option>
-            <option value="name_desc" {% if sort == "name_desc" %}selected{% endif %}>名前 降順</option>
+            <option value="name" {% if sort == "name" %}selected{% endif %}>名前順</option>
             <option value="newest" {% if sort == "newest" %}selected{% endif %}>新しい順</option>
             <option value="oldest" {% if sort == "oldest" %}selected{% endif %}>古い順</option>
-            <option value="main_department" {% if sort == "main_department" %}selected{% endif %}>メイン部署順</option>
-            <option value="inactive_first" {% if sort == "inactive_first" %}selected{% endif %}>無効順</option>
+            <option value="department" {% if sort == "department" %}selected{% endif %}>部署順</option>
           </select>
-          <button type="submit">表示</button>
-          {% if query or sort != "active_name" %}
+          <label class="member-settings-active-toggle">
+            <input type="checkbox" name="active_only" value="1" {% if active_only %}checked{% endif %}>
+            <span>有効なメンバーのみ表示</span>
+          </label>
+          {% if query or sort != "name" or not active_only %}
           <a href="{% url 'member_settings' %}" class="btn-inline">リセット</a>
           {% endif %}
         </form>
@@ -49,72 +50,64 @@
       </div>
       {% endif %}
 
-      {% if members %}
-      <div class="table-scroll">
-      <table class="mobile-card-table">
-        <thead>
-          <tr><th>名前</th><th>状態</th><th>メール</th><th>ログインID</th><th>所属部署</th><th>メイン部署</th><th>操作</th></tr>
-        </thead>
-        <tbody>
-          {% for member in members %}
-          <tr>
-            <td data-label="名前">{{ member.name }}</td>
-            <td data-label="状態">{% if member.is_active %}有効{% else %}無効{% endif %}</td>
-            <td data-label="メール">{% if member.email %}{{ member.email }}{% else %}-{% endif %}</td>
-            <td data-label="ログインID">{% if member.user %}{{ member.user.username }}{% else %}-{% endif %}</td>
-            <td data-label="所属部署">
-              {% for link in member.department_links.all %}
-                {{ link.department.name }}{% if not forloop.last %}, {% endif %}
-              {% empty %}
-                -
-              {% endfor %}
-            </td>
-            <td data-label="メイン部署">{% if member.default_department %}{{ member.default_department.name }}{% else %}-{% endif %}</td>
-            <td data-label="操作">
-              <a class="btn-inline" href="{% url 'member_edit' member.id %}">編集</a>
-              <form method="post" action="{% url 'member_delete' member.id %}" style="display:inline;" onsubmit="return confirm('{% if member.is_active %}このメンバーを無効化します。よろしいですか？{% else %}このメンバーを再有効化します。よろしいですか？{% endif %}');">
-                {% csrf_token %}
-                <button class="btn-inline {% if member.is_active %}btn-danger{% endif %}" type="submit">{% if member.is_active %}無効化{% else %}再有効化{% endif %}</button>
-              </form>
-              {% if not member.is_active %}
-              <form method="post" action="{% url 'member_purge' member.id %}" style="display:inline;" onsubmit="return confirm('このメンバーを完全に削除します。元に戻せません。よろしいですか？');">
-                {% csrf_token %}
-                <button class="btn-inline btn-danger" type="submit">削除</button>
-              </form>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div id="member-settings-list">
+        {% include "dashboard/partials/member_settings_list.html" %}
       </div>
-      {% if paginator.num_pages > 1 %}
-      <div class="target-history-pagination">
-        {% if page_obj.has_previous %}
-        <a class="btn-inline" href="?page={{ page_obj.previous_page_number }}{% if base_query_string %}&{{ base_query_string }}{% endif %}">前へ</a>
-        {% endif %}
-        {% for num in paginator.page_range %}
-          {% if num == page_obj.number %}
-          <span class="badge">{{ num }}</span>
-          {% elif num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
-          <a class="btn-inline" href="?page={{ num }}{% if base_query_string %}&{{ base_query_string }}{% endif %}">{{ num }}</a>
-          {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
-          <span class="muted">…</span>
-          {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
-          <span class="muted">…</span>
-          {% endif %}
-        {% endfor %}
-        {% if page_obj.has_next %}
-        <a class="btn-inline" href="?page={{ page_obj.next_page_number }}{% if base_query_string %}&{{ base_query_string }}{% endif %}">次へ</a>
-        {% endif %}
-        <span class="muted ml-auto">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
-      </div>
-      {% endif %}
-      {% else %}
-      <p class="muted">まだメンバーは登録されていません。</p>
-      {% endif %}
     </article>
   </section>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+<script>
+  (function () {
+    const form = document.getElementById("member-settings-filter-form");
+    const listContainer = document.getElementById("member-settings-list");
+    if (!form || !listContainer) {
+      return;
+    }
+
+    let debounceTimer = null;
+
+    async function fetchMembers(page) {
+      const params = new URLSearchParams(new FormData(form));
+      if (!form.querySelector('input[name="active_only"]').checked) {
+        params.set("active_only", "0");
+      }
+      if (page) {
+        params.set("page", String(page));
+      }
+      const response = await fetch(`${form.action}?${params.toString()}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      if (!response.ok) {
+        return;
+      }
+      listContainer.innerHTML = await response.text();
+    }
+
+    form.addEventListener("input", function (event) {
+      if (event.target.name !== "q") {
+        return;
+      }
+      window.clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(function () {
+        fetchMembers();
+      }, 180);
+    });
+
+    form.addEventListener("change", function (event) {
+      if (event.target.name === "sort" || event.target.name === "active_only") {
+        fetchMembers();
+      }
+    });
+
+    listContainer.addEventListener("click", function (event) {
+      const link = event.target.closest("[data-member-page]");
+      if (!link) {
+        return;
+      }
+      event.preventDefault();
+      fetchMembers(link.dataset.memberPage);
+    });
+  })();
+</script>
 {% endblock %}
