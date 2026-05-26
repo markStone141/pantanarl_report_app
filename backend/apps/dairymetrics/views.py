@@ -548,18 +548,32 @@ def _build_entry_v2_transaction_demo_context(
     personal_location_name_value = str(personal_setup_form["location_name"].value() or current_location_name)
     department_target_amount_value = str(department_target_form["daily_target_amount"].value() or previous_department_target_amount)
     transaction_amount_value = str(transaction_form["support_amount"].value() or "3000")
-    transaction_form_is_wv = "wv_result_type" in transaction_form.fields
+    transaction_form_is_wv = is_wv_department(selected_department_obj)
     transaction_wv_result_type_choices = (
-        list(transaction_form.fields["wv_result_type"].choices) if transaction_form_is_wv else []
+        list(transaction_form.fields["wv_result_type"].choices)
+        if transaction_form_is_wv and "wv_result_type" in transaction_form.fields
+        else []
     )
     transaction_wv_result_type_value = (
-        transaction_form["wv_result_type"].value() if transaction_form_is_wv else ""
+        transaction_form["wv_result_type"].value()
+        if transaction_form_is_wv and "wv_result_type" in transaction_form.fields
+        else ""
     ) or MemberMetricTransaction.WV_RESULT_CS
     transaction_wv_cs_count_value = str(
-        (transaction_form["wv_cs_count"].value() if transaction_form_is_wv else 1) or 1
+        (
+            transaction_form["wv_cs_count"].value()
+            if transaction_form_is_wv and "wv_cs_count" in transaction_form.fields
+            else 1
+        )
+        or 1
     )
     transaction_wv_refugee_amount_value = str(
-        (transaction_form["wv_refugee_amount"].value() if transaction_form_is_wv else 0) or 0
+        (
+            transaction_form["wv_refugee_amount"].value()
+            if transaction_form_is_wv and "wv_refugee_amount" in transaction_form.fields
+            else 0
+        )
+        or 0
     )
     transaction_age_band_value = transaction_form["age_band"].value() or MemberMetricTransaction.AGE_BAND_SEVENTIES
     personal_entry_date_value = str(personal_setup_form["entry_date"].value() or entry_date.strftime("%Y-%m-%d"))
