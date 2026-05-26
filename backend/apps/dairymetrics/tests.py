@@ -72,6 +72,37 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         response = self.client.get(reverse("dairymetrics_login"))
         self.assertRedirects(response, reverse("dairymetrics_admin_overview"))
 
+    def test_entry_v2_transaction_demo_can_save_un_transaction(self):
+        entry_date = timezone.localdate()
+        self.client.force_login(self.user)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+        )
+
+        response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "save_transaction",
+                "department_code": self.department.code,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "support_amount": "3000",
+                "location": "渋谷駅前",
+                "age_band": MemberMetricTransaction.AGE_BAND_SEVENTIES,
+                "gender": MemberMetricTransaction.GENDER_FEMALE,
+                "nationality_type": MemberMetricTransaction.NATIONALITY_DOMESTIC,
+                "comment": "UNテストコメント",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=transaction",
+        )
+
 
 class DairyMetricsDashboardTests(AppTestMixin, TestCase):
     DEFAULT_PASSWORD = "pass123"

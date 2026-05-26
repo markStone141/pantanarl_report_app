@@ -187,22 +187,22 @@
           <input type="hidden" name="department_code" value="{{ selected_department_code }}">
           <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
           <div class="dairymetrics-v2-transaction-form">
-            {% if selected_department_is_wv %}
+            {% if transaction_form_is_wv %}
             <input type="hidden" name="support_amount" id="v2-transaction-amount-hidden" value="{{ transaction_form.support_amount.value|default:0 }}">
             <div class="dairymetrics-field">
               <label for="v2-transaction-result-type">区分</label>
               <select id="v2-transaction-result-type" name="wv_result_type">
-                {% for value, label in transaction_form.fields.wv_result_type.choices %}
+                {% for value, label in transaction_wv_result_type_choices %}
                 <option value="{{ value }}" {% if transaction_wv_result_type_value == value %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
               </select>
-              {% if transaction_form.wv_result_type.errors %}<div class="error-text">{{ transaction_form.wv_result_type.errors|striptags }}</div>{% endif %}
+              {% if transaction_form_is_wv and transaction_form.wv_result_type.errors %}<div class="error-text">{{ transaction_form.wv_result_type.errors|striptags }}</div>{% endif %}
             </div>
             <div class="dairymetrics-field" id="v2-transaction-cs-count-wrap">
               <label for="v2-transaction-cs-count">CS口数</label>
               <input id="v2-transaction-cs-count" type="number" min="0" step="1" name="wv_cs_count" value="{{ transaction_wv_cs_count_value }}">
               <div class="dairymetrics-subtext">CSは1口 4,500円です。</div>
-              {% if transaction_form.wv_cs_count.errors %}<div class="error-text">{{ transaction_form.wv_cs_count.errors|striptags }}</div>{% endif %}
+              {% if transaction_form_is_wv and transaction_form.wv_cs_count.errors %}<div class="error-text">{{ transaction_form.wv_cs_count.errors|striptags }}</div>{% endif %}
             </div>
             <div class="dairymetrics-field" id="v2-transaction-refugee-amount-wrap">
               <label for="v2-transaction-refugee-amount">難民支援金額</label>
@@ -213,7 +213,7 @@
                 <option value="custom" {% if transaction_wv_refugee_amount_value != "500" and transaction_wv_refugee_amount_value != "1000" and transaction_wv_refugee_amount_value != "1500" and transaction_wv_refugee_amount_value != "2000" and transaction_wv_refugee_amount_value != "2500" and transaction_wv_refugee_amount_value != "3000" and transaction_wv_refugee_amount_value != "3500" and transaction_wv_refugee_amount_value != "4000" %}selected{% endif %}>直接入力</option>
               </select>
               <input type="hidden" name="wv_refugee_amount" id="v2-transaction-refugee-amount-hidden" value="{{ transaction_wv_refugee_amount_value }}">
-              {% if transaction_form.wv_refugee_amount.errors %}<div class="error-text">{{ transaction_form.wv_refugee_amount.errors|striptags }}</div>{% endif %}
+              {% if transaction_form_is_wv and transaction_form.wv_refugee_amount.errors %}<div class="error-text">{{ transaction_form.wv_refugee_amount.errors|striptags }}</div>{% endif %}
             </div>
             <div class="dairymetrics-field" id="v2-transaction-refugee-amount-custom-wrap" hidden>
               <label for="v2-transaction-refugee-amount">難民支援金額を直接入力</label>

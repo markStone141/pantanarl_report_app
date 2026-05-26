@@ -436,9 +436,15 @@ class DairymetricsV2TransactionForm(forms.ModelForm):
         self.department = department
         self.fields["support_amount"].min_value = 0
         if not department or department.code != "WV":
-            self.fields.pop("wv_result_type", None)
-            self.fields.pop("wv_cs_count", None)
-            self.fields.pop("wv_refugee_amount", None)
+            self.fields["wv_result_type"].required = False
+            self.fields["wv_cs_count"].required = False
+            self.fields["wv_refugee_amount"].required = False
+            self.fields["wv_result_type"].widget = forms.HiddenInput()
+            self.fields["wv_cs_count"].widget = forms.HiddenInput()
+            self.fields["wv_refugee_amount"].widget = forms.HiddenInput()
+            self.fields["wv_result_type"].initial = ""
+            self.fields["wv_cs_count"].initial = 0
+            self.fields["wv_refugee_amount"].initial = 0
         else:
             self.fields["support_amount"].required = False
             self.fields["wv_result_type"].required = True
