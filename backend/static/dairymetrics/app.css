@@ -2105,6 +2105,7 @@
 
 .dairymetrics-v2-activity-group {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -2113,6 +2114,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  grid-column: 1 / -1;
+}
+
+.dairymetrics-v2-activity-group > .muted {
+  grid-column: 1 / -1;
 }
 
 .dairymetrics-v2-activity-count {
@@ -2522,6 +2528,10 @@
 
 @media (max-width: 900px) {
   .dairymetrics-v2-activity-groups {
+    grid-template-columns: 1fr;
+  }
+
+  .dairymetrics-v2-activity-group {
     grid-template-columns: 1fr;
   }
 
