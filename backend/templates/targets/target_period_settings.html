@@ -110,15 +110,19 @@
           </div>
           <div class="target-history-actions target-history-actions-inline">
             <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
-            <a class="btn-inline" href="{% url 'target_period_settings' %}?period={{ row.id }}">編集</a>
+            <a class="icon-btn" href="{% url 'target_period_settings' %}?period={{ row.id }}" aria-label="路程を編集" title="編集">
+              <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+            </a>
+            <form method="post" class="target-delete-form target-inline-action-form" onsubmit="return confirm('この路程を削除します。よろしいですか？');">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete_period" />
+              <input type="hidden" name="delete_period_id" value="{{ row.id }}" />
+              <input type="hidden" name="history_page" value="{{ history_page.number }}" />
+              <button type="submit" class="icon-btn icon-btn-danger" aria-label="路程を削除" title="削除">
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+              </button>
+            </form>
           </div>
-          <form method="post" class="target-delete-form" onsubmit="return confirm('この路程を削除します。よろしいですか？');">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="delete_period" />
-            <input type="hidden" name="delete_period_id" value="{{ row.id }}" />
-            <input type="hidden" name="history_page" value="{{ history_page.number }}" />
-            <button type="submit" class="btn-inline btn-danger">削除</button>
-          </form>
         </div>
         <details class="target-history-details">
           <summary>実績を見る</summary>
