@@ -1439,6 +1439,80 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "決済入力")
         self.assertContains(response, "Metrics V2")
 
+    def test_performance_member_history_shows_transaction_edit_link(self):
+        self.client.logout()
+        report_user = User.objects.create_user(username="perf-member-history-link", password="pass1234", is_staff=False)
+        self.member.user = report_user
+        self.member.save(update_fields=["user"])
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=timezone.localdate(),
+            result_count=0,
+            support_amount=0,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷",
+            comment="初回決済",
+        )
+        self.client.force_login(report_user)
+
+        response = self.client.get(reverse("performance_member_history"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("performance_transaction_edit", args=[transaction.id]))
+
+    def test_performance_member_can_edit_own_transaction_from_history_flow(self):
+        self.client.logout()
+        report_user = User.objects.create_user(username="perf-member-tx-edit", password="pass1234", is_staff=False)
+        self.member.user = report_user
+        self.member.save(update_fields=["user"])
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=timezone.localdate() - timedelta(days=1),
+            result_count=0,
+            support_amount=0,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷",
+            comment="初回決済",
+        )
+        self.client.force_login(report_user)
+
+        response = self.client.post(
+            f"{reverse('performance_transaction_edit', args=[transaction.id])}?next={reverse('performance_member_history')}",
+            {
+                "support_amount": 4200,
+                "wv_result_type": "",
+                "wv_cs_count": 0,
+                "wv_refugee_amount": 0,
+                "location": "渋谷",
+                "age_band": MemberMetricTransaction.AGE_BAND_TWENTIES,
+                "is_student": "",
+                "gender": MemberMetricTransaction.GENDER_FEMALE,
+                "nationality_type": MemberMetricTransaction.NATIONALITY_DOMESTIC,
+                "comment": "金額修正",
+                "next": reverse("performance_member_history"),
+            },
+        )
+
+        self.assertRedirects(response, f"{reverse('performance_member_history')}?updated=transaction")
+        transaction.refresh_from_db()
+        entry.refresh_from_db()
+        self.assertEqual(transaction.support_amount, 4200)
+        self.assertEqual(entry.support_amount, 4200)
+
     def test_performance_member_can_edit_own_past_entry_from_history_flow(self):
         self.client.logout()
         report_user = User.objects.create_user(username="perf-member-edit", password="pass1234", is_staff=False)

@@ -15,7 +15,7 @@ from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, resolve_request_role
 from apps.accounts.models import Department, Member, MemberDepartment
-from apps.dairymetrics.forms import DairyMetricsLoginForm, MemberScopeTargetForm
+from apps.dairymetrics.forms import DairyMetricsLoginForm, DairymetricsV2TransactionForm, MemberScopeTargetForm
 from apps.dairymetrics.models import (
     DepartmentDailyMetricSummary,
     MemberDailyMetricEntry,
@@ -80,6 +80,12 @@ def _performance_redirect_for_user(user, *, fallback=""):
     if user.is_staff or user.is_superuser:
         return redirect("performance_index")
     return redirect("performance_member_dashboard")
+
+
+def _performance_next_url(next_url: str, *, fallback: str) -> str:
+    if next_url and isinstance(next_url, str) and next_url.startswith("/performance/"):
+        return next_url
+    return fallback
 
 
 def require_performance_roles(*allowed_roles: str):
@@ -1030,6 +1036,15 @@ def _build_member_dashboard_entry_rows(*, member, department, month_start, month
     return entry_rows
 
 
+def _attach_transaction_edit_urls(*, entry_rows, next_url):
+    for row in entry_rows:
+        for transaction in row["transactions"]:
+            transaction.edit_url = (
+                f"{reverse('performance_transaction_edit', args=[transaction.id])}"
+                f"?{urlencode({'next': next_url})}"
+            )
+
+
 def _build_detail_filter_dates(*, entry_rows, adjustment_rows):
     unique_dates = set()
     for row in entry_rows:
@@ -1145,6 +1160,12 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         limit=5,
     )
     activity_trend = build_member_activity_trend(member=member, department=department)
+    detail_next_url = (
+        reverse("performance_member_detail", args=[member.id, department.id])
+        if is_admin
+        else reverse("performance_member_dashboard")
+    )
+    _attach_transaction_edit_urls(entry_rows=recent_detail_payload["entry_rows"], next_url=detail_next_url)
     recent_totals = collect_member_final_actual_totals(
         member,
         department,
@@ -1292,9 +1313,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "recent_detail_selected_date": None,
         "recent_detail_has_more": recent_detail_payload["has_more"],
         "recent_detail_reset_url": (
-            reverse("performance_member_detail", args=[member.id, department.id])
-            if is_admin
-            else reverse("performance_member_dashboard")
+            detail_next_url
         ),
         "recent_summary_items": [
             {"key": "approach_total", "label": "合計AP", "value": f"{int(recent_totals.get('approach_count') or 0):,}"},
@@ -1408,6 +1427,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
     )
     entry_rows = detail_payload["entry_rows"]
     entry_edit_next_url = request.get_full_path()
+    _attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
     for row in entry_rows:
         row["edit_url"] = (
             f"{reverse('performance_entry_edit', args=[row['entry'].id])}"
@@ -1740,6 +1760,54 @@ def performance_entry_edit(request: HttpRequest, entry_id: int) -> HttpResponse:
     return render(request, "performance/entry_edit.html", context)
 
 
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
+def performance_transaction_edit(request: HttpRequest, transaction_id: int) -> HttpResponse:
+    transaction = get_object_or_404(
+        MemberMetricTransaction.objects.select_related("entry", "entry__member", "entry__department"),
+        pk=transaction_id,
+    )
+    is_admin = bool(request.user.is_staff or request.user.is_superuser)
+    if not is_admin:
+        member = getattr(request.user, "member_profile", None)
+        if member is None or member.id != transaction.entry.member_id:
+            raise Http404
+    next_url = request.GET.get("next") or request.POST.get("next") or ""
+    fallback_url = (
+        reverse("performance_member_history_detail", args=[transaction.entry.member_id, transaction.entry.department_id])
+        if is_admin
+        else reverse("performance_member_history")
+    )
+    back_url = _performance_next_url(next_url, fallback=fallback_url)
+    status_message = ""
+    if request.method == "POST":
+        form = DairymetricsV2TransactionForm(
+            request.POST,
+            instance=transaction,
+            department=transaction.entry.department,
+        )
+        if form.is_valid():
+            saved_transaction = form.save(commit=False)
+            saved_transaction.entry = transaction.entry
+            saved_transaction.save()
+            separator = "&" if "?" in back_url else "?"
+            return redirect(f"{back_url}{separator}updated=transaction")
+        status_message = "決済明細を確認してください。"
+    else:
+        form = DairymetricsV2TransactionForm(instance=transaction, department=transaction.entry.department)
+
+    context = {
+        "transaction": transaction,
+        "entry": transaction.entry,
+        "form": form,
+        "status_message": status_message,
+        "next_url": next_url,
+        "back_url": back_url,
+        "is_wv": transaction.entry.department.code == "WV",
+        "nav_items": _performance_nav_items() if is_admin else _performance_member_nav_items(is_admin=False),
+    }
+    return render(request, "performance/transaction_edit.html", context)
+
+
 @require_performance_roles(ROLE_ADMIN)
 def performance_member_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
@@ -1810,6 +1878,7 @@ def _render_member_history_day_detail_response(
     )
     for row in entry_rows:
         row["edit_url"] = f"{reverse('performance_entry_edit', args=[row['entry'].id])}?{urlencode({'next': entry_edit_next_url})}"
+    _attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
     adjustment_rows = list(
         MetricAdjustment.objects.filter(
             member=member,
@@ -1882,6 +1951,7 @@ def _render_member_history_list_response(
             f"{reverse('performance_entry_edit', args=[row['entry'].id])}"
             f"?{urlencode({'next': entry_edit_next_url})}"
         )
+    _attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
     context = {
         "member": member,
         "department": department,
@@ -1975,6 +2045,8 @@ def _render_member_day_detail_response(
         selected_date=selected_date,
         reset_url=reset_url,
     )
+    if not readonly_member_view:
+        _attach_transaction_edit_urls(entry_rows=context["recent_entry_rows"], next_url=reset_url)
     return render(request, "performance/partials/member_day_detail_cards.html", context)
 
 
@@ -2047,6 +2119,11 @@ def _render_member_recent_detail_response(
             else reverse("performance_member_dashboard")
         ),
     }
+    if not readonly_member_view:
+        _attach_transaction_edit_urls(
+            entry_rows=context["recent_entry_rows"],
+            next_url=context["recent_detail_reset_url"],
+        )
     return render(request, "performance/partials/member_day_detail_cards.html", context)
 
 

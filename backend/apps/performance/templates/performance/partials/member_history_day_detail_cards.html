@@ -55,7 +55,14 @@
                   <div class="metric-card">
                     <div class="row">
                       <strong>{{ tx.support_amount|floatformat:0 }}円</strong>
-                      <span class="muted">{{ tx.location|default:"場所未設定" }}</span>
+                      <div class="row">
+                        <span class="muted">{{ tx.location|default:"場所未設定" }}</span>
+                        {% if not readonly_member_view and tx.edit_url %}
+                        <a class="btn-inline" href="{{ tx.edit_url }}" aria-label="決済を修正">
+                          <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                        </a>
+                        {% endif %}
+                      </div>
                     </div>
                     <div class="muted mt-6">{{ tx.get_age_band_display }} / {{ tx.get_gender_display }} / {{ tx.get_nationality_type_display }}</div>
                     {% if tx.comment %}
