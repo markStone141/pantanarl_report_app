@@ -49,8 +49,6 @@ def metric_actual_value(*, metric_code, total_count, total_amount, total_cs_coun
 
 def format_metric_value(*, metric_code, value: int, unit: str = "") -> str:
     if _metric_kind(metric_code=metric_code, unit=unit) == "amount":
-        if (unit or "").strip().lower() == "yen":
-            return str(value)
         return f"{value:,}"
     return str(value)
 
