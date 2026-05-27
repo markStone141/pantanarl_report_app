@@ -2061,6 +2061,11 @@
   gap: 14px;
 }
 
+.dairymetrics-v2-transaction-list[hidden],
+.dairymetrics-v2-mail-history-detail[hidden] {
+  display: none !important;
+}
+
 .dairymetrics-v2-inline-meta {
   display: flex;
   gap: 12px;
