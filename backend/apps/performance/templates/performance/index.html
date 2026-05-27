@@ -265,22 +265,25 @@
           {% endif %}
         </div>
         <div class="performance-member-list-cell">
-          <strong>{{ card.month_amount_text }}</strong>
           <div class="muted performance-member-list-subtext">
+            <strong>{{ card.month_amount_text }}</strong>
+            <span>/</span>
             <span>{{ card.month_count_text }}</span>
             {% if card.month_count_subtext %}<span>{{ card.month_count_subtext }}</span>{% endif %}
           </div>
         </div>
         <div class="performance-member-list-cell">
-          <strong>{{ card.period_amount_text }}</strong>
           <div class="muted performance-member-list-subtext">
+            <strong>{{ card.period_amount_text }}</strong>
+            <span>/</span>
             <span>{{ card.period_count_text }}</span>
             {% if card.period_count_subtext %}<span>{{ card.period_count_subtext }}</span>{% endif %}
           </div>
         </div>
         <div class="performance-member-list-cell">
-          <strong>{{ card.recent_amount_text }}</strong>
           <div class="muted performance-member-list-subtext">
+            <strong>{{ card.recent_amount_text }}</strong>
+            <span>/</span>
             <span>{{ card.recent_date_text }} / {{ card.recent_count_text }}</span>
             {% if card.recent_count_subtext %}<span>{{ card.recent_count_subtext }}</span>{% endif %}
           </div>

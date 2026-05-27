@@ -277,6 +277,10 @@ a {
   line-height: 1.25;
 }
 
+.performance-member-list-subtext strong {
+  color: var(--text);
+}
+
 .performance-member-list-badge {
   margin-top: 2px;
   width: max-content;
