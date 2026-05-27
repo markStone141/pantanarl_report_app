@@ -2044,6 +2044,10 @@
   gap: 18px;
 }
 
+.dairymetrics-v2-detail-panel-card {
+  grid-column: 1 / -1;
+}
+
 .dairymetrics-v2-demo-head {
   display: grid;
   gap: 6px;

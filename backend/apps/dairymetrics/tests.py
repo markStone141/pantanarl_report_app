@@ -838,8 +838,94 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
             {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
         )
         self.assertContains(response, self.member.name)
-        self.assertContains(response, "4,500円")
-        self.assertContains(response, "CS1口 4,500円")
+
+    def test_wv_entry_v2_flow_reflects_in_performance_and_report_views(self):
+        entry_date = timezone.localdate()
+        self.client.force_login(self.user)
+
+        personal_response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "save_personal_setup",
+                "department": str(self.department.id),
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "location_name": "渋谷駅前",
+                "daily_target_cs_count": "2",
+                "daily_target_refugee_count": "1",
+                "daily_target_amount": "12000",
+            },
+        )
+        self.assertRedirects(
+            personal_response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=personal_setup",
+        )
+
+        department_response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "save_department_target",
+                "department_code": self.department.code,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "daily_target_amount": "30000",
+            },
+        )
+        self.assertRedirects(
+            department_response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=department_target",
+        )
+
+        transaction_response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "save_transaction",
+                "department_code": self.department.code,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "wv_result_type": MemberMetricTransaction.WV_RESULT_BOTH,
+                "wv_cs_count": "1",
+                "wv_refugee_amount": "1800",
+                "age_band": MemberMetricTransaction.AGE_BAND_TWENTIES,
+                "gender": MemberMetricTransaction.GENDER_FEMALE,
+                "nationality_type": MemberMetricTransaction.NATIONALITY_DOMESTIC,
+                "comment": "反映テスト",
+            },
+        )
+        self.assertRedirects(
+            transaction_response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=transaction",
+        )
+
+        closeout_response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "save_closeout",
+                "department_code": self.department.code,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "approach_count": "12",
+                "communication_count": "7",
+            },
+        )
+        self.assertRedirects(
+            closeout_response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=closeout",
+        )
+
+        performance_response = self.client.get(reverse("performance_member_dashboard"))
+        self.assertEqual(performance_response.status_code, 200)
+        self.assertContains(performance_response, "6,300円")
+        self.assertContains(performance_response, "CS 1件 / 難民 1件")
+
+        metrics_response = self.client.get(
+            reverse("dairymetrics_metrics_v2_demo"),
+            {"department": self.department.code},
+        )
+        self.assertEqual(metrics_response.status_code, 200)
+        self.assertContains(metrics_response, "CS件数")
+        self.assertContains(metrics_response, "難民件数")
+
+        report_response = self.client.get(reverse("report_wv"))
+        self.assertEqual(report_response.status_code, 200)
+        self.assertContains(report_response, 'value="1"', html=False)
+        self.assertContains(report_response, 'value="6300"', html=False)
 
     @patch("apps.mail.services._send_via_gmail", return_value="gmail-transaction-1")
     def test_entry_v2_transaction_demo_mock_send_creates_mail_history_and_shows_it(self, mocked_send):

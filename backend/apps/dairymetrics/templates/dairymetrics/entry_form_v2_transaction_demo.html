@@ -516,70 +516,6 @@
         <div class="dairymetrics-v2-transaction-actions">
           <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-transaction-list>本日の決済一覧を見る</button>
         </div>
-        <div class="dairymetrics-v2-transaction-list" id="dairymetrics-v2-transaction-list" hidden>
-          {% if transactions %}
-            {% for transaction in transactions %}
-            <div class="dairymetrics-v2-transaction-item">
-              <div class="dairymetrics-v2-transaction-top">
-                <strong>{{ transaction.time_label }}</strong>
-                <span class="dairymetrics-v2-mail-badge {% if transaction.mail_status == '修正再送済み' %}is-resent{% elif transaction.mail_status == '修正済み未送信' %}is-modified{% elif transaction.mail_status == '送信済み' %}is-sent{% elif transaction.mail_status == '送信失敗' %}is-failed{% else %}is-unsent{% endif %}">{{ transaction.mail_status }}</span>
-              </div>
-              <div class="dairymetrics-v2-transaction-main">
-                <span>{{ transaction.amount|intcomma }}円</span>
-                {% if selected_department_is_wv %}
-                <span>{{ transaction.result_type_label }}</span>
-                {% endif %}
-                <span>{{ transaction.age_band }} / {{ transaction.gender }} / {{ transaction.nationality }}</span>
-                <span>{{ transaction.location|default:"-" }}</span>
-              </div>
-              <div class="dairymetrics-subtext">{{ transaction.comment|default:"コメントなし" }}</div>
-              {% if transaction.mail_error_message %}
-              <div class="dairymetrics-subtext dairymetrics-error-text">送信エラー: {{ transaction.mail_error_message }}</div>
-              {% endif %}
-              <div class="dairymetrics-v2-inline-actions">
-                <button
-                  type="button"
-                  class="btn-inline dairymetrics-secondary-btn"
-                  data-edit-transaction
-                  data-transaction-id="{{ transaction.id }}"
-                  data-transaction-amount="{{ transaction.amount_value }}"
-                  data-transaction-location="{{ transaction.location|escapejs }}"
-                  data-transaction-age="{{ transaction.age_band_value }}"
-                  data-transaction-student="{% if transaction.is_student %}1{% else %}0{% endif %}"
-                  data-transaction-gender="{{ transaction.gender_value }}"
-                  data-transaction-nationality="{{ transaction.nationality_value }}"
-                  data-transaction-result-type="{{ transaction.result_type_value }}"
-                  data-transaction-cs-count="{{ transaction.wv_cs_count|default:0 }}"
-                  data-transaction-refugee-amount="{{ transaction.wv_refugee_amount|default:0 }}"
-                  data-transaction-comment="{{ transaction.comment|escapejs }}"
-                  data-transaction-has-sent="{% if transaction.has_mail_history %}1{% else %}0{% endif %}"
-                >
-                  修正
-                </button>
-                <button
-                  type="button"
-                  class="btn-inline dairymetrics-v2-mail-send-link"
-                  data-open-mail-modal
-                  data-preview-transaction-id="{{ transaction.id }}"
-                  data-preview-history-id="{{ transaction.latest_history_id }}"
-                  data-preview-subject="{% if transaction.has_mail_history %}{{ transaction.resend_preview_subject|escapejs }}{% else %}{{ transaction.preview_subject|escapejs }}{% endif %}"
-                  data-preview-body-field="dairymetrics-v2-mail-body-field-{{ transaction.id }}"
-                  data-preview-mode="{% if transaction.has_mail_history %}resend{% else %}send{% endif %}"
-                  {% if preview_transaction and preview_transaction.id == transaction.id %}data-auto-open-mail-modal{% endif %}
-                >
-                  {% if transaction.has_mail_history %}再送{% else %}メール送信{% endif %}
-                </button>
-                <textarea id="dairymetrics-v2-mail-body-field-{{ transaction.id }}" hidden readonly>{{ transaction.preview_body }}</textarea>
-              </div>
-            </div>
-            {% endfor %}
-          {% else %}
-          <p class="muted">まだ決済明細はありません。</p>
-          {% endif %}
-          <div class="dairymetrics-v2-transaction-actions">
-            <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-transaction-list>閉じる</button>
-          </div>
-        </div>
       </article>
 
       <article class="dairymetrics-v2-demo-card">
@@ -590,38 +526,110 @@
         <div class="dairymetrics-v2-transaction-actions">
           <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-sent-mail-list>当日送信メールを見る</button>
         </div>
-        <div class="dairymetrics-v2-transaction-list" id="dairymetrics-v2-sent-mail-list" hidden>
-          {% if sent_mail_histories %}
-            {% for mail in sent_mail_histories %}
-            <div class="dairymetrics-v2-transaction-item">
-              <div class="dairymetrics-v2-transaction-main dairymetrics-v2-mail-history-main">
-                <span><strong>{{ mail.sent_at }}</strong></span>
-                <span>{{ mail.sender_name }}</span>
-                <span>{{ mail.amount|intcomma }}円</span>
-                <span>
-                  <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-sent-mail-detail>内容</button>
-                </span>
+      </article>
+
+      <article class="dairymetrics-v2-demo-card dairymetrics-v2-detail-panel-card dairymetrics-v2-transaction-list" id="dairymetrics-v2-transaction-list" hidden>
+        <div class="dairymetrics-v2-demo-head">
+          <h3>本日の決済明細</h3>
+        </div>
+        {% if transactions %}
+          {% for transaction in transactions %}
+          <div class="dairymetrics-v2-transaction-item">
+            <div class="dairymetrics-v2-transaction-top">
+              <strong>{{ transaction.time_label }}</strong>
+              <span class="dairymetrics-v2-mail-badge {% if transaction.mail_status == '修正再送済み' %}is-resent{% elif transaction.mail_status == '修正済み未送信' %}is-modified{% elif transaction.mail_status == '送信済み' %}is-sent{% elif transaction.mail_status == '送信失敗' %}is-failed{% else %}is-unsent{% endif %}">{{ transaction.mail_status }}</span>
+            </div>
+            <div class="dairymetrics-v2-transaction-main">
+              <span>{{ transaction.amount|intcomma }}円</span>
+              {% if selected_department_is_wv %}
+              <span>{{ transaction.result_type_label }}</span>
+              {% endif %}
+              <span>{{ transaction.age_band }} / {{ transaction.gender }} / {{ transaction.nationality }}</span>
+              <span>{{ transaction.location|default:"-" }}</span>
+            </div>
+            <div class="dairymetrics-subtext">{{ transaction.comment|default:"コメントなし" }}</div>
+            {% if transaction.mail_error_message %}
+            <div class="dairymetrics-subtext dairymetrics-error-text">送信エラー: {{ transaction.mail_error_message }}</div>
+            {% endif %}
+            <div class="dairymetrics-v2-inline-actions">
+              <button
+                type="button"
+                class="btn-inline dairymetrics-secondary-btn"
+                data-edit-transaction
+                data-transaction-id="{{ transaction.id }}"
+                data-transaction-amount="{{ transaction.amount_value }}"
+                data-transaction-location="{{ transaction.location|escapejs }}"
+                data-transaction-age="{{ transaction.age_band_value }}"
+                data-transaction-student="{% if transaction.is_student %}1{% else %}0{% endif %}"
+                data-transaction-gender="{{ transaction.gender_value }}"
+                data-transaction-nationality="{{ transaction.nationality_value }}"
+                data-transaction-result-type="{{ transaction.result_type_value }}"
+                data-transaction-cs-count="{{ transaction.wv_cs_count|default:0 }}"
+                data-transaction-refugee-amount="{{ transaction.wv_refugee_amount|default:0 }}"
+                data-transaction-comment="{{ transaction.comment|escapejs }}"
+                data-transaction-has-sent="{% if transaction.has_mail_history %}1{% else %}0{% endif %}"
+              >
+                修正
+              </button>
+              <button
+                type="button"
+                class="btn-inline dairymetrics-v2-mail-send-link"
+                data-open-mail-modal
+                data-preview-transaction-id="{{ transaction.id }}"
+                data-preview-history-id="{{ transaction.latest_history_id }}"
+                data-preview-subject="{% if transaction.has_mail_history %}{{ transaction.resend_preview_subject|escapejs }}{% else %}{{ transaction.preview_subject|escapejs }}{% endif %}"
+                data-preview-body-field="dairymetrics-v2-mail-body-field-{{ transaction.id }}"
+                data-preview-mode="{% if transaction.has_mail_history %}resend{% else %}send{% endif %}"
+                {% if preview_transaction and preview_transaction.id == transaction.id %}data-auto-open-mail-modal{% endif %}
+              >
+                {% if transaction.has_mail_history %}再送{% else %}メール送信{% endif %}
+              </button>
+              <textarea id="dairymetrics-v2-mail-body-field-{{ transaction.id }}" hidden readonly>{{ transaction.preview_body }}</textarea>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+        <p class="muted">まだ決済明細はありません。</p>
+        {% endif %}
+        <div class="dairymetrics-v2-transaction-actions">
+          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-transaction-list>閉じる</button>
+        </div>
+      </article>
+
+      <article class="dairymetrics-v2-demo-card dairymetrics-v2-detail-panel-card dairymetrics-v2-transaction-list" id="dairymetrics-v2-sent-mail-list" hidden>
+        <div class="dairymetrics-v2-demo-head">
+          <h3>当日送信メール</h3>
+        </div>
+        {% if sent_mail_histories %}
+          {% for mail in sent_mail_histories %}
+          <div class="dairymetrics-v2-transaction-item">
+            <div class="dairymetrics-v2-transaction-main dairymetrics-v2-mail-history-main">
+              <span><strong>{{ mail.sent_at }}</strong></span>
+              <span>{{ mail.sender_name }}</span>
+              <span>{{ mail.amount|intcomma }}円</span>
+              <span>
+                <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-sent-mail-detail>内容</button>
+              </span>
+            </div>
+            <div class="dairymetrics-v2-mail-history-detail" hidden>
+              <div class="dairymetrics-v2-mail-subject">
+                件名: <strong>{{ mail.subject }}</strong>
               </div>
-              <div class="dairymetrics-v2-mail-history-detail" hidden>
-                <div class="dairymetrics-v2-mail-subject">
-                  件名: <strong>{{ mail.subject }}</strong>
-                </div>
-                {% if mail.is_resend %}
-                <div class="dairymetrics-subtext">このメールは再送履歴です。</div>
-                {% endif %}
-                <pre class="dairymetrics-v2-mail-body">{{ mail.body }}</pre>
-                <div class="dairymetrics-v2-inline-actions">
-                  <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-sent-mail-detail>閉じる</button>
-                </div>
+              {% if mail.is_resend %}
+              <div class="dairymetrics-subtext">このメールは再送履歴です。</div>
+              {% endif %}
+              <pre class="dairymetrics-v2-mail-body">{{ mail.body }}</pre>
+              <div class="dairymetrics-v2-inline-actions">
+                <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-sent-mail-detail>閉じる</button>
               </div>
             </div>
-            {% endfor %}
-          {% else %}
-          <p class="muted">まだ当日送信メールはありません。</p>
-          {% endif %}
-          <div class="dairymetrics-v2-transaction-actions">
-            <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-sent-mail-list>閉じる</button>
           </div>
+          {% endfor %}
+        {% else %}
+        <p class="muted">まだ当日送信メールはありません。</p>
+        {% endif %}
+        <div class="dairymetrics-v2-transaction-actions">
+          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-sent-mail-list>閉じる</button>
         </div>
       </article>
     </section>
