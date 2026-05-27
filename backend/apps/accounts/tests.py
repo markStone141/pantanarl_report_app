@@ -116,6 +116,13 @@ class LoginFlowTests(TestCase):
         report_user.refresh_from_db()
         self.assertTrue(report_user.is_active)
 
+    def test_login_page_links_to_performance_login_instead_of_dairymetrics_login(self):
+        response = self.client.get(reverse("home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("performance_login"))
+        self.assertNotContains(response, reverse("dairymetrics_login"))
+
 
 class RoleGuardTests(TestCase):
     def test_dashboard_requires_admin(self):
