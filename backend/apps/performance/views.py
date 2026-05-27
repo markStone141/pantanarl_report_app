@@ -1020,6 +1020,58 @@ def _build_member_dashboard_entry_rows(*, member, department, month_start, month
     return entry_rows
 
 
+def _build_recent_dashboard_detail_payload(
+    *,
+    member,
+    department,
+    start_date,
+    end_date,
+    selected_date=None,
+    limit=5,
+):
+    if selected_date is not None:
+        entry_rows = _build_member_dashboard_entry_rows(
+            member=member,
+            department=department,
+            month_start=selected_date,
+            month_end=selected_date,
+        )
+        adjustment_rows = list(
+            MetricAdjustment.objects.filter(
+                member=member,
+                department=department,
+                target_date=selected_date,
+            ).order_by("-target_date", "-created_at")
+        )
+        return {
+            "entry_rows": entry_rows,
+            "adjustment_rows": adjustment_rows,
+            "has_more": False,
+        }
+
+    all_entry_rows = _build_member_dashboard_entry_rows(
+        member=member,
+        department=department,
+        month_start=start_date,
+        month_end=end_date,
+    )
+    all_adjustment_rows = list(
+        MetricAdjustment.objects.filter(
+            member=member,
+            department=department,
+            target_date__range=(start_date, end_date),
+        ).order_by("-target_date", "-created_at")
+    )
+    sliced_entry_rows = all_entry_rows[:limit]
+    sliced_adjustment_rows = all_adjustment_rows[:limit]
+    has_more = len(all_entry_rows) > limit or len(all_adjustment_rows) > limit
+    return {
+        "entry_rows": sliced_entry_rows,
+        "adjustment_rows": sliced_adjustment_rows,
+        "has_more": has_more,
+    }
+
+
 def _build_trend_date_links(activity_trend):
     dates = list(activity_trend.get("dates") or [])
     labels = list(activity_trend.get("labels") or [])
@@ -1058,18 +1110,12 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
             target_date__range=(selected_month, selectedmonth_end),
         ).order_by("-target_date", "-created_at")
     )
-    recent_entry_rows = _build_member_dashboard_entry_rows(
+    recent_detail_payload = _build_recent_dashboard_detail_payload(
         member=member,
         department=department,
-        month_start=recent_start,
-        month_end=recent_end,
-    )
-    recent_adjustment_rows = list(
-        MetricAdjustment.objects.filter(
-            member=member,
-            department=department,
-            target_date__range=(recent_start, recent_end),
-        ).order_by("-target_date", "-created_at")
+        start_date=recent_start,
+        end_date=recent_end,
+        limit=5,
     )
     activity_trend = build_member_activity_trend(member=member, department=department)
     recent_totals = collect_member_final_actual_totals(
@@ -1209,9 +1255,15 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "selected_month": selected_month,
         "entry_rows": entry_rows,
         "adjustment_rows": adjustment_rows,
-        "recent_entry_rows": recent_entry_rows,
-        "recent_adjustment_rows": recent_adjustment_rows,
+        "recent_entry_rows": recent_detail_payload["entry_rows"],
+        "recent_adjustment_rows": recent_detail_payload["adjustment_rows"],
         "recent_range_label": f"{recent_start:%Y/%m/%d} - {recent_end:%Y/%m/%d}",
+        "recent_detail_start": recent_start,
+        "recent_detail_end": recent_end,
+        "recent_detail_limit": 5,
+        "recent_detail_limit_step": 5,
+        "recent_detail_selected_date": None,
+        "recent_detail_has_more": recent_detail_payload["has_more"],
         "recent_summary_items": [
             {"key": "approach_total", "label": "合計AP", "value": f"{int(recent_totals.get('approach_count') or 0):,}"},
             {"key": "communication_total", "label": "合計CM", "value": f"{int(recent_totals.get('communication_count') or 0):,}"},
@@ -1241,6 +1293,11 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
             reverse("performance_member_history_detail", args=[member.id, department.id])
             if is_admin
             else reverse("performance_member_history")
+        ),
+        "recent_detail_ajax_url": (
+            reverse("performance_member_detail_recent_detail", args=[member.id, department.id])
+            if is_admin
+            else reverse("performance_member_dashboard_recent_detail")
         ),
         "department_month_progress": department_month_progress,
         "department_period_progress": department_period_progress,
@@ -1781,11 +1838,83 @@ def _render_member_day_detail_response(
     return render(request, "performance/partials/member_day_detail_cards.html", context)
 
 
+def _render_member_recent_detail_response(
+    *,
+    request: HttpRequest,
+    member,
+    department,
+    is_admin=False,
+    readonly_member_view=False,
+):
+    today = timezone.localdate()
+    recent_start = today - timedelta(days=29)
+    recent_end = today
+    selected_date = _parse_selected_date(request.GET.get("date"))
+    try:
+        requested_limit = int(request.GET.get("limit") or 5)
+    except (TypeError, ValueError):
+        requested_limit = 5
+    limit = max(5, min(requested_limit, 30))
+    payload = _build_recent_dashboard_detail_payload(
+        member=member,
+        department=department,
+        start_date=recent_start,
+        end_date=recent_end,
+        selected_date=selected_date,
+        limit=limit,
+    )
+    detail_history_url = (
+        reverse("performance_member_history_insight", args=[member.id, department.id])
+        if readonly_member_view
+        else reverse("performance_member_history_detail", args=[member.id, department.id])
+        if is_admin
+        else reverse("performance_member_history")
+    )
+    recent_detail_ajax_url = (
+        reverse("performance_member_insight_recent_detail", args=[member.id, department.id])
+        if readonly_member_view
+        else reverse("performance_member_detail_recent_detail", args=[member.id, department.id])
+        if is_admin
+        else reverse("performance_member_dashboard_recent_detail")
+    )
+    context = {
+        "member": member,
+        "department": department,
+        "recent_entry_rows": payload["entry_rows"],
+        "recent_adjustment_rows": payload["adjustment_rows"],
+        "detail_heading": "直近30日の実績",
+        "detail_adjustment_heading": "直近30日の補正実績",
+        "detail_description": (
+            f"{selected_date:%Y/%m/%d} の実績を表示中"
+            if selected_date
+            else f"{recent_start:%Y/%m/%d} - {recent_end:%Y/%m/%d}"
+        ),
+        "show_reset_detail": False,
+        "detail_history_url": detail_history_url,
+        "readonly_member_view": readonly_member_view,
+        "recent_detail_start": recent_start,
+        "recent_detail_end": recent_end,
+        "recent_detail_limit": limit,
+        "recent_detail_limit_step": 5,
+        "recent_detail_selected_date": selected_date,
+        "recent_detail_has_more": payload["has_more"],
+        "recent_detail_ajax_url": recent_detail_ajax_url,
+    }
+    return render(request, "performance/partials/member_day_detail_cards.html", context)
+
+
 @require_performance_roles(ROLE_ADMIN)
 def performance_member_detail_day_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
     department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
     return _render_member_day_detail_response(request=request, member=member, department=department, is_admin=True)
+
+
+@require_performance_roles(ROLE_ADMIN)
+def performance_member_detail_recent_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
+    member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
+    department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
+    return _render_member_recent_detail_response(request=request, member=member, department=department, is_admin=True)
 
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
@@ -1806,6 +1935,7 @@ def performance_member_insight(request: HttpRequest, member_id: int, department_
         readonly_member_view=True,
     )
     context["detail_history_url"] = reverse("performance_member_history_insight", args=[member.id, department.id])
+    context["recent_detail_ajax_url"] = reverse("performance_member_insight_recent_detail", args=[member.id, department.id])
     return render(request, "performance/member_detail.html", context)
 
 
@@ -1814,6 +1944,19 @@ def performance_member_insight_day_detail(request: HttpRequest, member_id: int, 
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
     department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
     return _render_member_day_detail_response(
+        request=request,
+        member=member,
+        department=department,
+        is_admin=request.user.is_staff or request.user.is_superuser,
+        readonly_member_view=True,
+    )
+
+
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
+def performance_member_insight_recent_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
+    member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
+    department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
+    return _render_member_recent_detail_response(
         request=request,
         member=member,
         department=department,
@@ -1906,6 +2049,19 @@ def performance_member_dashboard_day_detail(request: HttpRequest) -> HttpRespons
     if department is None:
         raise Http404
     return _render_member_day_detail_response(request=request, member=member, department=department, is_admin=False)
+
+
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
+def performance_member_dashboard_recent_detail(request: HttpRequest) -> HttpResponse:
+    if request.user.is_staff or request.user.is_superuser:
+        raise Http404
+    member = getattr(request.user, "member_profile", None)
+    if member is None:
+        raise Http404
+    department = _resolve_member_card_department(member=member)
+    if department is None:
+        raise Http404
+    return _render_member_recent_detail_response(request=request, member=member, department=department, is_admin=False)
 
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)

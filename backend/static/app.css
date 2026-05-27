@@ -439,6 +439,21 @@ a {
   cursor: default;
 }
 
+.performance-recent-detail-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.performance-recent-detail-search {
+  width: min(220px, 100%);
+}
+
+.performance-recent-detail-table {
+  table-layout: fixed;
+}
+
 .card h2,
 .card h3 {
   margin: 0 0 8px;
@@ -1546,6 +1561,15 @@ th {
     font-size: 0.82rem;
     color: var(--muted);
     margin-bottom: 4px;
+  }
+
+  .performance-recent-detail-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .performance-recent-detail-search {
+    width: 100%;
   }
 
   .compact-member-table th,

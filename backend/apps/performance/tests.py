@@ -782,6 +782,135 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "補正実績金額")
         self.assertContains(response, "900円")
 
+    def test_performance_member_detail_limits_recent_dashboard_rows_to_five(self):
+        today = timezone.localdate()
+        created_dates = []
+        for offset in range(7):
+            entry_date = today - timedelta(days=offset)
+            created_dates.append(entry_date)
+            MemberDailyMetricEntry.objects.create(
+                member=self.member,
+                department=self.department,
+                entry_date=entry_date,
+                result_count=offset + 1,
+                support_amount=1000 * (offset + 1),
+                activity_closed=True,
+            )
+
+        response = self.client.get(reverse("performance_member_detail", args=[self.member.id, self.department.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["recent_entry_rows"]), 5)
+        self.assertContains(response, created_dates[0].strftime("%Y/%m/%d"))
+        self.assertContains(response, created_dates[4].strftime("%Y/%m/%d"))
+        self.assertNotContains(response, created_dates[5].strftime("%Y/%m/%d"))
+        self.assertContains(response, "さらに5件表示")
+
+    def test_performance_member_detail_recent_detail_ajax_filters_by_date(self):
+        today = timezone.localdate()
+        selected_day = today - timedelta(days=1)
+        other_day = today - timedelta(days=3)
+        selected_entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=selected_day,
+            result_count=1,
+            support_amount=3000,
+            activity_closed=True,
+        )
+        other_entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=other_day,
+            result_count=2,
+            support_amount=4500,
+            activity_closed=True,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=selected_entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷",
+            comment="選択日決済",
+        )
+        MemberMetricTransaction.objects.create(
+            entry=other_entry,
+            support_amount=4500,
+            age_band=MemberMetricTransaction.AGE_BAND_THIRTIES,
+            gender=MemberMetricTransaction.GENDER_MALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="池袋",
+            comment="別日決済",
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=selected_day,
+            source_type=MetricAdjustment.SOURCE_QR,
+            return_qr_count=1,
+            return_qr_amount=1200,
+            location_name="現場A",
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=other_day,
+            source_type=MetricAdjustment.SOURCE_POSTAL,
+            return_postal_count=1,
+            return_postal_amount=700,
+            location_name="現場B",
+        )
+
+        response = self.client.get(
+            reverse("performance_member_detail_recent_detail", args=[self.member.id, self.department.id]),
+            {"date": selected_day.isoformat(), "limit": 5},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "選択日決済")
+        self.assertContains(response, "現場A")
+        self.assertNotContains(response, "別日決済")
+        self.assertNotContains(response, "現場B")
+        self.assertNotContains(response, "さらに5件表示")
+
+    def test_performance_member_dashboard_recent_detail_uses_logged_in_member(self):
+        self.client.logout()
+        report_user = User.objects.create_user(username="perf-member-recent", password="pass1234", is_staff=False)
+        self.member.user = report_user
+        self.member.save(update_fields=["user"])
+        selected_day = timezone.localdate() - timedelta(days=2)
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=selected_day,
+            result_count=1,
+            support_amount=2500,
+            activity_closed=True,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=2500,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="新宿",
+            comment="本人 recent detail",
+        )
+        self.client.force_login(report_user)
+
+        response = self.client.get(
+            reverse("performance_member_dashboard_recent_detail"),
+            {"date": selected_day.isoformat()},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "本人 recent detail")
+        self.assertContains(response, reverse("performance_member_history"))
+
     def test_performance_member_history_shows_scoped_entries_and_adjustments(self):
         today = timezone.localdate()
         active_period = Period.objects.create(

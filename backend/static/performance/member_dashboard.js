@@ -58,6 +58,69 @@
     window.addEventListener("load", initProgressDonuts, { once: true });
   }
 
+  function initRecentDetailAjax() {
+    const root = document.querySelector("[data-performance-recent-detail-root]");
+    if (!root) {
+      return;
+    }
+
+    async function fetchRecentDetail(params) {
+      const url = root.dataset.recentDetailUrl;
+      if (!url) {
+        return;
+      }
+      const query = new URLSearchParams();
+      if (params.limit) {
+        query.set("limit", String(params.limit));
+      }
+      if (params.date) {
+        query.set("date", params.date);
+      }
+      const response = await fetch(url + "?" + query.toString(), {
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      });
+      if (!response.ok) {
+        return;
+      }
+      root.outerHTML = await response.text();
+      initRecentDetailAjax();
+    }
+
+    const searchInput = root.querySelector("[data-performance-recent-date-search]");
+    const clearButton = root.querySelector("[data-performance-recent-date-clear]");
+    const loadMoreButton = root.querySelector("[data-performance-recent-load-more]");
+    const step = Number(root.dataset.recentDetailStep || 5);
+
+    searchInput?.addEventListener("change", function () {
+      fetchRecentDetail({
+        limit: step,
+        date: searchInput.value || "",
+      });
+    });
+
+    clearButton?.addEventListener("click", function () {
+      fetchRecentDetail({
+        limit: step,
+        date: "",
+      });
+    });
+
+    loadMoreButton?.addEventListener("click", function () {
+      fetchRecentDetail({
+        limit: Number(root.dataset.recentDetailLimit || step) + step,
+        date: searchInput ? (searchInput.value || "") : "",
+      });
+    });
+  }
+
+  if (document.readyState === "complete") {
+    initRecentDetailAjax();
+  } else {
+    window.addEventListener("load", initRecentDetailAjax, { once: true });
+  }
+
   const dataNode = document.getElementById("performance-activity-trend-data");
   const canvas = document.getElementById("performance-activity-trend-chart");
   const decreaseButton = document.getElementById("performance-trend-decrease");
