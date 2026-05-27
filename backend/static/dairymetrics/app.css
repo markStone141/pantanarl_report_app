@@ -2034,6 +2034,13 @@
   gap: 18px;
 }
 
+.dairymetrics-v2-activity-layout,
+.dairymetrics-v2-transaction-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+
 .dairymetrics-v2-demo-card {
   padding: 22px;
   border: 1px solid rgba(142, 174, 206, 0.3);
@@ -2042,10 +2049,6 @@
   box-shadow: 0 14px 36px rgba(10, 41, 71, 0.08);
   display: grid;
   gap: 18px;
-}
-
-.dairymetrics-v2-detail-panel-card {
-  grid-column: 1 / -1;
 }
 
 .dairymetrics-v2-demo-head {
