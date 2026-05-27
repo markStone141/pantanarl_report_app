@@ -221,14 +221,14 @@ a {
 .performance-member-list-head,
 .performance-member-list-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1.2fr) repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: minmax(130px, 0.8fr) minmax(0, 0.95fr) minmax(0, 0.95fr) minmax(0, 1.1fr);
+  gap: 12px;
   align-items: start;
 }
 
 .performance-member-list-3col .performance-member-list-head,
 .performance-member-list-3col .performance-member-list-row {
-  grid-template-columns: minmax(180px, 1.2fr) repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(130px, 0.8fr) minmax(0, 1fr) minmax(0, 1.1fr);
 }
 
 .performance-member-list-head {
@@ -277,7 +277,7 @@ a {
 .performance-member-list-subtext {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 10px;
+  gap: 4px 8px;
   align-items: center;
   line-height: 1.25;
 }
