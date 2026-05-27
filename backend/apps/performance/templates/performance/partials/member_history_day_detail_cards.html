@@ -23,6 +23,7 @@
         <thead>
           <tr>
             <th>日付</th>
+            <th>現場</th>
             <th>件数</th>
             <th>金額</th>
             <th>AP / CM</th>
@@ -34,6 +35,7 @@
           {% for row in entry_rows %}
           <tr>
             <td data-label="日付">{{ row.entry.entry_date|date:"Y/m/d" }}</td>
+            <td data-label="現場">{{ row.entry.location_name|default:"-" }}</td>
             <td data-label="件数">{{ row.count_text }}</td>
             <td data-label="金額">{{ row.amount_text }}</td>
             <td data-label="AP / CM">{{ row.entry.approach_count }} / {{ row.entry.communication_count }}</td>

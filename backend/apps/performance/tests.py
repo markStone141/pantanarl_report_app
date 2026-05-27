@@ -831,6 +831,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
                 result_count=offset + 1,
                 support_amount=1000 * (offset + 1),
                 activity_closed=True,
+                location_name="渋谷駅前" if offset == 0 else "",
             )
 
         response = self.client.get(reverse("performance_member_detail", args=[self.member.id, self.department.id]))
@@ -839,6 +840,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(len(response.context["recent_entry_rows"]), 5)
         self.assertContains(response, created_dates[0].strftime("%Y/%m/%d"))
         self.assertContains(response, created_dates[4].strftime("%Y/%m/%d"))
+        self.assertContains(response, "渋谷駅前")
         self.assertNotContains(response, created_dates[5].strftime("%Y/%m/%d"))
         self.assertContains(response, "さらに5件表示")
         self.assertContains(response, 'data-performance-recent-date-search', html=False)
@@ -854,6 +856,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
             result_count=1,
             support_amount=3000,
             activity_closed=True,
+            location_name="現場A",
         )
         other_entry = MemberDailyMetricEntry.objects.create(
             member=self.member,
@@ -862,6 +865,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
             result_count=2,
             support_amount=4500,
             activity_closed=True,
+            location_name="現場B",
         )
         MemberMetricTransaction.objects.create(
             entry=selected_entry,
@@ -909,6 +913,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "選択日決済")
         self.assertContains(response, "現場A")
+        self.assertContains(response, 'data-label="現場">現場A', html=False)
         self.assertNotContains(response, "別日決済")
         self.assertNotContains(response, "現場B")
         self.assertNotContains(response, "さらに5件表示")
@@ -965,6 +970,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
             support_amount=3000,
             approach_count=8,
             communication_count=4,
+            location_name="渋谷駅前",
         )
         MemberMetricTransaction.objects.create(
             entry=entry_today,
@@ -1009,6 +1015,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "日次実績")
         self.assertContains(response, "補正実績")
         self.assertContains(response, entry_today.entry_date.strftime("%Y/%m/%d"))
+        self.assertContains(response, "渋谷駅前")
         self.assertContains(response, "郵送")
         self.assertContains(response, ">2件<", html=False)
         self.assertContains(response, "<th>現場</th>", html=False)
