@@ -210,39 +210,38 @@
   <section class="card mt-16">
     <h3>{{ history_snapshot.scope.label }} のメンバー実績</h3>
     {% if history_snapshot.active_member_cards %}
-    <div class="grid grid-2 mt-12">
+    <div class="performance-member-list performance-member-list-3col mt-12">
+      <div class="performance-member-list-head">
+        <span>名前</span>
+        <span>{{ history_snapshot.scope.label }}</span>
+        <span>直近の実績</span>
+      </div>
       {% for card in history_snapshot.active_member_cards %}
-      <a class="card performance-member-card-link{% if card.zero_streak_warning %} performance-member-card-link-warning{% elif card.active_streak_good %} performance-member-card-link-positive{% endif %}" href="{{ card.detail_url }}">
-        <div class="row performance-member-card-head">
-          <div>
+      <a class="performance-member-list-row{% if card.zero_streak_warning %} performance-member-card-link-warning{% elif card.active_streak_good %} performance-member-card-link-positive{% endif %}" href="{{ card.detail_url }}">
+        <div class="performance-member-list-cell performance-member-list-name">
+          <div class="performance-member-list-name-row">
             <strong>{{ card.member_name }}</strong>
-            <div class="muted mt-4">{{ card.department_code }}</div>
+            {% if card.zero_streak_warning %}
+            <span class="badge performance-warning-badge performance-member-list-badge">{{ card.zero_streak_text }}</span>
+            {% elif card.active_streak_good %}
+            <span class="badge performance-positive-badge performance-member-list-badge">{{ card.active_streak_text }}</span>
+            {% endif %}
           </div>
-          {% if card.zero_streak_warning %}
-          <span class="badge performance-warning-badge">{{ card.zero_streak_text }}</span>
-          {% elif card.active_streak_good %}
-          <span class="badge performance-positive-badge">{{ card.active_streak_text }}</span>
-          {% endif %}
         </div>
-        <div class="muted performance-member-card-updated">
-          {% if card.recent_date_text == "-" %}
-          実績なし
-          {% else %}
-          {{ card.updated_at }} 更新
-          {% endif %}
-        </div>
-        <div class="grid grid-2 mt-10 performance-member-card-grid">
-          <div class="metric-card performance-member-card-metric">
-            <span class="muted">{{ card.scope_label }}</span>
+        <div class="performance-member-list-cell">
+          <div class="muted performance-member-list-subtext">
             <strong>{{ card.scope_amount_text }}</strong>
-            <div class="muted">{{ card.scope_count_text }}</div>
-            {% if card.scope_count_subtext %}<div class="muted">{{ card.scope_count_subtext }}</div>{% endif %}
+            <span>/</span>
+            <span>{{ card.scope_count_text }}</span>
+            {% if card.scope_count_subtext %}<span>{{ card.scope_count_subtext }}</span>{% endif %}
           </div>
-          <div class="metric-card performance-member-card-metric">
-            <span class="muted">直近の実績</span>
+        </div>
+        <div class="performance-member-list-cell">
+          <div class="muted performance-member-list-subtext">
             <strong>{{ card.recent_amount_text }}</strong>
-            <div class="muted">{{ card.recent_date_text }} / {{ card.recent_count_text }}</div>
-            {% if card.recent_count_subtext %}<div class="muted">{{ card.recent_count_subtext }}</div>{% endif %}
+            <span>/</span>
+            <span>{{ card.recent_date_text }} / {{ card.recent_count_text }}</span>
+            {% if card.recent_count_subtext %}<span>{{ card.recent_count_subtext }}</span>{% endif %}
           </div>
         </div>
       </a>

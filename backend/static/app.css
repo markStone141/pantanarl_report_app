@@ -226,6 +226,11 @@ a {
   align-items: start;
 }
 
+.performance-member-list-3col .performance-member-list-head,
+.performance-member-list-3col .performance-member-list-row {
+  grid-template-columns: minmax(180px, 1.2fr) repeat(2, minmax(0, 1fr));
+}
+
 .performance-member-list-head {
   padding: 0 14px 6px;
   color: var(--muted);
@@ -261,7 +266,7 @@ a {
   gap: 4px;
 }
 
-.performance-member-list-meta {
+.performance-member-list-name-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 12px;
@@ -282,7 +287,6 @@ a {
 }
 
 .performance-member-list-badge {
-  margin-top: 2px;
   width: max-content;
 }
 

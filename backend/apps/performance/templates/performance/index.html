@@ -249,20 +249,14 @@
       {% for card in dashboard_snapshot.active_member_cards %}
       <a class="performance-member-list-row{% if card.zero_streak_warning %} performance-member-card-link-warning{% elif card.active_streak_good %} performance-member-card-link-positive{% endif %}" href="{{ card.detail_url }}">
         <div class="performance-member-list-cell performance-member-list-name">
-          <strong>{{ card.member_name }}</strong>
-          <div class="muted performance-member-list-meta">
-            <span>{{ card.department_code }}</span>
-            {% if card.recent_date_text == "-" %}
-            <span>実績なし</span>
-            {% else %}
-            <span>{{ card.updated_at }} 更新</span>
+          <div class="performance-member-list-name-row">
+            <strong>{{ card.member_name }}</strong>
+            {% if card.zero_streak_warning %}
+            <span class="badge performance-warning-badge performance-member-list-badge">{{ card.zero_streak_text }}</span>
+            {% elif card.active_streak_good %}
+            <span class="badge performance-positive-badge performance-member-list-badge">{{ card.active_streak_text }}</span>
             {% endif %}
           </div>
-          {% if card.zero_streak_warning %}
-          <span class="badge performance-warning-badge performance-member-list-badge">{{ card.zero_streak_text }}</span>
-          {% elif card.active_streak_good %}
-          <span class="badge performance-positive-badge performance-member-list-badge">{{ card.active_streak_text }}</span>
-          {% endif %}
         </div>
         <div class="performance-member-list-cell">
           <div class="muted performance-member-list-subtext">
