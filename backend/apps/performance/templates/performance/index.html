@@ -239,46 +239,45 @@
   <section class="card mt-16">
     <h3>有効メンバー一覧</h3>
     {% if dashboard_snapshot.active_member_cards %}
-    <div class="grid grid-2 mt-12">
+    <div class="performance-member-list mt-12">
+      <div class="performance-member-list-head">
+        <span>名前</span>
+        <span>今月累計</span>
+        <span>路程累計</span>
+        <span>直近の実績</span>
+      </div>
       {% for card in dashboard_snapshot.active_member_cards %}
-      <a class="card performance-member-card-link{% if card.zero_streak_warning %} performance-member-card-link-warning{% elif card.active_streak_good %} performance-member-card-link-positive{% endif %}" href="{{ card.detail_url }}">
-        <div class="row performance-member-card-head">
-          <div>
-            <strong>{{ card.member_name }}</strong>
-            <div class="muted mt-4">{{ card.department_code }}</div>
+      <a class="performance-member-list-row{% if card.zero_streak_warning %} performance-member-card-link-warning{% elif card.active_streak_good %} performance-member-card-link-positive{% endif %}" href="{{ card.detail_url }}">
+        <div class="performance-member-list-cell performance-member-list-name">
+          <strong>{{ card.member_name }}</strong>
+          <div class="muted">{{ card.department_code }}</div>
+          <div class="muted">
+            {% if card.recent_date_text == "-" %}
+            実績なし
+            {% else %}
+            {{ card.updated_at }} 更新
+            {% endif %}
           </div>
           {% if card.zero_streak_warning %}
-          <span class="badge performance-warning-badge">{{ card.zero_streak_text }}</span>
+          <span class="badge performance-warning-badge mt-6">{{ card.zero_streak_text }}</span>
           {% elif card.active_streak_good %}
-          <span class="badge performance-positive-badge">{{ card.active_streak_text }}</span>
+          <span class="badge performance-positive-badge mt-6">{{ card.active_streak_text }}</span>
           {% endif %}
         </div>
-        <div class="muted performance-member-card-updated">
-          {% if card.recent_date_text == "-" %}
-          実績なし
-          {% else %}
-          {{ card.updated_at }} 更新
-          {% endif %}
+        <div class="performance-member-list-cell">
+          <strong>{{ card.month_amount_text }}</strong>
+          <div class="muted">{{ card.month_count_text }}</div>
+          {% if card.month_count_subtext %}<div class="muted">{{ card.month_count_subtext }}</div>{% endif %}
         </div>
-        <div class="grid grid-3 mt-10 performance-member-card-grid">
-          <div class="metric-card performance-member-card-metric">
-            <span class="muted">今月累計</span>
-            <strong>{{ card.month_amount_text }}</strong>
-            <div class="muted">{{ card.month_count_text }}</div>
-            {% if card.month_count_subtext %}<div class="muted">{{ card.month_count_subtext }}</div>{% endif %}
-          </div>
-          <div class="metric-card performance-member-card-metric">
-            <span class="muted">路程累計</span>
-            <strong>{{ card.period_amount_text }}</strong>
-            <div class="muted">{{ card.period_count_text }}</div>
-            {% if card.period_count_subtext %}<div class="muted">{{ card.period_count_subtext }}</div>{% endif %}
-          </div>
-          <div class="metric-card performance-member-card-metric">
-            <span class="muted">直近の実績</span>
-            <strong>{{ card.recent_amount_text }}</strong>
-            <div class="muted">{{ card.recent_date_text }} / {{ card.recent_count_text }}</div>
-            {% if card.recent_count_subtext %}<div class="muted">{{ card.recent_count_subtext }}</div>{% endif %}
-          </div>
+        <div class="performance-member-list-cell">
+          <strong>{{ card.period_amount_text }}</strong>
+          <div class="muted">{{ card.period_count_text }}</div>
+          {% if card.period_count_subtext %}<div class="muted">{{ card.period_count_subtext }}</div>{% endif %}
+        </div>
+        <div class="performance-member-list-cell">
+          <strong>{{ card.recent_amount_text }}</strong>
+          <div class="muted">{{ card.recent_date_text }} / {{ card.recent_count_text }}</div>
+          {% if card.recent_count_subtext %}<div class="muted">{{ card.recent_count_subtext }}</div>{% endif %}
         </div>
       </a>
       {% endfor %}
