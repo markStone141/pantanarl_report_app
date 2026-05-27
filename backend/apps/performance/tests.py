@@ -136,6 +136,11 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
 
         self.assertRedirects(response, reverse("performance_index"))
 
+    def test_performance_logout_redirects_to_performance_login(self):
+        response = self.client.get(reverse("performance_logout"))
+
+        self.assertRedirects(response, reverse("performance_login"))
+
     def test_performance_history_uses_selected_month_and_period_for_progress_cards(self):
         today = timezone.localdate()
         selected_month = date(today.year, 4, 1)

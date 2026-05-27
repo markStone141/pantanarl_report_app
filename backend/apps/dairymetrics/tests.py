@@ -72,6 +72,13 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         response = self.client.get(reverse("dairymetrics_login"))
         self.assertRedirects(response, reverse("dairymetrics_admin_overview"))
 
+    def test_dairymetrics_logout_redirects_to_performance_login(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_logout"))
+
+        self.assertRedirects(response, reverse("performance_login"))
+
     def test_entry_v2_transaction_demo_can_save_un_transaction(self):
         entry_date = timezone.localdate()
         self.client.force_login(self.user)

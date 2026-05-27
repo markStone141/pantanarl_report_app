@@ -2,7 +2,7 @@ from functools import wraps
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from django.contrib.auth import login as auth_login
+from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
@@ -195,6 +195,11 @@ def performance_login(request: HttpRequest) -> HttpResponse:
             "next": request.GET.get("next", ""),
         },
     )
+
+
+def performance_logout(request: HttpRequest) -> HttpResponse:
+    auth_logout(request)
+    return redirect("performance_login")
 
 
 def _filtered_entries_queryset(cleaned_data):

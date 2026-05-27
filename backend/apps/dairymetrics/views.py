@@ -901,7 +901,7 @@ def login_view(request: HttpRequest) -> HttpResponse:
 
 def logout_view(request: HttpRequest) -> HttpResponse:
     auth_logout(request)
-    return redirect("dairymetrics_login")
+    return redirect("performance_login")
 
 
 @require_dairymetrics_member
