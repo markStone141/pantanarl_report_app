@@ -2099,6 +2099,7 @@
 
 .dairymetrics-v2-activity-groups {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -2520,6 +2521,10 @@
 }
 
 @media (max-width: 900px) {
+  .dairymetrics-v2-activity-groups {
+    grid-template-columns: 1fr;
+  }
+
   .metrics-v2-summary-grid,
   .metrics-v2-history-grid {
     grid-template-columns: 1fr;
