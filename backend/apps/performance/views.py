@@ -270,7 +270,7 @@ def _count_text(entry, adjustment_totals):
 
 
 def _wv_count_detail_text(*, cs_count: int, refugee_count: int) -> str:
-    return f"CS {int(cs_count or 0)}件 / 難民 {int(refugee_count or 0)}件"
+    return f"(CS {int(cs_count or 0)}件 / 難民 {int(refugee_count or 0)}件)"
 
 
 def _amount_text(entry, adjustment_totals):

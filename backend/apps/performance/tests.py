@@ -645,7 +645,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "3件")
-        self.assertContains(response, "CS 2件 / 難民 1件")
+        self.assertContains(response, "(CS 2件 / 難民 1件)")
 
     def test_performance_index_orders_enabled_member_cards_by_recent_entry_desc(self):
         today = timezone.localdate()
