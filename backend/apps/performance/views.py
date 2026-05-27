@@ -264,7 +264,7 @@ def _count_text(entry, adjustment_totals):
     if entry.department.code == "WV":
         total_cs = int(entry.cs_count or 0) + int(adjustment_totals["cs_count"])
         total_refugee = int(entry.refugee_count or 0) + int(adjustment_totals["refugee_count"])
-        return f"CS {total_cs} / 難民 {total_refugee}"
+        return f"{total_cs + total_refugee}件"
     total_count = entry_final_count_value(entry=entry, adjustment_totals=adjustment_totals)
     return f"{total_count}件"
 
@@ -435,7 +435,7 @@ def _final_count_text(*, department_code, totals):
     if department_code == "WV":
         total_cs = int(totals.get("cs_count") or 0)
         total_refugee = int(totals.get("refugee_count") or 0)
-        return f"CS {total_cs} / 難民 {total_refugee}"
+        return f"{total_cs + total_refugee}件"
     total_count = (
         int(totals.get("result_count") or 0)
         + int(totals.get("return_postal_count") or 0)

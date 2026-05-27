@@ -616,6 +616,37 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "2,800円")
         self.assertContains(response, reverse("performance_member_insight", args=[self.member.id, self.department.id]))
 
+    def test_performance_index_shows_wv_total_count_with_breakdown_subtext(self):
+        today = timezone.localdate()
+        self.department.code = "WV"
+        self.department.name = "WV"
+        self.department.save(update_fields=["code", "name"])
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            support_amount=6500,
+            result_count=2,
+            cs_count=1,
+            refugee_count=1,
+            activity_closed=True,
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=entry.entry_date,
+            source_type=MetricAdjustment.SOURCE_CS,
+            support_amount=MemberMetricTransaction.WV_CS_UNIT_AMOUNT,
+            result_count=1,
+            cs_count=1,
+        )
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "3件")
+        self.assertContains(response, "CS 2件 / 難民 1件")
+
     def test_performance_index_orders_enabled_member_cards_by_recent_entry_desc(self):
         today = timezone.localdate()
         newer_member = Member.objects.create(name="Newer", default_department=self.department)
