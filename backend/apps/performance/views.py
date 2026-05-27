@@ -117,6 +117,7 @@ def _performance_member_nav_items(*, is_admin=False):
         ]
     return [
         ("performance_member_dashboard", "実績管理ダッシュボード"),
+        ("performance_index", "全体実績"),
         ("performance_member_history", "実績閲覧"),
     ]
 
@@ -162,6 +163,10 @@ def _performance_member_page_nav_links(*, member, department, is_admin=False, re
         {
             "href": reverse("performance_member_dashboard"),
             "label": "実績管理ダッシュボード",
+        },
+        {
+            "href": reverse("performance_index"),
+            "label": "全体実績",
         },
         {
             "href": reverse("performance_member_history"),
@@ -1569,7 +1574,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
     }
 
 
-@require_performance_roles(ROLE_ADMIN)
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_index(request: HttpRequest) -> HttpResponse:
     filter_data = request.GET.copy()
     if not filter_data:
@@ -1612,8 +1617,11 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         target_month=dashboard_month,
         period=dashboard_period,
     )
+    nav_items = _performance_nav_items()
+    if resolve_request_role(request) == ROLE_REPORT:
+        nav_items = _performance_member_nav_items(is_admin=False)
     context = {
-        "nav_items": _performance_nav_items(),
+        "nav_items": nav_items,
         "filter_form": filter_form,
         "page_obj": page_obj,
         "paginator": paginator,
@@ -1633,7 +1641,7 @@ def performance_index(request: HttpRequest) -> HttpResponse:
     return render(request, "performance/index.html", context)
 
 
-@require_performance_roles(ROLE_ADMIN)
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_history(request: HttpRequest) -> HttpResponse:
     today = timezone.localdate()
     dashboard_scope = request.GET.get("dashboard_scope") or "month"
@@ -1666,8 +1674,11 @@ def performance_history(request: HttpRequest) -> HttpResponse:
         department=dashboard_department,
         scope=scope,
     )
+    nav_items = _performance_nav_items()
+    if resolve_request_role(request) == ROLE_REPORT:
+        nav_items = _performance_member_nav_items(is_admin=False)
     context = {
-        "nav_items": _performance_nav_items(),
+        "nav_items": nav_items,
         "dashboard_departments": Department.objects.filter(is_active=True).order_by("code", "id"),
         "dashboard_department": dashboard_department,
         "dashboard_month": dashboard_month,

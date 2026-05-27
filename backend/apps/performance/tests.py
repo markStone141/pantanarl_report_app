@@ -1355,10 +1355,29 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "直近30日の補正実績")
         self.assertContains(response, reverse("performance_member_history"))
         self.assertContains(response, "実績管理ダッシュボード")
+        self.assertContains(response, "全体実績")
+        self.assertContains(response, reverse("performance_index"))
         self.assertContains(response, "決済入力")
         self.assertContains(response, "実績閲覧")
         self.assertContains(response, "Metrics V2")
         self.assertNotContains(response, "総合管理者ページ")
+
+    def test_performance_member_can_open_overall_dashboard_and_history(self):
+        self.client.logout()
+        report_user = User.objects.create_user(username="perf-member-overall", password="pass1234", is_staff=False)
+        self.member.user = report_user
+        self.member.save(update_fields=["user"])
+        self.client.force_login(report_user)
+
+        dashboard_response = self.client.get(reverse("performance_index"))
+        history_response = self.client.get(reverse("performance_history"))
+
+        self.assertEqual(dashboard_response.status_code, 200)
+        self.assertContains(dashboard_response, "本日の活動状況")
+        self.assertContains(dashboard_response, "全体実績")
+        self.assertEqual(history_response.status_code, 200)
+        self.assertContains(history_response, "集計条件")
+        self.assertContains(history_response, "全体実績")
 
     def test_performance_member_insight_is_readonly_for_member_viewer(self):
         self.client.logout()
