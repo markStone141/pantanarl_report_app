@@ -1281,8 +1281,11 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "recent_detail_limit_step": 5,
         "recent_detail_selected_date": None,
         "recent_detail_has_more": recent_detail_payload["has_more"],
-        "recent_detail_filter_mode": "buttons",
-        "recent_detail_filter_dates": recent_detail_payload["filter_dates"],
+        "recent_detail_reset_url": (
+            reverse("performance_member_detail", args=[member.id, department.id])
+            if is_admin
+            else reverse("performance_member_dashboard")
+        ),
         "recent_summary_items": [
             {"key": "approach_total", "label": "合計AP", "value": f"{int(recent_totals.get('approach_count') or 0):,}"},
             {"key": "communication_total", "label": "合計CM", "value": f"{int(recent_totals.get('communication_count') or 0):,}"},
@@ -1890,6 +1893,13 @@ def _render_member_history_list_response(
             if is_admin
             else reverse("performance_member_history_list")
         ),
+        "detail_reset_url": (
+            reverse("performance_member_history_insight", args=[member.id, department.id])
+            if readonly_member_view
+            else reverse("performance_member_history_detail", args=[member.id, department.id])
+            if is_admin
+            else reverse("performance_member_history")
+        ),
     }
     return render(request, "performance/partials/member_history_day_detail_cards.html", context)
 
@@ -2013,6 +2023,13 @@ def _render_member_recent_detail_response(
         "recent_detail_selected_date": selected_date,
         "recent_detail_has_more": payload["has_more"],
         "recent_detail_ajax_url": recent_detail_ajax_url,
+        "recent_detail_reset_url": (
+            reverse("performance_member_insight", args=[member.id, department.id])
+            if readonly_member_view
+            else reverse("performance_member_detail", args=[member.id, department.id])
+            if is_admin
+            else reverse("performance_member_dashboard")
+        ),
     }
     return render(request, "performance/partials/member_day_detail_cards.html", context)
 

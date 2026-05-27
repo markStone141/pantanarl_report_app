@@ -89,9 +89,7 @@
     }
 
     const searchInput = root.querySelector("[data-performance-recent-date-search]");
-    const clearButton = root.querySelector("[data-performance-recent-date-clear]");
     const loadMoreButton = root.querySelector("[data-performance-recent-load-more]");
-    const dateLinks = root.querySelector("[data-performance-recent-date-links]");
     const step = Number(root.dataset.recentDetailStep || 5);
 
     searchInput?.addEventListener("change", function () {
@@ -101,29 +99,10 @@
       });
     });
 
-    clearButton?.addEventListener("click", function () {
-      fetchRecentDetail({
-        limit: step,
-        date: "",
-      });
-    });
-
     loadMoreButton?.addEventListener("click", function () {
       fetchRecentDetail({
         limit: Number(root.dataset.recentDetailLimit || step) + step,
         date: searchInput ? (searchInput.value || "") : "",
-      });
-    });
-
-    dateLinks?.addEventListener("click", function (event) {
-      const button = event.target.closest(".performance-trend-date-link");
-      if (!button) {
-        return;
-      }
-      event.preventDefault();
-      fetchRecentDetail({
-        limit: step,
-        date: button.dataset.recentDate || "",
       });
     });
   }
@@ -166,23 +145,15 @@
       initHistoryDetailAjax();
     }
 
-    const searchInput = root.querySelector("[data-performance-history-date-search]");
-    const clearButton = root.querySelector("[data-performance-history-date-clear]");
+    const searchInput = document.querySelector("[data-performance-history-date-search]");
     const loadMoreButton = root.querySelector("[data-performance-history-load-more]");
-    const dateLinks = root.querySelector("[data-performance-history-date-links]");
+    const dateLinks = document.querySelector("[data-performance-history-date-links]");
     const step = Number(root.dataset.detailStep || 5);
 
     searchInput?.addEventListener("change", function () {
       fetchHistoryDetail({
         limit: step,
         date: searchInput.value || "",
-      });
-    });
-
-    clearButton?.addEventListener("click", function () {
-      fetchHistoryDetail({
-        limit: step,
-        date: "",
       });
     });
 

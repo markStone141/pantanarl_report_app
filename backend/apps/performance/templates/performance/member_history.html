@@ -200,13 +200,30 @@
     {% else %}
     <p class="muted mt-12">表示できる実績はまだありません。</p>
     {% endif %}
+    <div class="performance-recent-detail-toolbar mt-12">
+      {% if detail_filter_mode == "buttons" %}
+      <div class="performance-trend-date-links" data-performance-history-date-links>
+        {% for item in detail_filter_dates %}
+        <button type="button" class="performance-trend-date-link" data-history-date="{{ item.date }}">{{ item.label }}</button>
+        {% endfor %}
+      </div>
+      {% else %}
+      <input
+        type="date"
+        class="performance-recent-detail-search"
+        value="{% if detail_selected_date %}{{ detail_selected_date|date:'Y-m-d' }}{% endif %}"
+        data-performance-history-date-search
+        aria-label="日付で検索"
+      >
+      {% endif %}
+    </div>
   </section>
   <div>
     {% include "performance/partials/member_history_day_detail_cards.html" with detail_heading=history_scope.label|add:" の日次実績" detail_adjustment_heading=history_scope.label|add:" の補正実績" detail_description="対象期間の日次実績と補正実績です。" show_reset_detail=False %}
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'performance/member_dashboard.js' %}?v=16"></script>
+<script src="{% static 'performance/member_dashboard.js' %}?v=17"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 <script>
   (function () {

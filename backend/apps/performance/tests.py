@@ -805,7 +805,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, created_dates[4].strftime("%Y/%m/%d"))
         self.assertNotContains(response, created_dates[5].strftime("%Y/%m/%d"))
         self.assertContains(response, "さらに5件表示")
-        self.assertContains(response, "data-performance-recent-date-links")
+        self.assertContains(response, 'data-performance-recent-date-search', html=False)
 
     def test_performance_member_detail_recent_detail_ajax_filters_by_date(self):
         today = timezone.localdate()
@@ -910,7 +910,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "本人 recent detail")
-        self.assertContains(response, reverse("performance_member_history"))
+        self.assertContains(response, reverse("performance_member_dashboard"))
 
     def test_performance_member_history_shows_scoped_entries_and_adjustments(self):
         today = timezone.localdate()
@@ -1004,7 +1004,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context["entry_rows"]), 5)
         self.assertContains(response, "さらに5件表示")
-        self.assertContains(response, "data-performance-history-date-links")
+        self.assertContains(response, 'data-performance-history-date-links', html=False)
 
     def test_performance_member_history_range_uses_date_input_filter(self):
         today = timezone.localdate()
