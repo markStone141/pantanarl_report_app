@@ -805,6 +805,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, created_dates[4].strftime("%Y/%m/%d"))
         self.assertNotContains(response, created_dates[5].strftime("%Y/%m/%d"))
         self.assertContains(response, "さらに5件表示")
+        self.assertContains(response, "data-performance-recent-date-links")
 
     def test_performance_member_detail_recent_detail_ajax_filters_by_date(self):
         today = timezone.localdate()
@@ -983,6 +984,52 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertNotContains(response, "<th>状態</th>", html=False)
         self.assertNotContains(response, "<th>メモ</th>", html=False)
 
+    def test_performance_member_history_limits_initial_rows_to_five(self):
+        today = timezone.localdate()
+        for offset in range(7):
+            MemberDailyMetricEntry.objects.create(
+                member=self.member,
+                department=self.department,
+                entry_date=today - timedelta(days=offset),
+                result_count=1,
+                support_amount=1000 * (offset + 1),
+                activity_closed=True,
+            )
+
+        response = self.client.get(
+            reverse("performance_member_history_detail", args=[self.member.id, self.department.id]),
+            {"dashboard_scope": "month", "dashboard_month": today.strftime("%Y-%m")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["entry_rows"]), 5)
+        self.assertContains(response, "さらに5件表示")
+        self.assertContains(response, "data-performance-history-date-links")
+
+    def test_performance_member_history_range_uses_date_input_filter(self):
+        today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today - timedelta(days=1),
+            result_count=1,
+            support_amount=1500,
+            activity_closed=True,
+        )
+
+        response = self.client.get(
+            reverse("performance_member_history_detail", args=[self.member.id, self.department.id]),
+            {
+                "dashboard_scope": "range",
+                "dashboard_start": (today - timedelta(days=10)).isoformat(),
+                "dashboard_end": today.isoformat(),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-performance-history-date-search', html=False)
+        self.assertNotContains(response, 'data-performance-history-date-links', html=False)
+
     def test_performance_member_history_shows_qr_adjustment_amount_and_count(self):
         today = timezone.localdate()
         MemberDailyMetricEntry.objects.create(
@@ -1159,6 +1206,79 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "本人日次")
         self.assertContains(response, reverse("performance_member_history"))
+
+    def test_performance_member_history_list_ajax_filters_by_date(self):
+        today = timezone.localdate()
+        selected_day = today - timedelta(days=1)
+        other_day = today - timedelta(days=3)
+        selected_entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=selected_day,
+            result_count=1,
+            support_amount=3000,
+            activity_closed=True,
+        )
+        other_entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=other_day,
+            result_count=2,
+            support_amount=4500,
+            activity_closed=True,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=selected_entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷",
+            comment="履歴選択日",
+        )
+        MemberMetricTransaction.objects.create(
+            entry=other_entry,
+            support_amount=4500,
+            age_band=MemberMetricTransaction.AGE_BAND_THIRTIES,
+            gender=MemberMetricTransaction.GENDER_MALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="池袋",
+            comment="履歴別日",
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=selected_day,
+            source_type=MetricAdjustment.SOURCE_QR,
+            return_qr_count=1,
+            return_qr_amount=1200,
+            location_name="現場A",
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=other_day,
+            source_type=MetricAdjustment.SOURCE_POSTAL,
+            return_postal_count=1,
+            return_postal_amount=700,
+            location_name="現場B",
+        )
+
+        response = self.client.get(
+            reverse("performance_member_history_detail_list", args=[self.member.id, self.department.id]),
+            {
+                "dashboard_scope": "month",
+                "dashboard_month": today.strftime("%Y-%m"),
+                "date": selected_day.isoformat(),
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "履歴選択日")
+        self.assertContains(response, "現場A")
+        self.assertNotContains(response, "履歴別日")
+        self.assertNotContains(response, "現場B")
 
     def test_performance_member_detail_shows_target_forms_when_edit_requested(self):
         today = timezone.localdate()

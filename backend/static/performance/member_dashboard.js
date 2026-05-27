@@ -91,6 +91,7 @@
     const searchInput = root.querySelector("[data-performance-recent-date-search]");
     const clearButton = root.querySelector("[data-performance-recent-date-clear]");
     const loadMoreButton = root.querySelector("[data-performance-recent-load-more]");
+    const dateLinks = root.querySelector("[data-performance-recent-date-links]");
     const step = Number(root.dataset.recentDetailStep || 5);
 
     searchInput?.addEventListener("change", function () {
@@ -113,12 +114,102 @@
         date: searchInput ? (searchInput.value || "") : "",
       });
     });
+
+    dateLinks?.addEventListener("click", function (event) {
+      const button = event.target.closest(".performance-trend-date-link");
+      if (!button) {
+        return;
+      }
+      event.preventDefault();
+      fetchRecentDetail({
+        limit: step,
+        date: button.dataset.recentDate || "",
+      });
+    });
   }
 
   if (document.readyState === "complete") {
     initRecentDetailAjax();
   } else {
     window.addEventListener("load", initRecentDetailAjax, { once: true });
+  }
+
+  function initHistoryDetailAjax() {
+    const root = document.querySelector("[data-performance-history-detail-root]");
+    if (!root) {
+      return;
+    }
+
+    async function fetchHistoryDetail(params) {
+      const url = root.dataset.detailUrl;
+      if (!url) {
+        return;
+      }
+      const query = new URLSearchParams(window.location.search);
+      query.delete("date");
+      query.delete("limit");
+      if (params.limit) {
+        query.set("limit", String(params.limit));
+      }
+      if (params.date) {
+        query.set("date", params.date);
+      }
+      const response = await fetch(url + "?" + query.toString(), {
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      });
+      if (!response.ok) {
+        return;
+      }
+      root.outerHTML = await response.text();
+      initHistoryDetailAjax();
+    }
+
+    const searchInput = root.querySelector("[data-performance-history-date-search]");
+    const clearButton = root.querySelector("[data-performance-history-date-clear]");
+    const loadMoreButton = root.querySelector("[data-performance-history-load-more]");
+    const dateLinks = root.querySelector("[data-performance-history-date-links]");
+    const step = Number(root.dataset.detailStep || 5);
+
+    searchInput?.addEventListener("change", function () {
+      fetchHistoryDetail({
+        limit: step,
+        date: searchInput.value || "",
+      });
+    });
+
+    clearButton?.addEventListener("click", function () {
+      fetchHistoryDetail({
+        limit: step,
+        date: "",
+      });
+    });
+
+    loadMoreButton?.addEventListener("click", function () {
+      fetchHistoryDetail({
+        limit: Number(root.dataset.detailLimit || step) + step,
+        date: searchInput ? (searchInput.value || "") : "",
+      });
+    });
+
+    dateLinks?.addEventListener("click", function (event) {
+      const button = event.target.closest(".performance-trend-date-link");
+      if (!button) {
+        return;
+      }
+      event.preventDefault();
+      fetchHistoryDetail({
+        limit: step,
+        date: button.dataset.historyDate || "",
+      });
+    });
+  }
+
+  if (document.readyState === "complete") {
+    initHistoryDetailAjax();
+  } else {
+    window.addEventListener("load", initHistoryDetailAjax, { once: true });
   }
 
   const dataNode = document.getElementById("performance-activity-trend-data");

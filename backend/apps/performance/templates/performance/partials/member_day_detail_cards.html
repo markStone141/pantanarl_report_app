@@ -19,6 +19,13 @@
     </div>
     {% if not show_reset_detail %}
     <div class="performance-recent-detail-toolbar mt-12">
+      {% if recent_detail_filter_mode == "buttons" %}
+      <div class="performance-trend-date-links" data-performance-recent-date-links>
+        {% for item in recent_detail_filter_dates %}
+        <button type="button" class="performance-trend-date-link" data-recent-date="{{ item.date }}">{{ item.label }}</button>
+        {% endfor %}
+      </div>
+      {% else %}
       <input
         type="date"
         class="performance-recent-detail-search"
@@ -26,6 +33,7 @@
         data-performance-recent-date-search
         aria-label="日付で検索"
       >
+      {% endif %}
       <button
         type="button"
         class="btn-inline"

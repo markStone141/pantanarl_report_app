@@ -1,121 +1,159 @@
-<section class="card mt-16">
-  <div class="row">
-    <div>
-      <h3>{{ detail_heading }}</h3>
-      <div class="muted">{{ detail_description }}</div>
+<div
+  id="performance-history-detail-root"
+  data-performance-history-detail-root
+  data-detail-url="{{ detail_ajax_url|default:'' }}"
+  data-detail-limit="{{ detail_limit|default:5 }}"
+  data-detail-step="{{ detail_limit_step|default:5 }}"
+>
+  <section class="card mt-16">
+    <div class="row">
+      <div>
+        <h3>{{ detail_heading }}</h3>
+        <div class="muted">{{ detail_description }}</div>
+      </div>
+      {% if show_reset_detail %}
+      <a class="btn-inline" href="{{ detail_reset_url }}">期間表示に戻す</a>
+      {% endif %}
     </div>
-    {% if show_reset_detail %}
-    <a class="btn-inline" href="{{ detail_reset_url }}">期間表示に戻す</a>
+    {% if not show_reset_detail %}
+    <div class="performance-recent-detail-toolbar mt-12">
+      {% if detail_filter_mode == "buttons" %}
+      <div class="performance-trend-date-links" data-performance-history-date-links>
+        {% for item in detail_filter_dates %}
+        <button type="button" class="performance-trend-date-link" data-history-date="{{ item.date }}">{{ item.label }}</button>
+        {% endfor %}
+      </div>
+      {% else %}
+      <input
+        type="date"
+        class="performance-recent-detail-search"
+        value="{% if detail_selected_date %}{{ detail_selected_date|date:'Y-m-d' }}{% endif %}"
+        data-performance-history-date-search
+        aria-label="日付で検索"
+      >
+      {% endif %}
+      <button
+        type="button"
+        class="btn-inline"
+        data-performance-history-date-clear
+        {% if not detail_selected_date %}hidden{% endif %}
+      >検索解除</button>
+    </div>
     {% endif %}
-  </div>
-  {% if entry_rows %}
-  <div class="table-scroll">
-    <table class="mobile-card-table">
-      <thead>
-        <tr>
-          <th>日付</th>
-          <th>件数</th>
-          <th>金額</th>
-          <th>AP / CM</th>
-          <th>修正</th>
-          <th>詳細</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in entry_rows %}
-        <tr>
-          <td data-label="日付">{{ row.entry.entry_date|date:"Y/m/d" }}</td>
-          <td data-label="件数">{{ row.count_text }}</td>
-          <td data-label="金額">{{ row.amount_text }}</td>
-          <td data-label="AP / CM">{{ row.entry.approach_count }} / {{ row.entry.communication_count }}</td>
-          <td data-label="修正">
-            {% if not readonly_member_view %}
-            <a class="icon-btn" href="{{ row.edit_url }}" aria-label="過去の実績を修正">
-              <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-            </a>
-            {% else %}
-            <span class="muted">-</span>
-            {% endif %}
-          </td>
-          <td data-label="詳細">
-            <details>
-              <summary>決済一覧</summary>
-              {% if row.transactions %}
-              <div class="grid mt-10">
-                {% for tx in row.transactions %}
-                <div class="metric-card">
-                  <div class="row">
-                    <strong>{{ tx.support_amount|floatformat:0 }}円</strong>
-                    <span class="muted">{{ tx.location|default:"場所未設定" }}</span>
-                  </div>
-                  <div class="muted mt-6">{{ tx.get_age_band_display }} / {{ tx.get_gender_display }} / {{ tx.get_nationality_type_display }}</div>
-                  {% if tx.comment %}
-                  <div class="mt-8">{{ tx.comment }}</div>
-                  {% endif %}
-                </div>
-                {% endfor %}
-              </div>
+    {% if entry_rows %}
+    <div class="mt-12">
+      <table class="mobile-card-table performance-recent-detail-table">
+        <thead>
+          <tr>
+            <th>日付</th>
+            <th>件数</th>
+            <th>金額</th>
+            <th>AP / CM</th>
+            <th>修正</th>
+            <th>詳細</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in entry_rows %}
+          <tr>
+            <td data-label="日付">{{ row.entry.entry_date|date:"Y/m/d" }}</td>
+            <td data-label="件数">{{ row.count_text }}</td>
+            <td data-label="金額">{{ row.amount_text }}</td>
+            <td data-label="AP / CM">{{ row.entry.approach_count }} / {{ row.entry.communication_count }}</td>
+            <td data-label="修正">
+              {% if not readonly_member_view %}
+              <a class="icon-btn" href="{{ row.edit_url }}" aria-label="過去の実績を修正">
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+              </a>
               {% else %}
-              <p class="muted mt-10">決済明細はありません。</p>
+              <span class="muted">-</span>
               {% endif %}
-            </details>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p class="muted">対象日の日次実績はありません。</p>
-  {% endif %}
-</section>
+            </td>
+            <td data-label="詳細">
+              <details>
+                <summary>決済一覧</summary>
+                {% if row.transactions %}
+                <div class="grid mt-10">
+                  {% for tx in row.transactions %}
+                  <div class="metric-card">
+                    <div class="row">
+                      <strong>{{ tx.support_amount|floatformat:0 }}円</strong>
+                      <span class="muted">{{ tx.location|default:"場所未設定" }}</span>
+                    </div>
+                    <div class="muted mt-6">{{ tx.get_age_band_display }} / {{ tx.get_gender_display }} / {{ tx.get_nationality_type_display }}</div>
+                    {% if tx.comment %}
+                    <div class="mt-8">{{ tx.comment }}</div>
+                    {% endif %}
+                  </div>
+                  {% endfor %}
+                </div>
+                {% else %}
+                <p class="muted mt-10">決済明細はありません。</p>
+                {% endif %}
+              </details>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">対象日の日次実績はありません。</p>
+    {% endif %}
+    {% if not show_reset_detail and detail_has_more %}
+    <div class="mt-12">
+      <button type="button" class="btn-inline" data-performance-history-load-more>さらに5件表示</button>
+    </div>
+    {% endif %}
+  </section>
 
-<section class="card mt-16">
-  <h3>{{ detail_adjustment_heading }}</h3>
-  {% if adjustment_rows %}
-  <div class="table-scroll">
-    <table class="mobile-card-table">
-      <thead>
-        <tr>
-          <th>対象日</th>
-          <th>現場</th>
-          <th>種別</th>
-          <th>件数</th>
-          <th>金額</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for adjustment in adjustment_rows %}
-        <tr>
-          <td data-label="対象日">{{ adjustment.target_date|date:"Y/m/d" }}</td>
-          <td data-label="現場">{{ adjustment.location_name|default:"-" }}</td>
-          <td data-label="種別">{{ adjustment.get_source_type_display }}</td>
-          <td data-label="件数">
-            {% if department.code == "WV" %}
-            CS {{ adjustment.cs_count }} / 難民 {{ adjustment.refugee_count }}
-            {% elif adjustment.source_type == "postal" %}
-            {{ adjustment.return_postal_count }}件
-            {% elif adjustment.source_type == "qr" %}
-            {{ adjustment.return_qr_count }}件
-            {% else %}
-            {{ adjustment.result_count }}件
-            {% endif %}
-          </td>
-          <td data-label="金額">
-            {% if adjustment.source_type == "postal" %}
-            {{ adjustment.return_postal_amount|default:0 }}円
-            {% elif adjustment.source_type == "qr" %}
-            {{ adjustment.return_qr_amount|default:0 }}円
-            {% else %}
-            {{ adjustment.support_amount|default:0 }}円
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p class="muted">対象日の補正実績はありません。</p>
-  {% endif %}
-</section>
+  <section class="card mt-16">
+    <h3>{{ detail_adjustment_heading }}</h3>
+    {% if adjustment_rows %}
+    <div class="mt-12">
+      <table class="mobile-card-table performance-recent-detail-table">
+        <thead>
+          <tr>
+            <th>対象日</th>
+            <th>現場</th>
+            <th>種別</th>
+            <th>件数</th>
+            <th>金額</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for adjustment in adjustment_rows %}
+          <tr>
+            <td data-label="対象日">{{ adjustment.target_date|date:"Y/m/d" }}</td>
+            <td data-label="現場">{{ adjustment.location_name|default:"-" }}</td>
+            <td data-label="種別">{{ adjustment.get_source_type_display }}</td>
+            <td data-label="件数">
+              {% if department.code == "WV" %}
+              CS {{ adjustment.cs_count }} / 難民 {{ adjustment.refugee_count }}
+              {% elif adjustment.source_type == "postal" %}
+              {{ adjustment.return_postal_count }}件
+              {% elif adjustment.source_type == "qr" %}
+              {{ adjustment.return_qr_count }}件
+              {% else %}
+              {{ adjustment.result_count }}件
+              {% endif %}
+            </td>
+            <td data-label="金額">
+              {% if adjustment.source_type == "postal" %}
+              {{ adjustment.return_postal_amount|default:0 }}円
+              {% elif adjustment.source_type == "qr" %}
+              {{ adjustment.return_qr_amount|default:0 }}円
+              {% else %}
+              {{ adjustment.support_amount|default:0 }}円
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">対象日の補正実績はありません。</p>
+    {% endif %}
+  </section>
+</div>
