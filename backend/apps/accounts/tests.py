@@ -33,6 +33,26 @@ class LoginFlowTests(TestCase):
         self.assertEqual(response.url, reverse("report_index"))
         self.assertEqual(self.client.session.get("role"), "report")
 
+    def test_authenticated_staff_can_open_report_home_without_reentering_password(self):
+        admin_user = get_user_model().objects.get(username="admin")
+        self.client.force_login(admin_user)
+
+        response = self.client.get(reverse("home"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("dashboard_index"))
+        self.assertEqual(self.client.session.get("role"), "admin")
+
+    def test_authenticated_member_can_open_report_home_without_reentering_password(self):
+        report_user = get_user_model().objects.create_user(username="member_report_shortcut", password="x", is_staff=False)
+        self.client.force_login(report_user)
+
+        response = self.client.get(reverse("home"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("report_index"))
+        self.assertEqual(self.client.session.get("role"), "report")
+
     def test_wrong_password_shows_error(self):
         response = self.client.post(
             reverse("home"),

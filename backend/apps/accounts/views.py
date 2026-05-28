@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
-from .auth import ROLE_ADMIN, ROLE_REPORT, SESSION_ROLE_KEY
+from .auth import ROLE_ADMIN, ROLE_REPORT, SESSION_ROLE_KEY, resolve_request_role
 from .forms import LoginForm
 
 REPORT_USERNAME = os.getenv("REPORT_LOGIN_USERNAME", "report")
@@ -34,7 +34,7 @@ def _redirect_by_role(role: str):
 
 
 def home(request: HttpRequest) -> HttpResponse:
-    current_role = request.session.get(SESSION_ROLE_KEY)
+    current_role = resolve_request_role(request)
     if request.method == "GET" and current_role in {ROLE_ADMIN, ROLE_REPORT}:
         return _redirect_by_role(current_role)
 

@@ -58,19 +58,19 @@ class ReportMemberFilteringTests(TestCase):
         self.assertContains(response, "ユニセフ 報告へ")
         self.assertContains(response, "ワールドビジョン 報告へ")
 
-    def test_report_index_links_to_performance_login_instead_of_dairymetrics(self):
+    def test_report_index_hides_legacy_metrics_links(self):
         response = self.client.get(reverse("report_index"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, reverse("performance_login"))
+        self.assertNotContains(response, reverse("performance_login"))
         self.assertNotContains(response, reverse("dairymetrics_dashboard"))
         self.assertNotContains(response, reverse("dairymetrics_admin_overview"))
 
-    def test_report_history_links_to_performance_login_instead_of_dairymetrics(self):
+    def test_report_history_hides_legacy_metrics_links(self):
         response = self.client.get(reverse("report_history"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, reverse("performance_login"))
+        self.assertNotContains(response, reverse("performance_login"))
         self.assertNotContains(response, reverse("dairymetrics_dashboard"))
         self.assertNotContains(response, reverse("dairymetrics_admin_overview"))
 
