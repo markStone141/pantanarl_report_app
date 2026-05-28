@@ -17,8 +17,11 @@
       {% if is_edit and redirect_target == "report_history" %}
       <a href="{% url 'report_history' %}">保存報告一覧</a>
       {% endif %}
-      {% if request.user.is_staff %}
+      {% if request.user.is_authenticated and request.user.is_staff %}
       <a href="{% url 'dashboard_index' %}">管理者ページ</a>
+      <a href="{% url 'performance_index' %}">実績管理ダッシュボード</a>
+      {% elif request.user.is_authenticated %}
+      <a href="{% url 'performance_member_dashboard' %}">実績管理ダッシュボード</a>
       {% endif %}
       <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
     </nav>

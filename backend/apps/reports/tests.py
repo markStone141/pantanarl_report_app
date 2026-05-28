@@ -5,6 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from django.contrib.auth import get_user_model
 from apps.accounts.models import Department, Member, MemberDepartment
 from apps.dairymetrics.models import MemberDailyMetricEntry
 from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
@@ -73,6 +74,24 @@ class ReportMemberFilteringTests(TestCase):
         self.assertNotContains(response, reverse("performance_login"))
         self.assertNotContains(response, reverse("dairymetrics_dashboard"))
         self.assertNotContains(response, reverse("dairymetrics_admin_overview"))
+
+    def test_report_index_shows_member_performance_link_for_authenticated_member(self):
+        member_user = get_user_model().objects.create_user(username="report_member_nav", password="x", is_staff=False)
+        self.client.force_login(member_user)
+
+        response = self.client.get(reverse("report_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("performance_member_dashboard"))
+
+    def test_report_index_shows_admin_performance_link_for_authenticated_admin(self):
+        admin_user = get_user_model().objects.create_user(username="report_admin_nav", password="x", is_staff=True)
+        self.client.force_login(admin_user)
+
+        response = self.client.get(reverse("report_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("performance_index"))
 
     def test_report_form_title_uses_department_display_name(self):
         department = Department.objects.create(name="ユニセフ渋谷", code="UN")

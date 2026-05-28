@@ -64,6 +64,18 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "補正実績入力")
         self.assertContains(response, reverse("performance_adjustments"))
 
+    def test_performance_member_dashboard_nav_includes_report_app(self):
+        self.client.logout()
+        member_user = User.objects.create_user(username="perf-member-report-nav", password="pass1234", is_staff=False)
+        self.member.user = member_user
+        self.member.save(update_fields=["user"])
+        self.client.force_login(member_user)
+
+        response = self.client.get(reverse("performance_member_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("report_index"))
+
     def test_performance_member_dashboard_redirects_to_performance_login(self):
         self.client.logout()
 
