@@ -293,7 +293,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
 
     def test_entry_v2_demo_requires_login(self):
         response = self.client.get(reverse("dairymetrics_entry_v2_demo"))
-        self.assertRedirects(response, reverse("dairymetrics_login"))
+        self.assertRedirects(response, reverse("performance_login"))
 
     def test_entry_v2_demo_prefills_total_count_from_existing_entry(self):
         self.department.code = "UN"
@@ -322,7 +322,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
 
     def test_entry_v2_transaction_demo_requires_login(self):
         response = self.client.get(reverse("dairymetrics_entry_v2_transaction_demo"))
-        self.assertRedirects(response, reverse("dairymetrics_login"))
+        self.assertRedirects(response, reverse("performance_login"))
 
     def test_entry_v2_transaction_demo_shows_goal_cards_and_mail_preview_flow(self):
         self.department.code = "UN"
@@ -3919,7 +3919,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
 
     def test_metrics_v2_demo_requires_login(self):
         response = self.client.get(reverse("dairymetrics_metrics_v2_demo"))
-        self.assertRedirects(response, reverse("dairymetrics_login"))
+        self.assertRedirects(response, reverse("performance_login"))
 
     def test_metrics_v2_demo_renders_member_sections(self):
         self.client.force_login(self.user)

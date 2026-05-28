@@ -8,13 +8,10 @@
   </button>
   <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
     <a href="{% url 'dashboard_index' %}">管理者ページ</a>
-    <a href="{% url 'dairymetrics_admin_overview' %}">管理トップ</a>
+    <a href="{% url 'performance_index' %}">全体実績</a>
+    <a href="{% url 'performance_history' %}">全体実績閲覧</a>
     <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
-    <a href="{% url 'dairymetrics_member_index' %}">メンバー一覧</a>
-    <a href="{% url 'dairymetrics_admin_ranking_overview' %}">全体ランキング</a>
-    <a href="{% url 'dairymetrics_admin_monthly_overview' %}">月次集計</a>
-    <a href="{% url 'dairymetrics_admin_monthly_comparison' %}">月比較</a>
-    <a href="{% url 'dairymetrics_adjustment_create' %}">戻り登録</a>
+    <a href="{% url 'dairymetrics_metrics_v2_demo' %}">Metrics V2</a>
     <a href="{% url 'report_index' %}">Report App</a>
     <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
   </nav>

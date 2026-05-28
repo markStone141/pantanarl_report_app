@@ -17,7 +17,7 @@ def require_dairymetrics_member(view_func):
     def wrapper(request, *args, **kwargs):
         user = request.user
         if not getattr(user, "is_authenticated", False):
-            return redirect("dairymetrics_login")
+            return redirect("performance_login")
         auto_close_stale_entries()
         if user.is_staff:
             return view_func(request, *args, **kwargs)
@@ -33,7 +33,7 @@ def require_dairymetrics_admin(view_func):
     def wrapper(request, *args, **kwargs):
         user = request.user
         if not getattr(user, "is_authenticated", False):
-            return redirect("dairymetrics_login")
+            return redirect("performance_login")
         auto_close_stale_entries()
         if not user.is_staff:
             raise Http404()
