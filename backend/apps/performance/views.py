@@ -41,6 +41,12 @@ from apps.performance.services.progress import (
     resolve_period_target_amounts_by_code,
     sum_adjustment_amount,
 )
+from apps.performance.services.member_details import (
+    attach_transaction_edit_urls,
+    build_entry_adjustment_detail_payload,
+    build_member_dashboard_entry_rows,
+    build_trend_date_links,
+)
 from apps.performance.services.trends import (
     EMPTY_ADJUSTMENT_TOTALS,
     build_adjustment_totals_map,
@@ -1001,135 +1007,6 @@ def _parse_selected_month(value, *, default):
         return default.replace(day=1)
 
 
-def _build_member_dashboard_entry_rows(*, member, department, month_start, month_end):
-    member_entries = MemberDailyMetricEntry.objects.select_related("member", "department").prefetch_related("transactions").filter(
-        member=member,
-        department=department,
-    )
-    entries = list(member_entries.filter(entry_date__range=(month_start, month_end)).order_by("-entry_date", "-id"))
-    adjustment_totals_map = build_adjustment_totals_map(entries)
-    entry_rows = []
-    for entry in entries:
-        adjustment_totals = adjustment_totals_map.get(
-            (entry.member_id, entry.department_id, entry.entry_date),
-            {
-                "result_count": 0,
-                "support_amount": 0,
-                "return_postal_count": 0,
-                "return_postal_amount": 0,
-                "return_qr_count": 0,
-                "return_qr_amount": 0,
-                "cs_count": 0,
-                "refugee_count": 0,
-            },
-        )
-        entry_rows.append(
-            {
-                "entry": entry,
-                "count_text": _field_count_text(entry),
-                "amount_text": _field_amount_text(entry),
-                "transactions": list(entry.transactions.all().order_by("created_at", "id")),
-            }
-        )
-    return entry_rows
-
-
-def _attach_transaction_edit_urls(*, entry_rows, next_url):
-    for row in entry_rows:
-        for transaction in row["transactions"]:
-            transaction.edit_url = (
-                f"{reverse('performance_transaction_edit', args=[transaction.id])}"
-                f"?{urlencode({'next': next_url})}"
-            )
-
-
-def _build_detail_filter_dates(*, entry_rows, adjustment_rows):
-    unique_dates = set()
-    for row in entry_rows:
-        unique_dates.add(row["entry"].entry_date)
-    for adjustment in adjustment_rows:
-        unique_dates.add(adjustment.target_date)
-    return [
-        {
-            "date": current_date.isoformat(),
-            "label": current_date.strftime("%m/%d"),
-        }
-        for current_date in sorted(unique_dates, reverse=True)
-    ]
-
-
-def _build_entry_adjustment_detail_payload(
-    *,
-    member,
-    department,
-    start_date,
-    end_date,
-    selected_date=None,
-    limit=5,
-):
-    if selected_date is not None:
-        entry_rows = _build_member_dashboard_entry_rows(
-            member=member,
-            department=department,
-            month_start=selected_date,
-            month_end=selected_date,
-        )
-        adjustment_rows = list(
-            MetricAdjustment.objects.filter(
-                member=member,
-                department=department,
-                target_date=selected_date,
-            ).order_by("-target_date", "-created_at")
-        )
-        return {
-            "entry_rows": entry_rows,
-            "adjustment_rows": adjustment_rows,
-            "has_more": False,
-            "filter_dates": _build_detail_filter_dates(entry_rows=entry_rows, adjustment_rows=adjustment_rows),
-        }
-
-    all_entry_rows = _build_member_dashboard_entry_rows(
-        member=member,
-        department=department,
-        month_start=start_date,
-        month_end=end_date,
-    )
-    all_adjustment_rows = list(
-        MetricAdjustment.objects.filter(
-            member=member,
-            department=department,
-            target_date__range=(start_date, end_date),
-        ).order_by("-target_date", "-created_at")
-    )
-    sliced_entry_rows = all_entry_rows[:limit]
-    sliced_adjustment_rows = all_adjustment_rows[:limit]
-    has_more = len(all_entry_rows) > limit or len(all_adjustment_rows) > limit
-    return {
-        "entry_rows": sliced_entry_rows,
-        "adjustment_rows": sliced_adjustment_rows,
-        "has_more": has_more,
-        "filter_dates": _build_detail_filter_dates(entry_rows=all_entry_rows, adjustment_rows=all_adjustment_rows),
-    }
-
-
-def _build_trend_date_links(activity_trend):
-    dates = list(activity_trend.get("dates") or [])
-    labels = list(activity_trend.get("labels") or [])
-    visible_count = int(activity_trend.get("default_visible_count") or 0)
-    if not dates or not labels or visible_count <= 0:
-        return []
-    start_index = max(0, len(dates) - visible_count)
-    links = []
-    for index in range(start_index, len(dates)):
-        links.append(
-            {
-                "date": dates[index],
-                "label": labels[index],
-            }
-        )
-    return links
-
-
 def _build_member_dashboard_context(*, request, member, department, is_admin=False):
     today = timezone.localdate()
     selected_month = _parse_selected_month(request.GET.get("month"), default=today)
@@ -1137,11 +1014,13 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
     current_period = _resolve_current_period(today)
     recent_start = today - timedelta(days=29)
     recent_end = today
-    entry_rows = _build_member_dashboard_entry_rows(
+    entry_rows = build_member_dashboard_entry_rows(
         member=member,
         department=department,
         month_start=selected_month,
         month_end=selectedmonth_end,
+        field_count_text=_field_count_text,
+        field_amount_text=_field_amount_text,
     )
     adjustment_rows = list(
         MetricAdjustment.objects.filter(
@@ -1150,12 +1029,17 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
             target_date__range=(selected_month, selectedmonth_end),
         ).order_by("-target_date", "-created_at")
     )
-    recent_detail_payload = _build_entry_adjustment_detail_payload(
+    recent_detail_payload = build_entry_adjustment_detail_payload(
         member=member,
         department=department,
         start_date=recent_start,
         end_date=recent_end,
         limit=5,
+        entry_rows_builder=lambda **kwargs: build_member_dashboard_entry_rows(
+            field_count_text=_field_count_text,
+            field_amount_text=_field_amount_text,
+            **kwargs,
+        ),
     )
     activity_trend = build_member_activity_trend(member=member, department=department)
     detail_next_url = (
@@ -1163,7 +1047,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         if is_admin
         else reverse("performance_member_dashboard")
     )
-    _attach_transaction_edit_urls(entry_rows=recent_detail_payload["entry_rows"], next_url=detail_next_url)
+    attach_transaction_edit_urls(entry_rows=recent_detail_payload["entry_rows"], next_url=detail_next_url)
     recent_totals = collect_member_final_actual_totals(
         member,
         department,
@@ -1337,7 +1221,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
             {"key": "active_days", "label": "稼働日数", "value": f"{recent_active_days:,}日"},
         ],
         "activity_trend": activity_trend,
-        "trend_date_links": _build_trend_date_links(activity_trend),
+        "trend_date_links": build_trend_date_links(activity_trend),
         "detail_history_url": (
             reverse("performance_member_history_detail", args=[member.id, department.id])
             if is_admin
@@ -1416,16 +1300,21 @@ def _build_member_history_context(*, request, member, department, is_admin=False
         requested_end=_parse_selected_date(dashboard_end),
     )
 
-    detail_payload = _build_entry_adjustment_detail_payload(
+    detail_payload = build_entry_adjustment_detail_payload(
         member=member,
         department=department,
         start_date=scope.start_date,
         end_date=scope.end_date,
         limit=5,
+        entry_rows_builder=lambda **kwargs: build_member_dashboard_entry_rows(
+            field_count_text=_field_count_text,
+            field_amount_text=_field_amount_text,
+            **kwargs,
+        ),
     )
     entry_rows = detail_payload["entry_rows"]
     entry_edit_next_url = request.get_full_path()
-    _attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
+    attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
     for row in entry_rows:
         row["edit_url"] = (
             f"{reverse('performance_entry_edit', args=[row['entry'].id])}"
@@ -1568,7 +1457,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
         "dashboard_end": dashboard_end,
         "history_scope": scope,
         "activity_trend": activity_trend,
-        "trend_date_links": _build_trend_date_links(activity_trend),
+        "trend_date_links": build_trend_date_links(activity_trend),
         "department_progress_cards": department_progress_cards,
         "member_progress_cards": member_progress_cards,
         "entry_rows": entry_rows,
@@ -1861,11 +1750,13 @@ def _render_member_history_day_detail_response(
     selected_date = _parse_selected_date(request.GET.get("date"))
     if selected_date is None:
         raise Http404
-    entry_rows = _build_member_dashboard_entry_rows(
+    entry_rows = build_member_dashboard_entry_rows(
         member=member,
         department=department,
         month_start=selected_date,
         month_end=selected_date,
+        field_count_text=_field_count_text,
+        field_amount_text=_field_amount_text,
     )
     entry_edit_next_url = (
         reverse("performance_member_history_insight", args=[member.id, department.id])
@@ -1876,7 +1767,7 @@ def _render_member_history_day_detail_response(
     )
     for row in entry_rows:
         row["edit_url"] = f"{reverse('performance_entry_edit', args=[row['entry'].id])}?{urlencode({'next': entry_edit_next_url})}"
-    _attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
+    attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
     adjustment_rows = list(
         MetricAdjustment.objects.filter(
             member=member,
@@ -1934,13 +1825,18 @@ def _render_member_history_list_response(
     except (TypeError, ValueError):
         requested_limit = 5
     limit = max(5, min(requested_limit, 30))
-    payload = _build_entry_adjustment_detail_payload(
+    payload = build_entry_adjustment_detail_payload(
         member=member,
         department=department,
         start_date=scope.start_date,
         end_date=scope.end_date,
         selected_date=selected_date,
         limit=limit,
+        entry_rows_builder=lambda **kwargs: build_member_dashboard_entry_rows(
+            field_count_text=_field_count_text,
+            field_amount_text=_field_amount_text,
+            **kwargs,
+        ),
     )
     entry_edit_next_url = request.get_full_path()
     entry_rows = payload["entry_rows"]
@@ -1949,7 +1845,7 @@ def _render_member_history_list_response(
             f"{reverse('performance_entry_edit', args=[row['entry'].id])}"
             f"?{urlencode({'next': entry_edit_next_url})}"
         )
-    _attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
+    attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
     context = {
         "member": member,
         "department": department,
@@ -2013,11 +1909,13 @@ def _render_member_day_detail_response(
     selected_date = _parse_selected_date(request.GET.get("date"))
     if selected_date is None:
         raise Http404
-    entry_rows = _build_member_dashboard_entry_rows(
+    entry_rows = build_member_dashboard_entry_rows(
         member=member,
         department=department,
         month_start=selected_date,
         month_end=selected_date,
+        field_count_text=_field_count_text,
+        field_amount_text=_field_amount_text,
     )
     adjustment_rows = list(
         MetricAdjustment.objects.filter(
@@ -2044,7 +1942,7 @@ def _render_member_day_detail_response(
         reset_url=reset_url,
     )
     if not readonly_member_view:
-        _attach_transaction_edit_urls(entry_rows=context["recent_entry_rows"], next_url=reset_url)
+        attach_transaction_edit_urls(entry_rows=context["recent_entry_rows"], next_url=reset_url)
     return render(request, "performance/partials/member_day_detail_cards.html", context)
 
 
@@ -2065,13 +1963,18 @@ def _render_member_recent_detail_response(
     except (TypeError, ValueError):
         requested_limit = 5
     limit = max(5, min(requested_limit, 30))
-    payload = _build_entry_adjustment_detail_payload(
+    payload = build_entry_adjustment_detail_payload(
         member=member,
         department=department,
         start_date=recent_start,
         end_date=recent_end,
         selected_date=selected_date,
         limit=limit,
+        entry_rows_builder=lambda **kwargs: build_member_dashboard_entry_rows(
+            field_count_text=_field_count_text,
+            field_amount_text=_field_amount_text,
+            **kwargs,
+        ),
     )
     detail_history_url = (
         reverse("performance_member_history_insight", args=[member.id, department.id])
@@ -2118,7 +2021,7 @@ def _render_member_recent_detail_response(
         ),
     }
     if not readonly_member_view:
-        _attach_transaction_edit_urls(
+        attach_transaction_edit_urls(
             entry_rows=context["recent_entry_rows"],
             next_url=context["recent_detail_reset_url"],
         )
