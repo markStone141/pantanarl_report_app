@@ -313,7 +313,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "実績入力 v2 デモ")
+        self.assertContains(response, "実績入力プレビュー")
         self.assertContains(response, 'value="7"', html=False)
         self.assertContains(response, 'value="12000"', html=False)
         self.assertContains(response, "年代内訳")
@@ -3943,7 +3943,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("dairymetrics_metrics_v2_demo"), {"department": self.department.code, "scope": "period", "period_id": self.period.id})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "UN の全体分析デモ")
+        self.assertContains(response, "UN の全体分析")
         self.assertContains(response, "ランキングモード")
         self.assertContains(response, "属性別の平均金額")
         self.assertContains(response, "管理者用ダッシュボード")
@@ -3962,7 +3962,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["selected_member"], self.member)
-        self.assertContains(response, f"{self.member.name}さん / {self.department.name} の分析デモ")
+        self.assertContains(response, f"{self.member.name}さん / {self.department.name} の分析")
         self.assertContains(response, reverse("performance_index"))
         self.assertContains(response, reverse("performance_member_insight", args=[self.member.id, self.department.id]))
         self.assertContains(response, reverse("performance_member_history_insight", args=[self.member.id, self.department.id]))

@@ -15,12 +15,12 @@
       <div class="topbar-muted">
         {% if is_admin %}
         {% if selected_member %}
-        {{ selected_member.name }}さん / {{ selected_department.name }} の分析デモ
+        {{ selected_member.name }}さん / {{ selected_department.name }} の分析
         {% else %}
-        {{ selected_department.name }} の全体分析デモ
+        {{ selected_department.name }} の全体分析
         {% endif %}
         {% else %}
-        {{ member.name }}さん / {{ selected_department.name }} の分析デモ
+        {{ member.name }}さん / {{ selected_department.name }} の分析
         {% endif %}
       </div>
     </div>

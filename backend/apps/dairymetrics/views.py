@@ -755,7 +755,7 @@ def entry_form_v2_demo(request: HttpRequest) -> HttpResponse:
         gender_bands=ENTRY_V2_GENDER_BANDS,
         nationality_bands=ENTRY_V2_NATIONALITY_BANDS,
     )
-    return render(request, "dairymetrics/entry_form_v2_demo.html", context)
+    return render(request, "dairymetrics/entry_form_v2.html", context)
 
 
 @require_dairymetrics_member
@@ -827,7 +827,7 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
         "metrics_v2_payload": payload,
         "metrics_v2_payload_json": payload_json,
     }
-    return render(request, "dairymetrics/metrics_v2_demo.html", context)
+    return render(request, "dairymetrics/metrics_v2.html", context)
 
 
 @require_dairymetrics_member
@@ -1182,7 +1182,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
         transaction_amount_options=ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS,
         wv_refugee_amount_options=ENTRY_V2_WV_REFUGEE_AMOUNT_OPTIONS,
     )
-    return render(request, "dairymetrics/entry_form_v2_transaction_demo.html", context)
+    return render(request, "dairymetrics/entry_form_v2_transaction.html", context)
 
 
 @require_dairymetrics_admin
