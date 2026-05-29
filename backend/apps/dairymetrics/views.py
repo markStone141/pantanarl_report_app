@@ -985,6 +985,34 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                     )
                 status_message = "決済明細を確認してください。"
                 open_entry_panel = True
+        elif action == "delete_transaction":
+            transaction_id = (request.POST.get("transaction_id") or "").strip()
+            if not selected_department_obj:
+                status_message = "削除対象の決済を確認してください。"
+            elif not transaction_id.isdigit():
+                status_message = "削除対象の決済を確認してください。"
+            else:
+                transaction_obj = (
+                    MemberMetricTransaction.objects.filter(
+                        id=int(transaction_id),
+                        entry__member=member,
+                        entry__department=selected_department_obj,
+                        entry__entry_date=entry_date,
+                    )
+                    .select_related("entry", "entry__department", "entry__member")
+                    .first()
+                )
+                if not transaction_obj:
+                    status_message = "削除対象の決済が見つかりません。"
+                else:
+                    transaction_obj.delete()
+                    return redirect(
+                        build_v2_redirect_url(
+                            department_code=selected_department,
+                            entry_date=entry_date,
+                            saved="transaction_deleted",
+                        )
+                    )
         elif action in {"send_transaction_mock", "send_transaction_mail"}:
             preview_tx_id = (request.POST.get("preview_transaction_id") or "").strip()
             preview_history_id = (request.POST.get("preview_history_id") or "").strip()
@@ -1155,6 +1183,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
             "personal_setup": "個人の日目標を保存しました。",
             "department_target": "部署全体の日目標を保存しました。",
             "transaction": "決済明細を登録しました。",
+            "transaction_deleted": "決済明細を削除しました。",
             "mail_sent": "メール履歴を保存しました。",
             "mail_failed": "メール送信に失敗しました。復旧後に再送してください。",
             "closeout": "活動終了時の最終実績を保存しました。",

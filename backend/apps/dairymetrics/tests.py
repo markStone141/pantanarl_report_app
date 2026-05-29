@@ -776,6 +776,64 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertEqual(summary.result_count, 3)
         self.assertEqual(summary.support_amount, 10800)
 
+    def test_entry_v2_transaction_demo_deletes_transaction_and_reverts_totals(self):
+        entry_date = timezone.localdate()
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            wv_result_type=MemberMetricTransaction.WV_RESULT_BOTH,
+            wv_cs_count=2,
+            wv_refugee_amount=1800,
+            location="渋谷駅前",
+            age_band=MemberMetricTransaction.AGE_BAND_SEVENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            comment="削除テスト",
+        )
+        MailSendHistory.objects.create(
+            department=self.department,
+            activity_date=entry_date,
+            sender_member=self.member,
+            transaction=transaction,
+            subject_snapshot="件名",
+            body_snapshot="本文",
+            sent_to_snapshot="a@example.com",
+            status=MailSendHistory.STATUS_SENT,
+            sent_at=timezone.now(),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "delete_transaction",
+                "department_code": self.department.code,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "transaction_id": str(transaction.id),
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=transaction_deleted",
+        )
+        self.assertFalse(MemberMetricTransaction.objects.filter(id=transaction.id).exists())
+        self.assertFalse(MailSendHistory.objects.filter(transaction_id=transaction.id).exists())
+        entry.refresh_from_db()
+        self.assertEqual(entry.result_count, 0)
+        self.assertEqual(entry.cs_count, 0)
+        self.assertEqual(entry.refugee_count, 0)
+        self.assertEqual(entry.support_amount, 0)
+        summary = DepartmentDailyMetricSummary.objects.get(department=self.department, entry_date=entry_date)
+        self.assertEqual(summary.result_count, 0)
+        self.assertEqual(summary.support_amount, 0)
+
     def test_entry_v2_transaction_demo_closeout_updates_entry_and_shows_department_mail_history(self):
         entry_date = timezone.localdate()
         entry = MemberDailyMetricEntry.objects.create(

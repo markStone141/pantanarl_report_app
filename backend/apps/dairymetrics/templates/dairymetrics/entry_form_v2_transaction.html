@@ -560,6 +560,20 @@
                 >
                   修正
                 </button>
+                <form method="post" onsubmit="return confirm('この決済を削除します。よろしいですか？');">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete_transaction">
+                  <input type="hidden" name="department_code" value="{{ selected_department_code }}">
+                  <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
+                  <input type="hidden" name="transaction_id" value="{{ transaction.id }}">
+                  <button
+                    type="submit"
+                    class="icon-btn icon-btn-danger"
+                    aria-label="決済を削除"
+                  >
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                  </button>
+                </form>
                 <button
                   type="button"
                   class="btn-inline dairymetrics-v2-mail-send-link"
