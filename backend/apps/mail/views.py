@@ -12,7 +12,7 @@ from .forms import (
     MailRecipientGroupForm,
 )
 from .models import MailDepartmentRouting, MailIntegrationSetting, MailRecipientGroup, MailSendHistory
-from .services import send_test_mail
+from .services import active_group_members, send_test_mail
 
 
 def _mail_nav_items():
@@ -156,7 +156,7 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
                     target_group = None
                 else:
                     group = test_form.cleaned_data["group"]
-                    members = group.members.exclude(email="").order_by("name")
+                    members = active_group_members(group)
                     preview_recipients = [f"{member.name} <{member.email}>" for member in members]
                     preview_summary = f"{group.name} に紐づくメンバーへテスト送信する想定です。"
                     target_member = None

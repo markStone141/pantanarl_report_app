@@ -20,13 +20,16 @@ def _active_setting() -> MailIntegrationSetting | None:
     return MailIntegrationSetting.objects.filter(is_active=True).order_by("id").first()
 
 
+def active_group_members(group: MailRecipientGroup | None):
+    if group is None:
+        return []
+    return list(group.members.filter(is_active=True).exclude(email="").order_by("name"))
+
+
 def _build_recipient_snapshot(group: MailRecipientGroup | None) -> str:
     if group is None:
         return "未設定（モック送信）"
-    recipients = []
-    for member in group.members.exclude(email="").order_by("name"):
-        recipients.append(f"{member.name} <{member.email}>")
-    return "\n".join(recipients)
+    return _members_recipient_snapshot(active_group_members(group))
 
 
 def _members_recipient_snapshot(members) -> str:
@@ -191,7 +194,7 @@ def send_test_mail(
         department = target_member.default_department
         summary = target_member.name
     elif recipient_group is not None:
-        members = list(recipient_group.members.exclude(email="").order_by("name"))
+        members = active_group_members(recipient_group)
         to_recipients = [setting.sender_email] if setting and setting.sender_email else []
         cc_recipients = [member.email for member in members]
         recipient_snapshot = _members_recipient_snapshot(members)
@@ -336,7 +339,7 @@ def send_transaction_mail(
     if recipient_group is None:
         raise MailSendError("送信先グループが未設定です。", code="missing_recipient_group")
 
-    members = list(recipient_group.members.exclude(email="").order_by("name"))
+    members = active_group_members(recipient_group)
     recipient_snapshot = _members_recipient_snapshot(members)
     to_recipients = [setting.sender_email] if setting and setting.sender_email else []
     cc_recipients = [member.email for member in members]

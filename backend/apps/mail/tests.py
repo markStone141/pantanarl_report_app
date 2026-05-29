@@ -143,6 +143,28 @@ class MailManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "alice@example.com")
         self.assertContains(response, "bob@example.com")
 
+    def test_mail_settings_test_preview_excludes_inactive_group_members(self):
+        inactive_member = self.create_member(
+            name="Inactive",
+            email="inactive@example.com",
+            department=self.department,
+            is_active=False,
+        )
+        group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)
+        group.members.set([self.member_one, inactive_member])
+        response = self.client.post(
+            reverse("mail_group_settings"),
+            {
+                "action": "test_preview",
+                "target_type": "group",
+                "group": group.id,
+                "member": "",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "alice@example.com")
+        self.assertNotContains(response, "inactive@example.com")
+
     def test_mail_group_settings_renders_integrated_mail_sections(self):
         response = self.client.get(reverse("mail_group_settings"))
         self.assertEqual(response.status_code, 200)
@@ -222,6 +244,38 @@ class MailManagementTests(AppTestMixin, TestCase):
             mocked_send.call_args.kwargs["cc_recipients"],
             ["alice@example.com", "carol@example.com"],
         )
+
+    @patch("apps.mail.services._send_via_gmail", return_value="gmail-message-2")
+    def test_mail_settings_test_send_excludes_inactive_group_members(self, mocked_send):
+        inactive_member = self.create_member(
+            name="Inactive",
+            email="inactive@example.com",
+            department=self.department,
+            is_active=False,
+        )
+        MailIntegrationSetting.objects.create(
+            sender_email="sender@example.com",
+            sender_name="Sender",
+            client_id="client-id",
+            client_secret="client-secret",
+            refresh_token="refresh-token",
+            token_uri="https://oauth2.googleapis.com/token",
+            is_active=True,
+        )
+        group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)
+        group.members.set([self.member_one, inactive_member])
+        response = self.client.post(
+            reverse("mail_group_settings"),
+            {
+                "action": "test_send",
+                "target_type": "group",
+                "member": "",
+                "group": group.id,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        mocked_send.assert_called_once()
+        self.assertEqual(mocked_send.call_args.kwargs["cc_recipients"], ["alice@example.com"])
 
     def test_send_transaction_mail_mock_creates_sent_history(self):
         group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)
@@ -306,6 +360,56 @@ class MailManagementTests(AppTestMixin, TestCase):
             mocked_send.call_args.kwargs["cc_recipients"],
             ["alice@example.com", "bob@example.com"],
         )
+
+    @patch("apps.mail.services._send_via_gmail", return_value="gmail-transaction-2")
+    def test_send_transaction_mail_excludes_inactive_group_members(self, mocked_send):
+        inactive_member = self.create_member(
+            name="Inactive",
+            email="inactive@example.com",
+            department=self.department,
+            is_active=False,
+        )
+        MailIntegrationSetting.objects.create(
+            sender_email="sender@example.com",
+            sender_name="Sender",
+            client_id="client-id",
+            client_secret="client-secret",
+            refresh_token="refresh-token",
+            token_uri="https://oauth2.googleapis.com/token",
+            is_active=True,
+        )
+        group = MailRecipientGroup.objects.create(name="共有B", department=self.department, is_active=True)
+        group.members.set([self.member_one, inactive_member])
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member_one,
+            department=self.department,
+            entry_date=timezone.localdate(),
+            daily_target_count=1,
+            daily_target_amount=3000,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=1000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            is_student=True,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+            comment="テスト",
+        )
+
+        history = send_transaction_mail(
+            sender_member=self.member_one,
+            transaction=transaction,
+            recipient_group=group,
+            subject="件名",
+            body="本文",
+        )
+
+        self.assertEqual(history.status, MailSendHistory.STATUS_SENT)
+        self.assertIn("alice@example.com", history.sent_to_snapshot)
+        self.assertNotIn("inactive@example.com", history.sent_to_snapshot)
+        self.assertEqual(mocked_send.call_args.kwargs["cc_recipients"], ["alice@example.com"])
 
     def test_record_transaction_mail_failure_saves_failed_history(self):
         entry = MemberDailyMetricEntry.objects.create(
