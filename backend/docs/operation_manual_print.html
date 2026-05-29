@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>本番運用マニュアル</title>
+  <style>
+    :root {
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #dbe5f2;
+      --bg: #f8fbff;
+      --accent: #1f7ae0;
+      --accent-soft: #eaf3ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+      line-height: 1.65;
+      background: #fff;
+    }
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 28px 56px;
+    }
+    h1, h2, h3 { line-height: 1.3; margin: 0 0 12px; }
+    h1 {
+      font-size: 30px;
+      margin-bottom: 8px;
+    }
+    h2 {
+      font-size: 20px;
+      margin-top: 28px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--line);
+    }
+    h3 {
+      font-size: 16px;
+      margin-top: 18px;
+    }
+    p {
+      margin: 0 0 12px;
+    }
+    ul, ol {
+      margin: 0 0 14px 22px;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    .lead {
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+    .box {
+      margin: 14px 0 18px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--bg);
+    }
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    code {
+      padding: 1px 6px;
+      border-radius: 6px;
+      background: #eff4fb;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+    }
+    @media print {
+      .page { padding: 18mm 14mm; }
+      h2 { break-after: avoid; }
+      .box { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="eyebrow">Report App / 実績管理 / Metrics V2</div>
+    <h1>本番運用マニュアル</h1>
+    <p class="lead">2026年6月時点の現行運用を前提にした、日次運用と本番投入のための実務マニュアルです。</p>
+
+    <h2>1. 使う画面</h2>
+    <div class="two-col">
+      <section class="box">
+        <h3>実績管理アプリ</h3>
+        <ul>
+          <li>ログイン: <code>/performance/login/</code></li>
+          <li>日目標入力</li>
+          <li>決済入力</li>
+          <li>実績ダッシュボード確認</li>
+          <li>過去実績確認</li>
+        </ul>
+      </section>
+      <section class="box">
+        <h3>Metrics V2 / Report App</h3>
+        <ul>
+          <li>Metrics V2: 月 / 路程 / 期間での分析</li>
+          <li>ランキング / 属性分析</li>
+          <li>Report App: 全体報告の作成 / 修正</li>
+        </ul>
+      </section>
+    </div>
+
+    <h2>2. メンバーの日次運用</h2>
+    <div class="box">
+      <ol>
+        <li>実績管理アプリにログイン</li>
+        <li>個人の日目標を入力</li>
+        <li>決済を登録</li>
+        <li>必要に応じて獲得メールを送信</li>
+        <li>活動終了を実行</li>
+        <li>実績管理 / Metrics V2 / Report App への反映を確認</li>
+      </ol>
+    </div>
+    <div class="two-col">
+      <section class="box">
+        <h3>UN</h3>
+        <ul>
+          <li>通常の件数 / 金額ベースで登録</li>
+          <li>UN 用フォームが表示される</li>
+        </ul>
+      </section>
+      <section class="box">
+        <h3>WV</h3>
+        <ul>
+          <li><code>CS</code> / <code>難民</code> / <code>CS+難民</code> で登録</li>
+          <li>CS は 1口 4,500円</li>
+          <li>難民支援は金額変動</li>
+          <li>件数は <code>CS件数</code> と <code>難民件数</code> を分けて扱う</li>
+        </ul>
+      </section>
+    </div>
+
+    <h2>3. 管理者の日次運用</h2>
+    <div class="box">
+      <ol>
+        <li>全体実績を確認</li>
+        <li>本日の活動状況を確認</li>
+        <li>有効メンバー一覧から個別状況を確認</li>
+        <li>必要なら補正実績を入力</li>
+        <li>Metrics V2 で分析</li>
+        <li>Report App で全体報告を確認</li>
+        <li>日報メールテンプレートを確認</li>
+      </ol>
+    </div>
+    <div class="box">
+      <h3>補正実績の扱い</h3>
+      <ul>
+        <li>補正実績は別枠で保持する</li>
+        <li>最終的な累計実績には加算される</li>
+        <li>個人実績にも加算される</li>
+        <li>一覧・履歴では通常実績と分けて確認する</li>
+      </ul>
+    </div>
+
+    <h2>4. メール設定</h2>
+    <div class="box">
+      <p>設定場所: 管理者ページ → <strong>メール</strong></p>
+      <ul>
+        <li>Gmail 連携設定: 送信元メールアドレス / Client ID / Client Secret / Refresh Token</li>
+        <li>決済報告用メールグループ設定: UN 用 / WV 用</li>
+        <li>送信時は <code>To = 自分</code>, <code>Cc = メールグループ</code></li>
+        <li>異常時は <code>送信失敗</code> バッジと error message を確認して再送</li>
+      </ul>
+    </div>
+
+    <h2>5. 6月1日の本番投入手順</h2>
+    <div class="box">
+      <h3>デプロイ前確認</h3>
+      <ul>
+        <li>Billing が有効</li>
+        <li>GitHub Actions の deploy workflow が有効</li>
+        <li>Cloud Run の Secret / env が正しい</li>
+        <li>Gmail 連携設定が保存済み</li>
+        <li>UN / WV のメールグループ設定が保存済み</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>本番投入直後の確認</h3>
+      <ol>
+        <li>実績管理ログイン</li>
+        <li>UN の目標入力 / 決済登録</li>
+        <li>WV の目標入力 / 決済登録</li>
+        <li>Gmail 実送信</li>
+        <li>活動終了</li>
+        <li>実績管理 / Metrics V2 / Report App への反映確認</li>
+        <li>日報メールテンプレート確認</li>
+      </ol>
+    </div>
+
+    <h2>6. トラブル時の切り分け</h2>
+    <div class="two-col">
+      <section class="box">
+        <h3>画面が 500</h3>
+        <ol>
+          <li>Billing</li>
+          <li>Cloud Run revision log</li>
+          <li>migrate job 成功有無</li>
+          <li>Secret / env</li>
+        </ol>
+      </section>
+      <section class="box">
+        <h3>メールが送れない</h3>
+        <ol>
+          <li>Gmail 連携設定</li>
+          <li>メールグループ設定</li>
+          <li><code>送信失敗</code> バッジ</li>
+          <li>error message</li>
+        </ol>
+      </section>
+    </div>
+
+    <h2>7. PDF 化の方法</h2>
+    <div class="box">
+      <ol>
+        <li>この HTML をブラウザで開く</li>
+        <li>印刷を開く</li>
+        <li>出力先を <strong>PDF に保存</strong> にする</li>
+        <li>背景グラフィックは ON 推奨</li>
+      </ol>
+      <p class="small">ファイル: <code>backend/docs/operation_manual_print.html</code></p>
+    </div>
+  </main>
+</body>
+</html>
