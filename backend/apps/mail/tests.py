@@ -10,7 +10,13 @@ from apps.common.test_helpers import AppTestMixin
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction
 
 from .models import MailDepartmentRouting, MailIntegrationSetting, MailRecipientGroup, MailSendHistory
-from .services import MailSendError, record_transaction_mail_failure, send_transaction_mail, send_transaction_mail_mock
+from .services import (
+    MailSendError,
+    record_transaction_mail_failure,
+    send_member_direct_mail,
+    send_transaction_mail,
+    send_transaction_mail_mock,
+)
 
 
 User = get_user_model()
@@ -410,6 +416,31 @@ class MailManagementTests(AppTestMixin, TestCase):
         self.assertIn("alice@example.com", history.sent_to_snapshot)
         self.assertNotIn("inactive@example.com", history.sent_to_snapshot)
         self.assertEqual(mocked_send.call_args.kwargs["cc_recipients"], ["alice@example.com"])
+
+    @patch("apps.mail.services._send_via_gmail", return_value="gmail-reminder-1")
+    def test_send_member_direct_mail_creates_sent_history(self, mocked_send):
+        MailIntegrationSetting.objects.create(
+            sender_email="sender@example.com",
+            sender_name="Sender",
+            client_id="client-id",
+            client_secret="client-secret",
+            refresh_token="refresh-token",
+            token_uri="https://oauth2.googleapis.com/token",
+            is_active=True,
+        )
+
+        history = send_member_direct_mail(
+            target_member=self.member_one,
+            department=self.department,
+            sender_member=None,
+            subject="Reminder",
+            body="Please input today's activity.",
+        )
+
+        self.assertEqual(history.status, MailSendHistory.STATUS_SENT)
+        self.assertEqual(history.provider_message_id, "gmail-reminder-1")
+        self.assertIn("alice@example.com", history.sent_to_snapshot)
+        self.assertEqual(mocked_send.call_args.kwargs["to_recipients"], ["alice@example.com"])
 
     def test_record_transaction_mail_failure_saves_failed_history(self):
         entry = MemberDailyMetricEntry.objects.create(

@@ -260,6 +260,69 @@ def send_test_mail(
     return history
 
 
+def send_member_direct_mail(
+    *,
+    target_member,
+    subject: str,
+    body: str,
+    sender_member=None,
+    department=None,
+) -> MailSendHistory:
+    setting = _active_setting()
+    now = timezone.now()
+    recipient_snapshot = _members_recipient_snapshot([target_member])
+    history = MailSendHistory.objects.create(
+        integration_setting=setting,
+        department=department or target_member.default_department,
+        activity_date=timezone.localdate(),
+        sender_member=sender_member,
+        transaction=None,
+        recipient_group=None,
+        subject_snapshot=subject,
+        body_snapshot=body,
+        sent_to_snapshot=recipient_snapshot,
+        provider_message_id="",
+        error_code="",
+        error_message="",
+        status=MailSendHistory.STATUS_DRAFT,
+        is_test=False,
+        is_resend=False,
+        sent_at=None,
+        last_attempt_at=now,
+    )
+    try:
+        if not target_member.email:
+            raise MailSendError("メンバーのメールアドレスが未登録です。", code="missing_recipient")
+        if not _integration_is_ready(setting):
+            raise MailSendError("Gmail連携設定が未完了です。", code="missing_setting")
+        provider_message_id = _send_via_gmail(
+            setting=setting,
+            to_recipients=[target_member.email],
+            cc_recipients=[],
+            subject=subject,
+            body=body,
+        )
+    except Exception as exc:
+        error_code, error_message = _extract_error_detail(exc)
+        history.status = MailSendHistory.STATUS_FAILED
+        history.error_code = error_code
+        history.error_message = error_message
+        history.provider_message_id = ""
+        history.sent_at = None
+        history.last_attempt_at = timezone.now()
+        history.save(update_fields=["status", "error_code", "error_message", "provider_message_id", "sent_at", "last_attempt_at"])
+        return history
+
+    history.status = MailSendHistory.STATUS_SENT
+    history.provider_message_id = provider_message_id
+    history.error_code = ""
+    history.error_message = ""
+    history.sent_at = timezone.now()
+    history.last_attempt_at = history.sent_at
+    history.save(update_fields=["status", "provider_message_id", "error_code", "error_message", "sent_at", "last_attempt_at"])
+    return history
+
+
 def send_transaction_mail_mock(
     *,
     sender_member,

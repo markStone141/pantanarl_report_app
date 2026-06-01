@@ -25,6 +25,8 @@ from apps.dairymetrics.models import (
     MemberPeriodMetricTarget,
     MetricAdjustment,
 )
+from apps.mail.models import MailSendHistory
+from apps.mail.services import send_member_direct_mail
 from apps.dairymetrics.services.activity_state import auto_close_stale_entries
 from apps.dairymetrics.services.final_actuals import (
     collect_department_final_actual_totals,
@@ -328,8 +330,11 @@ def _build_activity_member_rows(entries):
     for entry in entries:
         rows.append(
             {
+                "entry_id": entry.id,
+                "member_id": entry.member_id,
                 "member_name": entry.member.name,
                 "department_code": entry.department.code,
+                "department_id": entry.department_id,
                 "updated_at": timezone.localtime(entry.updated_at).strftime("%H:%M"),
                 "amount_text": f"{int(entry.support_amount or 0):,}円",
                 "count_text": (
@@ -337,6 +342,7 @@ def _build_activity_member_rows(entries):
                     if entry.department.code == "WV"
                     else f"{int(entry.result_count or 0)}件"
                 ),
+                "has_email": bool(entry.member.email),
             }
         )
     return rows
@@ -636,6 +642,24 @@ def _resolve_default_dashboard_department():
         Department.objects.filter(is_active=True, code="UN").first()
         or Department.objects.filter(is_active=True).order_by("code", "id").first()
     )
+
+
+def _resolve_default_dashboard_department_for_request(request: HttpRequest):
+    if resolve_request_role(request) == ROLE_REPORT:
+        member = getattr(request.user, "member_profile", None)
+        if member is not None:
+            if member.default_department_id:
+                department = Department.objects.filter(pk=member.default_department_id, is_active=True).first()
+                if department is not None:
+                    return department
+            department = (
+                Department.objects.filter(member_links__member=member, is_active=True)
+                .order_by("code", "id")
+                .first()
+            )
+            if department is not None:
+                return department
+    return _resolve_default_dashboard_department()
 
 
 def _parse_selected_date(value):
@@ -1571,7 +1595,7 @@ def performance_index(request: HttpRequest) -> HttpResponse:
     if department_id:
         dashboard_department = Department.objects.filter(pk=department_id, is_active=True).first()
     if dashboard_department is None:
-        dashboard_department = _resolve_default_dashboard_department()
+        dashboard_department = _resolve_default_dashboard_department_for_request(request)
     dashboard_month = timezone.localdate().replace(day=1)
     dashboard_period = _resolve_current_period(timezone.localdate())
     dashboard_start = request.GET.get("dashboard_start") or ""
@@ -1601,6 +1625,7 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         "dashboard_scope": "month",
         "dashboard_start": dashboard_start,
         "dashboard_end": dashboard_end,
+        "status_message": request.GET.get("status") or "",
     }
     return render(request, "performance/index.html", context)
 
@@ -1616,7 +1641,7 @@ def performance_history(request: HttpRequest) -> HttpResponse:
     if department_id:
         dashboard_department = Department.objects.filter(pk=department_id, is_active=True).first()
     if dashboard_department is None:
-        dashboard_department = _resolve_default_dashboard_department()
+        dashboard_department = _resolve_default_dashboard_department_for_request(request)
     dashboard_month = _parse_selected_month(request.GET.get("dashboard_month"), default=today)
     dashboard_period = None
     dashboard_period_id = request.GET.get("dashboard_period")
@@ -1654,6 +1679,38 @@ def performance_history(request: HttpRequest) -> HttpResponse:
         "history_snapshot": history_snapshot,
     }
     return render(request, "performance/history.html", context)
+
+
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
+def performance_send_activity_reminder(request: HttpRequest, entry_id: int) -> HttpResponse:
+    if request.method != "POST":
+        raise Http404
+    entry = get_object_or_404(
+        MemberDailyMetricEntry.objects.select_related("member", "department"),
+        pk=entry_id,
+        activity_closed=False,
+    )
+    sender_member = getattr(request.user, "member_profile", None)
+    target_member = entry.member
+    history = send_member_direct_mail(
+        target_member=target_member,
+        sender_member=sender_member,
+        department=entry.department,
+        subject=f"【リマインド】{entry.entry_date:%Y/%m/%d} の活動入力をお願いします",
+        body=(
+            f"{target_member.name}さん\n\n"
+            f"{entry.entry_date:%Y/%m/%d} の活動入力がまだ完了していません。\n"
+            "実績管理アプリから、当日の活動終了入力と実績確認をお願いします。"
+        ),
+    )
+    status = (
+        f"{target_member.name}さんへリマインドを送信しました。"
+        if history.status == MailSendHistory.STATUS_SENT
+        else f"{target_member.name}さんへのリマインド送信に失敗しました。"
+    )
+    next_url = request.POST.get("next") or reverse("performance_index")
+    separator = "&" if "?" in next_url else "?"
+    return redirect(f"{_performance_next_url(next_url, fallback=reverse('performance_index'))}{separator}{urlencode({'status': status})}")
 
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)

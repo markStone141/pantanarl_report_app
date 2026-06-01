@@ -195,6 +195,9 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertIn(f'name="department_code" value="{wv_department.code}"', payload["department_target_html"])
         self.assertIn('name="daily_target_amount"', payload["department_target_html"])
         self.assertIn('value="9000"', payload["department_target_html"])
+        self.assertIn('>15,000円<', payload["department_target_html"])
+        self.assertIn('>30,000円<', payload["department_target_html"])
+        self.assertNotIn('>10,000円<', payload["department_target_html"])
 
     def test_entry_v2_transaction_demo_defaults_to_existing_entry_department_for_day(self):
         wv_department = self.create_department("WV")

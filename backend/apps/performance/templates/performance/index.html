@@ -5,6 +5,9 @@
 
 {% block content %}
 <div class="container">
+  {% if status_message %}
+  <div class="note">{{ status_message }}</div>
+  {% endif %}
   <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
     <div>
       <strong>実績管理</strong>
@@ -72,6 +75,13 @@
             </div>
             <div class="muted">{{ row.updated_at }} 更新</div>
             <div class="mt-8">{{ row.count_text }} / {{ row.amount_text }}</div>
+            <div class="mt-8">
+              <form method="post" action="{% url 'performance_send_activity_reminder' row.entry_id %}" class="inline-form">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button type="submit" class="btn-inline" {% if not row.has_email %}disabled{% endif %}>入力リマインド</button>
+              </form>
+            </div>
           </div>
           {% endfor %}
         </div>

@@ -1,5 +1,6 @@
 import json
 from datetime import date, timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -16,6 +17,7 @@ from apps.dairymetrics.models import (
     MemberPeriodMetricTarget,
     MetricAdjustment,
 )
+from apps.mail.models import MailSendHistory
 from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 
 
@@ -257,6 +259,53 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
             f'<option value="{other_department.id}" selected>WV</option>',
             html=True,
         )
+
+    def test_performance_history_defaults_dashboard_department_to_member_default_for_report_role(self):
+        self.client.logout()
+        member_user, member_profile = self.create_member_user(
+            username="perf-history-member",
+            name="History Member",
+            department=self.department,
+            default_department=self.department,
+        )
+        other_department = self.create_department("WV")
+        MemberDepartment.objects.create(member=member_profile, department=other_department)
+        self.client.force_login(member_user)
+
+        response = self.client.get(reverse("performance_history"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["dashboard_department"].id, self.department.id)
+
+    @patch("apps.performance.views.send_member_direct_mail")
+    def test_performance_index_can_send_activity_reminder(self, mocked_send_member_direct_mail):
+        reminder_member = self.create_member(
+            name="Reminder Target",
+            department=self.department,
+            email="reminder@example.com",
+        )
+        entry = MemberDailyMetricEntry.objects.create(
+            member=reminder_member,
+            department=self.department,
+            entry_date=timezone.localdate(),
+            activity_closed=False,
+            support_amount=0,
+            result_count=0,
+        )
+        mocked_send_member_direct_mail.return_value = MailSendHistory(status=MailSendHistory.STATUS_SENT)
+
+        response = self.client.post(
+            reverse("performance_send_activity_reminder", args=[entry.id]),
+            {"next": reverse("performance_index")},
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('performance_index')}?status=Reminder+Target%E3%81%95%E3%82%93%E3%81%B8%E3%83%AA%E3%83%9E%E3%82%A4%E3%83%B3%E3%83%89%E3%82%92%E9%80%81%E4%BF%A1%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%E3%80%82",
+            fetch_redirect_response=False,
+        )
+        mocked_send_member_direct_mail.assert_called_once()
+        self.assertEqual(mocked_send_member_direct_mail.call_args.kwargs["target_member"], reminder_member)
 
     def test_performance_index_auto_closes_stale_open_entries(self):
         stale_entry = MemberDailyMetricEntry.objects.create(

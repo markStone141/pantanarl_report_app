@@ -78,6 +78,7 @@ ENTRY_V2_NATIONALITY_BANDS = [
 ]
 ENTRY_V2_TARGET_COUNT_OPTIONS = [1, 2, 3, 4, 5]
 ENTRY_V2_TARGET_AMOUNT_OPTIONS = list(range(1000, 10001, 500))
+ENTRY_V2_DEPARTMENT_TARGET_AMOUNT_OPTIONS = list(range(15000, 30001, 1000))
 ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS = list(range(1000, 5001, 500))
 ENTRY_V2_WV_REFUGEE_AMOUNT_OPTIONS = list(range(500, 4001, 500))
 
@@ -925,6 +926,7 @@ def entry_v2_personal_setup_fields(request: HttpRequest) -> HttpResponse:
         nationality_bands=ENTRY_V2_NATIONALITY_BANDS,
         target_count_options=ENTRY_V2_TARGET_COUNT_OPTIONS,
         target_amount_options=ENTRY_V2_TARGET_AMOUNT_OPTIONS,
+        department_target_amount_options=ENTRY_V2_DEPARTMENT_TARGET_AMOUNT_OPTIONS,
         transaction_amount_options=ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS,
         wv_refugee_amount_options=ENTRY_V2_WV_REFUGEE_AMOUNT_OPTIONS,
     )
@@ -1180,6 +1182,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                         nationality_bands=ENTRY_V2_NATIONALITY_BANDS,
                         target_count_options=ENTRY_V2_TARGET_COUNT_OPTIONS,
                         target_amount_options=ENTRY_V2_TARGET_AMOUNT_OPTIONS,
+                        department_target_amount_options=ENTRY_V2_DEPARTMENT_TARGET_AMOUNT_OPTIONS,
                         transaction_amount_options=ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS,
                         wv_refugee_amount_options=ENTRY_V2_WV_REFUGEE_AMOUNT_OPTIONS,
                     )
@@ -1317,6 +1320,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
         nationality_bands=ENTRY_V2_NATIONALITY_BANDS,
         target_count_options=ENTRY_V2_TARGET_COUNT_OPTIONS,
         target_amount_options=ENTRY_V2_TARGET_AMOUNT_OPTIONS,
+        department_target_amount_options=ENTRY_V2_DEPARTMENT_TARGET_AMOUNT_OPTIONS,
         transaction_amount_options=ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS,
         wv_refugee_amount_options=ENTRY_V2_WV_REFUGEE_AMOUNT_OPTIONS,
     )

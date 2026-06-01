@@ -232,6 +232,7 @@ def build_entry_v2_transaction_demo_context(
     nationality_bands,
     target_count_options,
     target_amount_options,
+    department_target_amount_options,
     transaction_amount_options,
     wv_refugee_amount_options,
 ):
@@ -608,6 +609,7 @@ def build_entry_v2_transaction_demo_context(
         "available_mail_groups": available_mail_groups,
         "target_count_options": target_count_options,
         "target_amount_options": target_amount_options,
+        "department_target_amount_options": department_target_amount_options,
         "transaction_amount_options": transaction_amount_options,
         "wv_refugee_amount_options": wv_refugee_amount_options,
         "personal_target_count_value": personal_target_count_value,
