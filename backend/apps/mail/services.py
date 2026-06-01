@@ -140,6 +140,7 @@ def _send_via_gmail(
     cc_recipients: list[str] | None = None,
     subject: str,
     body: str,
+    sender_name_override: str = "",
 ) -> str:
     if not to_recipients and not cc_recipients:
         raise MailSendError("送信先メールアドレスがありません。", code="missing_recipient")
@@ -155,7 +156,7 @@ def _send_via_gmail(
     credentials = _gmail_credentials(setting)
     raw_message = _build_raw_message(
         sender_email=setting.sender_email,
-        sender_name=setting.sender_name,
+        sender_name=sender_name_override or setting.sender_name,
         to_recipients=to_recipients,
         cc_recipients=cc_recipients,
         subject=subject,
@@ -267,6 +268,7 @@ def send_member_direct_mail(
     body: str,
     sender_member=None,
     department=None,
+    sender_name_override: str = "",
 ) -> MailSendHistory:
     setting = _active_setting()
     now = timezone.now()
@@ -301,6 +303,7 @@ def send_member_direct_mail(
             cc_recipients=[],
             subject=subject,
             body=body,
+            sender_name_override=sender_name_override,
         )
     except Exception as exc:
         error_code, error_message = _extract_error_detail(exc)

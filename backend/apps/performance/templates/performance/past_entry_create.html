@@ -25,7 +25,7 @@
 
   <section class="card mt-16">
     <h3>入力対象</h3>
-    <form method="get" class="grid performance-dashboard-filter-grid mt-12">
+    <form method="get" class="grid performance-dashboard-filter-grid mt-12" id="performance-past-entry-selection-form">
       <div>{{ selection_form.department }}</div>
       <div>{{ selection_form.member }}</div>
       <div>{{ selection_form.entry_date }}</div>
@@ -165,6 +165,22 @@
   </section>
   {% endif %}
 </div>
+
+<script>
+  (function () {
+    const form = document.getElementById("performance-past-entry-selection-form");
+    if (!form) return;
+    const departmentSelect = form.querySelector('select[name="department"]');
+    const memberSelect = form.querySelector('select[name="member"]');
+    if (!departmentSelect) return;
+    departmentSelect.addEventListener("change", function () {
+      if (memberSelect) {
+        memberSelect.value = "";
+      }
+      form.requestSubmit();
+    });
+  })();
+</script>
 
 {% if selected_department and selected_member and selected_entry_date and not existing_entry %}
 {{ wv_cs_unit_amount|json_script:"past-entry-wv-cs-unit-amount" }}

@@ -306,6 +306,17 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         )
         mocked_send_member_direct_mail.assert_called_once()
         self.assertEqual(mocked_send_member_direct_mail.call_args.kwargs["target_member"], reminder_member)
+        self.assertEqual(mocked_send_member_direct_mail.call_args.kwargs["sender_name_override"], "おつかれさまです")
+        self.assertIn("活動お疲れ様でした。活動終了が確認できていませんのでお手数ですが入力をよろしくお願いします。", mocked_send_member_direct_mail.call_args.kwargs["body"])
+
+    def test_performance_past_entry_create_get_with_department_shows_member_options(self):
+        response = self.client.get(
+            reverse("performance_past_entry_create"),
+            {"department": self.department.id, "entry_date": "2026-06-01"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'<option value="{self.member.id}">{self.member.name}</option>', html=True)
 
     def test_performance_index_auto_closes_stale_open_entries(self):
         stale_entry = MemberDailyMetricEntry.objects.create(

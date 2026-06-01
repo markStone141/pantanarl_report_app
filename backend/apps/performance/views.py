@@ -1696,11 +1696,12 @@ def performance_send_activity_reminder(request: HttpRequest, entry_id: int) -> H
         target_member=target_member,
         sender_member=sender_member,
         department=entry.department,
+        sender_name_override="おつかれさまです",
         subject=f"【リマインド】{entry.entry_date:%Y/%m/%d} の活動入力をお願いします",
         body=(
             f"{target_member.name}さん\n\n"
-            f"{entry.entry_date:%Y/%m/%d} の活動入力がまだ完了していません。\n"
-            "実績管理アプリから、当日の活動終了入力と実績確認をお願いします。"
+            "活動お疲れ様でした。活動終了が確認できていませんので"
+            "お手数ですが入力をよろしくお願いします。"
         ),
     )
     status = (

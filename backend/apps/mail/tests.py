@@ -441,6 +441,7 @@ class MailManagementTests(AppTestMixin, TestCase):
         self.assertEqual(history.provider_message_id, "gmail-reminder-1")
         self.assertIn("alice@example.com", history.sent_to_snapshot)
         self.assertEqual(mocked_send.call_args.kwargs["to_recipients"], ["alice@example.com"])
+        self.assertEqual(mocked_send.call_args.kwargs["sender_name_override"], "")
 
     def test_record_transaction_mail_failure_saves_failed_history(self):
         entry = MemberDailyMetricEntry.objects.create(
