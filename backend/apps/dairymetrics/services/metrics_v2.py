@@ -497,8 +497,37 @@ def _member_metric_row(*, member, department, scope: MetricsV2Scope):
     }
 
 
+def _ranking_members(*, department, scope: MetricsV2Scope):
+    active_member_ids = set(
+        Member.objects.active()
+        .filter(department_links__department=department)
+        .distinct()
+        .values_list("id", flat=True)
+    )
+    scoped_member_ids = set(
+        MemberDailyMetricEntry.objects.filter(
+            department=department,
+            entry_date__range=(scope.start_date, scope.end_date),
+        ).values_list("member_id", flat=True)
+    )
+    scoped_member_ids.update(
+        MetricAdjustment.objects.filter(
+            department=department,
+            target_date__range=(scope.start_date, scope.end_date),
+        ).values_list("member_id", flat=True)
+    )
+    member_ids = active_member_ids | scoped_member_ids
+    if not member_ids:
+        return []
+    return list(
+        Member.objects.filter(id__in=member_ids, department_links__department=department)
+        .distinct()
+        .order_by("name")
+    )
+
+
 def _build_ranking_payload(*, department, scope: MetricsV2Scope):
-    members = list(Member.objects.active().filter(department_links__department=department).distinct().order_by("name"))
+    members = _ranking_members(department=department, scope=scope)
     rows = [_member_metric_row(member=member, department=department, scope=scope) for member in members]
     ranking_options = [
         option

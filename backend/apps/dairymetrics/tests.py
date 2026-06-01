@@ -4221,3 +4221,42 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "CS限定の年代別決済比率")
         self.assertContains(response, "CS限定の男女比")
         self.assertContains(response, "CS限定の国籍比")
+
+    def test_metrics_v2_demo_ranking_includes_inactive_member_with_scope_records(self):
+        inactive_user, inactive_member = self.create_member_user(
+            username="inactive_metrics_member",
+            password="pass123",
+            name="Inactive Metrics",
+            department=self.department,
+        )
+        inactive_member.is_active = False
+        inactive_member.save(update_fields=["is_active"])
+        today = timezone.localdate()
+        inactive_entry = MemberDailyMetricEntry.objects.create(
+            member=inactive_member,
+            department=self.department,
+            entry_date=today,
+            result_count=2,
+            support_amount=2500,
+            approach_count=5,
+            communication_count=3,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=inactive_entry,
+            support_amount=2500,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷",
+            comment="inactive metrics",
+        )
+
+        self.client.force_login(self.admin)
+        response = self.client.get(
+            reverse("dairymetrics_metrics_v2_demo"),
+            {"department": self.department.code, "scope": "custom", "start_date": today.strftime("%Y-%m-%d"), "end_date": today.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        ranking_payload = response.context["metrics_v2_payload"]["ranking"]["metric_map"]["decision_count"]
+        self.assertIn("Inactive Metrics", ranking_payload["labels"])

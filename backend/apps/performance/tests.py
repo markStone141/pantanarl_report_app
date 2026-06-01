@@ -1081,6 +1081,33 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "さらに5件表示")
         self.assertContains(response, 'data-performance-history-date-links', html=False)
 
+    def test_performance_history_includes_inactive_member_with_scope_records(self):
+        today = timezone.localdate()
+        inactive_user, inactive_member = self.create_member_user(
+            username="inactive_history_member",
+            password="pass123",
+            name="Inactive History",
+            department=self.department,
+        )
+        inactive_member.is_active = False
+        inactive_member.save(update_fields=["is_active"])
+        MemberDailyMetricEntry.objects.create(
+            member=inactive_member,
+            department=self.department,
+            entry_date=today,
+            result_count=1,
+            support_amount=2000,
+            activity_closed=True,
+        )
+
+        response = self.client.get(
+            reverse("performance_history"),
+            {"dashboard_scope": "month", "dashboard_month": today.strftime("%Y-%m"), "department": self.department.id},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Inactive History")
+
     def test_performance_member_history_range_uses_date_input_filter(self):
         today = timezone.localdate()
         MemberDailyMetricEntry.objects.create(

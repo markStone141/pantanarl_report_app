@@ -589,6 +589,39 @@ def _resolve_member_card_department(*, member, selected_department=None):
     )
 
 
+def _members_for_history_scope(*, department, start_date, end_date):
+    active_member_ids = set(
+        Member.objects.active()
+        .filter(department_links__department=department, department_links__department__is_active=True)
+        .values_list("id", flat=True)
+    )
+    scoped_member_ids = set(
+        MemberDailyMetricEntry.objects.filter(
+            department=department,
+            entry_date__range=(start_date, end_date),
+        ).values_list("member_id", flat=True)
+    )
+    scoped_member_ids.update(
+        MetricAdjustment.objects.filter(
+            department=department,
+            target_date__range=(start_date, end_date),
+        ).values_list("member_id", flat=True)
+    )
+    member_ids = active_member_ids | scoped_member_ids
+    if not member_ids:
+        return []
+    return list(
+        Member.objects.filter(
+            id__in=member_ids,
+            department_links__department=department,
+            department_links__department__is_active=True,
+        )
+        .select_related("default_department")
+        .distinct()
+        .order_by("name", "id")
+    )
+
+
 def _resolve_default_dashboard_department():
     return (
         Department.objects.filter(is_active=True, code="UN").first()
@@ -973,12 +1006,10 @@ def _build_performance_history_snapshot(*, department, scope):
             )
         )
 
-    active_members = list(
-        Member.objects.active()
-        .filter(department_links__department=department, department_links__department__is_active=True)
-        .select_related("default_department")
-        .distinct()
-        .order_by("name", "id")
+    active_members = _members_for_history_scope(
+        department=department,
+        start_date=scope.start_date,
+        end_date=scope.end_date,
     )
 
     return {
