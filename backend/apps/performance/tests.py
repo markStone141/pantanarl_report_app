@@ -1,3 +1,4 @@
+import json
 from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
@@ -63,6 +64,138 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, entry.entry_date.strftime("%m/%d"))
         self.assertContains(response, "補正実績入力")
         self.assertContains(response, reverse("performance_adjustments"))
+
+    def test_performance_past_entry_create_renders_department_specific_transaction_inputs(self):
+        wv_department = self.create_department("WV")
+        wv_member = self.create_member(name="WV Member", department=wv_department)
+
+        un_response = self.client.get(
+            reverse("performance_past_entry_create"),
+            {"department": self.department.id, "member": self.member.id, "entry_date": "2026-06-01"},
+        )
+        self.assertEqual(un_response.status_code, 200)
+        self.assertContains(un_response, "決済金額")
+        self.assertNotContains(un_response, "CS口数")
+
+        wv_response = self.client.get(
+            reverse("performance_past_entry_create"),
+            {"department": wv_department.id, "member": wv_member.id, "entry_date": "2026-06-01"},
+        )
+        self.assertEqual(wv_response.status_code, 200)
+        self.assertContains(wv_response, "CS口数")
+        self.assertContains(wv_response, "難民支援金額")
+
+    def test_performance_past_entry_create_saves_un_entry_and_transactions(self):
+        response = self.client.post(
+            reverse("performance_past_entry_create"),
+            {
+                "department": self.department.id,
+                "member": self.member.id,
+                "entry_date": "2026-06-01",
+                "location_name": "渋谷駅前",
+                "approach_count": "8",
+                "communication_count": "3",
+                "transactions_payload": json.dumps(
+                    [
+                        {
+                            "support_amount": 3000,
+                            "wv_result_type": "",
+                            "wv_cs_count": 0,
+                            "wv_refugee_amount": 0,
+                            "age_band": MemberMetricTransaction.AGE_BAND_TWENTIES,
+                            "is_student": False,
+                            "gender": MemberMetricTransaction.GENDER_FEMALE,
+                            "nationality_type": MemberMetricTransaction.NATIONALITY_DOMESTIC,
+                            "comment": "過去UN",
+                        }
+                    ]
+                ),
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('performance_past_entry_create')}?department={self.department.id}&member={self.member.id}&entry_date=2026-06-01&saved=1",
+        )
+        entry = MemberDailyMetricEntry.objects.get(member=self.member, department=self.department, entry_date=date(2026, 6, 1))
+        self.assertTrue(entry.activity_closed)
+        self.assertEqual(entry.location_name, "渋谷駅前")
+        self.assertEqual(entry.approach_count, 8)
+        self.assertEqual(entry.communication_count, 3)
+        self.assertEqual(entry.result_count, 1)
+        self.assertEqual(entry.support_amount, 3000)
+        self.assertEqual(entry.transactions.count(), 1)
+        summary = DepartmentDailyMetricSummary.objects.get(department=self.department, entry_date=date(2026, 6, 1))
+        self.assertEqual(summary.approach_count, 8)
+        self.assertEqual(summary.communication_count, 3)
+        self.assertEqual(summary.result_count, 1)
+        self.assertEqual(summary.support_amount, 3000)
+
+    def test_performance_past_entry_create_saves_wv_entry_and_transactions(self):
+        wv_department = self.create_department("WV")
+        wv_member = self.create_member(name="WV Member", department=wv_department)
+
+        response = self.client.post(
+            reverse("performance_past_entry_create"),
+            {
+                "department": wv_department.id,
+                "member": wv_member.id,
+                "entry_date": "2026-06-01",
+                "location_name": "新宿駅前",
+                "approach_count": "10",
+                "communication_count": "4",
+                "transactions_payload": json.dumps(
+                    [
+                        {
+                            "support_amount": 6500,
+                            "wv_result_type": MemberMetricTransaction.WV_RESULT_BOTH,
+                            "wv_cs_count": 1,
+                            "wv_refugee_amount": 2000,
+                            "age_band": MemberMetricTransaction.AGE_BAND_THIRTIES,
+                            "is_student": False,
+                            "gender": MemberMetricTransaction.GENDER_MALE,
+                            "nationality_type": MemberMetricTransaction.NATIONALITY_DOMESTIC,
+                            "comment": "過去WV",
+                        }
+                    ]
+                ),
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('performance_past_entry_create')}?department={wv_department.id}&member={wv_member.id}&entry_date=2026-06-01&saved=1",
+        )
+        entry = MemberDailyMetricEntry.objects.get(member=wv_member, department=wv_department, entry_date=date(2026, 6, 1))
+        self.assertEqual(entry.result_count, 2)
+        self.assertEqual(entry.cs_count, 1)
+        self.assertEqual(entry.refugee_count, 1)
+        self.assertEqual(entry.support_amount, 6500)
+
+    def test_performance_past_entry_create_blocks_duplicate_entry_dates(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 6, 1),
+            result_count=1,
+            support_amount=1000,
+        )
+
+        response = self.client.post(
+            reverse("performance_past_entry_create"),
+            {
+                "department": self.department.id,
+                "member": self.member.id,
+                "entry_date": "2026-06-01",
+                "location_name": "渋谷駅前",
+                "approach_count": "8",
+                "communication_count": "3",
+                "transactions_payload": "[]",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "その日の実績はすでに登録されています。")
 
     def test_performance_member_dashboard_nav_includes_report_app(self):
         self.client.logout()

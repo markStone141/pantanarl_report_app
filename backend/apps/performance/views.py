@@ -48,6 +48,12 @@ from apps.performance.services.member_details import (
     build_member_dashboard_entry_rows,
     build_trend_date_links,
 )
+from apps.performance.services.past_entries import (
+    create_past_entry_with_transactions,
+    normalize_transaction_payloads,
+    parse_transactions_payload,
+    transaction_preview_rows,
+)
 from apps.performance.services.trends import (
     EMPTY_ADJUSTMENT_TOTALS,
     build_adjustment_totals_map,
@@ -63,6 +69,8 @@ from apps.targets.models import (
 from .forms import (
     PerformanceAdjustmentListFilterForm,
     PerformanceEntryFilterForm,
+    PerformancePastEntryCreateForm,
+    PerformancePastEntrySelectionForm,
     PerformanceMemberDailyMetricEntryForm,
     PerformanceMetricAdjustmentForm,
 )
@@ -121,6 +129,7 @@ def _performance_nav_items():
     return [
         ("performance_index", "実績管理ダッシュボード"),
         ("performance_history", "実績閲覧"),
+        ("performance_past_entry_create", "過去実績入力"),
         ("performance_adjustments", "補正実績入力"),
         ("dashboard_index", "総合管理者ページ"),
     ]
@@ -2359,6 +2368,101 @@ def performance_member_history_day_detail(request: HttpRequest) -> HttpResponse:
     if department is None:
         raise Http404
     return _render_member_history_day_detail_response(request=request, member=member, department=department, is_admin=False)
+
+
+@require_performance_roles(ROLE_ADMIN)
+def performance_past_entry_create(request: HttpRequest) -> HttpResponse:
+    selection_source = request.POST if request.method == "POST" else request.GET
+    selection_form = PerformancePastEntrySelectionForm(selection_source or None)
+    selected_department = None
+    selected_member = None
+    selected_entry_date = None
+    existing_entry = None
+    status_message = ""
+    create_form = PerformancePastEntryCreateForm(request.POST or None)
+    transactions_payload_value = request.POST.get("transactions_payload", "[]") if request.method == "POST" else "[]"
+    transaction_errors = []
+    transaction_preview = []
+    cleaned_transactions = []
+
+    if selection_form.is_valid():
+        selected_department = selection_form.cleaned_data["department"]
+        selected_member = selection_form.cleaned_data["member"]
+        selected_entry_date = selection_form.cleaned_data["entry_date"]
+        existing_entry = MemberDailyMetricEntry.objects.filter(
+            member=selected_member,
+            department=selected_department,
+            entry_date=selected_entry_date,
+        ).first()
+
+    transaction_form = DairymetricsV2TransactionForm(department=selected_department)
+
+    if request.method == "POST" and selection_form.is_valid() and create_form.is_valid():
+        try:
+            transaction_payload_rows = parse_transactions_payload(transactions_payload_value)
+        except ValueError as exc:
+            transaction_errors = [str(exc)]
+            transaction_payload_rows = []
+        else:
+            transaction_preview = transaction_preview_rows(
+                department=selected_department,
+                payload_rows=transaction_payload_rows,
+            )
+            cleaned_transactions, transaction_errors = normalize_transaction_payloads(
+                department=selected_department,
+                payload_rows=transaction_payload_rows,
+            )
+        if existing_entry is not None:
+            status_message = "その日の実績はすでに登録されています。既存データを修正してください。"
+        elif not transaction_errors:
+            try:
+                create_past_entry_with_transactions(
+                    member=selected_member,
+                    department=selected_department,
+                    entry_date=selected_entry_date,
+                    location_name=create_form.cleaned_data["location_name"],
+                    approach_count=create_form.cleaned_data["approach_count"],
+                    communication_count=create_form.cleaned_data["communication_count"],
+                    transactions=cleaned_transactions,
+                )
+            except ValueError as exc:
+                status_message = str(exc)
+            else:
+                query = urlencode(
+                    {
+                        "department": selected_department.id,
+                        "member": selected_member.id,
+                        "entry_date": selected_entry_date.strftime("%Y-%m-%d"),
+                        "saved": 1,
+                    }
+                )
+                return redirect(f"{reverse('performance_past_entry_create')}?{query}")
+        elif not status_message:
+            status_message = "決済明細を確認してください。"
+    elif request.GET.get("saved") == "1":
+        status_message = "過去実績を登録しました。"
+
+    context = {
+        "nav_items": _performance_nav_items(),
+        "selection_form": selection_form,
+        "create_form": create_form,
+        "transaction_form": transaction_form,
+        "selected_department": selected_department,
+        "selected_member": selected_member,
+        "selected_entry_date": selected_entry_date,
+        "existing_entry": existing_entry,
+        "status_message": status_message,
+        "transactions_payload_value": transactions_payload_value,
+        "transaction_preview": transaction_preview,
+        "transaction_errors": transaction_errors,
+        "is_wv_department": bool(selected_department and selected_department.code == "WV"),
+        "age_band_choices": MemberMetricTransaction.AGE_BAND_CHOICES,
+        "gender_choices": MemberMetricTransaction.GENDER_CHOICES,
+        "nationality_choices": MemberMetricTransaction.NATIONALITY_CHOICES,
+        "wv_result_type_choices": MemberMetricTransaction.WV_RESULT_TYPE_CHOICES,
+        "wv_cs_unit_amount": MemberMetricTransaction.WV_CS_UNIT_AMOUNT,
+    }
+    return render(request, "performance/past_entry_create.html", context)
 
 
 @require_performance_roles(ROLE_ADMIN)
