@@ -903,6 +903,39 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
         self.assertNotIn("9999", row["month_target"])
 
+    def test_dashboard_ignores_finished_period_even_if_dates_overlap_today(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        period = Period.objects.create(
+            month=current_month,
+            name=f"{today.year}年度{today.month}月 第1次路程",
+            status="finished",
+            start_date=today - timedelta(days=1),
+            end_date=today + timedelta(days=1),
+        )
+        metric = TargetMetric.objects.create(
+            department=self.depts["UN"],
+            code="amount",
+            label="Amount",
+            unit="yen",
+            display_order=1,
+            is_active=True,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=period,
+            department=self.depts["UN"],
+            metric=metric,
+            value=9999,
+        )
+
+        response = self.client.get(reverse("dashboard_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["target_period_summary"], "-")
+        self.assertEqual(response.context["target_period_status"], "-")
+        row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
+        self.assertNotIn("9999", row["period_target"])
+
     def test_dashboard_reflects_existing_actuals_when_target_created_later(self):
         today = timezone.localdate()
         month = today.replace(day=1)

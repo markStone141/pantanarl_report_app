@@ -4,8 +4,8 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from apps.accounts.models import Department
+from apps.common.target_periods import current_active_period
 from apps.mail.models import MailRecipientGroup, MailSendHistory
-from apps.targets.models import Period
 
 from apps.dairymetrics.forms import (
     DairymetricsV2CloseoutForm,
@@ -257,11 +257,7 @@ def build_entry_v2_transaction_demo_context(
     department_day_total = int(getattr(department_summary, "support_amount", 0) or 0)
     department_day_target = int(getattr(department_summary, "daily_target_amount", 0) or 0)
 
-    active_period = (
-        Period.objects.filter(start_date__lte=entry_date, end_date__gte=entry_date)
-        .order_by("-start_date", "-id")
-        .first()
-    )
+    active_period = current_active_period(target_date=entry_date)
     period_target_amount = 0
     period_total_amount = 0
     period_label = "保存済み路程がありません"

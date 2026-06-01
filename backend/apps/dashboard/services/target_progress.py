@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from datetime import timedelta
 
+from apps.common.target_periods import current_active_period
 from apps.common.report_metrics import (
     collect_actual_totals,
     collect_adjustment_totals,
     metric_detail_rows,
     period_status as calc_period_status,
 )
-from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
+from apps.targets.models import MonthTargetMetricValue, PeriodTargetMetricValue, TargetMetric
 
 
 def collect_metrics_by_code(*, target_codes):
@@ -46,11 +47,7 @@ def build_target_scope_snapshot(*, target_date, target_codes, metrics_by_code):
         ).order_by("department__code", "metric__display_order", "id"),
     )
 
-    current_period = (
-        Period.objects.filter(start_date__lte=target_date, end_date__gte=target_date)
-        .order_by("-month", "start_date", "id")
-        .first()
-    )
+    current_period = current_active_period(target_date=target_date)
 
     if current_period:
         period_target_values_by_code = _collect_target_values_by_code(

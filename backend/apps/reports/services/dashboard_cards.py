@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Department
 from apps.common.dashboard_snapshot import build_member_rows, build_submission_snapshot
+from apps.common.target_periods import current_active_period
 from apps.common.report_metrics import (
     SPLIT_COUNT_CODES,
     collect_actual_totals,
@@ -11,7 +12,7 @@ from apps.common.report_metrics import (
     period_status as calc_period_status,
 )
 from apps.dairymetrics.models import MemberDailyMetricEntry
-from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
+from apps.targets.models import MonthTargetMetricValue, PeriodTargetMetricValue, TargetMetric
 
 
 def format_amount_text(value):
@@ -58,11 +59,7 @@ def build_report_dashboard_cards_context():
     else:
         month_status = "finished"
 
-    current_period = (
-        Period.objects.filter(start_date__lte=today, end_date__gte=today)
-        .order_by("-month", "start_date", "id")
-        .first()
-    )
+    current_period = current_active_period(target_date=today)
 
     if current_period:
         period_rows = list(

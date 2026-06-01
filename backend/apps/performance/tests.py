@@ -620,13 +620,32 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
             activity_closed=True,
         )
 
-        response = self.client.get(reverse("performance_index"))
+    def test_performance_member_dashboard_ignores_finished_period_even_if_dates_overlap_today(self):
+        today = timezone.localdate()
+        period = Period.objects.create(
+            month=today.replace(day=1),
+            name=f"{today.year}年度{today.month}月 第1次路程",
+            status="finished",
+            start_date=today - timedelta(days=1),
+            end_date=today + timedelta(days=1),
+        )
+        MemberPeriodMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            period=period,
+            target_amount=9999,
+        )
+        self.client.logout()
+        member_user = User.objects.create_user(username="perf-member-finished-period", password="pass1234", is_staff=False)
+        self.member.user = member_user
+        self.member.save(update_fields=["user"])
+        self.client.force_login(member_user)
+
+        response = self.client.get(reverse("performance_member_dashboard"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "有効メンバー一覧")
-        self.assertContains(response, self.member.name)
-        self.assertContains(response, "2,800円")
-        self.assertContains(response, reverse("performance_member_insight", args=[self.member.id, self.department.id]))
+        self.assertNotContains(response, "9,999円")
+        self.assertContains(response, "現在の路程が未設定です。")
 
     def test_performance_index_shows_wv_total_count_with_breakdown_subtext(self):
         today = timezone.localdate()

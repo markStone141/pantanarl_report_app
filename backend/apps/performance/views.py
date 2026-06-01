@@ -15,6 +15,7 @@ from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, resolve_request_role
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.common.target_periods import current_active_period
 from apps.dairymetrics.forms import DairyMetricsLoginForm, DairymetricsV2TransactionForm, MemberScopeTargetForm
 from apps.dairymetrics.models import (
     DepartmentDailyMetricSummary,
@@ -306,12 +307,7 @@ def _field_amount_text(entry):
 
 
 def _resolve_current_period(today):
-    return (
-        Period.objects.filter(start_date__lte=today, end_date__gte=today)
-        .order_by("-month", "start_date", "id")
-        .first()
-        or Period.objects.order_by("-end_date", "-start_date", "-id").first()
-    )
+    return current_active_period(target_date=today)
 
 
 def _build_activity_member_rows(entries):

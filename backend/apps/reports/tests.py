@@ -705,6 +705,38 @@ class ReportTargetMonthSelectionTests(TestCase):
             f"{current_month.year}/{current_month.month}",
         )
 
+    def test_report_index_ignores_finished_period_even_if_dates_overlap_today(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        un = Department.objects.create(name="UN", code="UN")
+        period = Period.objects.create(
+            month=current_month,
+            name=f"{today.year}年度{today.month}月 第1次路程",
+            status="finished",
+            start_date=today - timedelta(days=1),
+            end_date=today + timedelta(days=1),
+        )
+        metric = TargetMetric.objects.create(
+            department=un,
+            code="amount",
+            label="Amount",
+            unit="yen",
+            display_order=1,
+            is_active=True,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=period,
+            department=un,
+            metric=metric,
+            value=7777,
+        )
+
+        response = self.client.get(reverse("report_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["target_period_summary"], "-")
+        self.assertEqual(response.context["target_period_status"], "-")
+
     def test_report_index_month_and_period_actuals_include_adjustments(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)
