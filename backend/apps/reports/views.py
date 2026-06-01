@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.db.models import Sum
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -87,9 +89,9 @@ def report_history(request: HttpRequest) -> HttpResponse:
         .values("code", "name")
     )
     for report in reports:
-        report.followup_count_text = _format_amount_text(report.followup_count)
+        report.followup_count_text = format_amount_text(report.followup_count)
         for line in report.lines.all():
-            line.amount_text = _format_amount_text(line.amount)
+            line.amount_text = format_amount_text(line.amount)
     return render(
         request,
         "reports/report_history.html",
@@ -512,9 +514,9 @@ def _render_report_form(
         .order_by("-created_at")[:30]
     )
     for report in recent_reports:
-        report.followup_count_text = _format_amount_text(report.followup_count)
+        report.followup_count_text = format_amount_text(report.followup_count)
         for line in report.lines.all():
-            line.amount_text = _format_amount_text(line.amount)
+            line.amount_text = format_amount_text(line.amount)
     if form.is_bound:
         selected_reporter_id = str(form.data.get("reporter", "") or "")
         memo_value = form.data.get("memo", "") or ""
