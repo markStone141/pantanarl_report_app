@@ -2498,7 +2498,6 @@ def performance_past_entry_create(request: HttpRequest) -> HttpResponse:
                     {
                         "department": selected_department.id,
                         "member": selected_member.id,
-                        "entry_date": selected_entry_date.strftime("%Y-%m-%d"),
                         "saved": 1,
                     }
                 )

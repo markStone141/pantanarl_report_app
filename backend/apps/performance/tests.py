@@ -117,7 +117,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
 
         self.assertRedirects(
             response,
-            f"{reverse('performance_past_entry_create')}?department={self.department.id}&member={self.member.id}&entry_date=2026-06-01&saved=1",
+            f"{reverse('performance_past_entry_create')}?department={self.department.id}&member={self.member.id}&saved=1",
         )
         entry = MemberDailyMetricEntry.objects.get(member=self.member, department=self.department, entry_date=date(2026, 6, 1))
         self.assertTrue(entry.activity_closed)
@@ -166,7 +166,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
 
         self.assertRedirects(
             response,
-            f"{reverse('performance_past_entry_create')}?department={wv_department.id}&member={wv_member.id}&entry_date=2026-06-01&saved=1",
+            f"{reverse('performance_past_entry_create')}?department={wv_department.id}&member={wv_member.id}&saved=1",
         )
         entry = MemberDailyMetricEntry.objects.get(member=wv_member, department=wv_department, entry_date=date(2026, 6, 1))
         self.assertEqual(entry.result_count, 2)

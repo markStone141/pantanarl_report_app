@@ -133,10 +133,6 @@
               <input id="past-transaction-student" type="checkbox">
             </div>
           </div>
-          <div class="performance-past-entry-full">
-            <label for="past-transaction-comment">コメント</label>
-            <textarea id="past-transaction-comment" rows="3"></textarea>
-          </div>
         </div>
         <div class="mt-12">
           <button type="button" class="btn-inline" data-past-entry-add-transaction>決済を追加</button>
@@ -262,7 +258,6 @@
               </button>
             </div>
             <div class="muted mt-6">${csrfSafe(row.age_band)} / ${csrfSafe(row.gender)} / ${csrfSafe(row.nationality_type)}${row.is_student ? " / 学生" : ""}</div>
-            ${row.comment ? `<div class="mt-6">${csrfSafe(row.comment)}</div>` : ""}
           </div>
         `;
       }).join("");
@@ -274,7 +269,7 @@
         gender: document.getElementById("past-transaction-gender").value,
         nationality_type: document.getElementById("past-transaction-nationality").value,
         is_student: document.getElementById("past-transaction-student").checked,
-        comment: document.getElementById("past-transaction-comment").value.trim(),
+        comment: "",
       };
       if (isWv) {
         row.wv_result_type = document.getElementById("past-transaction-result-type").value;
