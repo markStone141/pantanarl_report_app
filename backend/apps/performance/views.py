@@ -50,6 +50,7 @@ from apps.performance.services.member_details import (
     build_member_dashboard_entry_rows,
     build_trend_date_links,
 )
+from apps.performance.services.admin_entries import build_admin_entry_management_page
 from apps.performance.services.past_entries import (
     create_past_entry_with_transactions,
     normalize_transaction_payloads,
@@ -69,6 +70,7 @@ from apps.targets.models import (
 )
 
 from .forms import (
+    PerformanceAdminEntryFilterForm,
     PerformanceAdjustmentListFilterForm,
     PerformanceEntryFilterForm,
     PerformancePastEntryCreateForm,
@@ -131,6 +133,7 @@ def _performance_nav_items():
     return [
         ("performance_index", "実績管理ダッシュボード"),
         ("performance_history", "実績閲覧"),
+        ("performance_admin_entries", "全体エントリー管理"),
         ("performance_past_entry_create", "過去実績入力"),
         ("performance_adjustments", "補正実績入力"),
         ("dashboard_index", "総合管理者ページ"),
@@ -1564,32 +1567,6 @@ def _build_member_history_context(*, request, member, department, is_admin=False
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_index(request: HttpRequest) -> HttpResponse:
-    filter_data = request.GET.copy()
-    if not filter_data:
-        filter_data["date_from"] = ""
-        filter_data["date_to"] = ""
-    filter_form = PerformanceEntryFilterForm(filter_data)
-    entries_queryset = MemberDailyMetricEntry.objects.none()
-    adjustments_preview = MetricAdjustment.objects.none()
-    if filter_form.is_valid():
-        entries_queryset = _filtered_entries_queryset(filter_form.cleaned_data)
-        adjustments_preview = _filtered_adjustments_queryset(filter_form.cleaned_data)[:10]
-
-    paginator = Paginator(entries_queryset, 20)
-    page_obj = paginator.get_page(request.GET.get("page") or 1)
-    entries = list(page_obj.object_list)
-    entry_rows = []
-    for entry in entries:
-        entry_rows.append(
-            {
-                "entry": entry,
-                "count_text": _field_count_text(entry),
-                "amount_text": _field_amount_text(entry),
-            }
-        )
-
-    current_query = request.GET.copy()
-    current_query.pop("page", None)
     department_id = request.GET.get("dashboard_department")
     dashboard_department = None
     if department_id:
@@ -1610,12 +1587,6 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         nav_items = _performance_member_nav_items(is_admin=False)
     context = {
         "nav_items": nav_items,
-        "filter_form": filter_form,
-        "page_obj": page_obj,
-        "paginator": paginator,
-        "entry_rows": entry_rows,
-        "adjustments_preview": adjustments_preview,
-        "current_query_string": current_query.urlencode(),
         "dashboard_snapshot": dashboard_snapshot,
         "dashboard_departments": Department.objects.filter(is_active=True).order_by("code", "id"),
         "dashboard_department": dashboard_department,
@@ -1628,6 +1599,38 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         "status_message": request.GET.get("status") or "",
     }
     return render(request, "performance/index.html", context)
+
+
+@require_performance_roles(ROLE_ADMIN)
+def performance_admin_entries(request: HttpRequest) -> HttpResponse:
+    filter_data = request.GET.copy()
+    if not filter_data:
+        filter_data["date_from"] = ""
+        filter_data["date_to"] = ""
+    filter_form = PerformanceAdminEntryFilterForm(filter_data)
+    page_obj = None
+    paginator = None
+    summary_rows = []
+    current_query = request.GET.copy()
+    current_query.pop("page", None)
+    if filter_form.is_valid():
+        payload = build_admin_entry_management_page(
+            cleaned_data=filter_form.cleaned_data,
+            page_number=request.GET.get("page") or 1,
+            next_url=request.get_full_path(),
+        )
+        paginator = payload["paginator"]
+        page_obj = payload["page_obj"]
+        summary_rows = payload["summary_rows"]
+    context = {
+        "nav_items": _performance_nav_items(),
+        "filter_form": filter_form,
+        "page_obj": page_obj,
+        "paginator": paginator,
+        "summary_rows": summary_rows,
+        "current_query_string": current_query.urlencode(),
+    }
+    return render(request, "performance/admin_entries.html", context)
 
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)

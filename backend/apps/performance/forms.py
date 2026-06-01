@@ -40,6 +40,40 @@ class PerformanceEntryFilterForm(forms.Form):
             self.initial.setdefault("date_from", today.replace(day=1))
 
 
+class PerformanceAdminEntryFilterForm(forms.Form):
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.none(),
+        required=False,
+        label="部署",
+        empty_label="すべての部署",
+    )
+    member = forms.ModelChoiceField(
+        queryset=Member.objects.none(),
+        required=False,
+        label="メンバー",
+        empty_label="すべてのメンバー",
+    )
+    date_from = forms.DateField(
+        required=False,
+        label="開始日",
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    date_to = forms.DateField(
+        required=False,
+        label="終了日",
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["department"].queryset = Department.objects.filter(is_active=True).order_by("code")
+        self.fields["member"].queryset = Member.objects.order_by("name")
+        if not self.is_bound:
+            today = timezone.localdate()
+            self.initial.setdefault("date_to", today)
+            self.initial.setdefault("date_from", today.replace(day=1))
+
+
 class PerformancePastEntrySelectionForm(forms.Form):
     department = forms.ModelChoiceField(
         queryset=Department.objects.none(),

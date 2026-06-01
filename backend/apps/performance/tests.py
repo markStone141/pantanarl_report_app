@@ -318,6 +318,48 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f'<option value="{self.member.id}">{self.member.name}</option>', html=True)
 
+    def test_performance_admin_entries_page_shows_summary_and_entry_actions(self):
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 6, 3),
+            approach_count=7,
+            communication_count=4,
+            result_count=2,
+            support_amount=3500,
+            location_name="渋谷駅前",
+        )
+        DepartmentDailyMetricSummary.objects.create(
+            department=self.department,
+            entry_date=entry.entry_date,
+            approach_count=7,
+            communication_count=4,
+            result_count=2,
+            support_amount=3500,
+            created_by=self.member,
+            updated_by=self.member,
+        )
+
+        response = self.client.get(reverse("performance_admin_entries"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "全体エントリー管理")
+        self.assertContains(response, "UN / 2026/06/03")
+        self.assertContains(response, self.member.name)
+        self.assertContains(response, "渋谷駅前")
+        self.assertContains(response, reverse("performance_entry_edit", args=[entry.id]))
+        self.assertContains(response, reverse("performance_entry_delete", args=[entry.id]))
+
+    def test_performance_admin_entries_includes_inactive_member_filter_option(self):
+        inactive_member = self.create_member(name="Inactive Entry", department=self.department)
+        inactive_member.is_active = False
+        inactive_member.save(update_fields=["is_active"])
+
+        response = self.client.get(reverse("performance_admin_entries"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'<option value="{inactive_member.id}">{inactive_member.name}</option>', html=True)
+
     def test_performance_index_auto_closes_stale_open_entries(self):
         stale_entry = MemberDailyMetricEntry.objects.create(
             member=self.member,
