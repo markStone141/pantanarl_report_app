@@ -196,6 +196,28 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertIn('name="daily_target_amount"', payload["department_target_html"])
         self.assertIn('value="9000"', payload["department_target_html"])
 
+    def test_entry_v2_transaction_demo_defaults_to_existing_entry_department_for_day(self):
+        wv_department = self.create_department("WV")
+        MemberDepartment.objects.create(member=self.member, department=wv_department)
+        entry_date = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=wv_department,
+            entry_date=entry_date,
+            daily_target_cs_count=2,
+            daily_target_refugee_count=1,
+            daily_target_amount=9000,
+            support_amount=0,
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_entry_v2_transaction_demo"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_department_code"], "WV")
+        self.assertContains(response, "CS口数")
+        self.assertNotContains(response, "決済金額")
+
 
 class DairyMetricsDashboardTests(AppTestMixin, TestCase):
     DEFAULT_PASSWORD = "pass123"

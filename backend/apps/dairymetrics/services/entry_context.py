@@ -91,9 +91,47 @@ def parse_month_input(raw_value: str) -> date | None:
     return parse_date(f"{raw_value}-01")
 
 
-def default_entry_department_code(*, member, departments, selected_department):
+def _existing_entry_department_code_for_date(*, member, departments, entry_date):
+    department_ids = [department.id for department in departments]
+    if not department_ids:
+        return ""
+    existing_entry = (
+        MemberDailyMetricEntry.objects.filter(
+            member=member,
+            department_id__in=department_ids,
+            entry_date=entry_date,
+        )
+        .select_related("department")
+        .order_by("-updated_at", "-id")
+        .first()
+    )
+    if existing_entry and existing_entry.department:
+        return existing_entry.department.code
+    existing_summary = (
+        DepartmentDailyMetricSummary.objects.filter(
+            department_id__in=department_ids,
+            entry_date=entry_date,
+        )
+        .select_related("department")
+        .order_by("-updated_at", "-id")
+        .first()
+    )
+    if existing_summary and existing_summary.department:
+        return existing_summary.department.code
+    return ""
+
+
+def default_entry_department_code(*, member, departments, selected_department, entry_date=None):
     if selected_department:
         return selected_department
+    if entry_date is not None:
+        existing_entry_department_code = _existing_entry_department_code_for_date(
+            member=member,
+            departments=departments,
+            entry_date=entry_date,
+        )
+        if existing_entry_department_code:
+            return existing_entry_department_code
     department_codes = [department.code for department in departments]
     if member.default_department and member.default_department.code in department_codes:
         return member.default_department.code
@@ -106,6 +144,7 @@ def build_entry_v2_demo_context(*, member, selected_department, entry_date, age_
         member=member,
         departments=departments,
         selected_department=selected_department,
+        entry_date=entry_date,
     )
     selected_department_obj = next(
         (department for department in departments if department.code == selected_department_code),
