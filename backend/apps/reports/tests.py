@@ -77,6 +77,11 @@ class ReportMemberFilteringTests(TestCase):
 
     def test_report_index_shows_member_performance_link_for_authenticated_member(self):
         member_user = get_user_model().objects.create_user(username="report_member_nav", password="x", is_staff=False)
+        member = Member.objects.create(name="Report Member", email="member@example.com", user=member_user)
+        department = Department.objects.create(name="UN", code="UN")
+        MemberDepartment.objects.create(member=member, department=department)
+        member.default_department = department
+        member.save(update_fields=["default_department"])
         self.client.force_login(member_user)
 
         response = self.client.get(reverse("report_index"))
@@ -92,6 +97,16 @@ class ReportMemberFilteringTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("performance_index"))
+
+    def test_report_index_hides_performance_link_for_authenticated_user_without_member_profile(self):
+        report_user = get_user_model().objects.create_user(username="report_only_nav", password="x", is_staff=False)
+        self.client.force_login(report_user)
+
+        response = self.client.get(reverse("report_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, reverse("performance_member_dashboard"))
+        self.assertNotContains(response, "実績管理ダッシュボード")
 
     def test_report_form_title_uses_department_display_name(self):
         department = Department.objects.create(name="ユニセフ渋谷", code="UN")

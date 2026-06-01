@@ -40,6 +40,18 @@ def _history_query_string(*, date_from_str: str = "", date_to_str: str = "", dat
         return ""
     return f"?{urlencode(query_params)}"
 
+
+def _resolve_report_performance_dashboard_url(request: HttpRequest) -> str | None:
+    user = getattr(request, "user", None)
+    if not user or not user.is_authenticated:
+        return None
+    if user.is_staff or user.is_superuser:
+        return reverse("performance_index")
+    member = getattr(user, "member_profile", None)
+    if member is None:
+        return None
+    return reverse("performance_member_dashboard")
+
 @require_roles(ROLE_REPORT, ROLE_ADMIN)
 def report_index(request: HttpRequest) -> HttpResponse:
     department_map = {
@@ -56,7 +68,10 @@ def report_index(request: HttpRequest) -> HttpResponse:
         }
         for code, url_name in REPORT_ROUTE_BY_DEPARTMENT_CODE.items()
     ]
-    context = {"department_buttons": department_buttons}
+    context = {
+        "department_buttons": department_buttons,
+        "performance_dashboard_url": _resolve_report_performance_dashboard_url(request),
+    }
     context.update(build_report_dashboard_cards_context())
     return render(request, "reports/report_index.html", context)
 
@@ -101,6 +116,7 @@ def report_history(request: HttpRequest) -> HttpResponse:
             "date_from": date_from_str,
             "date_to": date_to_str,
             "date_on": date_on_str,
+            "performance_dashboard_url": _resolve_report_performance_dashboard_url(request),
         },
     )
 
@@ -558,6 +574,7 @@ def _render_report_form(
             "today_iso": timezone.localdate().isoformat(),
             "dairymetrics_closed_entries": dairymetrics_sync_context["closed_entries"],
             "dairymetrics_active_entries": dairymetrics_sync_context["active_entries"],
+            "performance_dashboard_url": _resolve_report_performance_dashboard_url(request),
         },
     )
 
