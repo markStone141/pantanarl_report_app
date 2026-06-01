@@ -544,10 +544,15 @@ a {
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+  min-width: 0;
 }
 
 .performance-recent-detail-search {
   width: min(220px, 100%);
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: block;
 }
 
 .performance-recent-detail-table {
@@ -1666,10 +1671,13 @@ th {
   .performance-recent-detail-toolbar {
     flex-direction: column;
     align-items: stretch;
+    min-width: 0;
   }
 
   .performance-recent-detail-search {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .compact-member-table th,
