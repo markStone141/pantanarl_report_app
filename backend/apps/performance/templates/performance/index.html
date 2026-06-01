@@ -77,7 +77,7 @@
             <div class="muted mt-4">現場: {{ row.location_name|default:"未入力" }}</div>
             <div class="mt-8">{{ row.count_text }} / {{ row.amount_text }}</div>
             <div class="mt-8">
-              <form method="post" action="{% url 'performance_send_activity_reminder' row.entry_id %}" class="inline-form">
+              <form method="post" action="{% url 'performance_send_activity_reminder' row.entry_id %}" class="inline-form" onsubmit="return confirm('{{ row.member_name }}さんに入力リマインドを送信しますか？');">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{{ request.get_full_path }}">
                 <button type="submit" class="btn-inline" {% if not row.has_email %}disabled{% endif %}>入力リマインド</button>
