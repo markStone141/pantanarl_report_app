@@ -95,6 +95,10 @@ def _performance_next_url(next_url: str, *, fallback: str) -> str:
     return fallback
 
 
+def _can_edit_member_performance(*, is_admin: bool, readonly_member_view: bool) -> bool:
+    return bool(is_admin or not readonly_member_view)
+
+
 def require_performance_roles(*allowed_roles: str):
     def decorator(view_func):
         @wraps(view_func)
@@ -1044,6 +1048,15 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         else reverse("performance_member_dashboard")
     )
     attach_transaction_edit_urls(entry_rows=recent_detail_payload["entry_rows"], next_url=detail_next_url)
+    for row in recent_detail_payload["entry_rows"]:
+        row["edit_url"] = (
+            f"{reverse('performance_entry_edit', args=[row['entry'].id])}"
+            f"?{urlencode({'next': detail_next_url})}"
+        )
+        row["delete_url"] = (
+            f"{reverse('performance_entry_delete', args=[row['entry'].id])}"
+            f"?{urlencode({'next': detail_next_url})}"
+        )
     recent_totals = collect_member_final_actual_totals(
         member,
         department,
@@ -1270,6 +1283,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "edit_period_target": edit_period_target,
         "is_admin_view": is_admin,
         "readonly_member_view": False,
+        "can_edit": True,
     }
 
 
@@ -1310,12 +1324,18 @@ def _build_member_history_context(*, request, member, department, is_admin=False
     )
     entry_rows = detail_payload["entry_rows"]
     entry_edit_next_url = request.get_full_path()
-    attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
-    for row in entry_rows:
-        row["edit_url"] = (
-            f"{reverse('performance_entry_edit', args=[row['entry'].id])}"
-            f"?{urlencode({'next': entry_edit_next_url})}"
-        )
+    can_edit = _can_edit_member_performance(is_admin=is_admin, readonly_member_view=False)
+    if can_edit:
+        attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
+        for row in entry_rows:
+            row["edit_url"] = (
+                f"{reverse('performance_entry_edit', args=[row['entry'].id])}"
+                f"?{urlencode({'next': entry_edit_next_url})}"
+            )
+            row["delete_url"] = (
+                f"{reverse('performance_entry_delete', args=[row['entry'].id])}"
+                f"?{urlencode({'next': entry_edit_next_url})}"
+            )
     adjustment_rows = detail_payload["adjustment_rows"]
     activity_trend = build_member_activity_trend(
         member=member,
@@ -1445,6 +1465,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
         "department": department,
         "is_admin_view": is_admin,
         "readonly_member_view": False,
+        "can_edit": can_edit,
         "dashboard_scope": dashboard_scope,
         "dashboard_month": dashboard_month,
         "dashboard_period": dashboard_period,
@@ -1644,6 +1665,36 @@ def performance_entry_edit(request: HttpRequest, entry_id: int) -> HttpResponse:
 
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
+def performance_entry_delete(request: HttpRequest, entry_id: int) -> HttpResponse:
+    entry = get_object_or_404(MemberDailyMetricEntry.objects.select_related("member", "department"), pk=entry_id)
+    is_admin = bool(request.user.is_staff or request.user.is_superuser)
+    if not is_admin:
+        member = getattr(request.user, "member_profile", None)
+        if member is None or member.id != entry.member_id:
+            raise Http404
+    next_url = request.GET.get("next") or request.POST.get("next") or ""
+    fallback_url = (
+        reverse("performance_member_history_detail", args=[entry.member_id, entry.department_id])
+        if is_admin
+        else reverse("performance_member_history")
+    )
+    back_url = _performance_next_url(next_url, fallback=fallback_url)
+    if request.method == "POST":
+        previous_department_id = entry.department_id
+        previous_entry_date = entry.entry_date
+        entry.delete()
+        old_summary = DepartmentDailyMetricSummary.objects.filter(
+            department_id=previous_department_id,
+            entry_date=previous_entry_date,
+        ).first()
+        if old_summary:
+            old_summary.recalculate_from_entries()
+        separator = "&" if "?" in back_url else "?"
+        return redirect(f"{back_url}{separator}deleted=entry")
+    raise Http404
+
+
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_transaction_edit(request: HttpRequest, transaction_id: int) -> HttpResponse:
     transaction = get_object_or_404(
         MemberMetricTransaction.objects.select_related("entry", "entry__member", "entry__department"),
@@ -1743,6 +1794,7 @@ def _render_member_history_day_detail_response(
     is_admin=False,
     readonly_member_view=False,
 ):
+    can_edit = _can_edit_member_performance(is_admin=is_admin, readonly_member_view=readonly_member_view)
     selected_date = _parse_selected_date(request.GET.get("date"))
     if selected_date is None:
         raise Http404
@@ -1761,9 +1813,11 @@ def _render_member_history_day_detail_response(
         if is_admin
         else reverse("performance_member_history")
     )
-    for row in entry_rows:
-        row["edit_url"] = f"{reverse('performance_entry_edit', args=[row['entry'].id])}?{urlencode({'next': entry_edit_next_url})}"
-    attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
+    if can_edit:
+        for row in entry_rows:
+            row["edit_url"] = f"{reverse('performance_entry_edit', args=[row['entry'].id])}?{urlencode({'next': entry_edit_next_url})}"
+            row["delete_url"] = f"{reverse('performance_entry_delete', args=[row['entry'].id])}?{urlencode({'next': entry_edit_next_url})}"
+        attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
     adjustment_rows = list(
         MetricAdjustment.objects.filter(
             member=member,
@@ -1782,6 +1836,7 @@ def _render_member_history_day_detail_response(
         "show_reset_detail": True,
         "detail_reset_url": entry_edit_next_url,
         "readonly_member_view": readonly_member_view,
+        "can_edit": can_edit,
     }
     return render(request, "performance/partials/member_history_day_detail_cards.html", context)
 
@@ -1836,12 +1891,18 @@ def _render_member_history_list_response(
     )
     entry_edit_next_url = request.get_full_path()
     entry_rows = payload["entry_rows"]
-    for row in entry_rows:
-        row["edit_url"] = (
-            f"{reverse('performance_entry_edit', args=[row['entry'].id])}"
-            f"?{urlencode({'next': entry_edit_next_url})}"
-        )
-    attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
+    can_edit = _can_edit_member_performance(is_admin=is_admin, readonly_member_view=readonly_member_view)
+    if can_edit:
+        for row in entry_rows:
+            row["edit_url"] = (
+                f"{reverse('performance_entry_edit', args=[row['entry'].id])}"
+                f"?{urlencode({'next': entry_edit_next_url})}"
+            )
+            row["delete_url"] = (
+                f"{reverse('performance_entry_delete', args=[row['entry'].id])}"
+                f"?{urlencode({'next': entry_edit_next_url})}"
+            )
+        attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
     context = {
         "member": member,
         "department": department,
@@ -1856,6 +1917,7 @@ def _render_member_history_list_response(
         ),
         "show_reset_detail": False,
         "readonly_member_view": readonly_member_view,
+        "can_edit": can_edit,
         "detail_limit": limit,
         "detail_limit_step": 5,
         "detail_has_more": payload["has_more"],
@@ -1937,8 +1999,19 @@ def _render_member_day_detail_response(
         selected_date=selected_date,
         reset_url=reset_url,
     )
-    if not readonly_member_view:
+    can_edit = _can_edit_member_performance(is_admin=is_admin, readonly_member_view=readonly_member_view)
+    context["can_edit"] = can_edit
+    if can_edit:
         attach_transaction_edit_urls(entry_rows=context["recent_entry_rows"], next_url=reset_url)
+        for row in context["recent_entry_rows"]:
+            row["edit_url"] = (
+                f"{reverse('performance_entry_edit', args=[row['entry'].id])}"
+                f"?{urlencode({'next': reset_url})}"
+            )
+            row["delete_url"] = (
+                f"{reverse('performance_entry_delete', args=[row['entry'].id])}"
+                f"?{urlencode({'next': reset_url})}"
+            )
     return render(request, "performance/partials/member_day_detail_cards.html", context)
 
 
@@ -2015,12 +2088,22 @@ def _render_member_recent_detail_response(
             if is_admin
             else reverse("performance_member_dashboard")
         ),
+        "can_edit": _can_edit_member_performance(is_admin=is_admin, readonly_member_view=readonly_member_view),
     }
-    if not readonly_member_view:
+    if context["can_edit"]:
         attach_transaction_edit_urls(
             entry_rows=context["recent_entry_rows"],
             next_url=context["recent_detail_reset_url"],
         )
+        for row in context["recent_entry_rows"]:
+            row["edit_url"] = (
+                f"{reverse('performance_entry_edit', args=[row['entry'].id])}"
+                f"?{urlencode({'next': context['recent_detail_reset_url']})}"
+            )
+            row["delete_url"] = (
+                f"{reverse('performance_entry_delete', args=[row['entry'].id])}"
+                f"?{urlencode({'next': context['recent_detail_reset_url']})}"
+            )
     return render(request, "performance/partials/member_day_detail_cards.html", context)
 
 
@@ -2049,6 +2132,10 @@ def performance_member_insight(request: HttpRequest, member_id: int, department_
         is_admin=request.user.is_staff or request.user.is_superuser,
     )
     context["readonly_member_view"] = True
+    context["can_edit"] = _can_edit_member_performance(
+        is_admin=request.user.is_staff or request.user.is_superuser,
+        readonly_member_view=True,
+    )
     context["nav_items"] = _performance_member_page_nav_links(
         member=member,
         department=department,
@@ -2097,6 +2184,10 @@ def performance_member_history_insight(request: HttpRequest, member_id: int, dep
         is_admin=request.user.is_staff or request.user.is_superuser,
     )
     context["readonly_member_view"] = True
+    context["can_edit"] = _can_edit_member_performance(
+        is_admin=request.user.is_staff or request.user.is_superuser,
+        readonly_member_view=True,
+    )
     context["nav_items"] = _performance_member_page_nav_links(
         member=member,
         department=department,

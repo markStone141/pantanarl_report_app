@@ -27,7 +27,7 @@
             <th>件数</th>
             <th>金額</th>
             <th>AP / CM</th>
-            <th>修正</th>
+            <th>操作</th>
             <th>詳細</th>
           </tr>
         </thead>
@@ -39,11 +39,20 @@
             <td data-label="件数">{{ row.count_text }}</td>
             <td data-label="金額">{{ row.amount_text }}</td>
             <td data-label="AP / CM">{{ row.entry.approach_count }} / {{ row.entry.communication_count }}</td>
-            <td data-label="修正">
-              {% if not readonly_member_view %}
+            <td data-label="操作">
+              {% if can_edit %}
+              <div class="row">
               <a class="icon-btn" href="{{ row.edit_url }}" aria-label="過去の実績を修正">
                 <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
               </a>
+              <form method="post" action="{{ row.delete_url }}" style="display:inline;" onsubmit="return confirm('この日次実績を削除します。よろしいですか？');">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ detail_reset_url }}">
+                <button type="submit" class="icon-btn icon-btn-danger" aria-label="日次実績を削除">
+                  <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                </button>
+              </form>
+              </div>
               {% else %}
               <span class="muted">-</span>
               {% endif %}
@@ -59,7 +68,7 @@
                       <strong>{{ tx.support_amount|floatformat:0 }}円</strong>
                       <div class="row">
                         <span class="muted">{{ tx.location|default:"場所未設定" }}</span>
-                        {% if not readonly_member_view and tx.edit_url %}
+                        {% if can_edit and tx.edit_url %}
                         <a class="btn-inline" href="{{ tx.edit_url }}" aria-label="決済を修正">
                           <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                         </a>

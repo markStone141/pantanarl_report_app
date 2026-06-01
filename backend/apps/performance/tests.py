@@ -1053,8 +1053,9 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, ">-<", html=False)
         self.assertContains(response, "900円")
         self.assertContains(response, "初回決済")
-        self.assertContains(response, "<th>修正</th>", html=False)
+        self.assertContains(response, "<th>操作</th>", html=False)
         self.assertContains(response, 'aria-label="過去の実績を修正"', html=False)
+        self.assertContains(response, 'aria-label="日次実績を削除"', html=False)
         self.assertNotContains(response, "<th>状態</th>", html=False)
         self.assertNotContains(response, "<th>メモ</th>", html=False)
 
@@ -1559,7 +1560,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         entry = MemberDailyMetricEntry.objects.create(
             member=self.member,
             department=self.department,
-            entry_date=timezone.localdate() - timedelta(days=1),
+            entry_date=timezone.localdate(),
             result_count=0,
             support_amount=0,
             approach_count=0,
@@ -1593,6 +1594,74 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         entry.refresh_from_db()
         self.assertEqual(entry.approach_count, 12)
         self.assertEqual(entry.communication_count, 4)
+
+    def test_performance_member_can_delete_own_past_entry_from_history_flow(self):
+        self.client.logout()
+        report_user = User.objects.create_user(username="perf-member-delete", password="pass1234", is_staff=False)
+        self.member.user = report_user
+        self.member.save(update_fields=["user"])
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=timezone.localdate() - timedelta(days=1),
+            result_count=1,
+            support_amount=3000,
+            approach_count=5,
+            communication_count=2,
+        )
+        DepartmentDailyMetricSummary.objects.create(
+            department=self.department,
+            entry_date=entry.entry_date,
+            approach_count=5,
+            communication_count=2,
+            result_count=1,
+            support_amount=3000,
+            created_by=self.member,
+            updated_by=self.member,
+        )
+        self.client.force_login(report_user)
+
+        response = self.client.post(
+            f"{reverse('performance_entry_delete', args=[entry.id])}?next={reverse('performance_member_history')}",
+            {
+                "next": reverse("performance_member_history"),
+            },
+        )
+
+        self.assertRedirects(response, f"{reverse('performance_member_history')}?deleted=entry")
+        self.assertFalse(MemberDailyMetricEntry.objects.filter(pk=entry.id).exists())
+        summary = DepartmentDailyMetricSummary.objects.get(department=self.department, entry_date=entry.entry_date)
+        self.assertEqual(summary.result_count, 0)
+        self.assertEqual(summary.support_amount, 0)
+
+    def test_admin_member_history_insight_shows_edit_and_delete_actions(self):
+        teammate = Member.objects.create(name="Teammate", default_department=self.department)
+        MemberDepartment.objects.create(member=teammate, department=self.department)
+        entry = MemberDailyMetricEntry.objects.create(
+            member=teammate,
+            department=self.department,
+            entry_date=timezone.localdate(),
+            result_count=1,
+            support_amount=3000,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷",
+            comment="管理者確認",
+        )
+
+        response = self.client.get(
+            reverse("performance_member_history_insight", args=[teammate.id, self.department.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("performance_entry_edit", args=[entry.id]))
+        self.assertContains(response, reverse("performance_entry_delete", args=[entry.id]))
+        self.assertContains(response, reverse("performance_transaction_edit", args=[transaction.id]))
 
     def test_performance_member_detail_can_save_month_target(self):
         today = timezone.localdate()

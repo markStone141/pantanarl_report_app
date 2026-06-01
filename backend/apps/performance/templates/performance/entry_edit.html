@@ -48,6 +48,13 @@
       <div class="dairymetrics-field-full dairymetrics-form-actions">
         <button type="submit">保存する</button>
         <a class="btn-inline" href="{{ back_url }}">一覧へ戻る</a>
+        <form method="post" action="{% url 'performance_entry_delete' entry.id %}" style="display:inline;" onsubmit="return confirm('この日次実績を削除します。よろしいですか？');">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ next_url }}">
+          <button type="submit" class="icon-btn icon-btn-danger" aria-label="日次実績を削除">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+          </button>
+        </form>
       </div>
     </form>
   </section>

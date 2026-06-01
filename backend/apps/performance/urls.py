@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     performance_adjustment_delete,
     performance_adjustments,
+    performance_entry_delete,
     performance_entry_edit,
     performance_history,
     performance_index,
@@ -41,6 +42,7 @@ urlpatterns = [
     path("member/history/list/", performance_member_history_list, name="performance_member_history_list"),
     path("member/history/day-detail/", performance_member_history_day_detail, name="performance_member_history_day_detail"),
     path("entries/<int:entry_id>/", performance_entry_edit, name="performance_entry_edit"),
+    path("entries/<int:entry_id>/delete/", performance_entry_delete, name="performance_entry_delete"),
     path("transactions/<int:transaction_id>/edit/", performance_transaction_edit, name="performance_transaction_edit"),
     path("members/<int:member_id>/<int:department_id>/", performance_member_detail, name="performance_member_detail"),
     path("members/<int:member_id>/<int:department_id>/recent-detail/", performance_member_detail_recent_detail, name="performance_member_detail_recent_detail"),
