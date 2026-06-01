@@ -258,6 +258,26 @@ def _render_personal_setup_form_partial(request: HttpRequest, context: dict, *, 
         request=request,
     )
 
+
+def _render_department_target_form_partial(request: HttpRequest, context: dict, *, inline: bool) -> str:
+    partial_context = {
+        **context,
+        "entry_date_id": "v2-inline-target-date" if inline else "v2-dept-target-date",
+        "amount_select_id": "v2-inline-target-amount-select" if inline else "v2-dept-target-amount-select",
+        "amount_hidden_id": "v2-inline-target-amount-hidden" if inline else "v2-dept-target-amount-hidden",
+        "amount_wrap_id": "v2-inline-target-amount-wrap" if inline else "v2-dept-target-amount-wrap",
+        "amount_custom_id": "v2-inline-target-amount-custom" if inline else "v2-dept-target-amount-custom",
+        "submit_label": "修正内容を保存" if inline else "全体目標を保存",
+        "close_button_label": "閉じる" if inline else "",
+        "close_button_attr": "data-close-department-target-edit" if inline else "",
+        "show_meta": not inline,
+    }
+    return render_to_string(
+        "dairymetrics/partials/department_target_form.html",
+        partial_context,
+        request=request,
+    )
+
 def _build_member_dashboard_context(*, request, member, readonly=False, viewer_member=None):
     selected_department_code = (request.GET.get("department") or "").strip()
     selected_scope = (request.GET.get("scope") or "today").strip()
@@ -877,6 +897,7 @@ def entry_v2_personal_setup_fields(request: HttpRequest) -> HttpResponse:
         )
     selected_department_code = selected_department_obj.code if selected_department_obj else ""
     entry_date = parse_date((request.GET.get("entry_date") or "").strip()) or timezone.localdate()
+    department_entry_date = parse_date((request.GET.get("department_entry_date") or "").strip()) or entry_date
     form_initial = {
         "department": selected_department_obj,
         "entry_date": entry_date,
@@ -884,14 +905,21 @@ def entry_v2_personal_setup_fields(request: HttpRequest) -> HttpResponse:
         "daily_target_count": (request.GET.get("daily_target_count") or "").strip() or 0,
         "daily_target_cs_count": (request.GET.get("daily_target_cs_count") or "").strip() or 0,
         "daily_target_refugee_count": (request.GET.get("daily_target_refugee_count") or "").strip() or 0,
-        "daily_target_amount": (request.GET.get("daily_target_amount") or "").strip() or 0,
+        "daily_target_amount": (request.GET.get("personal_daily_target_amount") or "").strip() or 0,
     }
     personal_setup_form = DairymetricsV2PersonalSetupForm(member=member, initial=form_initial)
+    department_target_form = DairymetricsV2DepartmentTargetForm(
+        initial={
+            "entry_date": department_entry_date,
+            "daily_target_amount": (request.GET.get("department_daily_target_amount") or "").strip() or 0,
+        }
+    )
     context = build_entry_v2_transaction_demo_context(
         member=member,
         selected_department=selected_department_code,
         entry_date=entry_date,
         personal_setup_form=personal_setup_form,
+        department_target_form=department_target_form,
         age_bands=ENTRY_V2_AGE_BANDS,
         gender_bands=ENTRY_V2_GENDER_BANDS,
         nationality_bands=ENTRY_V2_NATIONALITY_BANDS,
@@ -904,6 +932,8 @@ def entry_v2_personal_setup_fields(request: HttpRequest) -> HttpResponse:
         {
             "setup_html": _render_personal_setup_form_partial(request, context, inline=False),
             "inline_html": _render_personal_setup_form_partial(request, context, inline=True),
+            "department_target_html": _render_department_target_form_partial(request, context, inline=False),
+            "department_target_inline_html": _render_department_target_form_partial(request, context, inline=True),
             "is_wv": context["selected_department_is_wv"],
         }
     )

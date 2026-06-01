@@ -1,0 +1,44 @@
+{% load humanize %}
+
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="save_department_target">
+  <input type="hidden" name="department_code" value="{{ selected_department_code }}">
+  <div class="dairymetrics-v2-transaction-form">
+    <div class="dairymetrics-field">
+      <label for="{{ entry_date_id }}">全体目標の対象日</label>
+      <div class="dairymetrics-date-wrap">
+        <div class="dairymetrics-date-field">
+          <input id="{{ entry_date_id }}" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ department_entry_date_value }}">
+        </div>
+      </div>
+      {% if department_target_form.entry_date.errors %}<div class="error-text">{{ department_target_form.entry_date.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="dairymetrics-field">
+      <label for="{{ amount_select_id }}">全体目標金額</label>
+      <select id="{{ amount_select_id }}" data-target-select data-target-custom="#{{ amount_wrap_id }}" data-target-hidden="#{{ amount_hidden_id }}">
+        <option value="custom" {% if department_target_amount_value != "1000" and department_target_amount_value != "1500" and department_target_amount_value != "2000" and department_target_amount_value != "2500" and department_target_amount_value != "3000" and department_target_amount_value != "3500" and department_target_amount_value != "4000" and department_target_amount_value != "4500" and department_target_amount_value != "5000" and department_target_amount_value != "5500" and department_target_amount_value != "6000" and department_target_amount_value != "6500" and department_target_amount_value != "7000" and department_target_amount_value != "7500" and department_target_amount_value != "8000" and department_target_amount_value != "8500" and department_target_amount_value != "9000" and department_target_amount_value != "9500" and department_target_amount_value != "10000" %}selected{% endif %}>直接入力</option>
+        {% for amount in target_amount_options %}
+        <option value="{{ amount }}" {% if department_target_amount_value == amount|stringformat:"s" %}selected{% endif %}>{{ amount|intcomma }}円</option>
+        {% endfor %}
+      </select>
+      <input type="hidden" name="daily_target_amount" id="{{ amount_hidden_id }}" value="{{ department_target_amount_value }}">
+      {% if department_target_form.daily_target_amount.errors %}<div class="error-text">{{ department_target_form.daily_target_amount.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="dairymetrics-field" id="{{ amount_wrap_id }}" hidden>
+      <label for="{{ amount_custom_id }}">全体目標金額を直接入力</label>
+      <input id="{{ amount_custom_id }}" type="number" min="0" step="100" value="{{ department_target_amount_value }}">
+    </div>
+  </div>
+  {% if show_meta %}
+  <div class="dairymetrics-v2-inline-meta">
+    <span>保存されると、その日の部署全体集計箱が作られます。</span>
+  </div>
+  {% endif %}
+  <div class="dairymetrics-v2-transaction-actions">
+    <button type="submit" class="btn-inline dairymetrics-save-btn">{{ submit_label }}</button>
+    {% if close_button_label %}
+    <button type="button" class="btn-inline dairymetrics-secondary-btn" {{ close_button_attr|safe }}>{{ close_button_label }}</button>
+    {% endif %}
+  </div>
+</form>

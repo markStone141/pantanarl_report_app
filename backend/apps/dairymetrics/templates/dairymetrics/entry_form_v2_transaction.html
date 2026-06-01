@@ -61,43 +61,9 @@
         <div class="dairymetrics-v2-demo-head">
           <h3>部署全体の日目標を入力</h3>
         </div>
-        <form method="post">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="save_department_target">
-          <input type="hidden" name="department_code" value="{{ selected_department_code }}">
-          <div class="dairymetrics-v2-transaction-form">
-            <div class="dairymetrics-field">
-              <label for="v2-dept-target-date">全体目標の対象日</label>
-              <div class="dairymetrics-date-wrap">
-                <div class="dairymetrics-date-field">
-                  <input id="v2-dept-target-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ department_entry_date_value }}">
-                </div>
-              </div>
-              {% if department_target_form.entry_date.errors %}<div class="error-text">{{ department_target_form.entry_date.errors|striptags }}</div>{% endif %}
-            </div>
-            <div class="dairymetrics-field">
-              <label for="v2-dept-target-amount-select">全体目標金額</label>
-              <select id="v2-dept-target-amount-select" data-target-select data-target-custom="#v2-dept-target-amount-wrap" data-target-hidden="#v2-dept-target-amount-hidden">
-                <option value="custom" {% if department_target_amount_value != "1000" and department_target_amount_value != "1500" and department_target_amount_value != "2000" and department_target_amount_value != "2500" and department_target_amount_value != "3000" and department_target_amount_value != "3500" and department_target_amount_value != "4000" and department_target_amount_value != "4500" and department_target_amount_value != "5000" and department_target_amount_value != "5500" and department_target_amount_value != "6000" and department_target_amount_value != "6500" and department_target_amount_value != "7000" and department_target_amount_value != "7500" and department_target_amount_value != "8000" and department_target_amount_value != "8500" and department_target_amount_value != "9000" and department_target_amount_value != "9500" and department_target_amount_value != "10000" %}selected{% endif %}>直接入力</option>
-                {% for amount in target_amount_options %}
-                <option value="{{ amount }}" {% if department_target_amount_value == amount|stringformat:"s" %}selected{% endif %}>{{ amount|intcomma }}円</option>
-                {% endfor %}
-              </select>
-              <input type="hidden" name="daily_target_amount" id="v2-dept-target-amount-hidden" value="{{ department_target_form.daily_target_amount.value|default:10000 }}">
-              {% if department_target_form.daily_target_amount.errors %}<div class="error-text">{{ department_target_form.daily_target_amount.errors|striptags }}</div>{% endif %}
-            </div>
-            <div class="dairymetrics-field" id="v2-dept-target-amount-wrap" hidden>
-              <label for="v2-dept-target-amount-custom">全体目標金額を直接入力</label>
-              <input id="v2-dept-target-amount-custom" type="number" min="0" step="100" value="{{ department_target_form.daily_target_amount.value|default:10000 }}">
-            </div>
-          </div>
-          <div class="dairymetrics-v2-inline-meta">
-            <span>保存されると、その日の部署全体集計箱が作られます。</span>
-          </div>
-          <div class="dairymetrics-v2-transaction-actions">
-            <button type="submit" class="btn-inline dairymetrics-save-btn">全体目標を保存</button>
-          </div>
-        </form>
+        <div id="dairymetrics-v2-department-target-form-root">
+          {% include "dairymetrics/partials/department_target_form.html" with entry_date_id="v2-dept-target-date" amount_select_id="v2-dept-target-amount-select" amount_hidden_id="v2-dept-target-amount-hidden" amount_wrap_id="v2-dept-target-amount-wrap" amount_custom_id="v2-dept-target-amount-custom" submit_label="全体目標を保存" close_button_label="" close_button_attr="" show_meta=True %}
+        </div>
       </div>
       {% endif %}
     </section>
@@ -266,39 +232,9 @@
           <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-department-target-edit>修正する</button>
         </div>
         <section class="dairymetrics-v2-entry-panel" id="dairymetrics-v2-department-target-panel" {% if not open_department_target_panel %}hidden{% endif %}>
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="save_department_target">
-            <input type="hidden" name="department_code" value="{{ selected_department_code }}">
-            <div class="dairymetrics-v2-transaction-form">
-              <div class="dairymetrics-field">
-                <label for="v2-inline-target-date">全体目標の対象日</label>
-                <div class="dairymetrics-date-wrap">
-                  <div class="dairymetrics-date-field">
-                    <input id="v2-inline-target-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ department_entry_date_value }}">
-                  </div>
-                </div>
-              </div>
-              <div class="dairymetrics-field">
-                <label for="v2-inline-target-amount-select">全体目標金額</label>
-                <select id="v2-inline-target-amount-select" data-target-select data-target-custom="#v2-inline-target-amount-wrap" data-target-hidden="#v2-inline-target-amount-hidden">
-                  <option value="custom" {% if department_target_amount_value != "1000" and department_target_amount_value != "1500" and department_target_amount_value != "2000" and department_target_amount_value != "2500" and department_target_amount_value != "3000" and department_target_amount_value != "3500" and department_target_amount_value != "4000" and department_target_amount_value != "4500" and department_target_amount_value != "5000" and department_target_amount_value != "5500" and department_target_amount_value != "6000" and department_target_amount_value != "6500" and department_target_amount_value != "7000" and department_target_amount_value != "7500" and department_target_amount_value != "8000" and department_target_amount_value != "8500" and department_target_amount_value != "9000" and department_target_amount_value != "9500" and department_target_amount_value != "10000" %}selected{% endif %}>直接入力</option>
-                  {% for amount in target_amount_options %}
-                  <option value="{{ amount }}" {% if department_target_amount_value == amount|stringformat:"s" %}selected{% endif %}>{{ amount|intcomma }}円</option>
-                  {% endfor %}
-                </select>
-                <input type="hidden" name="daily_target_amount" id="v2-inline-target-amount-hidden" value="{{ department_target_form.daily_target_amount.value|default:10000 }}">
-              </div>
-              <div class="dairymetrics-field" id="v2-inline-target-amount-wrap" hidden>
-                <label for="v2-inline-target-amount-custom">全体目標金額を直接入力</label>
-                <input id="v2-inline-target-amount-custom" type="number" min="0" step="100" value="{{ department_target_form.daily_target_amount.value|default:10000 }}">
-              </div>
-            </div>
-            <div class="dairymetrics-v2-transaction-actions">
-              <button type="submit" class="btn-inline dairymetrics-save-btn">修正内容を保存</button>
-              <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-department-target-edit>閉じる</button>
-            </div>
-          </form>
+          <div id="dairymetrics-v2-inline-department-target-form-root">
+            {% include "dairymetrics/partials/department_target_form.html" with entry_date_id="v2-inline-target-date" amount_select_id="v2-inline-target-amount-select" amount_hidden_id="v2-inline-target-amount-hidden" amount_wrap_id="v2-inline-target-amount-wrap" amount_custom_id="v2-inline-target-amount-custom" submit_label="修正内容を保存" close_button_label="閉じる" close_button_attr='data-close-department-target-edit' show_meta=False %}
+          </div>
         </section>
         {% endif %}
       </article>
@@ -683,13 +619,29 @@
         "daily_target_count",
         "daily_target_cs_count",
         "daily_target_refugee_count",
-        "daily_target_amount",
       ].forEach(function (name) {
         const value = formData.get(name);
         if (value !== null) {
           params.set(name, value);
         }
       });
+      const personalAmountValue = formData.get("daily_target_amount");
+      if (personalAmountValue !== null) {
+        params.set("personal_daily_target_amount", personalAmountValue);
+      }
+      const departmentSetupRoot = document.getElementById("dairymetrics-v2-department-target-form-root");
+      const departmentSetupForm = departmentSetupRoot ? departmentSetupRoot.querySelector("form") : null;
+      if (departmentSetupForm) {
+        const departmentFormData = new FormData(departmentSetupForm);
+        const departmentEntryDateValue = departmentFormData.get("entry_date");
+        if (departmentEntryDateValue !== null) {
+          params.set("department_entry_date", departmentEntryDateValue);
+        }
+        const departmentAmountValue = departmentFormData.get("daily_target_amount");
+        if (departmentAmountValue !== null) {
+          params.set("department_daily_target_amount", departmentAmountValue);
+        }
+      }
       return params.toString();
     }
 
@@ -709,6 +661,16 @@
       if (inlineRoot && payload.inline_html) {
         inlineRoot.innerHTML = payload.inline_html;
         bindTargetSelects(inlineRoot);
+      }
+      const departmentTargetRoot = document.getElementById("dairymetrics-v2-department-target-form-root");
+      const departmentTargetInlineRoot = document.getElementById("dairymetrics-v2-inline-department-target-form-root");
+      if (departmentTargetRoot && payload.department_target_html) {
+        departmentTargetRoot.innerHTML = payload.department_target_html;
+        bindTargetSelects(departmentTargetRoot);
+      }
+      if (departmentTargetInlineRoot && payload.department_target_inline_html) {
+        departmentTargetInlineRoot.innerHTML = payload.department_target_inline_html;
+        bindTargetSelects(departmentTargetInlineRoot);
       }
     }
 
