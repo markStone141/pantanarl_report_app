@@ -2384,6 +2384,7 @@ def performance_past_entry_create(request: HttpRequest) -> HttpResponse:
     transaction_errors = []
     transaction_preview = []
     cleaned_transactions = []
+    existing_entry_next_url = ""
 
     if selection_form.is_valid():
         selected_department = selection_form.cleaned_data["department"]
@@ -2394,6 +2395,10 @@ def performance_past_entry_create(request: HttpRequest) -> HttpResponse:
             department=selected_department,
             entry_date=selected_entry_date,
         ).first()
+        existing_entry_next_url = (
+            f"{reverse('performance_past_entry_create')}?"
+            f"{urlencode({'department': selected_department.id, 'member': selected_member.id, 'entry_date': selected_entry_date.strftime('%Y-%m-%d')})}"
+        )
 
     transaction_form = DairymetricsV2TransactionForm(department=selected_department)
 
@@ -2451,6 +2456,7 @@ def performance_past_entry_create(request: HttpRequest) -> HttpResponse:
         "selected_member": selected_member,
         "selected_entry_date": selected_entry_date,
         "existing_entry": existing_entry,
+        "existing_entry_next_url": existing_entry_next_url,
         "status_message": status_message,
         "transactions_payload_value": transactions_payload_value,
         "transaction_preview": transaction_preview,

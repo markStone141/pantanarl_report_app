@@ -40,7 +40,16 @@
     {% if existing_entry %}
     <div class="note mt-12">
       その日の実績はすでに登録されています。
-      <a href="{% url 'performance_member_history_detail' selected_member.id selected_department.id %}?dashboard_scope=range&dashboard_start={{ selected_entry_date|date:'Y-m-d' }}&dashboard_end={{ selected_entry_date|date:'Y-m-d' }}">既存データを開く</a>
+      <a href="{% url 'performance_entry_edit' existing_entry.id %}?next={{ existing_entry_next_url|urlencode }}">編集する</a>
+      <span> / </span>
+      <a href="{% url 'performance_member_history_detail' selected_member.id selected_department.id %}?dashboard_scope=range&dashboard_start={{ selected_entry_date|date:'Y-m-d' }}&dashboard_end={{ selected_entry_date|date:'Y-m-d' }}">履歴で開く</a>
+      <form method="post" action="{% url 'performance_entry_delete' existing_entry.id %}" class="inline-form">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ existing_entry_next_url }}">
+        <button type="submit" class="icon-btn danger" aria-label="既存実績を削除" onclick="return confirm('この日の実績を削除しますか？ 決済明細も一緒に削除されます。');">
+          <i class="fa-solid fa-trash" aria-hidden="true"></i>
+        </button>
+      </form>
     </div>
     {% endif %}
   </section>

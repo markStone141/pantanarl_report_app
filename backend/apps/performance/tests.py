@@ -197,6 +197,24 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "その日の実績はすでに登録されています。")
 
+    def test_performance_past_entry_create_shows_edit_and_delete_for_existing_future_entry(self):
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 6, 15),
+            result_count=1,
+            support_amount=1000,
+        )
+
+        response = self.client.get(
+            reverse("performance_past_entry_create"),
+            {"department": self.department.id, "member": self.member.id, "entry_date": "2026-06-15"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("performance_entry_edit", args=[entry.id]))
+        self.assertContains(response, reverse("performance_entry_delete", args=[entry.id]))
+
     def test_performance_member_dashboard_nav_includes_report_app(self):
         self.client.logout()
         member_user = User.objects.create_user(username="perf-member-report-nav", password="pass1234", is_staff=False)
