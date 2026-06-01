@@ -60,6 +60,16 @@ class DepartmentForm(forms.Form):
         queryset=Member.objects.none(),
         empty_label="未設定",
     )
+    show_in_dashboard_submission = forms.BooleanField(
+        label="提出状況一覧に表示",
+        required=False,
+        initial=True,
+    )
+    show_in_dashboard_progress = forms.BooleanField(
+        label="目標進捗に表示",
+        required=False,
+        initial=True,
+    )
 
 
 class TargetMetricForm(forms.Form):

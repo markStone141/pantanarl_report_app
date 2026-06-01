@@ -318,6 +318,21 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f'<option value="{self.member.id}">{self.member.name}</option>', html=True)
 
+    def test_performance_past_entry_member_options_returns_department_members(self):
+        other_department = self.create_department("WV")
+        other_member = self.create_member(name="Other Member", department=other_department)
+
+        response = self.client.get(
+            reverse("performance_past_entry_member_options"),
+            {"department": self.department.id},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["options"], [{"id": self.member.id, "name": self.member.name}])
+        self.assertNotIn({"id": other_member.id, "name": other_member.name}, payload["options"])
+
     def test_performance_admin_entries_page_shows_summary_and_entry_actions(self):
         entry = MemberDailyMetricEntry.objects.create(
             member=self.member,

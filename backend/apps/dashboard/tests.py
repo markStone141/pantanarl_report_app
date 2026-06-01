@@ -394,12 +394,16 @@ class DepartmentSettingsViewTests(TestCase):
                 "name": "UN Updated",
                 "code": "UN",
                 "default_reporter": str(self.member_un.id),
+                "show_in_dashboard_submission": "on",
+                "show_in_dashboard_progress": "on",
             },
         )
         self.assertEqual(response.status_code, 200)
         department.refresh_from_db()
         self.assertEqual(department.name, "UN Updated")
         self.assertEqual(department.default_reporter_id, self.member_un.id)
+        self.assertTrue(department.show_in_dashboard_submission)
+        self.assertTrue(department.show_in_dashboard_progress)
 
     def test_update_department_rejects_reporter_outside_department(self):
         department = self.depts["UN"]
@@ -411,6 +415,8 @@ class DepartmentSettingsViewTests(TestCase):
                 "name": "UN Updated",
                 "code": "UN",
                 "default_reporter": str(self.member_wv.id),
+                "show_in_dashboard_submission": "on",
+                "show_in_dashboard_progress": "on",
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -422,6 +428,21 @@ class DepartmentSettingsViewTests(TestCase):
         response = self.client.post(reverse("department_delete", args=[department.id]))
         self.assertEqual(response.status_code, 302)
         self.assertFalse(Department.objects.filter(id=department.id).exists())
+
+    def test_create_department_can_disable_dashboard_sections(self):
+        response = self.client.post(
+            reverse("department_settings"),
+            {
+                "action": "save_department",
+                "name": "Hidden Team",
+                "code": "HIDDENTEAM",
+                "default_reporter": "",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        department = Department.objects.get(code="HIDDENTEAM")
+        self.assertFalse(department.show_in_dashboard_submission)
+        self.assertFalse(department.show_in_dashboard_progress)
 
     def test_create_metric_for_department(self):
         response = self.client.post(
@@ -554,6 +575,36 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertIn("50.0%", row["month_rate"])
         self.assertIn("4000", row["period_target"])
         self.assertIn("25.0%", row["period_rate"])
+
+    def test_dashboard_respects_department_visibility_flags(self):
+        today = timezone.localdate()
+        self.depts["WV"].show_in_dashboard_submission = False
+        self.depts["WV"].show_in_dashboard_progress = False
+        self.depts["WV"].save(update_fields=["show_in_dashboard_submission", "show_in_dashboard_progress"])
+
+        metric = TargetMetric.objects.create(
+            department=self.depts["WV"],
+            code="amount",
+            label="Amount",
+            unit="yen",
+            display_order=1,
+            is_active=True,
+        )
+        MonthTargetMetricValue.objects.create(
+            department=self.depts["WV"],
+            target_month=today.replace(day=1),
+            metric=metric,
+            status="active",
+            value=3000,
+        )
+
+        response = self.client.get(reverse("dashboard_index"))
+
+        self.assertEqual(response.status_code, 200)
+        labels = [row["label"] for row in response.context["target_progress_rows"]]
+        self.assertNotIn("WV", labels)
+        codes = [card["code"] for card in response.context["kpi_cards"]]
+        self.assertNotIn("WV", codes)
 
     def test_dashboard_mail_payload_switches_today_and_previous_day(self):
         today = timezone.localdate()

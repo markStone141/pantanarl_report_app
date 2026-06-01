@@ -2533,6 +2533,23 @@ def performance_past_entry_create(request: HttpRequest) -> HttpResponse:
 
 
 @require_performance_roles(ROLE_ADMIN)
+def performance_past_entry_member_options(request: HttpRequest) -> HttpResponse:
+    department_id = request.GET.get("department")
+    if not department_id or not department_id.isdigit():
+        return JsonResponse({"options": []})
+    department = Department.objects.filter(pk=int(department_id), is_active=True).first()
+    if department is None:
+        return JsonResponse({"options": []})
+    options = list(
+        Member.objects.filter(department_links__department=department)
+        .distinct()
+        .order_by("name")
+        .values("id", "name")
+    )
+    return JsonResponse({"options": options})
+
+
+@require_performance_roles(ROLE_ADMIN)
 def performance_adjustments(request: HttpRequest) -> HttpResponse:
     status_message = ""
     edit_adjustment = None

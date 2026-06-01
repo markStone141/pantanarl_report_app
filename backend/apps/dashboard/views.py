@@ -50,8 +50,10 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
     real_today = timezone.localdate()
     selected_mode = "prev" if request.GET.get("mode") == "prev" else "today"
     today = real_today - timedelta(days=1) if selected_mode == "prev" else real_today
-    target_department_objects = list(Department.objects.filter(is_active=True).order_by("code"))
-    target_departments = [(department.code, department.name) for department in target_department_objects]
+    all_department_objects = list(Department.objects.filter(is_active=True).order_by("code"))
+    submission_department_objects = [department for department in all_department_objects if department.show_in_dashboard_submission]
+    progress_department_objects = [department for department in all_department_objects if department.show_in_dashboard_progress]
+    target_departments = [(department.code, department.name) for department in submission_department_objects]
     snapshot = build_submission_snapshot(
         report_date=today,
         target_departments=target_departments,
@@ -63,10 +65,11 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
     for row in submission_rows:
         row["amount_text"] = _format_amount_text(row.get("amount"))
 
-    metrics_by_code = collect_metrics_by_code(target_codes=target_codes)
+    progress_target_codes = [department.code for department in progress_department_objects]
+    metrics_by_code = collect_metrics_by_code(target_codes=progress_target_codes)
     target_scope = build_target_scope_snapshot(
         target_date=today,
-        target_codes=target_codes,
+        target_codes=progress_target_codes,
         metrics_by_code=metrics_by_code,
     )
     current_month = target_scope["month_start"]
@@ -83,7 +86,9 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
     metric_detail_by_code = target_scope["metric_detail_by_code"]
 
     target_progress_rows = []
-    for code, label in target_departments:
+    for department in progress_department_objects:
+        code = department.code
+        label = department.name
         _, _, month_rate_text = format_metric_triples(
             metrics=metrics_by_code[code],
             target_values=month_target_values_by_code.get(code, {}),
@@ -125,7 +130,9 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
         )
 
     kpi_cards = []
-    for code, label in target_departments:
+    for department in progress_department_objects:
+        code = department.code
+        label = department.name
         member_rows = build_member_rows(member_totals=member_totals, codes=[code])
         for member_row in member_rows:
             member_row["amount_text"] = _format_amount_text(member_row.get("amount", 0))
@@ -143,7 +150,7 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
             }
         )
 
-    label_by_code = {code: label for code, label in target_departments}
+    label_by_code = {department.code: department.name for department in submission_department_objects}
 
     def build_mail_template_payload(base_date):
         base_snapshot = build_submission_snapshot(
@@ -164,7 +171,7 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
 
         base_scope = build_target_scope_snapshot(
             target_date=base_date,
-            target_codes=target_codes,
+            target_codes=progress_target_codes,
             metrics_by_code=metrics_by_code,
         )
         base_month = base_scope["month_start"]
@@ -651,6 +658,8 @@ def department_settings(request: HttpRequest) -> HttpResponse:
             "name": edit_department.name,
             "code": edit_department.code,
             "default_reporter": edit_department.default_reporter_id,
+            "show_in_dashboard_submission": edit_department.show_in_dashboard_submission,
+            "show_in_dashboard_progress": edit_department.show_in_dashboard_progress,
         }
         if edit_department
         else None,
@@ -706,7 +715,17 @@ def department_settings(request: HttpRequest) -> HttpResponse:
                             department.name = form.cleaned_data["name"].strip()
                             department.code = code
                             department.default_reporter = default_reporter
-                            department.save(update_fields=["name", "code", "default_reporter"])
+                            department.show_in_dashboard_submission = form.cleaned_data["show_in_dashboard_submission"]
+                            department.show_in_dashboard_progress = form.cleaned_data["show_in_dashboard_progress"]
+                            department.save(
+                                update_fields=[
+                                    "name",
+                                    "code",
+                                    "default_reporter",
+                                    "show_in_dashboard_submission",
+                                    "show_in_dashboard_progress",
+                                ]
+                            )
                             status_message = f"{department.name}（{department.code}）を更新しました。"
                             edit_department = None
                             form = _department_form()
@@ -716,6 +735,8 @@ def department_settings(request: HttpRequest) -> HttpResponse:
                             code=code,
                             default_reporter=None,
                             is_active=True,
+                            show_in_dashboard_submission=form.cleaned_data["show_in_dashboard_submission"],
+                            show_in_dashboard_progress=form.cleaned_data["show_in_dashboard_progress"],
                         )
                         status_message = f"{department.name}（{department.code}）を追加しました。"
                         edit_department = None

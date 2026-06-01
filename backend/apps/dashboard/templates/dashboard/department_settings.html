@@ -54,6 +54,18 @@
         <div class="error-text">{{ form.default_reporter.errors|striptags }}</div>
         {% endif %}
 
+        <label for="id_show_in_dashboard_submission">{{ form.show_in_dashboard_submission.label }}</label>
+        {{ form.show_in_dashboard_submission }}
+        {% if form.show_in_dashboard_submission.errors %}
+        <div class="error-text">{{ form.show_in_dashboard_submission.errors|striptags }}</div>
+        {% endif %}
+
+        <label for="id_show_in_dashboard_progress">{{ form.show_in_dashboard_progress.label }}</label>
+        {{ form.show_in_dashboard_progress }}
+        {% if form.show_in_dashboard_progress.errors %}
+        <div class="error-text">{{ form.show_in_dashboard_progress.errors|striptags }}</div>
+        {% endif %}
+
         <button type="submit" class="mt-12">
           {% if edit_department %}部署を更新{% else %}部署を追加{% endif %}
         </button>
@@ -69,13 +81,15 @@
       <div class="table-scroll">
       <table class="mobile-card-table">
         <thead>
-          <tr><th>部署名</th><th>部署コード</th><th>操作</th></tr>
+          <tr><th>部署名</th><th>部署コード</th><th>提出状況</th><th>目標進捗</th><th>操作</th></tr>
         </thead>
         <tbody>
           {% for department in departments %}
           <tr>
             <td>{{ department.name }}</td>
             <td>{{ department.code }}</td>
+            <td>{% if department.show_in_dashboard_submission %}表示{% else %}非表示{% endif %}</td>
+            <td>{% if department.show_in_dashboard_progress %}表示{% else %}非表示{% endif %}</td>
             <td>
               <a class="btn-inline" href="{% url 'department_settings' %}?edit={{ department.id }}">編集</a>
               <a class="btn-inline" href="{% url 'department_settings' %}?metric_department={{ department.id }}">指標</a>

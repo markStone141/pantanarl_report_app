@@ -172,12 +172,31 @@
     if (!form) return;
     const departmentSelect = form.querySelector('select[name="department"]');
     const memberSelect = form.querySelector('select[name="member"]');
-    if (!departmentSelect) return;
+    if (!departmentSelect || !memberSelect) return;
+    const endpoint = "{% url 'performance_past_entry_member_options' %}";
+
+    function renderOptions(options) {
+      memberSelect.innerHTML = '<option value="">メンバーを選択</option>';
+      options.forEach(function (option) {
+        const element = document.createElement("option");
+        element.value = option.id;
+        element.textContent = option.name;
+        memberSelect.appendChild(element);
+      });
+    }
+
     departmentSelect.addEventListener("change", function () {
-      if (memberSelect) {
-        memberSelect.value = "";
+      memberSelect.value = "";
+      if (!departmentSelect.value) {
+        renderOptions([]);
+        return;
       }
-      form.requestSubmit();
+      fetch(`${endpoint}?department=${encodeURIComponent(departmentSelect.value)}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      })
+        .then(function (response) { return response.json(); })
+        .then(function (data) { renderOptions(data.options || []); })
+        .catch(function () { renderOptions([]); });
     });
   })();
 </script>

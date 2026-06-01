@@ -24,6 +24,8 @@ class Department(models.Model):
         related_name="default_department_links",
     )
     is_active = models.BooleanField(default=True)
+    show_in_dashboard_submission = models.BooleanField(default=True)
+    show_in_dashboard_progress = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
