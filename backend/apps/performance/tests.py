@@ -375,6 +375,61 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f'<option value="{inactive_member.id}">{inactive_member.name}</option>', html=True)
 
+    def test_performance_admin_entries_can_delete_orphan_summary(self):
+        summary = DepartmentDailyMetricSummary.objects.create(
+            department=self.department,
+            entry_date=date(2026, 6, 4),
+            approach_count=0,
+            communication_count=0,
+            result_count=0,
+            support_amount=0,
+            created_by=self.member,
+            updated_by=self.member,
+        )
+
+        response = self.client.post(
+            reverse("performance_summary_delete", args=[summary.id]),
+            {"next": reverse("performance_admin_entries")},
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('performance_admin_entries')}?deleted=summary",
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(DepartmentDailyMetricSummary.objects.filter(pk=summary.id).exists())
+
+    def test_performance_admin_entries_does_not_delete_summary_with_entries(self):
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 6, 5),
+            result_count=1,
+            support_amount=1000,
+        )
+        summary = DepartmentDailyMetricSummary.objects.create(
+            department=self.department,
+            entry_date=entry.entry_date,
+            approach_count=0,
+            communication_count=0,
+            result_count=1,
+            support_amount=1000,
+            created_by=self.member,
+            updated_by=self.member,
+        )
+
+        response = self.client.post(
+            reverse("performance_summary_delete", args=[summary.id]),
+            {"next": reverse("performance_admin_entries")},
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('performance_admin_entries')}?status=summary_not_empty",
+            fetch_redirect_response=False,
+        )
+        self.assertTrue(DepartmentDailyMetricSummary.objects.filter(pk=summary.id).exists())
+
     def test_performance_index_auto_closes_stale_open_entries(self):
         stale_entry = MemberDailyMetricEntry.objects.create(
             member=self.member,

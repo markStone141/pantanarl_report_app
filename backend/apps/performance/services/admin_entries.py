@@ -86,6 +86,7 @@ def build_admin_entry_summary_rows(*, summaries, next_url):
         )
     rows = []
     for summary in summaries:
+        entries = entry_map.get((summary.department_id, summary.entry_date), [])
         rows.append(
             {
                 "summary": summary,
@@ -95,7 +96,9 @@ def build_admin_entry_summary_rows(*, summaries, next_url):
                 "communication_count": int(summary.communication_count or 0),
                 "count_text": f"{int(summary.result_count or 0)}件",
                 "amount_text": f"{int(summary.support_amount or 0):,}円",
-                "entries": entry_map.get((summary.department_id, summary.entry_date), []),
+                "entries": entries,
+                "can_delete_summary": not entries,
+                "delete_summary_url": f"{reverse('performance_summary_delete', args=[summary.id])}?next={next_url}",
             }
         )
     return rows

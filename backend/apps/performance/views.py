@@ -2549,6 +2549,27 @@ def performance_past_entry_member_options(request: HttpRequest) -> HttpResponse:
 
 
 @require_performance_roles(ROLE_ADMIN)
+def performance_summary_delete(request: HttpRequest, summary_id: int) -> HttpResponse:
+    if request.method != "POST":
+        raise Http404
+    summary = get_object_or_404(
+        DepartmentDailyMetricSummary.objects.select_related("department"),
+        pk=summary_id,
+    )
+    next_url = request.POST.get("next") or request.GET.get("next") or reverse("performance_admin_entries")
+    has_entries = MemberDailyMetricEntry.objects.filter(
+        department=summary.department,
+        entry_date=summary.entry_date,
+    ).exists()
+    if not has_entries:
+        summary.delete()
+        separator = "&" if "?" in next_url else "?"
+        return redirect(f"{_performance_next_url(next_url, fallback=reverse('performance_admin_entries'))}{separator}deleted=summary")
+    separator = "&" if "?" in next_url else "?"
+    return redirect(f"{_performance_next_url(next_url, fallback=reverse('performance_admin_entries'))}{separator}status=summary_not_empty")
+
+
+@require_performance_roles(ROLE_ADMIN)
 def performance_adjustments(request: HttpRequest) -> HttpResponse:
     status_message = ""
     edit_adjustment = None

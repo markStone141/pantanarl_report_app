@@ -62,6 +62,16 @@
           <span>{{ row.amount_text }}</span>
         </div>
       </div>
+      {% if row.can_delete_summary %}
+      <div class="mt-12">
+        <form method="post" action="{{ row.delete_summary_url }}" class="inline-form" onsubmit="return confirm('この全体エントリーを削除します。よろしいですか？');">
+          {% csrf_token %}
+          <button type="submit" class="icon-btn icon-btn-danger" aria-label="全体エントリーを削除">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+          </button>
+        </form>
+      </div>
+      {% endif %}
       {% if row.entries %}
       <div class="table-wrap mt-12">
         <table>
