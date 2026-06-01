@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container" data-personal-setup-fields-url="{% url 'dairymetrics_entry_v2_personal_setup_fields' %}">
   <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
     <div>
       <strong>決済登録</strong>
@@ -50,81 +50,9 @@
           <h3>個人の日目標を入力</h3>
           <p class="muted">{{ member.name }}さんの活動準備です。</p>
         </div>
-        <form method="post">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="save_personal_setup">
-          <div class="dairymetrics-v2-transaction-form">
-            <div class="dairymetrics-field">
-              <label for="v2-personal-department">部署</label>
-              <select id="v2-personal-department" name="department">
-                {% for department in departments %}
-                <option value="{{ department.id }}" {% if personal_setup_form.department.value|stringformat:"s" == department.id|stringformat:"s" %}selected{% endif %}>{{ department.name }}</option>
-                {% endfor %}
-              </select>
-              {% if personal_setup_form.department.errors %}<div class="error-text">{{ personal_setup_form.department.errors|striptags }}</div>{% endif %}
-            </div>
-            <div class="dairymetrics-field">
-              <label for="v2-personal-date">活動日</label>
-              <div class="dairymetrics-date-wrap">
-                <div class="dairymetrics-date-field">
-                  <input id="v2-personal-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ personal_entry_date_value }}">
-                </div>
-              </div>
-              {% if personal_setup_form.entry_date.errors %}<div class="error-text">{{ personal_setup_form.entry_date.errors|striptags }}</div>{% endif %}
-            </div>
-            <div class="dairymetrics-field">
-              <label for="v2-personal-location">今日の活動現場</label>
-              <input id="v2-personal-location" type="text" name="location_name" value="{{ personal_location_name_value }}">
-              {% if personal_setup_form.location_name.errors %}<div class="error-text">{{ personal_setup_form.location_name.errors|striptags }}</div>{% endif %}
-            </div>
-            {% if selected_department_is_wv %}
-            <div class="dairymetrics-field">
-              <label for="v2-personal-target-cs-count">個人のCS件数目標</label>
-              <input id="v2-personal-target-cs-count" type="number" min="0" step="1" name="daily_target_cs_count" value="{{ personal_target_cs_count_value }}">
-              {% if personal_setup_form.daily_target_cs_count.errors %}<div class="error-text">{{ personal_setup_form.daily_target_cs_count.errors|striptags }}</div>{% endif %}
-            </div>
-            <div class="dairymetrics-field">
-              <label for="v2-personal-target-refugee-count">個人の難民件数目標</label>
-              <input id="v2-personal-target-refugee-count" type="number" min="0" step="1" name="daily_target_refugee_count" value="{{ personal_target_refugee_count_value }}">
-              {% if personal_setup_form.daily_target_refugee_count.errors %}<div class="error-text">{{ personal_setup_form.daily_target_refugee_count.errors|striptags }}</div>{% endif %}
-            </div>
-            {% else %}
-            <div class="dairymetrics-field">
-              <label for="v2-personal-target-count-select">個人の件数目標</label>
-              <select id="v2-personal-target-count-select" data-target-select data-target-custom="#v2-personal-target-count-wrap" data-target-hidden="#v2-personal-target-count-hidden">
-                {% for count in target_count_options %}
-                <option value="{{ count }}" {% if personal_target_count_value == count|stringformat:"s" %}selected{% endif %}>{{ count }}件</option>
-                {% endfor %}
-                <option value="custom" {% if personal_target_count_value != "1" and personal_target_count_value != "2" and personal_target_count_value != "3" and personal_target_count_value != "4" and personal_target_count_value != "5" %}selected{% endif %}>直接入力</option>
-              </select>
-              <input type="hidden" name="daily_target_count" id="v2-personal-target-count-hidden" value="{{ personal_setup_form.daily_target_count.value|default:1 }}">
-              {% if personal_setup_form.daily_target_count.errors %}<div class="error-text">{{ personal_setup_form.daily_target_count.errors|striptags }}</div>{% endif %}
-            </div>
-            <div class="dairymetrics-field" id="v2-personal-target-count-wrap" hidden>
-              <label for="v2-personal-target-count-custom">個人の件数目標を直接入力</label>
-              <input id="v2-personal-target-count-custom" type="number" min="0" step="1" value="{{ personal_setup_form.daily_target_count.value|default:1 }}">
-            </div>
-            {% endif %}
-            <div class="dairymetrics-field">
-              <label for="v2-personal-target-amount-select">個人の金額目標</label>
-              <select id="v2-personal-target-amount-select" data-target-select data-target-custom="#v2-personal-target-amount-wrap" data-target-hidden="#v2-personal-target-amount-hidden">
-                <option value="custom" {% if personal_target_amount_value != "1000" and personal_target_amount_value != "1500" and personal_target_amount_value != "2000" and personal_target_amount_value != "2500" and personal_target_amount_value != "3000" and personal_target_amount_value != "3500" and personal_target_amount_value != "4000" and personal_target_amount_value != "4500" and personal_target_amount_value != "5000" and personal_target_amount_value != "5500" and personal_target_amount_value != "6000" and personal_target_amount_value != "6500" and personal_target_amount_value != "7000" and personal_target_amount_value != "7500" and personal_target_amount_value != "8000" and personal_target_amount_value != "8500" and personal_target_amount_value != "9000" and personal_target_amount_value != "9500" and personal_target_amount_value != "10000" %}selected{% endif %}>直接入力</option>
-                {% for amount in target_amount_options %}
-                <option value="{{ amount }}" {% if personal_target_amount_value == amount|stringformat:"s" %}selected{% endif %}>{{ amount|intcomma }}円</option>
-                {% endfor %}
-              </select>
-              <input type="hidden" name="daily_target_amount" id="v2-personal-target-amount-hidden" value="{{ personal_setup_form.daily_target_amount.value|default:6000 }}">
-              {% if personal_setup_form.daily_target_amount.errors %}<div class="error-text">{{ personal_setup_form.daily_target_amount.errors|striptags }}</div>{% endif %}
-            </div>
-            <div class="dairymetrics-field" id="v2-personal-target-amount-wrap" hidden>
-              <label for="v2-personal-target-amount-custom">個人の金額目標を直接入力</label>
-              <input id="v2-personal-target-amount-custom" type="number" min="0" step="100" value="{{ personal_setup_form.daily_target_amount.value|default:6000 }}">
-            </div>
-          </div>
-          <div class="dairymetrics-v2-transaction-actions">
-            <button type="submit" class="btn-inline dairymetrics-save-btn">個人の準備を保存</button>
-          </div>
-        </form>
+        <div id="dairymetrics-v2-personal-setup-form-root">
+          {% include "dairymetrics/partials/personal_setup_form.html" with department_select_id="v2-personal-department" entry_date_id="v2-personal-date" location_id="v2-personal-location" cs_count_id="v2-personal-target-cs-count" refugee_count_id="v2-personal-target-refugee-count" count_select_id="v2-personal-target-count-select" count_hidden_id="v2-personal-target-count-hidden" count_wrap_id="v2-personal-target-count-wrap" count_custom_id="v2-personal-target-count-custom" amount_select_id="v2-personal-target-amount-select" amount_hidden_id="v2-personal-target-amount-hidden" amount_wrap_id="v2-personal-target-amount-wrap" amount_custom_id="v2-personal-target-amount-custom" submit_label="個人の準備を保存" close_button_label="" close_button_attr="" %}
+        </div>
       </div>
       {% endif %}
 
@@ -328,77 +256,9 @@
           <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-personal-target-edit>修正する</button>
         </div>
         <section class="dairymetrics-v2-entry-panel" id="dairymetrics-v2-personal-target-panel" {% if not open_personal_target_panel %}hidden{% endif %}>
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="save_personal_setup">
-            <div class="dairymetrics-v2-transaction-form">
-              <div class="dairymetrics-field">
-                <label for="v2-inline-personal-department">部署</label>
-                <select id="v2-inline-personal-department" name="department">
-                  {% for department in departments %}
-                  <option value="{{ department.id }}" {% if personal_setup_form.department.value|stringformat:"s" == department.id|stringformat:"s" %}selected{% endif %}>{{ department.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="dairymetrics-field">
-                <label for="v2-inline-personal-date">活動日</label>
-              <div class="dairymetrics-date-wrap">
-                <div class="dairymetrics-date-field">
-                  <input id="v2-inline-personal-date" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ personal_entry_date_value }}">
-                </div>
-              </div>
-            </div>
-              <div class="dairymetrics-field">
-                <label for="v2-inline-personal-location">今日の活動現場</label>
-                <input id="v2-inline-personal-location" type="text" name="location_name" value="{{ personal_location_name_value }}">
-              </div>
-              {% if selected_department_is_wv %}
-              <div class="dairymetrics-field">
-                <label for="v2-inline-personal-cs-count">個人のCS件数目標</label>
-                <input id="v2-inline-personal-cs-count" type="number" min="0" step="1" name="daily_target_cs_count" value="{{ personal_target_cs_count_value }}">
-                {% if personal_setup_form.daily_target_cs_count.errors %}<div class="error-text">{{ personal_setup_form.daily_target_cs_count.errors|striptags }}</div>{% endif %}
-              </div>
-              <div class="dairymetrics-field">
-                <label for="v2-inline-personal-refugee-count">個人の難民件数目標</label>
-                <input id="v2-inline-personal-refugee-count" type="number" min="0" step="1" name="daily_target_refugee_count" value="{{ personal_target_refugee_count_value }}">
-                {% if personal_setup_form.daily_target_refugee_count.errors %}<div class="error-text">{{ personal_setup_form.daily_target_refugee_count.errors|striptags }}</div>{% endif %}
-              </div>
-              {% else %}
-              <div class="dairymetrics-field">
-                <label for="v2-inline-personal-count-select">個人の件数目標</label>
-                <select id="v2-inline-personal-count-select" data-target-select data-target-custom="#v2-inline-personal-count-wrap" data-target-hidden="#v2-inline-personal-count-hidden">
-                  {% for count in target_count_options %}
-                  <option value="{{ count }}" {% if personal_target_count_value == count|stringformat:"s" %}selected{% endif %}>{{ count }}件</option>
-                  {% endfor %}
-                  <option value="custom" {% if personal_target_count_value != "1" and personal_target_count_value != "2" and personal_target_count_value != "3" and personal_target_count_value != "4" and personal_target_count_value != "5" %}selected{% endif %}>直接入力</option>
-                </select>
-                <input type="hidden" name="daily_target_count" id="v2-inline-personal-count-hidden" value="{{ personal_target_count_value }}">
-              </div>
-              <div class="dairymetrics-field" id="v2-inline-personal-count-wrap" hidden>
-                <label for="v2-inline-personal-count-custom">個人の件数目標を直接入力</label>
-                <input id="v2-inline-personal-count-custom" type="number" min="0" step="1" value="{{ personal_target_count_value }}">
-              </div>
-              {% endif %}
-              <div class="dairymetrics-field">
-                <label for="v2-inline-personal-amount-select">個人の金額目標</label>
-                <select id="v2-inline-personal-amount-select" data-target-select data-target-custom="#v2-inline-personal-amount-wrap" data-target-hidden="#v2-inline-personal-amount-hidden">
-                  <option value="custom" {% if personal_target_amount_value != "1000" and personal_target_amount_value != "1500" and personal_target_amount_value != "2000" and personal_target_amount_value != "2500" and personal_target_amount_value != "3000" and personal_target_amount_value != "3500" and personal_target_amount_value != "4000" and personal_target_amount_value != "4500" and personal_target_amount_value != "5000" and personal_target_amount_value != "5500" and personal_target_amount_value != "6000" and personal_target_amount_value != "6500" and personal_target_amount_value != "7000" and personal_target_amount_value != "7500" and personal_target_amount_value != "8000" and personal_target_amount_value != "8500" and personal_target_amount_value != "9000" and personal_target_amount_value != "9500" and personal_target_amount_value != "10000" %}selected{% endif %}>直接入力</option>
-                  {% for amount in target_amount_options %}
-                  <option value="{{ amount }}" {% if personal_target_amount_value == amount|stringformat:"s" %}selected{% endif %}>{{ amount|intcomma }}円</option>
-                  {% endfor %}
-                </select>
-                <input type="hidden" name="daily_target_amount" id="v2-inline-personal-amount-hidden" value="{{ personal_target_amount_value }}">
-              </div>
-              <div class="dairymetrics-field" id="v2-inline-personal-amount-wrap" hidden>
-                <label for="v2-inline-personal-amount-custom">個人の金額目標を直接入力</label>
-                <input id="v2-inline-personal-amount-custom" type="number" min="0" step="100" value="{{ personal_target_amount_value }}">
-              </div>
-            </div>
-            <div class="dairymetrics-v2-transaction-actions">
-              <button type="submit" class="btn-inline dairymetrics-save-btn">修正内容を保存</button>
-              <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-personal-target-edit>閉じる</button>
-            </div>
-          </form>
+          <div id="dairymetrics-v2-inline-personal-setup-form-root">
+            {% include "dairymetrics/partials/personal_setup_form.html" with department_select_id="v2-inline-personal-department" entry_date_id="v2-inline-personal-date" location_id="v2-inline-personal-location" cs_count_id="v2-inline-personal-cs-count" refugee_count_id="v2-inline-personal-refugee-count" count_select_id="v2-inline-personal-count-select" count_hidden_id="v2-inline-personal-count-hidden" count_wrap_id="v2-inline-personal-count-wrap" count_custom_id="v2-inline-personal-count-custom" amount_select_id="v2-inline-personal-amount-select" amount_hidden_id="v2-inline-personal-amount-hidden" amount_wrap_id="v2-inline-personal-amount-wrap" amount_custom_id="v2-inline-personal-amount-custom" submit_label="修正内容を保存" close_button_label="閉じる" close_button_attr='data-close-personal-target-edit' %}
+          </div>
         </section>
         {% endif %}
         {% if card.label == "全体の日目標" %}
@@ -770,9 +630,9 @@
     const mailPreviewTransactionId = document.getElementById("dairymetrics-v2-mail-transaction-id");
     const mailPreviewHistoryId = document.getElementById("dairymetrics-v2-mail-history-id");
     const mailPreviewSubmitButton = document.getElementById("dairymetrics-v2-mail-submit-button");
-    const targetSelects = document.querySelectorAll("[data-target-select]");
     const ageSelect = document.querySelector("[data-student-age]");
     const studentWrap = document.getElementById("v2-student-wrap");
+    const personalSetupFieldsUrl = document.querySelector("[data-personal-setup-fields-url]")?.dataset.personalSetupFieldsUrl || "";
 
     function syncTargetFieldState(select) {
       const targetSelector = select?.dataset.targetCustom;
@@ -791,10 +651,64 @@
       if (hiddenInput) {
         hiddenInput.value = isCustom && input ? input.value : select.value;
       }
-      if (input) {
+      if (input && input.dataset.targetSyncBound !== "1") {
+        input.dataset.targetSyncBound = "1";
         input.addEventListener("input", function () {
           hiddenInput.value = input.value;
         });
+      }
+    }
+
+    function bindTargetSelects(root = document) {
+      root.querySelectorAll("[data-target-select]").forEach(function (select) {
+        if (select.dataset.targetSelectBound === "1") {
+          syncTargetFieldState(select);
+          return;
+        }
+        select.dataset.targetSelectBound = "1";
+        select.addEventListener("change", function () {
+          syncTargetFieldState(select);
+        });
+        syncTargetFieldState(select);
+      });
+    }
+
+    function buildPersonalSetupQuery(form) {
+      const formData = new FormData(form);
+      const params = new URLSearchParams();
+      [
+        "department",
+        "entry_date",
+        "location_name",
+        "daily_target_count",
+        "daily_target_cs_count",
+        "daily_target_refugee_count",
+        "daily_target_amount",
+      ].forEach(function (name) {
+        const value = formData.get(name);
+        if (value !== null) {
+          params.set(name, value);
+        }
+      });
+      return params.toString();
+    }
+
+    async function refreshPersonalSetupForms(form) {
+      if (!personalSetupFieldsUrl || !form) return;
+      const response = await fetch(`${personalSetupFieldsUrl}?${buildPersonalSetupQuery(form)}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      if (!response.ok) return;
+      const payload = await response.json();
+      const setupRoot = document.getElementById("dairymetrics-v2-personal-setup-form-root");
+      const inlineRoot = document.getElementById("dairymetrics-v2-inline-personal-setup-form-root");
+      if (setupRoot && payload.setup_html) {
+        setupRoot.innerHTML = payload.setup_html;
+        bindTargetSelects(setupRoot);
+      }
+      if (inlineRoot && payload.inline_html) {
+        inlineRoot.innerHTML = payload.inline_html;
+        bindTargetSelects(inlineRoot);
       }
     }
 
@@ -1147,12 +1061,13 @@
       });
     });
 
-    targetSelects.forEach(function (select) {
-      select.addEventListener("change", function () {
-        syncTargetFieldState(select);
-      });
-      syncTargetFieldState(select);
+    document.addEventListener("change", function (event) {
+      const departmentSelect = event.target.closest("[data-personal-setup-department-select]");
+      if (!departmentSelect) return;
+      refreshPersonalSetupForms(departmentSelect.form);
     });
+
+    bindTargetSelects(document);
 
     ageSelect?.addEventListener("change", syncStudentField);
     transactionResultTypeSelect?.addEventListener("change", syncWvTransactionFields);

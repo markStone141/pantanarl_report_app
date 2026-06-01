@@ -1,0 +1,84 @@
+{% load humanize %}
+
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="save_personal_setup">
+  <div class="dairymetrics-v2-transaction-form">
+    <div class="dairymetrics-field">
+      <label for="{{ department_select_id }}">部署</label>
+      <select
+        id="{{ department_select_id }}"
+        name="department"
+        data-personal-setup-department-select
+      >
+        {% for department in departments %}
+        <option value="{{ department.id }}" {% if personal_setup_form.department.value|stringformat:"s" == department.id|stringformat:"s" %}selected{% endif %}>{{ department.name }}</option>
+        {% endfor %}
+      </select>
+      {% if personal_setup_form.department.errors %}<div class="error-text">{{ personal_setup_form.department.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="dairymetrics-field">
+      <label for="{{ entry_date_id }}">活動日</label>
+      <div class="dairymetrics-date-wrap">
+        <div class="dairymetrics-date-field">
+          <input id="{{ entry_date_id }}" class="dairymetrics-date-input" type="date" name="entry_date" value="{{ personal_entry_date_value }}">
+        </div>
+      </div>
+      {% if personal_setup_form.entry_date.errors %}<div class="error-text">{{ personal_setup_form.entry_date.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="dairymetrics-field">
+      <label for="{{ location_id }}">今日の活動現場</label>
+      <input id="{{ location_id }}" type="text" name="location_name" value="{{ personal_location_name_value }}">
+      {% if personal_setup_form.location_name.errors %}<div class="error-text">{{ personal_setup_form.location_name.errors|striptags }}</div>{% endif %}
+    </div>
+    {% if selected_department_is_wv %}
+    <div class="dairymetrics-field">
+      <label for="{{ cs_count_id }}">個人のCS件数目標</label>
+      <input id="{{ cs_count_id }}" type="number" min="0" step="1" name="daily_target_cs_count" value="{{ personal_target_cs_count_value }}">
+      {% if personal_setup_form.daily_target_cs_count.errors %}<div class="error-text">{{ personal_setup_form.daily_target_cs_count.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="dairymetrics-field">
+      <label for="{{ refugee_count_id }}">個人の難民件数目標</label>
+      <input id="{{ refugee_count_id }}" type="number" min="0" step="1" name="daily_target_refugee_count" value="{{ personal_target_refugee_count_value }}">
+      {% if personal_setup_form.daily_target_refugee_count.errors %}<div class="error-text">{{ personal_setup_form.daily_target_refugee_count.errors|striptags }}</div>{% endif %}
+    </div>
+    {% else %}
+    <div class="dairymetrics-field">
+      <label for="{{ count_select_id }}">個人の件数目標</label>
+      <select id="{{ count_select_id }}" data-target-select data-target-custom="#{{ count_wrap_id }}" data-target-hidden="#{{ count_hidden_id }}">
+        {% for count in target_count_options %}
+        <option value="{{ count }}" {% if personal_target_count_value == count|stringformat:"s" %}selected{% endif %}>{{ count }}件</option>
+        {% endfor %}
+        <option value="custom" {% if personal_target_count_value != "1" and personal_target_count_value != "2" and personal_target_count_value != "3" and personal_target_count_value != "4" and personal_target_count_value != "5" %}selected{% endif %}>直接入力</option>
+      </select>
+      <input type="hidden" name="daily_target_count" id="{{ count_hidden_id }}" value="{{ personal_target_count_value }}">
+      {% if personal_setup_form.daily_target_count.errors %}<div class="error-text">{{ personal_setup_form.daily_target_count.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="dairymetrics-field" id="{{ count_wrap_id }}" hidden>
+      <label for="{{ count_custom_id }}">個人の件数目標を直接入力</label>
+      <input id="{{ count_custom_id }}" type="number" min="0" step="1" value="{{ personal_target_count_value }}">
+    </div>
+    {% endif %}
+    <div class="dairymetrics-field">
+      <label for="{{ amount_select_id }}">個人の金額目標</label>
+      <select id="{{ amount_select_id }}" data-target-select data-target-custom="#{{ amount_wrap_id }}" data-target-hidden="#{{ amount_hidden_id }}">
+        <option value="custom" {% if personal_target_amount_value != "1000" and personal_target_amount_value != "1500" and personal_target_amount_value != "2000" and personal_target_amount_value != "2500" and personal_target_amount_value != "3000" and personal_target_amount_value != "3500" and personal_target_amount_value != "4000" and personal_target_amount_value != "4500" and personal_target_amount_value != "5000" and personal_target_amount_value != "5500" and personal_target_amount_value != "6000" and personal_target_amount_value != "6500" and personal_target_amount_value != "7000" and personal_target_amount_value != "7500" and personal_target_amount_value != "8000" and personal_target_amount_value != "8500" and personal_target_amount_value != "9000" and personal_target_amount_value != "9500" and personal_target_amount_value != "10000" %}selected{% endif %}>直接入力</option>
+        {% for amount in target_amount_options %}
+        <option value="{{ amount }}" {% if personal_target_amount_value == amount|stringformat:"s" %}selected{% endif %}>{{ amount|intcomma }}円</option>
+        {% endfor %}
+      </select>
+      <input type="hidden" name="daily_target_amount" id="{{ amount_hidden_id }}" value="{{ personal_target_amount_value }}">
+      {% if personal_setup_form.daily_target_amount.errors %}<div class="error-text">{{ personal_setup_form.daily_target_amount.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="dairymetrics-field" id="{{ amount_wrap_id }}" hidden>
+      <label for="{{ amount_custom_id }}">個人の金額目標を直接入力</label>
+      <input id="{{ amount_custom_id }}" type="number" min="0" step="100" value="{{ personal_target_amount_value }}">
+    </div>
+  </div>
+  <div class="dairymetrics-v2-transaction-actions">
+    <button type="submit" class="btn-inline dairymetrics-save-btn">{{ submit_label }}</button>
+    {% if close_button_label %}
+    <button type="button" class="btn-inline dairymetrics-secondary-btn" {{ close_button_attr|safe }}>{{ close_button_label }}</button>
+    {% endif %}
+  </div>
+</form>

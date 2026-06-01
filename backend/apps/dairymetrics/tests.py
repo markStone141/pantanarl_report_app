@@ -124,6 +124,51 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertNotContains(response, "難民支援金額")
         self.assertNotContains(response, "区分")
 
+    def test_entry_v2_personal_setup_fields_ajax_shows_un_count_field(self):
+        entry_date = timezone.localdate()
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_personal_setup_fields"),
+            {
+                "department": str(self.department.id),
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "daily_target_count": "2",
+                "daily_target_amount": "4000",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn('name="daily_target_count"', payload["setup_html"])
+        self.assertNotIn('name="daily_target_cs_count"', payload["setup_html"])
+        self.assertNotIn('name="daily_target_refugee_count"', payload["setup_html"])
+
+    def test_entry_v2_personal_setup_fields_ajax_shows_wv_split_count_fields(self):
+        wv_department = self.create_department("WV")
+        MemberDepartment.objects.create(member=self.member, department=wv_department)
+        entry_date = timezone.localdate()
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_personal_setup_fields"),
+            {
+                "department": str(wv_department.id),
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "daily_target_cs_count": "2",
+                "daily_target_refugee_count": "1",
+                "daily_target_amount": "4000",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn('name="daily_target_cs_count"', payload["setup_html"])
+        self.assertIn('name="daily_target_refugee_count"', payload["setup_html"])
+        self.assertNotIn('name="daily_target_count"', payload["setup_html"])
+
 
 class DairyMetricsDashboardTests(AppTestMixin, TestCase):
     DEFAULT_PASSWORD = "pass123"

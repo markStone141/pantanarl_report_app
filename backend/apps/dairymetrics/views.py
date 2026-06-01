@@ -231,6 +231,33 @@ def _default_member_filter_code(viewer_member, filter_departments):
             return viewer_department.code
     return department_codes[0] if department_codes else ""
 
+
+def _render_personal_setup_form_partial(request: HttpRequest, context: dict, *, inline: bool) -> str:
+    partial_context = {
+        **context,
+        "department_select_id": "v2-inline-personal-department" if inline else "v2-personal-department",
+        "entry_date_id": "v2-inline-personal-date" if inline else "v2-personal-date",
+        "location_id": "v2-inline-personal-location" if inline else "v2-personal-location",
+        "cs_count_id": "v2-inline-personal-cs-count" if inline else "v2-personal-target-cs-count",
+        "refugee_count_id": "v2-inline-personal-refugee-count" if inline else "v2-personal-target-refugee-count",
+        "count_select_id": "v2-inline-personal-count-select" if inline else "v2-personal-target-count-select",
+        "count_hidden_id": "v2-inline-personal-count-hidden" if inline else "v2-personal-target-count-hidden",
+        "count_wrap_id": "v2-inline-personal-count-wrap" if inline else "v2-personal-target-count-wrap",
+        "count_custom_id": "v2-inline-personal-count-custom" if inline else "v2-personal-target-count-custom",
+        "amount_select_id": "v2-inline-personal-amount-select" if inline else "v2-personal-target-amount-select",
+        "amount_hidden_id": "v2-inline-personal-amount-hidden" if inline else "v2-personal-target-amount-hidden",
+        "amount_wrap_id": "v2-inline-personal-amount-wrap" if inline else "v2-personal-target-amount-wrap",
+        "amount_custom_id": "v2-inline-personal-amount-custom" if inline else "v2-personal-target-amount-custom",
+        "submit_label": "修正内容を保存" if inline else "個人の準備を保存",
+        "close_button_label": "閉じる" if inline else "",
+        "close_button_attr": "data-close-personal-target-edit" if inline else "",
+    }
+    return render_to_string(
+        "dairymetrics/partials/personal_setup_form.html",
+        partial_context,
+        request=request,
+    )
+
 def _build_member_dashboard_context(*, request, member, readonly=False, viewer_member=None):
     selected_department_code = (request.GET.get("department") or "").strip()
     selected_scope = (request.GET.get("scope") or "today").strip()
@@ -828,6 +855,58 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
         "metrics_v2_payload_json": payload_json,
     }
     return render(request, "dairymetrics/metrics_v2.html", context)
+
+
+@require_dairymetrics_member
+def entry_v2_personal_setup_fields(request: HttpRequest) -> HttpResponse:
+    member = get_member_profile(request.user)
+    if not member:
+        return JsonResponse({"error": "member_not_found"}, status=404)
+
+    department_id = (request.GET.get("department") or "").strip()
+    selected_department_obj = None
+    if department_id.isdigit():
+        selected_department_obj = (
+            Department.objects.filter(
+                is_active=True,
+                pk=int(department_id),
+                member_links__member=member,
+            )
+            .distinct()
+            .first()
+        )
+    selected_department_code = selected_department_obj.code if selected_department_obj else ""
+    entry_date = parse_date((request.GET.get("entry_date") or "").strip()) or timezone.localdate()
+    form_initial = {
+        "department": selected_department_obj,
+        "entry_date": entry_date,
+        "location_name": (request.GET.get("location_name") or "").strip(),
+        "daily_target_count": (request.GET.get("daily_target_count") or "").strip() or 0,
+        "daily_target_cs_count": (request.GET.get("daily_target_cs_count") or "").strip() or 0,
+        "daily_target_refugee_count": (request.GET.get("daily_target_refugee_count") or "").strip() or 0,
+        "daily_target_amount": (request.GET.get("daily_target_amount") or "").strip() or 0,
+    }
+    personal_setup_form = DairymetricsV2PersonalSetupForm(member=member, initial=form_initial)
+    context = build_entry_v2_transaction_demo_context(
+        member=member,
+        selected_department=selected_department_code,
+        entry_date=entry_date,
+        personal_setup_form=personal_setup_form,
+        age_bands=ENTRY_V2_AGE_BANDS,
+        gender_bands=ENTRY_V2_GENDER_BANDS,
+        nationality_bands=ENTRY_V2_NATIONALITY_BANDS,
+        target_count_options=ENTRY_V2_TARGET_COUNT_OPTIONS,
+        target_amount_options=ENTRY_V2_TARGET_AMOUNT_OPTIONS,
+        transaction_amount_options=ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS,
+        wv_refugee_amount_options=ENTRY_V2_WV_REFUGEE_AMOUNT_OPTIONS,
+    )
+    return JsonResponse(
+        {
+            "setup_html": _render_personal_setup_form_partial(request, context, inline=False),
+            "inline_html": _render_personal_setup_form_partial(request, context, inline=True),
+            "is_wv": context["selected_department_is_wv"],
+        }
+    )
 
 
 @require_dairymetrics_member
