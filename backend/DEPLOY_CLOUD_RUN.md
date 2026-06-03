@@ -59,6 +59,7 @@ When `main` is updated, GitHub Actions will:
 3. deploy `report-app`
 4. upsert the migration job
 5. execute the migration job
+6. upsert the activity reminder job with the same image
 
 Required GitHub secrets:
 
@@ -69,6 +70,8 @@ Optional GitHub repository variables:
 
 - `CLOUD_RUN_MIGRATE_JOB_ENV_VARS`
 - `CLOUD_RUN_MIGRATE_JOB_SECRETS`
+- `CLOUD_RUN_ACTIVITY_REMINDER_JOB_ENV_VARS`
+- `CLOUD_RUN_ACTIVITY_REMINDER_JOB_SECRETS`
 
 ## 5. First deploy checklist
 
@@ -122,7 +125,7 @@ Notes:
 The activity close reminder job sends email to active members who still have an open activity entry.
 It is intended to run every day at 19:00 JST via Cloud Scheduler.
 
-Prepare or update the job and scheduler:
+Prepare or update the job and scheduler manually:
 
 ```bash
 cd backend
@@ -137,6 +140,9 @@ SECRETS='SECRET_KEY=SECRET_KEY:latest,DB_PASSWORD=DB_PASSWORD:latest' \
 SCHEDULER_SERVICE_ACCOUNT=<scheduler-service-account>@<gcp-project-id>.iam.gserviceaccount.com \
 ./scripts/cloud_run_activity_reminder_job.sh upsert-all
 ```
+
+After this initial setup, GitHub Actions updates the Cloud Run Job image on every `main` deployment.
+The Cloud Scheduler job can keep pointing to the same `report-app-activity-reminder` job.
 
 Run the job manually:
 

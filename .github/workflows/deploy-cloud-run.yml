@@ -17,6 +17,8 @@ env:
   IMAGE: asia-northeast1-docker.pkg.dev/reportapp-488507/report-app/report-app:${{ github.sha }}
   MIGRATE_JOB: report-app-migrate
   MIGRATE_JOB_ENV_VARS: DJANGO_SETTINGS_MODULE=config.settings.prod
+  ACTIVITY_REMINDER_JOB: report-app-activity-reminder
+  ACTIVITY_REMINDER_JOB_ENV_VARS: DJANGO_SETTINGS_MODULE=config.settings.prod
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 concurrency:
@@ -83,3 +85,19 @@ jobs:
           SERVICE="${SERVICE}" \
           JOB_NAME="${MIGRATE_JOB}" \
           ./backend/scripts/cloud_run_migrate_job.sh run
+
+      - name: Upsert activity reminder job
+        env:
+          JOB_SECRETS: ${{ vars.CLOUD_RUN_ACTIVITY_REMINDER_JOB_SECRETS }}
+          JOB_ENV_VARS: ${{ vars.CLOUD_RUN_ACTIVITY_REMINDER_JOB_ENV_VARS }}
+        run: |
+          chmod +x backend/scripts/cloud_run_activity_reminder_job.sh
+          PROJECT_ID="${PROJECT_ID}" \
+          REGION="${REGION}" \
+          REPOSITORY="${REPOSITORY}" \
+          SERVICE="${SERVICE}" \
+          JOB_NAME="${ACTIVITY_REMINDER_JOB}" \
+          IMAGE="${IMAGE}" \
+          ENV_VARS="${JOB_ENV_VARS:-${ACTIVITY_REMINDER_JOB_ENV_VARS}}" \
+          SECRETS="${JOB_SECRETS}" \
+          ./backend/scripts/cloud_run_activity_reminder_job.sh upsert-job
