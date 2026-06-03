@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
 from apps.dairymetrics.models import MetricAdjustment
+from apps.mail.models import MailRecipientGroup
 from apps.reports.models import DailyDepartmentReport, DailyDepartmentReportLine
 from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 
@@ -83,6 +84,29 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         member.refresh_from_db()
         self.assertFalse(member.is_active)
+
+    def test_delete_member_removes_member_from_mail_groups(self):
+        member = Member.objects.create(name="Mail Group User", email="mail.group@example.com")
+        group = MailRecipientGroup.objects.create(name="共有A", department=self.depts["UN"])
+        group.members.add(member)
+
+        response = self.client.post(reverse("member_delete", args=[member.id]))
+
+        self.assertEqual(response.status_code, 302)
+        member.refresh_from_db()
+        self.assertFalse(member.is_active)
+        self.assertFalse(group.members.filter(id=member.id).exists())
+
+    def test_reactivate_member_does_not_restore_mail_groups(self):
+        member = Member.objects.create(name="Reactivated User", email="reactivated@example.com", is_active=False)
+        group = MailRecipientGroup.objects.create(name="共有B", department=self.depts["UN"])
+
+        response = self.client.post(reverse("member_delete", args=[member.id]))
+
+        self.assertEqual(response.status_code, 302)
+        member.refresh_from_db()
+        self.assertTrue(member.is_active)
+        self.assertFalse(group.members.filter(id=member.id).exists())
 
     def test_purge_inactive_member_removes_record(self):
         member = Member.objects.create(name="Inactive User", login_id="inactive_id", password="", is_active=False)

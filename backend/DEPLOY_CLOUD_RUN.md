@@ -116,3 +116,40 @@ Notes:
 - If `IMAGE` is omitted, the script falls back to `:latest`.
 - `SECRETS` accepts the same format as `gcloud run jobs create --set-secrets`.
 - Use the same image tag for both the web deploy and the migration job.
+
+## 8. Cloud Run Job for activity close reminders
+
+The activity close reminder job sends email to active members who still have an open activity entry.
+It is intended to run every day at 19:00 JST via Cloud Scheduler.
+
+Prepare or update the job and scheduler:
+
+```bash
+cd backend
+chmod +x scripts/cloud_run_activity_reminder_job.sh
+PROJECT_ID=<gcp-project-id> \
+REGION=asia-northeast1 \
+REPOSITORY=report-app \
+SERVICE=report-app \
+IMAGE=asia-northeast1-docker.pkg.dev/<gcp-project-id>/report-app/report-app:<image-tag> \
+ENV_VARS='DJANGO_SETTINGS_MODULE=config.settings.prod,ALLOWED_HOSTS=<host>,CSRF_TRUSTED_ORIGINS=https://<host>,DB_ENGINE=django.db.backends.postgresql,DB_NAME=<db-name>,DB_USER=<db-user>,DB_HOST=<db-host>,DB_PORT=5432' \
+SECRETS='SECRET_KEY=SECRET_KEY:latest,DB_PASSWORD=DB_PASSWORD:latest' \
+SCHEDULER_SERVICE_ACCOUNT=<scheduler-service-account>@<gcp-project-id>.iam.gserviceaccount.com \
+./scripts/cloud_run_activity_reminder_job.sh upsert-all
+```
+
+Run the job manually:
+
+```bash
+cd backend
+PROJECT_ID=<gcp-project-id> \
+REGION=asia-northeast1 \
+SERVICE=report-app \
+./scripts/cloud_run_activity_reminder_job.sh run
+```
+
+Notes:
+
+- Default schedule is `0 19 * * *` with `Asia/Tokyo` time zone.
+- The scheduler service account needs permission to run the Cloud Run Job.
+- The app also prevents duplicate same-day reminder emails per member.

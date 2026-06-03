@@ -21,6 +21,7 @@ from apps.common.report_metrics import (
     format_metric_triples,
     format_yen,
 )
+from apps.mail.models import MailRecipientGroupMember
 from apps.targets.models import TargetMetric
 
 from .forms import DepartmentForm, MemberRegistrationForm, TargetMetricForm
@@ -614,6 +615,8 @@ def member_delete(request: HttpRequest, member_id: int) -> HttpResponse:
     linked_user = member.user
     member.is_active = not member.is_active
     member.save(update_fields=["is_active"])
+    if not member.is_active:
+        MailRecipientGroupMember.objects.filter(member=member).delete()
     if linked_user and not linked_user.is_superuser:
         linked_user.is_active = member.is_active
         linked_user.save(update_fields=["is_active"])
