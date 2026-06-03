@@ -90,6 +90,8 @@ jobs:
         env:
           JOB_SECRETS: ${{ vars.CLOUD_RUN_ACTIVITY_REMINDER_JOB_SECRETS }}
           JOB_ENV_VARS: ${{ vars.CLOUD_RUN_ACTIVITY_REMINDER_JOB_ENV_VARS }}
+          FALLBACK_JOB_SECRETS: ${{ vars.CLOUD_RUN_MIGRATE_JOB_SECRETS }}
+          FALLBACK_JOB_ENV_VARS: ${{ vars.CLOUD_RUN_MIGRATE_JOB_ENV_VARS }}
         run: |
           chmod +x backend/scripts/cloud_run_activity_reminder_job.sh
           PROJECT_ID="${PROJECT_ID}" \
@@ -98,6 +100,6 @@ jobs:
           SERVICE="${SERVICE}" \
           JOB_NAME="${ACTIVITY_REMINDER_JOB}" \
           IMAGE="${IMAGE}" \
-          ENV_VARS="${JOB_ENV_VARS:-${ACTIVITY_REMINDER_JOB_ENV_VARS}}" \
-          SECRETS="${JOB_SECRETS}" \
+          ENV_VARS="${JOB_ENV_VARS:-${FALLBACK_JOB_ENV_VARS:-${ACTIVITY_REMINDER_JOB_ENV_VARS}}}" \
+          SECRETS="${JOB_SECRETS:-${FALLBACK_JOB_SECRETS}}" \
           ./backend/scripts/cloud_run_activity_reminder_job.sh upsert-job

@@ -73,6 +73,9 @@ Optional GitHub repository variables:
 - `CLOUD_RUN_ACTIVITY_REMINDER_JOB_ENV_VARS`
 - `CLOUD_RUN_ACTIVITY_REMINDER_JOB_SECRETS`
 
+If the activity reminder variables are omitted, the workflow falls back to the migration job variables.
+This keeps the reminder job connected to the same production settings, database, and secrets.
+
 ## 5. First deploy checklist
 
 1. Deploy once with `RUN_MIGRATIONS_ON_STARTUP=1`.
