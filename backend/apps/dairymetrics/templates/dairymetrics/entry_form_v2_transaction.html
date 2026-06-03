@@ -452,15 +452,22 @@
       </div>
       <form method="post" class="dairymetrics-v2-mail-form" id="dairymetrics-v2-mail-form">
         {% csrf_token %}
-        <div class="dairymetrics-field">
+        <div class="dairymetrics-v2-mail-sending" id="dairymetrics-v2-mail-sending" hidden>
+          <div class="dairymetrics-v2-mail-spinner" aria-hidden="true"></div>
+          <div>
+            <strong>メールを送信中です</strong>
+            <p class="muted">完了後、自動で決済登録画面に戻ります。このままお待ちください。</p>
+          </div>
+        </div>
+        <div class="dairymetrics-field" data-mail-edit-field>
           <label for="dairymetrics-v2-mail-subject-input">件名</label>
           <input id="dairymetrics-v2-mail-subject-input" type="text" name="preview_subject" value="">
         </div>
-        <div class="dairymetrics-field">
+        <div class="dairymetrics-field" data-mail-edit-field>
           <label for="dairymetrics-v2-mail-body-input">本文</label>
           <textarea id="dairymetrics-v2-mail-body-input" class="dairymetrics-v2-mail-body-textarea" rows="10" name="preview_body"></textarea>
         </div>
-        <div class="dairymetrics-v2-transaction-actions">
+        <div class="dairymetrics-v2-transaction-actions" data-mail-actions>
         <input type="hidden" name="action" value="send_transaction_mail">
         <input type="hidden" name="department_code" value="{{ selected_department_code }}">
         <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
@@ -566,9 +573,12 @@
     const mailPreviewTransactionId = document.getElementById("dairymetrics-v2-mail-transaction-id");
     const mailPreviewHistoryId = document.getElementById("dairymetrics-v2-mail-history-id");
     const mailPreviewSubmitButton = document.getElementById("dairymetrics-v2-mail-submit-button");
+    const mailPreviewForm = document.getElementById("dairymetrics-v2-mail-form");
+    const mailSendingPanel = document.getElementById("dairymetrics-v2-mail-sending");
     const ageSelect = document.querySelector("[data-student-age]");
     const studentWrap = document.getElementById("v2-student-wrap");
     const personalSetupFieldsUrl = document.querySelector("[data-personal-setup-fields-url]")?.dataset.personalSetupFieldsUrl || "";
+    let mailSubmitting = false;
 
     function syncTargetFieldState(select) {
       const targetSelector = select?.dataset.targetCustom;
@@ -877,6 +887,21 @@
 
     function openMailModal(button) {
       if (!mailPreviewModal || !mailPreviewBackdrop || !button) return;
+      mailSubmitting = false;
+      mailPreviewForm?.classList.remove("is-sending");
+      mailPreviewModal.removeAttribute("aria-busy");
+      if (mailSendingPanel) {
+        mailSendingPanel.hidden = true;
+      }
+      mailPreviewForm?.querySelectorAll("[data-mail-edit-field], [data-mail-actions]").forEach(function (element) {
+        element.hidden = false;
+      });
+      if (mailPreviewSubjectInput) {
+        mailPreviewSubjectInput.readOnly = false;
+      }
+      if (mailPreviewBodyInput) {
+        mailPreviewBodyInput.readOnly = false;
+      }
       const bodyFieldId = button.dataset.previewBodyField || "";
       const bodyField = bodyFieldId ? document.getElementById(bodyFieldId) : null;
       let previewSubject = button.dataset.previewSubject || "";
@@ -896,8 +921,12 @@
         mailPreviewHistoryId.value = button.dataset.previewHistoryId || "";
       }
       if (mailPreviewSubmitButton) {
+        mailPreviewSubmitButton.disabled = false;
         mailPreviewSubmitButton.textContent = button.dataset.previewMode === "resend" ? "再送信" : "送信";
       }
+      mailPreviewForm?.querySelectorAll("[data-close-mail-modal]").forEach(function (button) {
+        button.disabled = false;
+      });
       const viewportCenter = window.scrollY + (window.innerHeight / 2);
       mailPreviewBackdrop.style.top = "0px";
       mailPreviewBackdrop.style.height = `${Math.max(document.body.scrollHeight, document.documentElement.scrollHeight)}px`;
@@ -907,6 +936,7 @@
     }
 
     function closeMailModal() {
+      if (mailSubmitting) return;
       if (mailPreviewBackdrop) {
         mailPreviewBackdrop.hidden = true;
       }
@@ -918,6 +948,32 @@
       }
       if (mailPreviewHistoryId) {
         mailPreviewHistoryId.value = "";
+      }
+    }
+
+    function showMailSendingState() {
+      mailPreviewForm?.classList.add("is-sending");
+      mailPreviewForm?.querySelectorAll("[data-mail-edit-field], [data-mail-actions]").forEach(function (element) {
+        element.hidden = true;
+      });
+      if (mailSendingPanel) {
+        mailSendingPanel.hidden = false;
+      }
+      if (mailPreviewSubjectInput) {
+        mailPreviewSubjectInput.readOnly = true;
+      }
+      if (mailPreviewBodyInput) {
+        mailPreviewBodyInput.readOnly = true;
+      }
+      if (mailPreviewSubmitButton) {
+        mailPreviewSubmitButton.disabled = true;
+        mailPreviewSubmitButton.textContent = "送信中";
+      }
+      mailPreviewForm?.querySelectorAll("button").forEach(function (button) {
+        button.disabled = true;
+      });
+      if (mailPreviewModal) {
+        mailPreviewModal.setAttribute("aria-busy", "true");
       }
     }
 
@@ -1015,6 +1071,14 @@
       });
     });
     mailPreviewBackdrop?.addEventListener("click", closeMailModal);
+    mailPreviewForm?.addEventListener("submit", function (event) {
+      if (mailSubmitting) {
+        event.preventDefault();
+        return;
+      }
+      mailSubmitting = true;
+      showMailSendingState();
+    });
     document.querySelectorAll("[data-clear-on-focus]").forEach(function (input) {
       input.addEventListener("focus", function () {
         if (input.value === "0") {

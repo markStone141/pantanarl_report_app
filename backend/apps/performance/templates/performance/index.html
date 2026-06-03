@@ -74,6 +74,7 @@
               <span class="badge">{{ row.department_code }}</span>
             </div>
             <div class="muted">{{ row.updated_at }} 更新</div>
+            <div class="muted mt-4">現場: {{ row.location_name|default:"未入力" }}</div>
             <div class="mt-8">{{ row.count_text }} / {{ row.amount_text }}</div>
             <div class="mt-8">
               <form method="post" action="{% url 'performance_send_activity_reminder' row.entry_id %}" class="inline-form">
@@ -100,6 +101,7 @@
               <span class="badge">{{ row.department_code }}</span>
             </div>
             <div class="muted">{{ row.updated_at }} 更新</div>
+            <div class="muted mt-4">現場: {{ row.location_name|default:"未入力" }}</div>
             <div class="mt-8">{{ row.count_text }} / {{ row.amount_text }}</div>
           </div>
           {% endfor %}

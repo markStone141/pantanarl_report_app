@@ -825,6 +825,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
             entry_date=today,
             result_count=1,
             support_amount=3000,
+            location_name="渋谷駅前",
             activity_closed=False,
         )
         finished_entry = MemberDailyMetricEntry.objects.create(
@@ -833,6 +834,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
             entry_date=today,
             result_count=1,
             support_amount=2000,
+            location_name="新宿駅前",
             activity_closed=True,
         )
         DepartmentDailyMetricSummary.objects.create(
@@ -872,6 +874,8 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "目標達成率")
         self.assertContains(response, "70.0%")
         self.assertContains(response, "7,000円")
+        self.assertContains(response, "現場: 渋谷駅前")
+        self.assertContains(response, "現場: 新宿駅前")
         self.assertContains(response, "補正 2,000円")
         self.assertContains(response, "通常実績")
         self.assertContains(response, "補正実績")
