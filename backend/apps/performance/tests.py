@@ -71,6 +71,38 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "補正実績入力")
         self.assertContains(response, reverse("performance_adjustments"))
 
+    def test_performance_index_wv_overall_activity_trend_does_not_double_count_counts(self):
+        wv_department = self.create_department("WV")
+        wv_member = self.create_member(name="WV Member", department=wv_department)
+        entry_date = date(2026, 6, 4)
+        MemberDailyMetricEntry.objects.create(
+            member=wv_member,
+            department=wv_department,
+            entry_date=entry_date,
+            result_count=2,
+            support_amount=6000,
+            cs_count=1,
+            refugee_count=1,
+            approach_count=5,
+            communication_count=2,
+        )
+        MetricAdjustment.objects.create(
+            member=wv_member,
+            department=wv_department,
+            target_date=entry_date,
+            support_amount=1500,
+            result_count=1,
+            cs_count=1,
+            refugee_count=0,
+        )
+
+        response = self.client.get(reverse("performance_index"), {"dashboard_department": wv_department.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["dashboard_snapshot"]["overall_activity_trend"]["counts"], [3])
+        self.assertEqual(response.context["dashboard_snapshot"]["overall_activity_trend"]["cs_counts"], [2])
+        self.assertEqual(response.context["dashboard_snapshot"]["overall_activity_trend"]["refugee_counts"], [1])
+
     def test_performance_past_entry_create_renders_department_specific_transaction_inputs(self):
         wv_department = self.create_department("WV")
         wv_member = self.create_member(name="WV Member", department=wv_department)

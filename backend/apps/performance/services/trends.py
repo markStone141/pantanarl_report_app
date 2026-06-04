@@ -309,7 +309,7 @@ def build_overall_activity_trend(*, department=None, start_date=None, end_date=N
     communication_counts = []
     target_amounts = []
     rate_values = []
-    use_equivalent_count = department is None or department.code == "WV"
+    use_equivalent_count = department is not None and department.code == "WV"
     for activity_date in latest_dates:
         entry_row = entry_totals.get(activity_date, {})
         adjustment_row = adjustment_totals.get(activity_date, {})
@@ -328,14 +328,7 @@ def build_overall_activity_trend(*, department=None, start_date=None, end_date=N
             adjustment_refugee_counts.append(int(adjustment_row.get("refugee_count_total") or 0))
             cs_counts.append(cs_count_value)
             refugee_counts.append(refugee_count_value)
-            counts.append(
-                int(entry_row.get("result_count_total") or 0)
-                + cs_count_value
-                + refugee_count_value
-                + int(adjustment_row.get("result_count_total") or 0)
-                + int(adjustment_row.get("return_postal_count_total") or 0)
-                + int(adjustment_row.get("return_qr_count_total") or 0)
-            )
+            counts.append(cs_count_value + refugee_count_value)
         else:
             cs_counts.append(0)
             refugee_counts.append(0)
