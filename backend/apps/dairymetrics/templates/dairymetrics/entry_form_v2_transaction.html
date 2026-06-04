@@ -486,6 +486,7 @@
         <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
         <input type="hidden" name="preview_transaction_id" id="dairymetrics-v2-mail-transaction-id" value="">
         <input type="hidden" name="preview_history_id" id="dairymetrics-v2-mail-history-id" value="">
+        <button type="button" class="btn-inline dairymetrics-secondary-btn" data-edit-from-mail-modal>閉じて内容を修正</button>
         <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-mail-modal>閉じる</button>
         <button type="submit" class="btn-inline dairymetrics-save-btn" id="dairymetrics-v2-mail-submit-button">送信</button>
         </div>
@@ -964,6 +965,19 @@
       }
     }
 
+    function editFromMailModal() {
+      const transactionId = mailPreviewTransactionId?.value || "";
+      if (!transactionId) {
+        closeMailModal();
+        return;
+      }
+      const editButton = document.querySelector(`[data-edit-transaction][data-transaction-id="${transactionId}"]`);
+      closeMailModal();
+      if (editButton) {
+        openTransactionEdit(editButton);
+      }
+    }
+
     function showMailSendingState() {
       mailPreviewForm?.classList.add("is-sending");
       mailPreviewForm?.querySelectorAll("[data-mail-edit-field], [data-mail-actions]").forEach(function (element) {
@@ -1081,6 +1095,11 @@
     document.querySelectorAll("[data-close-mail-modal]").forEach((button) => {
       button.addEventListener("click", function () {
         closeMailModal();
+      });
+    });
+    document.querySelectorAll("[data-edit-from-mail-modal]").forEach((button) => {
+      button.addEventListener("click", function () {
+        editFromMailModal();
       });
     });
     mailPreviewBackdrop?.addEventListener("click", closeMailModal);

@@ -1522,6 +1522,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "路目まで 25,500円")
+        self.assertContains(response, "閉じて内容を修正")
 
     def test_entry_v2_transaction_demo_preview_body_uses_amount_like_metric_codes_for_wv_targets(self):
         entry_date = timezone.localdate()
