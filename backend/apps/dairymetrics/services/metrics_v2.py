@@ -30,6 +30,7 @@ from apps.dairymetrics.services.final_actuals import (
     collect_department_final_actual_totals,
     collect_member_final_actual_totals,
 )
+from apps.common.target_periods import current_active_period
 
 
 RANKING_METRIC_OPTIONS = [
@@ -434,6 +435,31 @@ def _build_period_totals_series(*, department, member=None, periods):
     }
 
 
+def _recent_period_history_periods(*, target_date: date, limit: int = 6) -> list[Period]:
+    ended_periods = list(
+        Period.objects.filter(end_date__lte=target_date).order_by("-end_date", "-start_date", "-id")
+    )
+    active_period = current_active_period(target_date=target_date)
+
+    selected_periods: list[Period] = []
+    seen_period_ids: set[int] = set()
+
+    if active_period is not None:
+        selected_periods.append(active_period)
+        seen_period_ids.add(active_period.id)
+
+    for period in ended_periods:
+        if period.id in seen_period_ids:
+            continue
+        selected_periods.append(period)
+        seen_period_ids.add(period.id)
+        if len(selected_periods) >= limit:
+            break
+
+    selected_periods.reverse()
+    return selected_periods
+
+
 def _build_month_totals_series(*, department, member=None, reference_month: date):
     month_starts = []
     cursor = reference_month.replace(day=1)
@@ -597,8 +623,7 @@ def build_metrics_v2_dashboard_payload(
     )
 
     reference_month = scope.month_start or scope.end_date.replace(day=1)
-    available_periods = list(Period.objects.filter(end_date__lte=scope.end_date).order_by("-end_date", "-start_date", "-id")[:6])
-    available_periods.reverse()
+    available_periods = _recent_period_history_periods(target_date=scope.end_date)
 
     return {
         "scope": scope,

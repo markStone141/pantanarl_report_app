@@ -17,6 +17,7 @@ from apps.targets.models import (
     Period,
     PeriodTargetMetricValue,
     TARGET_STATUS_ACTIVE,
+    TARGET_STATUS_FINISHED,
     TargetMetric,
 )
 
@@ -4380,6 +4381,49 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         stale_entry.refresh_from_db()
         self.assertTrue(stale_entry.activity_closed)
         self.assertIsNotNone(stale_entry.activity_closed_at)
+
+    def test_metrics_v2_demo_recent_period_history_ends_with_current_active_period(self):
+        today = timezone.localdate()
+        previous_period = Period.objects.create(
+            month=(today.replace(day=1) - timedelta(days=1)).replace(day=1),
+            name="第0次路程",
+            status=TARGET_STATUS_FINISHED,
+            start_date=today - timedelta(days=35),
+            end_date=today - timedelta(days=15),
+        )
+        PeriodTargetMetricValue.objects.create(
+            department=self.department,
+            period=previous_period,
+            metric=self.amount_metric,
+            value=24000,
+        )
+        previous_entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today - timedelta(days=20),
+            approach_count=10,
+            communication_count=5,
+            result_count=1,
+            support_amount=2500,
+            activity_closed=True,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=previous_entry,
+            support_amount=2500,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="池袋",
+            comment="old",
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_metrics_v2_demo"))
+
+        self.assertEqual(response.status_code, 200)
+        period_labels = response.context["metrics_v2_payload"]["period_history"]["labels"]
+        self.assertEqual(period_labels[-1], self.period.name)
+        self.assertIn(previous_period.name, period_labels)
 
     def test_metrics_v2_demo_shows_wv_count_breakdowns_and_cs_only_distribution_cards(self):
         wv_department = self.create_department("WV")
