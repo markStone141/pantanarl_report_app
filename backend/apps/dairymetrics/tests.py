@@ -110,6 +110,99 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
             f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=transaction",
         )
 
+    def test_entry_v2_transaction_demo_blocks_duplicate_un_transaction_save(self):
+        entry_date = timezone.localdate()
+        self.client.force_login(self.user)
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+        )
+        MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_SEVENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+            comment="UNテストコメント",
+        )
+
+        response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "save_transaction",
+                "department_code": self.department.code,
+                "entry_date": entry_date.strftime("%Y-%m-%d"),
+                "support_amount": "3000",
+                "location": "渋谷駅前",
+                "age_band": MemberMetricTransaction.AGE_BAND_SEVENTIES,
+                "gender": MemberMetricTransaction.GENDER_FEMALE,
+                "nationality_type": MemberMetricTransaction.NATIONALITY_DOMESTIC,
+                "comment": "UNテストコメント",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(MemberMetricTransaction.objects.filter(entry=entry).count(), 1)
+        self.assertContains(response, "同じ内容の決済が既に登録されています")
+        self.assertContains(response, "登録せずにメールだけ送信")
+
+    def test_entry_v2_transaction_demo_can_send_mail_for_duplicate_existing_transaction(self):
+        entry_date = timezone.localdate()
+        self.client.force_login(self.user)
+        self.member.email = "member@example.com"
+        self.member.save(update_fields=["email"])
+        MailIntegrationSetting.objects.create(
+            sender_email="sender@example.com",
+            sender_name="Sender",
+            client_id="client-id",
+            client_secret="client-secret",
+            refresh_token="refresh-token",
+            token_uri="https://oauth2.googleapis.com/token",
+            is_active=True,
+        )
+        recipient_group = MailRecipientGroup.objects.create(name="共有C", department=self.department, is_active=True)
+        recipient_group.members.add(self.member)
+        MailDepartmentRouting.objects.create(department=self.department, recipient_group=recipient_group)
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=2,
+            daily_target_amount=4000,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_SEVENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+            comment="UNテストコメント",
+        )
+
+        with patch("apps.mail.services._send_via_gmail", return_value="gmail-duplicate-1"):
+            response = self.client.post(
+                reverse("dairymetrics_entry_v2_transaction_demo"),
+                {
+                    "action": "send_duplicate_transaction_mail",
+                    "department_code": self.department.code,
+                    "entry_date": entry_date.strftime("%Y-%m-%d"),
+                    "duplicate_transaction_id": str(transaction.id),
+                },
+            )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=mail_sent",
+        )
+        self.assertEqual(MemberMetricTransaction.objects.filter(entry=entry).count(), 1)
+        history = MailSendHistory.objects.get(transaction=transaction)
+        self.assertEqual(history.status, MailSendHistory.STATUS_SENT)
+
     def test_entry_v2_transaction_demo_hides_wv_fields_for_un_department(self):
         entry_date = timezone.localdate()
         self.client.force_login(self.user)

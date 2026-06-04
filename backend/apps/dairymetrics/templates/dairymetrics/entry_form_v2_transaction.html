@@ -34,6 +34,19 @@
       {% if status_message %}
       <div class="note">{{ status_message }}</div>
       {% endif %}
+      {% if duplicate_transaction %}
+      <div class="note">
+        同一内容の既存決済: {{ duplicate_transaction.time_label }} / {{ duplicate_transaction.amount|intcomma }}円 / {{ duplicate_transaction.mail_status }}
+        <form method="post" class="dairymetrics-inline-form mt-8">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="send_duplicate_transaction_mail">
+          <input type="hidden" name="department_code" value="{{ selected_department_code }}">
+          <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
+          <input type="hidden" name="duplicate_transaction_id" value="{{ duplicate_transaction.id }}">
+          <button type="submit" class="btn-inline dairymetrics-save-btn">登録せずにメールだけ送信</button>
+        </form>
+      </div>
+      {% endif %}
     </div>
 
     {% if not has_personal_target or not has_department_target %}

@@ -38,6 +38,7 @@ from .models import MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjus
 from .services.entry_v2 import (
     build_transaction_mail_preview,
     build_v2_redirect_url,
+    find_duplicate_transaction,
     get_default_mail_group,
     get_or_create_department_daily_summary,
     transaction_mail_status,
@@ -963,6 +964,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
     selected_department = raw_department_code
 
     status_message = ""
+    duplicate_transaction = None
     open_entry_panel = False
     open_personal_target_panel = False
     open_department_target_panel = False
@@ -1083,19 +1085,29 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                         entry_date=entry_date,
                         defaults={"input_source": MemberDailyMetricEntry.SOURCE_MEMBER},
                     )
-                    transaction_obj = transaction_form.save(commit=False)
-                    transaction_obj.entry = entry
-                    transaction_obj.save()
-                    return redirect(
-                        build_v2_redirect_url(
-                            department_code=selected_department,
-                            entry_date=entry_date,
-                            saved="transaction",
-                            preview_tx=transaction_obj.id if action == "save_transaction_preview" else None,
-                        )
+                    duplicate_transaction = find_duplicate_transaction(
+                        entry=entry,
+                        cleaned_data=transaction_form.cleaned_data,
+                        exclude_id=transaction_instance.id if transaction_instance else None,
                     )
-                status_message = "決済明細を確認してください。"
-                open_entry_panel = True
+                    if duplicate_transaction is not None:
+                        status_message = "同じ内容の決済が既に登録されています。登録は行わず、必要なら既存決済からメールだけ送信してください。"
+                        open_entry_panel = True
+                    else:
+                        transaction_obj = transaction_form.save(commit=False)
+                        transaction_obj.entry = entry
+                        transaction_obj.save()
+                        return redirect(
+                            build_v2_redirect_url(
+                                department_code=selected_department,
+                                entry_date=entry_date,
+                                saved="transaction",
+                                preview_tx=transaction_obj.id if action == "save_transaction_preview" else None,
+                            )
+                        )
+                else:
+                    status_message = "決済明細を確認してください。"
+                    open_entry_panel = True
         elif action == "delete_transaction":
             transaction_id = (request.POST.get("transaction_id") or "").strip()
             if not selected_department_obj:
@@ -1124,16 +1136,28 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                             saved="transaction_deleted",
                         )
                     )
-        elif action in {"send_transaction_mock", "send_transaction_mail"}:
+        elif action in {"send_transaction_mock", "send_transaction_mail", "send_duplicate_transaction_mail"}:
             preview_tx_id = (request.POST.get("preview_transaction_id") or "").strip()
             preview_history_id = (request.POST.get("preview_history_id") or "").strip()
+            duplicate_tx_id = (request.POST.get("duplicate_transaction_id") or "").strip()
             edited_subject = (request.POST.get("preview_subject") or "").strip()
             edited_body = (request.POST.get("preview_body") or "").strip()
             if not selected_department_obj:
                 status_message = "送信対象の決済を確認してください。"
             else:
                 preview_transaction = None
-                if preview_tx_id.isdigit():
+                if action == "send_duplicate_transaction_mail" and duplicate_tx_id.isdigit():
+                    preview_transaction = (
+                        MemberMetricTransaction.objects.filter(
+                            id=int(duplicate_tx_id),
+                            entry__member=member,
+                            entry__department=selected_department_obj,
+                            entry__entry_date=entry_date,
+                        )
+                        .select_related("entry", "entry__department")
+                        .first()
+                    )
+                elif preview_tx_id.isdigit():
                     preview_transaction = (
                         MemberMetricTransaction.objects.filter(
                             id=int(preview_tx_id),
@@ -1324,6 +1348,13 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
         transaction_amount_options=ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS,
         wv_refugee_amount_options=ENTRY_V2_WV_REFUGEE_AMOUNT_OPTIONS,
     )
+    if duplicate_transaction is not None:
+        context["duplicate_transaction"] = {
+            "id": duplicate_transaction.id,
+            "amount": int(duplicate_transaction.support_amount or 0),
+            "time_label": timezone.localtime(duplicate_transaction.created_at).strftime("%H:%M"),
+            "mail_status": transaction_mail_status(duplicate_transaction),
+        }
     return render(request, "dairymetrics/entry_form_v2_transaction.html", context)
 
 

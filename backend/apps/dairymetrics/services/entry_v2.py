@@ -139,6 +139,48 @@ def transaction_mail_status(transaction_obj):
     return "未送信"
 
 
+def find_duplicate_transaction(*, entry, cleaned_data, exclude_id=None):
+    transactions = entry.transactions.all()
+    if exclude_id:
+        transactions = transactions.exclude(id=exclude_id)
+
+    target_support_amount = int(cleaned_data.get("support_amount") or 0)
+    target_age_band = cleaned_data.get("age_band") or ""
+    target_is_student = bool(cleaned_data.get("is_student"))
+    target_gender = cleaned_data.get("gender") or ""
+    target_nationality = cleaned_data.get("nationality_type") or ""
+    target_location = (cleaned_data.get("location") or "").strip()
+    target_comment = (cleaned_data.get("comment") or "").strip()
+    target_result_type = cleaned_data.get("wv_result_type") or ""
+    target_cs_count = int(cleaned_data.get("wv_cs_count") or 0)
+    target_refugee_amount = int(cleaned_data.get("wv_refugee_amount") or 0)
+
+    for transaction in transactions.order_by("-created_at", "-id"):
+        if int(transaction.support_amount or 0) != target_support_amount:
+            continue
+        if (transaction.age_band or "") != target_age_band:
+            continue
+        if bool(transaction.is_student) != target_is_student:
+            continue
+        if (transaction.gender or "") != target_gender:
+            continue
+        if (transaction.nationality_type or "") != target_nationality:
+            continue
+        if (transaction.location or "").strip() != target_location:
+            continue
+        if (transaction.comment or "").strip() != target_comment:
+            continue
+        if entry.department.code == "WV":
+            if (transaction.wv_result_type or "") != target_result_type:
+                continue
+            if int(transaction.wv_cs_count or 0) != target_cs_count:
+                continue
+            if int(transaction.wv_refugee_amount or 0) != target_refugee_amount:
+                continue
+        return transaction
+    return None
+
+
 def build_v2_department_activity_rows(*, department, entry_date):
     if not department:
         return {"active": [], "closed": []}
