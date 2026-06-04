@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.utils.http import urlencode
 
 from apps.mail.models import MailDepartmentRouting, MailRecipientGroup, MailSendHistory
+from apps.common.report_metrics import _metric_kind
 from apps.targets.models import (
     DepartmentMonthTarget,
     DepartmentPeriodTarget,
@@ -215,19 +216,23 @@ def get_default_mail_group(*, department):
     )
 
 
+def _amount_metric_value(queryset):
+    for metric_value in queryset.select_related("metric").order_by("metric__display_order", "id"):
+        if _metric_kind(metric_code=metric_value.metric.code, unit=metric_value.metric.unit or "") == "amount":
+            return int(metric_value.value or 0), True
+    return None
+
+
 def get_period_target_amount(*, period, department):
-    metric_value = (
+    resolved = _amount_metric_value(
         PeriodTargetMetricValue.objects.filter(
             period=period,
             department=department,
             metric__is_active=True,
-            metric__code="amount",
         )
-        .select_related("metric")
-        .first()
     )
-    if metric_value:
-        return int(metric_value.value or 0), True
+    if resolved is not None:
+        return resolved
     legacy_target = DepartmentPeriodTarget.objects.filter(
         period=period,
         department=department,
@@ -236,18 +241,15 @@ def get_period_target_amount(*, period, department):
 
 
 def get_month_target_amount(*, target_month, department):
-    metric_value = (
+    resolved = _amount_metric_value(
         MonthTargetMetricValue.objects.filter(
             target_month=target_month,
             department=department,
             metric__is_active=True,
-            metric__code="amount",
         )
-        .select_related("metric")
-        .first()
     )
-    if metric_value:
-        return int(metric_value.value or 0), True
+    if resolved is not None:
+        return resolved
     legacy_target = DepartmentMonthTarget.objects.filter(
         department=department,
         target_month=target_month,

@@ -1430,6 +1430,75 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "路目まで 25,500円")
 
+    def test_entry_v2_transaction_demo_preview_body_uses_amount_like_metric_codes_for_wv_targets(self):
+        entry_date = timezone.localdate()
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+            daily_target_count=1,
+            daily_target_amount=3000,
+        )
+        period = Period.objects.create(
+            month=entry_date.replace(day=1),
+            name="2026年6月 第1次路程",
+            status=TARGET_STATUS_ACTIVE,
+            start_date=entry_date - timedelta(days=1),
+            end_date=entry_date + timedelta(days=1),
+        )
+        amount_metric = TargetMetric.objects.create(
+            department=self.department,
+            code="support_amount",
+            label="金額",
+            unit="円",
+            display_order=1,
+            is_active=True,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=period,
+            department=self.department,
+            metric=amount_metric,
+            value=66000,
+        )
+        DepartmentPeriodTarget.objects.create(
+            department=self.department,
+            period=period,
+            target_amount=6600,
+        )
+        MonthTargetMetricValue.objects.create(
+            target_month=entry_date.replace(day=1),
+            department=self.department,
+            metric=amount_metric,
+            value=100000,
+            status=TARGET_STATUS_ACTIVE,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            wv_result_type=MemberMetricTransaction.WV_RESULT_CS,
+            wv_cs_count=1,
+            support_amount=4500,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+            comment="WVコード確認",
+        )
+        entry.recalculate_from_transactions()
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "department": self.department.code,
+                "date": entry_date.strftime("%Y-%m-%d"),
+                "preview_tx": str(transaction.id),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "路目まで 61,500円")
+        self.assertNotContains(response, "路目まで 2,100円")
+
     def test_entry_v2_transaction_demo_shows_modified_unsent_after_editing_sent_transaction(self):
         entry_date = timezone.localdate()
         entry = MemberDailyMetricEntry.objects.create(
