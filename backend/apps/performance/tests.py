@@ -1246,6 +1246,31 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "3稼働連続0件")
 
+    def test_performance_index_does_not_mark_zero_streak_until_third_entry_is_closed(self):
+        today = timezone.localdate()
+        for offset in (1, 2):
+            MemberDailyMetricEntry.objects.create(
+                member=self.member,
+                department=self.department,
+                entry_date=today - timedelta(days=offset),
+                result_count=0,
+                support_amount=0,
+                activity_closed=True,
+            )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            result_count=0,
+            support_amount=0,
+            activity_closed=False,
+        )
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "3稼働連続0件")
+
     def test_performance_index_streak_uses_adjustment_counts(self):
         today = timezone.localdate()
         for offset in range(3):

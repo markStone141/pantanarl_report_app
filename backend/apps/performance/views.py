@@ -397,7 +397,7 @@ def _collect_member_latest_entries_by_department(*, member_department_pairs, sta
         for entry in department_entries:
             pair_key = (entry.member_id, entry.department_id)
             bucket = latest_entries_by_department[department.id].setdefault(pair_key, [])
-            if len(bucket) < 3:
+            if len(bucket) < 6:
                 bucket.append(entry)
                 picked_entries.append(entry)
         adjustment_totals_by_department[department.id] = build_adjustment_totals_map(picked_entries)
@@ -406,7 +406,8 @@ def _collect_member_latest_entries_by_department(*, member_department_pairs, sta
 
 def _build_member_recent_metrics(*, entries, adjustment_totals_map, department_code):
     latest_final_counts = []
-    for latest_entry in entries:
+    closed_entries = [entry for entry in entries if entry.activity_closed][:3]
+    for latest_entry in closed_entries:
         latest_totals = adjustment_totals_map.get(
             (latest_entry.member_id, latest_entry.department_id, latest_entry.entry_date),
             EMPTY_ADJUSTMENT_TOTALS,

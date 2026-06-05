@@ -4555,3 +4555,40 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         ranking_payload = response.context["metrics_v2_payload"]["ranking"]["metric_map"]["decision_count"]
         self.assertIn("Inactive Metrics", ranking_payload["labels"])
+
+    def test_metrics_v2_demo_month_conversion_ranking_uses_base_entries_not_adjustments(self):
+        target_month = date(2026, 3, 1)
+        ranking_member = self.create_member(name="Conversion Base", department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=ranking_member,
+            department=self.department,
+            entry_date=date(2026, 3, 8),
+            approach_count=20,
+            communication_count=10,
+            result_count=1,
+            support_amount=3000,
+            activity_closed=True,
+        )
+        MetricAdjustment.objects.create(
+            member=ranking_member,
+            department=self.department,
+            target_date=date(2026, 3, 9),
+            source_type=MetricAdjustment.SOURCE_INCREASE,
+            result_count=9,
+            support_amount=9000,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_metrics_v2_demo"),
+            {
+                "department": self.department.code,
+                "scope": "month",
+                "month": target_month.strftime("%Y-%m"),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        ranking_payload = response.context["metrics_v2_payload"]["ranking"]["metric_map"]["conversion_rate"]
+        rates_by_member = dict(zip(ranking_payload["labels"], ranking_payload["values"]))
+        self.assertEqual(rates_by_member["Conversion Base"], 10.0)

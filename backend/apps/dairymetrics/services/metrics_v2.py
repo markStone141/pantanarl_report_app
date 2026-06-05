@@ -498,15 +498,19 @@ def _build_month_totals_series(*, department, member=None, reference_month: date
 
 def _member_metric_row(*, member, department, scope: MetricsV2Scope):
     totals = collect_member_final_actual_totals(member, department, scope.start_date, scope.end_date, include_adjustments=True)
+    base_totals = collect_member_final_actual_totals(member, department, scope.start_date, scope.end_date, include_adjustments=False)
     active_days = _active_day_count(member=member, department=department, start_date=scope.start_date, end_date=scope.end_date)
     decision_count = _count_value(department.code, totals)
+    base_decision_count = _count_value(department.code, base_totals)
+    base_approach_count = int(base_totals.get("approach_count") or 0)
+    base_communication_count = int(base_totals.get("communication_count") or 0)
     support_amount = int(totals.get("support_amount") or 0)
     increase_totals = _increase_totals(member=member, department=department, start_date=scope.start_date, end_date=scope.end_date)
     return {
         "member": member,
         "metrics": {
-            "conversion_rate": _percentage(decision_count, int(totals.get("communication_count") or 0)) or 0,
-            "communication_rate": _percentage(int(totals.get("communication_count") or 0), int(totals.get("approach_count") or 0)) or 0,
+            "conversion_rate": _percentage(base_decision_count, base_communication_count) or 0,
+            "communication_rate": _percentage(base_communication_count, base_approach_count) or 0,
             "approach_count": int(totals.get("approach_count") or 0),
             "communication_count": int(totals.get("communication_count") or 0),
             "average_amount_per_active_day": _safe_average(support_amount, active_days) or 0,
