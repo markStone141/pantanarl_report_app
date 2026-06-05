@@ -1,0 +1,90 @@
+<section class="card mt-16">
+  <div class="row">
+    <div>
+      <h3>本日の決済詳細</h3>
+      <div class="muted">{{ today_detail_date|date:"Y/m/d" }} の選択部署決済明細です。</div>
+    </div>
+  </div>
+  {% if today_transaction_rows %}
+  <div class="mt-12">
+    <table class="mobile-card-table performance-recent-detail-table">
+      <thead>
+        <tr>
+          <th>メンバー</th>
+          <th>現場</th>
+          <th>区分</th>
+          <th>金額</th>
+          <th>詳細</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in today_transaction_rows %}
+        <tr>
+          <td data-label="メンバー">{{ row.member_name }}</td>
+          <td data-label="現場">{{ row.location_name }}</td>
+          <td data-label="区分">{{ row.type_text }}</td>
+          <td data-label="金額">{{ row.amount_text }}</td>
+          <td data-label="詳細">
+            <details>
+              <summary>内容</summary>
+              <div class="mt-10 muted">{{ row.detail_text }}</div>
+              {% if row.comment %}
+              <div class="mt-8">{{ row.comment }}</div>
+              {% endif %}
+            </details>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted mt-12">当日の決済明細はありません。</p>
+  {% endif %}
+</section>
+
+<section class="card mt-16">
+  <div class="row">
+    <div>
+      <h3>本日の送信メール詳細</h3>
+      <div class="muted">{{ today_detail_date|date:"Y/m/d" }} の選択部署送信メールです。</div>
+    </div>
+  </div>
+  {% if today_mail_rows %}
+  <div class="mt-12">
+    <table class="mobile-card-table performance-recent-detail-table">
+      <thead>
+        <tr>
+          <th>メンバー</th>
+          <th>件名</th>
+          <th>状態</th>
+          <th>送信時刻</th>
+          <th>詳細</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in today_mail_rows %}
+        <tr>
+          <td data-label="メンバー">{{ row.member_name }}</td>
+          <td data-label="件名">{{ row.subject }}</td>
+          <td data-label="状態">{{ row.status_text }}</td>
+          <td data-label="送信時刻">{{ row.sent_at_text }}</td>
+          <td data-label="詳細">
+            <details>
+              <summary>内容</summary>
+              <div class="mt-10 muted">送信先: {{ row.recipient_text }}</div>
+              <div class="mt-8">{{ row.body_text|linebreaksbr }}</div>
+              {% if row.error_text %}
+              <div class="mt-8 muted">エラー: {{ row.error_text }}</div>
+              {% endif %}
+            </details>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted mt-12">当日の送信メールはありません。</p>
+  {% endif %}
+</section>

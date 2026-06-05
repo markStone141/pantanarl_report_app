@@ -467,6 +467,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f'<option value="{self.member.id}">{self.member.name}</option>', html=True)
+        self.assertContains(response, "dashboard/mobile_drawer.js")
 
     def test_performance_past_entry_member_options_returns_department_members(self):
         other_department = self.create_department("WV")
@@ -679,6 +680,54 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "4,500円")
         self.assertContains(response, "16.1%")
         self.assertContains(response, "実績閲覧")
+
+    def test_performance_index_and_history_show_today_transaction_and_mail_details(self):
+        today = timezone.localdate()
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            result_count=1,
+            support_amount=3000,
+            approach_count=4,
+            communication_count=2,
+            location_name="渋谷駅前",
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+            comment="当日詳細",
+        )
+        MailSendHistory.objects.create(
+            department=self.department,
+            activity_date=today,
+            sender_member=self.member,
+            transaction=transaction,
+            subject_snapshot="【UN】当日送信",
+            body_snapshot="本文です",
+            sent_to_snapshot="group@example.com",
+            status=MailSendHistory.STATUS_SENT,
+            is_test=False,
+            sent_at=timezone.now(),
+            last_attempt_at=timezone.now(),
+        )
+
+        index_response = self.client.get(reverse("performance_index"))
+        history_response = self.client.get(reverse("performance_history"))
+
+        self.assertEqual(index_response.status_code, 200)
+        self.assertContains(index_response, "本日の決済詳細")
+        self.assertContains(index_response, "本日の送信メール詳細")
+        self.assertContains(index_response, "【UN】当日送信")
+        self.assertContains(index_response, "本文です")
+        self.assertEqual(history_response.status_code, 200)
+        self.assertContains(history_response, "本日の決済詳細")
+        self.assertContains(history_response, "本日の送信メール詳細")
+        self.assertContains(history_response, "【UN】当日送信")
 
     def test_performance_entry_edit_updates_daily_entry_and_department_summary(self):
         entry = MemberDailyMetricEntry.objects.create(
