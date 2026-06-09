@@ -331,6 +331,8 @@ def _resolve_current_period(today):
 def _build_activity_member_rows(entries):
     rows = []
     for entry in entries:
+        support_amount = int(entry.support_amount or 0)
+        daily_target_amount = int(entry.daily_target_amount or 0)
         rows.append(
             {
                 "entry_id": entry.id,
@@ -340,7 +342,7 @@ def _build_activity_member_rows(entries):
                 "department_id": entry.department_id,
                 "updated_at": timezone.localtime(entry.updated_at).strftime("%H:%M"),
                 "location_name": (entry.location_name or "").strip(),
-                "amount_text": f"{int(entry.support_amount or 0):,}円",
+                "amount_text": f"{support_amount:,}円 / {daily_target_amount:,}円",
                 "count_text": (
                     f"CS {int(entry.cs_count or 0)} / 難民 {int(entry.refugee_count or 0)}"
                     if entry.department.code == "WV"

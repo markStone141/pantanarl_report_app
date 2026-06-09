@@ -1024,6 +1024,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
             entry_date=today,
             result_count=1,
             support_amount=3000,
+            daily_target_amount=8000,
             location_name="渋谷駅前",
             activity_closed=False,
         )
@@ -1033,6 +1034,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
             entry_date=today,
             result_count=1,
             support_amount=2000,
+            daily_target_amount=8000,
             location_name="新宿駅前",
             activity_closed=True,
         )
@@ -1070,6 +1072,8 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "68.8%")
         self.assertContains(response, active_entry.member.name)
         self.assertContains(response, finished_entry.member.name)
+        self.assertContains(response, "3,000円 / 8,000円")
+        self.assertContains(response, "2,000円 / 8,000円")
         self.assertContains(response, "目標達成率")
         self.assertContains(response, "70.0%")
         self.assertContains(response, "7,000円")
