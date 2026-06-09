@@ -699,6 +699,10 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertContains(response, "Member Closed V2")
         self.assertContains(response, "新宿駅前")
         self.assertContains(response, "池袋駅前")
+        self.assertContains(response, "2件")
+        self.assertContains(response, "3,000円")
+        self.assertNotContains(response, "件数 2件")
+        self.assertNotContains(response, "金額 3,000円")
         self.assertContains(response, reverse("performance_member_insight", args=[active_member.id, self.department.id]))
         self.assertContains(response, reverse("performance_member_insight", args=[closed_member.id, self.department.id]))
 
