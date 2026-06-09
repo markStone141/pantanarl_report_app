@@ -279,7 +279,7 @@
                 </div>
                 <div class="dairymetrics-v2-activity-values">
                   <span>{{ row.count_label }}</span>
-                  <span>{{ row.amount_value|intcomma }}円</span>
+                  <span>{{ row.amount_value|intcomma }}円 / {{ row.target_amount_value|intcomma }}円</span>
                 </div>
                 <div class="dairymetrics-subtext">{{ row.location_name|default:"現場未入力" }}</div>
               </a>
@@ -307,7 +307,7 @@
                 </div>
                 <div class="dairymetrics-v2-activity-values">
                   <span>{{ row.count_label }}</span>
-                  <span>{{ row.amount_value|intcomma }}円</span>
+                  <span>{{ row.amount_value|intcomma }}円 / {{ row.target_amount_value|intcomma }}円</span>
                 </div>
                 <div class="dairymetrics-subtext">{{ row.location_name|default:"現場未入力" }}</div>
               </a>

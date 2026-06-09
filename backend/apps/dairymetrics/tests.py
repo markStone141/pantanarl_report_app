@@ -670,6 +670,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
             entry_date=entry_date,
             result_count=2,
             support_amount=3000,
+            daily_target_amount=8000,
             location_name="新宿駅前",
             activity_closed=False,
             input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
@@ -680,6 +681,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
             entry_date=entry_date,
             result_count=3,
             support_amount=4500,
+            daily_target_amount=9000,
             location_name="池袋駅前",
             activity_closed=True,
             input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
@@ -700,7 +702,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertContains(response, "新宿駅前")
         self.assertContains(response, "池袋駅前")
         self.assertContains(response, "2件")
-        self.assertContains(response, "3,000円")
+        self.assertContains(response, "3,000円 / 8,000円")
+        self.assertContains(response, "4,500円 / 9,000円")
         self.assertNotContains(response, "件数 2件")
         self.assertNotContains(response, "金額 3,000円")
         self.assertContains(response, reverse("performance_member_insight", args=[active_member.id, self.department.id]))
