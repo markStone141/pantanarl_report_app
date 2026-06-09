@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from django.db.models import Sum
+from django.db.models import Count, Sum
 
 from apps.dairymetrics.models import MemberDailyMetricEntry, MetricAdjustment
 from apps.dairymetrics.services.final_actuals import (
     ADJUSTMENT_METRIC_FIELDS,
     ENTRY_METRIC_FIELDS,
     collect_department_final_actual_totals,
+    collect_member_final_actual_totals_by_ids,
     merge_final_actual_totals,
     zero_final_actual_totals,
 )
@@ -19,6 +20,7 @@ from apps.dairymetrics.services.metrics_v2 import (
     _percentage,
     _return_amount_value,
     _return_count_value,
+    _ranking_members,
     _safe_average,
     _wv_count_breakdown_text,
 )
@@ -114,10 +116,68 @@ def _ranking_sections(*, department, scope):
             {
                 "key": key,
                 "label": metric["label"],
-                "rows": metric["rows"][:10],
+                "rows": metric["rows"][:3],
             }
         )
     return sections
+
+
+def _member_report_rows(*, department, scope):
+    members = _ranking_members(department=department, scope=scope)
+    member_ids = [member.id for member in members]
+    totals_by_member_id = collect_member_final_actual_totals_by_ids(
+        member_ids=member_ids,
+        department=department,
+        start_date=scope.start_date,
+        end_date=scope.end_date,
+        include_adjustments=True,
+    )
+    base_totals_by_member_id = collect_member_final_actual_totals_by_ids(
+        member_ids=member_ids,
+        department=department,
+        start_date=scope.start_date,
+        end_date=scope.end_date,
+        include_adjustments=False,
+    )
+    active_day_rows = (
+        MemberDailyMetricEntry.objects.filter(
+            member_id__in=member_ids,
+            department=department,
+            entry_date__range=(scope.start_date, scope.end_date),
+        )
+        .values("member_id")
+        .annotate(active_days=Count("entry_date", distinct=True))
+    )
+    active_days_by_member_id = {row["member_id"]: int(row["active_days"] or 0) for row in active_day_rows}
+
+    rows = []
+    for member in members:
+        totals = totals_by_member_id.get(member.id, zero_final_actual_totals())
+        base_totals = base_totals_by_member_id.get(member.id, zero_final_actual_totals())
+        decision_count = _count_value(department.code, totals)
+        base_decision_count = _count_value(department.code, base_totals)
+        amount = int(totals.get("support_amount") or 0)
+        approach_count = int(totals.get("approach_count") or 0)
+        communication_count = int(totals.get("communication_count") or 0)
+        base_approach_count = int(base_totals.get("approach_count") or 0)
+        base_communication_count = int(base_totals.get("communication_count") or 0)
+        active_days = active_days_by_member_id.get(member.id, 0)
+        rows.append(
+            {
+                "member_name": member.name,
+                "count_text": _format_number(decision_count),
+                "amount_text": _format_number(amount, "円"),
+                "approach_text": _format_number(approach_count),
+                "communication_text": _format_number(communication_count),
+                "communication_rate_text": _format_percentage(_percentage(base_communication_count, base_approach_count)),
+                "conversion_rate_text": _format_percentage(_percentage(base_decision_count, base_communication_count)),
+                "average_amount_per_decision_text": _format_number(_safe_average(amount, decision_count), "円"),
+                "average_amount_per_active_day_text": _format_number(_safe_average(amount, active_days), "円"),
+                "active_days_text": _format_number(active_days),
+                "breakdown_text": _wv_count_breakdown_text(totals) if department.code == "WV" else "",
+            }
+        )
+    return sorted(rows, key=lambda row: row["member_name"])
 
 
 def build_metrics_scope_report(*, department, scope):
@@ -176,4 +236,5 @@ def build_metrics_scope_report(*, department, scope):
         ],
         "daily_rows": _daily_report_rows(department=department, scope=scope),
         "ranking_sections": _ranking_sections(department=department, scope=scope),
+        "member_rows": _member_report_rows(department=department, scope=scope),
     }

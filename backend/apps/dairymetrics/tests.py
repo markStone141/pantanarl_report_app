@@ -4344,11 +4344,27 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "目標との差分")
         self.assertContains(response, "補正実績")
         self.assertContains(response, "ランキング")
+        self.assertContains(response, "各項目の上位3名")
         self.assertContains(response, "日別推移")
+        self.assertContains(response, "メンバー別集計")
+        self.assertContains(response, "コミュ率")
+        self.assertContains(response, "平均/決済")
+        self.assertContains(response, "平均/稼働")
         self.assertContains(response, "17,000円")
         self.assertContains(response, "50,000円")
         self.assertContains(response, "片山")
         self.assertContains(response, "印刷 / PDF保存")
+        self.assertTrue(all(len(section["rows"]) <= 3 for section in response.context["report"]["ranking_sections"]))
+        member_rows = {row["member_name"]: row for row in response.context["report"]["member_rows"]}
+        self.assertEqual(member_rows[self.member.name]["amount_text"], "13,000円")
+        self.assertEqual(member_rows[self.member.name]["count_text"], "5")
+        self.assertEqual(member_rows[self.member.name]["approach_text"], "12")
+        self.assertEqual(member_rows[self.member.name]["communication_text"], "6")
+        self.assertEqual(member_rows[self.member.name]["communication_rate_text"], "50.0%")
+        self.assertEqual(member_rows[self.member.name]["conversion_rate_text"], "66.7%")
+        self.assertEqual(member_rows[self.member.name]["average_amount_per_decision_text"], "2,600円")
+        self.assertEqual(member_rows[self.member.name]["average_amount_per_active_day_text"], "13,000円")
+        self.assertEqual(member_rows[self.member.name]["active_days_text"], "1")
 
     def test_metrics_report_renders_period_scope(self):
         self.client.force_login(self.admin)
@@ -4401,6 +4417,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "CS件数")
         self.assertContains(response, "難民件数")
         self.assertContains(response, "合計 3件 / CS 2件 / 難民 1件")
+        self.assertEqual(response.context["report"]["member_rows"][0]["breakdown_text"], "CS 2件 / 難民 1件")
 
     def test_metrics_v2_demo_renders_admin_overall_mode(self):
         self.client.force_login(self.admin)

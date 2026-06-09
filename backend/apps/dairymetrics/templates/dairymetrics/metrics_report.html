@@ -119,6 +119,7 @@
 
   <section class="card mt-16">
     <h3>ランキング</h3>
+    <div class="muted mt-6">各項目の上位3名を簡易表示します。</div>
     <div class="grid grid-2 mt-12 metrics-report-ranking-grid">
       {% for section in report.ranking_sections %}
       <article class="metric-card">
@@ -169,6 +170,50 @@
     </div>
     {% else %}
     <p class="muted mt-12">対象期間の実績はありません。</p>
+    {% endif %}
+  </section>
+
+  <section class="card mt-16">
+    <h3>メンバー別集計</h3>
+    {% if report.member_rows %}
+    <div class="table-scroll mt-12">
+      <table class="dairymetrics-admin-table metrics-report-table metrics-report-member-table">
+        <thead>
+          <tr>
+            <th>メンバー</th>
+            <th>件数</th>
+            <th>金額</th>
+            <th>AP</th>
+            <th>CM</th>
+            <th>コミュ率</th>
+            <th>決済率</th>
+            <th>平均/決済</th>
+            <th>平均/稼働</th>
+            <th>稼働日数</th>
+            {% if selected_department.code == "WV" %}<th>内訳</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in report.member_rows %}
+          <tr>
+            <td>{{ row.member_name }}</td>
+            <td>{{ row.count_text }}</td>
+            <td>{{ row.amount_text }}</td>
+            <td>{{ row.approach_text }}</td>
+            <td>{{ row.communication_text }}</td>
+            <td>{{ row.communication_rate_text }}</td>
+            <td>{{ row.conversion_rate_text }}</td>
+            <td>{{ row.average_amount_per_decision_text }}</td>
+            <td>{{ row.average_amount_per_active_day_text }}</td>
+            <td>{{ row.active_days_text }}</td>
+            {% if selected_department.code == "WV" %}<td>{{ row.breakdown_text }}</td>{% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted mt-12">対象期間のメンバー実績はありません。</p>
     {% endif %}
   </section>
 </div>

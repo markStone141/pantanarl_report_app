@@ -2610,6 +2610,12 @@
   white-space: nowrap;
 }
 
+.metrics-report-member-table th,
+.metrics-report-member-table td {
+  font-size: 0.86rem;
+  padding: 9px 10px;
+}
+
 @media print {
   .no-print,
   .dashboard-drawer-toggle,
