@@ -4325,8 +4325,82 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "実績管理ダッシュボード")
         self.assertContains(response, "決済入力")
         self.assertContains(response, "過去の実績を見る")
+        self.assertContains(response, "振り返りレポート")
+        self.assertContains(response, reverse("dairymetrics_metrics_report"))
         self.assertNotContains(response, "現行 Metrics")
         self.assertNotContains(response, "総合管理者ページ")
+
+    def test_metrics_report_renders_monthly_summary_and_rankings(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_metrics_report"),
+            {"department": self.department.code, "scope": "month", "month": timezone.localdate().strftime("%Y-%m")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "振り返りレポート")
+        self.assertContains(response, "出力条件")
+        self.assertContains(response, "目標との差分")
+        self.assertContains(response, "補正実績")
+        self.assertContains(response, "ランキング")
+        self.assertContains(response, "日別推移")
+        self.assertContains(response, "17,000円")
+        self.assertContains(response, "50,000円")
+        self.assertContains(response, "片山")
+        self.assertContains(response, "印刷 / PDF保存")
+
+    def test_metrics_report_renders_period_scope(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_metrics_report"),
+            {"department": self.department.code, "scope": "period", "period_id": self.period.id},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.period.name)
+        self.assertContains(response, "30,000円")
+
+    def test_metrics_report_renders_wv_breakdowns(self):
+        wv_department = self.create_department("WV")
+        wv_member = self.create_member(name="WV Member", department=wv_department)
+        amount_metric = TargetMetric.objects.create(
+            department=wv_department,
+            code="amount",
+            label="金額",
+            unit="円",
+            display_order=1,
+        )
+        today = timezone.localdate()
+        MonthTargetMetricValue.objects.create(
+            department=wv_department,
+            target_month=today.replace(day=1),
+            metric=amount_metric,
+            value=30000,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=wv_member,
+            department=wv_department,
+            entry_date=today,
+            approach_count=8,
+            communication_count=5,
+            result_count=2,
+            cs_count=2,
+            refugee_count=1,
+            support_amount=9000,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_metrics_report"),
+            {"department": wv_department.code, "scope": "month", "month": today.strftime("%Y-%m")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "CS件数")
+        self.assertContains(response, "難民件数")
+        self.assertContains(response, "合計 3件 / CS 2件 / 難民 1件")
 
     def test_metrics_v2_demo_renders_admin_overall_mode(self):
         self.client.force_login(self.admin)

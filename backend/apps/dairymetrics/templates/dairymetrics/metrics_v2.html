@@ -37,12 +37,14 @@
       <a href="{% url 'performance_history' %}">過去の実績を見る</a>
       {% endif %}
       <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
+      <a href="{% url 'dairymetrics_metrics_report' %}">振り返りレポート</a>
       <a href="{% url 'dashboard_index' %}">総合管理者ページ</a>
       {% else %}
       <a href="{% url 'performance_member_dashboard' %}">実績管理ダッシュボード</a>
       <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
       <a href="{% url 'performance_member_history' %}">過去の実績を見る</a>
       <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
+      <a href="{% url 'dairymetrics_metrics_report' %}">振り返りレポート</a>
       {% endif %}
       <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
     </nav>
@@ -96,6 +98,9 @@
         <button type="submit">表示</button>
       </div>
     </form>
+    <div class="mt-12">
+      <a class="btn-inline" href="{% url 'dairymetrics_metrics_report' %}?department={{ selected_department.code }}&scope={{ scope_value }}{% if scope.month_start %}&month={{ month_value }}{% endif %}{% if scope.period %}&period_id={{ scope.period.id }}{% endif %}">この条件で振り返りレポートを見る</a>
+    </div>
   </section>
 
   {{ metrics_v2_payload_json|json_script:"metrics-v2-dashboard-data" }}

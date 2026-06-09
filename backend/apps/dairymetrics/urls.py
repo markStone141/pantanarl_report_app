@@ -17,6 +17,7 @@ urlpatterns = [
     path("entry-v2-transaction/personal-setup-fields/", views.entry_v2_personal_setup_fields, name="dairymetrics_entry_v2_personal_setup_fields"),
     path("entry-v2-transaction/", views.entry_form_v2_transaction_demo, name="dairymetrics_entry_v2_transaction_demo"),
     path("metrics-v2/", views.metrics_v2_demo, name="dairymetrics_metrics_v2_demo"),
+    path("metrics-report/", views.metrics_report, name="dairymetrics_metrics_report"),
     path("targets/scope/", views.scope_target_form, name="dairymetrics_scope_target"),
     path("admin/", views.admin_overview, name="dairymetrics_admin_overview"),
     path("admin/rankings/", views.admin_ranking_overview, name="dairymetrics_admin_ranking_overview"),

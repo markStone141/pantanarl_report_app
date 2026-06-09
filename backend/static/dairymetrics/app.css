@@ -2565,6 +2565,72 @@
   color: #94a3b8;
 }
 
+.metrics-report-hero {
+  background: linear-gradient(135deg, #f8fbff 0%, #eef7ff 52%, #f8fafc 100%);
+}
+
+.metrics-report-hero h1 {
+  margin: 6px 0;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+.metrics-report-card-grid {
+  gap: 14px;
+}
+
+.metrics-report-section-grid,
+.metrics-report-ranking-grid {
+  gap: 16px;
+}
+
+.metrics-report-kpi-list {
+  display: grid;
+  gap: 10px;
+}
+
+.metrics-report-kpi-list > div,
+.metrics-report-ranking-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.metrics-report-ranking-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.metrics-report-table th,
+.metrics-report-table td {
+  white-space: nowrap;
+}
+
+@media print {
+  .no-print,
+  .dashboard-drawer-toggle,
+  .dashboard-drawer-nav,
+  .dashboard-drawer-backdrop {
+    display: none !important;
+  }
+
+  .metrics-report-page.container {
+    max-width: none;
+    padding: 0;
+  }
+
+  .metrics-report-page .card,
+  .metrics-report-page .metric-card,
+  .metrics-report-hero {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+}
+
 @media (max-width: 900px) {
   .dairymetrics-v2-activity-groups {
     grid-template-columns: 1fr;
@@ -2575,7 +2641,8 @@
   }
 
   .metrics-v2-summary-grid,
-  .metrics-v2-history-grid {
+  .metrics-v2-history-grid,
+  .metrics-report-section-grid {
     grid-template-columns: 1fr;
   }
 
@@ -2598,6 +2665,11 @@
 
 @media (max-width: 640px) {
   .metrics-v2-distribution-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-report-ranking-grid,
+  .metrics-report-card-grid {
     grid-template-columns: 1fr;
   }
 }

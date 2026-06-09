@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from apps.accounts.models import Department, Member
+from apps.common.target_periods import current_active_period
 from apps.mail.models import MailSendHistory
 from apps.mail.services import MailSendError, record_transaction_mail_failure, send_transaction_mail
 from apps.targets.models import Period
@@ -44,6 +45,7 @@ from .services.entry_v2 import (
     transaction_mail_status,
 )
 from .services.metrics_v2 import build_metrics_v2_dashboard_payload, resolve_metrics_v2_scope
+from .services.reports import build_metrics_scope_report
 from .selectors import (
     build_admin_daily_overview,
     build_admin_ranking_overview,
@@ -877,6 +879,52 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
         "metrics_v2_payload_json": payload_json,
     }
     return render(request, "dairymetrics/metrics_v2.html", context)
+
+
+@require_dairymetrics_member
+def metrics_report(request: HttpRequest) -> HttpResponse:
+    viewer_member = get_member_profile(request.user)
+    departments, selected_department = resolve_metrics_v2_department(request=request, member=viewer_member)
+    if not selected_department:
+        return redirect("dairymetrics_dashboard")
+
+    today = timezone.localdate()
+    requested_scope = (request.GET.get("scope") or "month").strip()
+    if requested_scope not in {"month", "period"}:
+        requested_scope = "month"
+    requested_month = parse_month_input(request.GET.get("month") or "")
+    requested_period = None
+    raw_period_id = (request.GET.get("period_id") or "").strip()
+    if raw_period_id.isdigit():
+        requested_period = Period.objects.filter(pk=int(raw_period_id)).first()
+    if requested_scope == "period" and requested_period is None:
+        requested_period = current_active_period(target_date=today) or Period.objects.order_by("-end_date", "-start_date", "-id").first()
+
+    scope = resolve_metrics_v2_scope(
+        today=today,
+        scope=requested_scope,
+        requested_month=requested_month,
+        requested_period=requested_period,
+    )
+    if requested_scope == "period" and scope.scope != "period":
+        scope = resolve_metrics_v2_scope(today=today, scope="month", requested_month=requested_month)
+
+    report = build_metrics_scope_report(department=selected_department, scope=scope)
+    period_options = list(Period.objects.order_by("-end_date", "-start_date", "-id")[:24])
+
+    context = {
+        "is_admin": request.user.is_staff,
+        "member": viewer_member,
+        "departments": departments,
+        "selected_department": selected_department,
+        "scope": scope,
+        "scope_value": scope.scope,
+        "month_value": (scope.month_start or today.replace(day=1)).strftime("%Y-%m"),
+        "period_options": period_options,
+        "selected_period_id": scope.period.id if scope.period else "",
+        "report": report,
+    }
+    return render(request, "dairymetrics/metrics_report.html", context)
 
 
 @require_dairymetrics_member
