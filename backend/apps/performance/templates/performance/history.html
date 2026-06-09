@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}実績閲覧 | Report App{% endblock %}
+{% block title %}過去の実績を見る | Report App{% endblock %}
 
 {% block content %}
 <div class="container">
   <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
     <div>
-      <strong>実績閲覧</strong>
+      <strong>過去の実績を見る</strong>
       <div class="muted topbar-muted">月・路程・期間指定で実績を振り返ります。</div>
     </div>
     <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
@@ -17,7 +17,7 @@
       {% for url_name, label in nav_items %}
       <a href="{% url url_name %}">{{ label }}</a>
       {% endfor %}
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">Metrics V2</a>
+      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
       <a href="{% url 'performance_logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>

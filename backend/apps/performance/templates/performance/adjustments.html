@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}補正実績 | 実績管理{% endblock %}
+{% block title %}戻り・増額登録 | 実績管理{% endblock %}
 
 {% block content %}
 <div class="container">
   <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
     <div>
-      <strong>補正実績</strong>
+      <strong>戻り・増額登録</strong>
       <div class="topbar-muted" style="color: #f7fbff; font-size: 0.93rem; line-height: 1.5;">戻り・増額・郵送などの後追い補正を管理します。</div>
     </div>
     <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
@@ -17,7 +17,7 @@
       {% for url_name, label in nav_items %}
       <a href="{% url url_name %}">{{ label }}</a>
       {% endfor %}
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">Metrics V2</a>
+      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
       <a href="{% url 'performance_logout' %}" class="logout-link">ログアウト</a>
     </nav>
   </header>
@@ -27,7 +27,7 @@
     {% if status_message %}
     <div class="note mb-10">{{ status_message }}</div>
     {% endif %}
-    <h3>{% if edit_adjustment %}補正実績を編集{% else %}補正実績を追加{% endif %}</h3>
+    <h3>{% if edit_adjustment %}戻り・増額を編集{% else %}戻り・増額を追加{% endif %}</h3>
     <form method="post" class="grid dairymetrics-entry-grid">
       {% csrf_token %}
       {% if edit_adjustment %}

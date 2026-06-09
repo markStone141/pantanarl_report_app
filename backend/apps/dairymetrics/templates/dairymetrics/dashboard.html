@@ -30,13 +30,13 @@
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       {% if readonly_dashboard and member and selected_department and viewer_member %}
       <a href="{% url 'performance_member_insight' member.id selected_department.id %}">実績管理ダッシュボード</a>
-      <a href="{% url 'performance_member_history_insight' member.id selected_department.id %}">実績閲覧</a>
+      <a href="{% url 'performance_member_history_insight' member.id selected_department.id %}">過去の実績を見る</a>
       {% elif member %}
       <a href="{% url 'performance_member_dashboard' %}">実績管理ダッシュボード</a>
-      <a href="{% url 'performance_member_history' %}">過去実績閲覧</a>
+      <a href="{% url 'performance_member_history' %}">過去の実績を見る</a>
       {% endif %}
       {% if member %}<a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>{% endif %}
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">Metrics V2</a>
+      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
       {% if is_admin %}<a href="{% url 'performance_index' %}">全体実績</a>{% endif %}
       {% if is_admin %}<a href="{% url 'dashboard_index' %}">管理者ページ</a>{% endif %}
       <a href="{% url 'report_index' %}">Report App</a>

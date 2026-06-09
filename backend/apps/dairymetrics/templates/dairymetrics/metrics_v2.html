@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static humanize %}
 
-{% block title %}Metrics V2 | DairyMetrics{% endblock %}
+{% block title %}分析する | DairyMetrics{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=25" />
@@ -11,7 +11,7 @@
 <div class="container">
   <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
     <div>
-      <strong>Metrics V2</strong>
+      <strong>分析する</strong>
       <div class="topbar-muted">
         {% if is_admin %}
         {% if selected_member %}
@@ -32,17 +32,17 @@
       <a href="{% url 'performance_index' %}">管理者用ダッシュボード</a>
       {% if selected_member %}
       <a href="{% url 'performance_member_insight' selected_member.id selected_department.id %}">実績管理ダッシュボード</a>
-      <a href="{% url 'performance_member_history_insight' selected_member.id selected_department.id %}">実績閲覧</a>
+      <a href="{% url 'performance_member_history_insight' selected_member.id selected_department.id %}">過去の実績を見る</a>
       {% else %}
-      <a href="{% url 'performance_history' %}">過去実績閲覧</a>
+      <a href="{% url 'performance_history' %}">過去の実績を見る</a>
       {% endif %}
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">Metrics V2</a>
+      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
       <a href="{% url 'dashboard_index' %}">総合管理者ページ</a>
       {% else %}
       <a href="{% url 'performance_member_dashboard' %}">実績管理ダッシュボード</a>
       <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
-      <a href="{% url 'performance_member_history' %}">過去実績閲覧</a>
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">Metrics V2</a>
+      <a href="{% url 'performance_member_history' %}">過去の実績を見る</a>
+      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
       {% endif %}
       <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
     </nav>

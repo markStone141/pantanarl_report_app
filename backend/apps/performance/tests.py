@@ -68,7 +68,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "performance-activity-trend-chart")
         self.assertContains(response, "日目達成率")
         self.assertContains(response, entry.entry_date.strftime("%m/%d"))
-        self.assertContains(response, "補正実績入力")
+        self.assertContains(response, "戻り・増額登録")
         self.assertContains(response, reverse("performance_adjustments"))
 
     def test_performance_index_wv_overall_activity_trend_does_not_double_count_counts(self):
@@ -679,7 +679,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "4月第2次路程")
         self.assertContains(response, "4,500円")
         self.assertContains(response, "16.1%")
-        self.assertContains(response, "実績閲覧")
+        self.assertContains(response, "過去の実績を見る")
 
     def test_performance_index_and_history_show_today_transaction_and_mail_details(self):
         today = timezone.localdate()
@@ -1590,7 +1590,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, f"{self.member.name} の実績閲覧")
+        self.assertContains(response, f"{self.member.name} の過去の実績")
         self.assertContains(response, "集計条件")
         self.assertContains(response, "全体の月目標")
         self.assertContains(response, "個人の月目標")
@@ -1975,8 +1975,8 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "全体実績")
         self.assertContains(response, reverse("performance_index"))
         self.assertContains(response, "決済入力")
-        self.assertContains(response, "実績閲覧")
-        self.assertContains(response, "Metrics V2")
+        self.assertContains(response, "過去の実績を見る")
+        self.assertContains(response, "分析する")
         self.assertNotContains(response, "総合管理者ページ")
 
     def test_performance_member_can_open_overall_dashboard_and_history(self):
@@ -2021,7 +2021,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         )
         self.assertContains(response, reverse("performance_member_insight", args=[teammate.id, self.department.id]))
         self.assertContains(response, reverse("performance_member_history_insight", args=[teammate.id, self.department.id]))
-        self.assertNotContains(response, "このメンバーの Metrics V2")
+        self.assertNotContains(response, "このメンバーの 分析する")
         self.assertNotContains(response, "月目標を保存")
         self.assertNotContains(response, "路程目標を保存")
 
@@ -2050,11 +2050,11 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         response = self.client.get(reverse("performance_member_history"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, f"{self.member.name} の実績閲覧")
+        self.assertContains(response, f"{self.member.name} の過去の実績")
         self.assertContains(response, "集計条件")
         self.assertContains(response, "実績管理ダッシュボード")
         self.assertContains(response, "決済入力")
-        self.assertContains(response, "Metrics V2")
+        self.assertContains(response, "分析する")
 
     def test_performance_member_history_shows_transaction_edit_link(self):
         self.client.logout()

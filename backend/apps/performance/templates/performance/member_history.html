@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}実績閲覧 | 実績管理{% endblock %}
+{% block title %}過去の実績を見る | 実績管理{% endblock %}
 
 {% block content %}
 <div class="container">
   <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
     <div>
-      <strong>{{ member.name }} の実績閲覧</strong>
+      <strong>{{ member.name }} の過去の実績</strong>
       <div class="muted topbar-muted">{{ department.code }} / 月・路程・期間ごとの実績確認</div>
     </div>
     <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
@@ -20,7 +20,7 @@
       {% if not is_admin_view %}
       <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
       {% endif %}
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}?department={{ department.code }}{% if readonly_member_view %}&member={{ member.id }}{% endif %}">Metrics V2</a>
+      <a href="{% url 'dairymetrics_metrics_v2_demo' %}?department={{ department.code }}{% if readonly_member_view %}&member={{ member.id }}{% endif %}">分析する</a>
       <a href="{% url 'report_index' %}">Report App</a>
       <a href="{% url 'performance_logout' %}" class="logout-link">ログアウト</a>
     </nav>
