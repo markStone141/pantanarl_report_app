@@ -28,6 +28,7 @@ from apps.dairymetrics.models import (
 )
 from apps.dairymetrics.services.final_actuals import (
     collect_department_final_actual_totals,
+    collect_increase_adjustment_totals,
     collect_member_final_actual_totals,
 )
 from apps.common.target_periods import current_active_period
@@ -110,6 +111,13 @@ def _safe_average(numerator: int, denominator: int) -> float | None:
     if denominator <= 0:
         return None
     return round(numerator / denominator, 1)
+
+
+def _average_amount_per_decision_value(*, department_code: str, totals: dict, excluded_adjustment_totals: dict | None = None) -> float | None:
+    excluded_adjustment_totals = excluded_adjustment_totals or {}
+    amount = max(0, int(totals.get("support_amount") or 0) - int(excluded_adjustment_totals.get("support_amount") or 0))
+    decision_count = max(0, _count_value(department_code, totals) - _count_value(department_code, excluded_adjustment_totals))
+    return _safe_average(amount, decision_count)
 
 
 def _format_number(value: float | int | None, unit: str = "") -> str:
@@ -244,21 +252,27 @@ def _active_day_count(*, member=None, department, start_date: date, end_date: da
 
 
 def _increase_totals(*, member=None, department, start_date: date, end_date: date) -> dict:
-    queryset = MetricAdjustment.objects.filter(
+    totals = collect_increase_adjustment_totals(
+        member=member,
         department=department,
-        target_date__range=(start_date, end_date),
-        source_type=MetricAdjustment.SOURCE_INCREASE,
+        start_date=start_date,
+        end_date=end_date,
     )
-    if member is not None:
-        queryset = queryset.filter(member=member)
-    aggregated = queryset.aggregate(total_count=Sum("result_count"), total_amount=Sum("support_amount"))
     return {
-        "count": int(aggregated["total_count"] or 0),
-        "amount": int(aggregated["total_amount"] or 0),
+        "count": _count_value(department.code, totals),
+        "amount": int(totals.get("support_amount") or 0),
     }
 
 
-def _build_summary_cards(*, title_prefix: str, department_code: str, totals: dict, target_amount: int, active_days: int) -> dict:
+def _build_summary_cards(
+    *,
+    title_prefix: str,
+    department_code: str,
+    totals: dict,
+    target_amount: int,
+    active_days: int,
+    excluded_average_adjustment_totals: dict | None = None,
+) -> dict:
     decision_count = _count_value(department_code, totals)
     support_amount = int(totals.get("support_amount") or 0)
     approach_count = int(totals.get("approach_count") or 0)
@@ -296,7 +310,17 @@ def _build_summary_cards(*, title_prefix: str, department_code: str, totals: dic
                 "helper": count_breakdown_text,
             },
             {"label": "1稼働あたりの平均金額", "value": _format_number(_safe_average(support_amount, active_days), "円")},
-            {"label": "1決済あたりの平均金額", "value": _format_number(_safe_average(support_amount, decision_count), "円")},
+            {
+                "label": "1決済あたりの平均金額",
+                "value": _format_number(
+                    _average_amount_per_decision_value(
+                        department_code=department_code,
+                        totals=totals,
+                        excluded_adjustment_totals=excluded_average_adjustment_totals,
+                    ),
+                    "円",
+                ),
+            },
             {"label": "目標進捗", "value": _format_percentage(_percentage(support_amount, target_amount))},
         ],
         "totals": {
@@ -517,6 +541,12 @@ def _build_month_totals_series(*, department, member=None, reference_month: date
 def _member_metric_row(*, member, department, scope: MetricsV2Scope):
     totals = collect_member_final_actual_totals(member, department, scope.start_date, scope.end_date, include_adjustments=True)
     base_totals = collect_member_final_actual_totals(member, department, scope.start_date, scope.end_date, include_adjustments=False)
+    excluded_average_adjustment_totals = collect_increase_adjustment_totals(
+        member=member,
+        department=department,
+        start_date=scope.start_date,
+        end_date=scope.end_date,
+    )
     active_days = _active_day_count(member=member, department=department, start_date=scope.start_date, end_date=scope.end_date)
     decision_count = _count_value(department.code, totals)
     base_decision_count = _count_value(department.code, base_totals)
@@ -532,7 +562,12 @@ def _member_metric_row(*, member, department, scope: MetricsV2Scope):
             "approach_count": int(totals.get("approach_count") or 0),
             "communication_count": int(totals.get("communication_count") or 0),
             "average_amount_per_active_day": _safe_average(support_amount, active_days) or 0,
-            "average_amount_per_decision": _safe_average(support_amount, decision_count) or 0,
+            "average_amount_per_decision": _average_amount_per_decision_value(
+                department_code=department.code,
+                totals=totals,
+                excluded_adjustment_totals=excluded_average_adjustment_totals,
+            )
+            or 0,
             "support_amount": support_amount,
             "decision_count": decision_count,
             "cs_count": _cs_count_value(totals),
@@ -621,14 +656,26 @@ def build_metrics_v2_dashboard_payload(
     member=None,
 ) -> dict:
     overall_totals = collect_department_final_actual_totals(department, scope.start_date, scope.end_date, include_adjustments=True)
+    overall_excluded_average_adjustment_totals = collect_increase_adjustment_totals(
+        department=department,
+        start_date=scope.start_date,
+        end_date=scope.end_date,
+    )
     overall_target_amount = _department_target_amount_for_scope(department=department, scope=scope)
     overall_active_days = _active_day_count(department=department, start_date=scope.start_date, end_date=scope.end_date)
 
     personal_totals = None
+    personal_excluded_average_adjustment_totals = None
     personal_target_amount = 0
     personal_active_days = 0
     if member is not None:
         personal_totals = collect_member_final_actual_totals(member, department, scope.start_date, scope.end_date, include_adjustments=True)
+        personal_excluded_average_adjustment_totals = collect_increase_adjustment_totals(
+            member=member,
+            department=department,
+            start_date=scope.start_date,
+            end_date=scope.end_date,
+        )
         personal_target_amount = _member_target_amount_for_scope(member=member, department=department, scope=scope)
         personal_active_days = _active_day_count(member=member, department=department, start_date=scope.start_date, end_date=scope.end_date)
 
@@ -645,6 +692,7 @@ def build_metrics_v2_dashboard_payload(
             totals=overall_totals,
             target_amount=overall_target_amount,
             active_days=overall_active_days,
+            excluded_average_adjustment_totals=overall_excluded_average_adjustment_totals,
         ),
         "personal_summary": (
             _build_summary_cards(
@@ -653,6 +701,7 @@ def build_metrics_v2_dashboard_payload(
                 totals=personal_totals,
                 target_amount=personal_target_amount,
                 active_days=personal_active_days,
+                excluded_average_adjustment_totals=personal_excluded_average_adjustment_totals,
             )
             if member is not None and personal_totals is not None
             else None

@@ -90,6 +90,41 @@ def collect_department_final_actual_totals(department, start_date, end_date, *, 
     return merge_final_actual_totals(entry_totals, adjustment_totals)
 
 
+def collect_increase_adjustment_totals(*, department, start_date, end_date, member=None):
+    adjustments = MetricAdjustment.objects.filter(
+        department=department,
+        target_date__range=(start_date, end_date),
+        source_type=MetricAdjustment.SOURCE_INCREASE,
+    )
+    if member is not None:
+        adjustments = adjustments.filter(member=member)
+    return aggregate_adjustment_totals(adjustments)
+
+
+def collect_increase_adjustment_totals_by_member_ids(*, member_ids, department, start_date, end_date):
+    totals_by_member_id = {member_id: zero_final_actual_totals() for member_id in member_ids}
+    if not member_ids:
+        return totals_by_member_id
+
+    adjustment_annotations = {f"sum_{field}": Sum(field) for field in ADJUSTMENT_METRIC_FIELDS}
+    adjustment_rows = (
+        MetricAdjustment.objects.filter(
+            member_id__in=member_ids,
+            department=department,
+            target_date__range=(start_date, end_date),
+            source_type=MetricAdjustment.SOURCE_INCREASE,
+        )
+        .values("member_id")
+        .annotate(**adjustment_annotations)
+    )
+    for row in adjustment_rows:
+        totals = totals_by_member_id.setdefault(row["member_id"], zero_final_actual_totals())
+        for field in ADJUSTMENT_METRIC_FIELDS:
+            totals[field] = int(row.get(f"sum_{field}") or 0)
+
+    return totals_by_member_id
+
+
 def collect_member_final_actual_totals_by_ids(
     *,
     member_ids,

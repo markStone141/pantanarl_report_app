@@ -4329,6 +4329,14 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, reverse("dairymetrics_metrics_report"))
         self.assertNotContains(response, "現行 Metrics")
         self.assertNotContains(response, "総合管理者ページ")
+        personal_average_values = {
+            item["label"]: item["value"] for item in response.context["metrics_v2_payload"]["personal_summary"]["averages"]
+        }
+        overall_average_values = {
+            item["label"]: item["value"] for item in response.context["metrics_v2_payload"]["overall_summary"]["averages"]
+        }
+        self.assertEqual(personal_average_values["1決済あたりの平均金額"], "3,000円")
+        self.assertEqual(overall_average_values["1決済あたりの平均金額"], "2,667円")
 
     def test_metrics_report_renders_monthly_summary_and_rankings(self):
         self.client.force_login(self.admin)
@@ -4383,6 +4391,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "片山")
         self.assertNotContains(response, "印刷 / PDF保存")
         self.assertNotIn("ranking_sections", response.context["report"])
+        self.assertEqual(response.context["report"]["summary_cards"][6]["value"], "2,667円")
         self.assertEqual(response.context["report"]["distribution_cards"][0]["total_text"], "3件")
         self.assertEqual(response.context["report"]["average_amount_comparison"]["age"]["labels"], ["20代", "30代", "40代"])
         member_rows = {row["member_name"]: row for row in response.context["report"]["member_rows"]}
@@ -4392,7 +4401,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(member_rows[self.member.name]["communication_text"], "6")
         self.assertEqual(member_rows[self.member.name]["communication_rate_text"], "50.0%")
         self.assertEqual(member_rows[self.member.name]["conversion_rate_text"], "66.7%")
-        self.assertEqual(member_rows[self.member.name]["average_amount_per_decision_text"], "2,600")
+        self.assertEqual(member_rows[self.member.name]["average_amount_per_decision_text"], "3,000")
         self.assertEqual(member_rows[self.member.name]["average_amount_per_active_day_text"], "13,000")
         self.assertEqual(member_rows[self.member.name]["active_days_text"], "1")
 

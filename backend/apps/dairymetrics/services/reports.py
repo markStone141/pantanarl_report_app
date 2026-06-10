@@ -7,11 +7,14 @@ from apps.dairymetrics.services.final_actuals import (
     ADJUSTMENT_METRIC_FIELDS,
     ENTRY_METRIC_FIELDS,
     collect_department_final_actual_totals,
+    collect_increase_adjustment_totals,
+    collect_increase_adjustment_totals_by_member_ids,
     collect_member_final_actual_totals_by_ids,
     merge_final_actual_totals,
     zero_final_actual_totals,
 )
 from apps.dairymetrics.services.metrics_v2 import (
+    _average_amount_per_decision_value,
     _count_value,
     _department_target_amount_for_scope,
     _format_number,
@@ -145,6 +148,12 @@ def _member_report_rows(*, department, scope):
         end_date=scope.end_date,
         include_adjustments=False,
     )
+    excluded_average_adjustment_totals_by_member_id = collect_increase_adjustment_totals_by_member_ids(
+        member_ids=member_ids,
+        department=department,
+        start_date=scope.start_date,
+        end_date=scope.end_date,
+    )
     active_day_rows = (
         MemberDailyMetricEntry.objects.filter(
             member_id__in=member_ids,
@@ -160,6 +169,10 @@ def _member_report_rows(*, department, scope):
     for member in members:
         totals = totals_by_member_id.get(member.id, zero_final_actual_totals())
         base_totals = base_totals_by_member_id.get(member.id, zero_final_actual_totals())
+        excluded_average_adjustment_totals = excluded_average_adjustment_totals_by_member_id.get(
+            member.id,
+            zero_final_actual_totals(),
+        )
         decision_count = _count_value(department.code, totals)
         base_decision_count = _count_value(department.code, base_totals)
         amount = int(totals.get("support_amount") or 0)
@@ -170,7 +183,11 @@ def _member_report_rows(*, department, scope):
         active_days = active_days_by_member_id.get(member.id, 0)
         communication_rate = _percentage(base_communication_count, base_approach_count)
         conversion_rate = _percentage(base_decision_count, base_communication_count)
-        average_amount_per_decision = _safe_average(amount, decision_count)
+        average_amount_per_decision = _average_amount_per_decision_value(
+            department_code=department.code,
+            totals=totals,
+            excluded_adjustment_totals=excluded_average_adjustment_totals,
+        )
         average_amount_per_active_day = _safe_average(amount, active_days)
         rows.append(
             {
@@ -221,6 +238,11 @@ def build_metrics_scope_report(*, department, scope):
         scope.end_date,
         include_adjustments=False,
     )
+    excluded_average_adjustment_totals = collect_increase_adjustment_totals(
+        department=department,
+        start_date=scope.start_date,
+        end_date=scope.end_date,
+    )
     target_amount = _department_target_amount_for_scope(department=department, scope=scope)
 
     decision_count = _count_value(department.code, final_totals)
@@ -260,7 +282,18 @@ def build_metrics_scope_report(*, department, scope):
             {"label": "稼働日数", "value": _format_number(active_days), "helper": ""},
             {"label": "コミュ率", "value": _format_percentage(_percentage(base_communication_count, base_approach_count)), "helper": "通常実績ベース"},
             {"label": "決済率", "value": _format_percentage(_percentage(base_decision_count, base_communication_count)), "helper": "通常実績ベース"},
-            {"label": "1決済当たりの平均", "value": _format_number(_safe_average(support_amount, decision_count), "円"), "helper": ""},
+            {
+                "label": "1決済当たりの平均",
+                "value": _format_number(
+                    _average_amount_per_decision_value(
+                        department_code=department.code,
+                        totals=final_totals,
+                        excluded_adjustment_totals=excluded_average_adjustment_totals,
+                    ),
+                    "円",
+                ),
+                "helper": "",
+            },
             {
                 "label": "1稼働当たりの平均",
                 "value": _format_number(_safe_average(support_amount, active_days), "円"),
