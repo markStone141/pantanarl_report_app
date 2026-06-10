@@ -4372,7 +4372,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "17,000円")
         self.assertContains(response, "50,000円")
         self.assertContains(response, "片山")
-        self.assertContains(response, "印刷 / PDF保存")
+        self.assertNotContains(response, "印刷 / PDF保存")
         self.assertNotIn("ranking_sections", response.context["report"])
         member_rows = {row["member_name"]: row for row in response.context["report"]["member_rows"]}
         self.assertEqual(member_rows[self.member.name]["amount_text"], "13,000円")
