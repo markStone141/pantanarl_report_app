@@ -408,6 +408,24 @@ def _build_distribution_cards(*, department_code: str, transaction_queryset):
     return cards, average_amount_comparison
 
 
+def build_metrics_v2_distribution_payload(*, department, scope: MetricsV2Scope, member=None) -> dict:
+    transaction_queryset = MemberMetricTransaction.objects.filter(
+        entry__department=department,
+        entry__entry_date__range=(scope.start_date, scope.end_date),
+    ).select_related("entry")
+    if member is not None:
+        transaction_queryset = transaction_queryset.filter(entry__member=member)
+
+    distributions, average_amount_comparison = _build_distribution_cards(
+        department_code=department.code,
+        transaction_queryset=transaction_queryset,
+    )
+    return {
+        "distribution_cards": distributions,
+        "average_amount_comparison": average_amount_comparison,
+    }
+
+
 def _build_period_totals_series(*, department, member=None, periods):
     labels = []
     amounts = []
@@ -614,17 +632,7 @@ def build_metrics_v2_dashboard_payload(
         personal_target_amount = _member_target_amount_for_scope(member=member, department=department, scope=scope)
         personal_active_days = _active_day_count(member=member, department=department, start_date=scope.start_date, end_date=scope.end_date)
 
-    transaction_queryset = MemberMetricTransaction.objects.filter(
-        entry__department=department,
-        entry__entry_date__range=(scope.start_date, scope.end_date),
-    ).select_related("entry")
-    if member is not None:
-        transaction_queryset = transaction_queryset.filter(entry__member=member)
-
-    distributions, average_amount_comparison = _build_distribution_cards(
-        department_code=department.code,
-        transaction_queryset=transaction_queryset,
-    )
+    distribution_payload = build_metrics_v2_distribution_payload(department=department, scope=scope, member=member)
 
     reference_month = scope.month_start or scope.end_date.replace(day=1)
     available_periods = _recent_period_history_periods(target_date=scope.end_date)
@@ -659,7 +667,6 @@ def build_metrics_v2_dashboard_payload(
             member=member,
             periods=available_periods,
         ),
-        "distribution_cards": distributions,
-        "average_amount_comparison": average_amount_comparison,
+        **distribution_payload,
         "ranking": _build_ranking_payload(department=department, scope=scope),
     }

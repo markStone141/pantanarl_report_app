@@ -238,8 +238,69 @@
     <p class="muted mt-12">対象期間のメンバー実績はありません。</p>
     {% endif %}
   </section>
+
+  <section class="mt-16">
+    <div class="row">
+      <div>
+        <h3>属性別分析</h3>
+        <div class="muted">年代・男女・国籍の比率と平均金額を確認できます。</div>
+      </div>
+    </div>
+    <div class="grid grid-3 metrics-v2-distribution-grid mt-12">
+      {% for card in report.distribution_cards %}
+      <article class="card">
+        <div class="row">
+          <strong>{{ card.title }}</strong>
+          <span class="badge">{{ card.total_text }}</span>
+        </div>
+        <div class="metrics-v2-chart-frame metrics-v2-chart-frame-distribution mt-12">
+          <canvas
+            class="metrics-v2-distribution-chart"
+            aria-label="{{ card.title }}"
+            data-chart-labels="{{ card.labels|join:'|' }}"
+            data-chart-values="{{ card.counts|join:',' }}"
+          ></canvas>
+        </div>
+        <div class="metrics-v2-distribution-list mt-12">
+          {% for row in card.rows %}
+          <div class="metrics-v2-distribution-row">
+            <span class="metrics-v2-distribution-label">
+              <span class="metrics-v2-distribution-swatch metrics-v2-distribution-swatch-{{ forloop.counter0 }}"></span>
+              {{ row.label }}
+            </span>
+            <span class="muted">{{ row.count_text }} / {{ row.percent_text }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="card mt-16">
+    <div class="row">
+      <div>
+        <h3>属性別の平均金額</h3>
+        <div class="muted">年代・男女・国籍で平均金額の差を確認できます。</div>
+      </div>
+    </div>
+    <div class="mt-12">
+      <label for="metrics-v2-amount-mode">分類</label>
+      <select id="metrics-v2-amount-mode" data-metrics-v2-amount-select>
+        <option value="age">年代</option>
+        <option value="gender">男女</option>
+        <option value="nationality">国籍</option>
+      </select>
+    </div>
+    <div class="metrics-v2-chart-frame mt-12">
+      <canvas id="metrics-v2-average-amount-chart" class="metrics-v2-history-chart" aria-label="属性別の平均金額"></canvas>
+    </div>
+  </section>
 </div>
 
+{{ report.analysis_chart_payload|json_script:"metrics-v2-dashboard-data" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=6"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 <script>
   (() => {

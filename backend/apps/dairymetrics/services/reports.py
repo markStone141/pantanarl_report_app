@@ -22,6 +22,7 @@ from apps.dairymetrics.services.metrics_v2 import (
     _ranking_members,
     _safe_average,
     _wv_count_breakdown_text,
+    build_metrics_v2_distribution_payload,
 )
 
 
@@ -203,6 +204,10 @@ def _member_report_rows(*, department, scope):
     return sorted(rows, key=lambda row: row["member_name"])
 
 
+def _analysis_chart_payload(*, department, scope) -> dict:
+    return build_metrics_v2_distribution_payload(department=department, scope=scope)
+
+
 def build_metrics_scope_report(*, department, scope):
     final_totals = collect_department_final_actual_totals(
         department,
@@ -238,6 +243,8 @@ def build_metrics_scope_report(*, department, scope):
     daily_rows = _daily_report_rows(department=department, scope=scope)
     highest_amount_day = max(daily_rows, key=lambda row: row["amount_value"], default=None)
     lowest_amount_day = min(daily_rows, key=lambda row: row["amount_value"], default=None)
+
+    analysis_chart_payload = _analysis_chart_payload(department=department, scope=scope)
 
     return {
         "department": department,
@@ -284,4 +291,6 @@ def build_metrics_scope_report(*, department, scope):
         ],
         "daily_rows": daily_rows,
         "member_rows": _member_report_rows(department=department, scope=scope),
+        "analysis_chart_payload": analysis_chart_payload,
+        **analysis_chart_payload,
     }
