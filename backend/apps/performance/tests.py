@@ -681,6 +681,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "4月第2次路程")
+        self.assertContains(response, f"{selected_period.start_date:%Y/%m/%d} - {selected_period.end_date:%Y/%m/%d}")
         self.assertContains(response, "4,500円")
         self.assertContains(response, "16.1%")
         self.assertContains(response, "過去の実績を見る")
@@ -1088,6 +1089,8 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "補正実績")
         self.assertContains(response, "残り")
         self.assertContains(response, 'data-chart-values="5000,2000,3000"', html=False)
+        self.assertContains(response, "5月第2次路程")
+        self.assertContains(response, f"{active_period.start_date:%Y/%m/%d} - {active_period.end_date:%Y/%m/%d}")
 
     def test_performance_index_shows_active_member_cards_with_detail_link(self):
         today = timezone.localdate()
@@ -2313,6 +2316,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         current_period = Period.objects.create(
             name="2026年5月 第4次路程",
             month=today.replace(day=1),
+            status="active",
             start_date=today - timedelta(days=2),
             end_date=today + timedelta(days=2),
         )

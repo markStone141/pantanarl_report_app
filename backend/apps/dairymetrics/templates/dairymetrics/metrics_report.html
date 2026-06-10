@@ -63,7 +63,7 @@
       <div data-metrics-report-field="period">
         <select name="period_id" aria-label="対象路程">
           {% for period in period_options %}
-          <option value="{{ period.id }}" {% if period.id == selected_period_id %}selected{% endif %}>{{ period.name }}</option>
+          <option value="{{ period.id }}" {% if period.id == selected_period_id %}selected{% endif %}>{{ period.name }}（{{ period.start_date|date:"Y/m/d" }} - {{ period.end_date|date:"Y/m/d" }}）</option>
           {% endfor %}
         </select>
       </div>

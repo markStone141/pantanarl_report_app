@@ -251,6 +251,7 @@
 
   <section class="card mt-16">
     <h3>有効メンバー一覧</h3>
+    <div class="muted mt-6">路程累計: {{ dashboard_snapshot.current_period_display }}</div>
     {% if dashboard_snapshot.active_member_cards %}
     <div class="performance-member-list mt-12">
       <div class="performance-member-list-head">

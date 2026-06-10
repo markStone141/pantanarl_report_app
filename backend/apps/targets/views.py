@@ -9,6 +9,7 @@ from django.utils import timezone
 from apps.accounts.auth import ROLE_ADMIN, require_roles
 from apps.accounts.models import Department
 from apps.common.report_metrics import collect_actual_totals, format_metric_value, metric_detail_rows
+from apps.common.target_periods import current_active_period
 
 from .models import (
     MonthTargetMetricValue,
@@ -450,7 +451,7 @@ def _current_month() -> date:
 
 def _current_period() -> Period | None:
     today = timezone.localdate()
-    active = Period.objects.filter(start_date__lte=today, end_date__gte=today).order_by("-month", "start_date", "id").first()
+    active = current_active_period(target_date=today)
     if active:
         return active
     return Period.objects.order_by("-month", "start_date", "id").first()

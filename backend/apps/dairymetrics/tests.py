@@ -4415,6 +4415,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.period.name)
+        self.assertContains(response, f"{self.period.start_date:%Y/%m/%d} - {self.period.end_date:%Y/%m/%d}")
         self.assertContains(response, "30,000円")
 
     def test_metrics_report_renders_wv_breakdowns(self):
@@ -4473,6 +4474,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         response = self.client.get(reverse("dairymetrics_metrics_v2_demo"), {"department": self.department.code, "scope": "period", "period_id": self.period.id})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "UN の全体分析")
+        self.assertContains(response, f"{self.period.start_date:%Y/%m/%d} - {self.period.end_date:%Y/%m/%d}")
         self.assertContains(response, "ランキングモード")
         self.assertContains(response, "属性別の平均金額")
         self.assertContains(response, "管理者用ダッシュボード")

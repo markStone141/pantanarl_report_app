@@ -5,6 +5,7 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member
+from apps.common.target_periods import current_active_period
 from apps.targets.models import Period
 
 from .models import (
@@ -315,11 +316,7 @@ def _resolve_scope(
 ):
     month_start = today.replace(day=1)
     month_end = today.replace(day=monthrange(today.year, today.month)[1])
-    current_period = (
-        Period.objects.filter(start_date__lte=today, end_date__gte=today)
-        .order_by("-month", "start_date", "id")
-        .first()
-    )
+    current_period = current_active_period(target_date=today)
     latest_period = Period.objects.order_by("-end_date", "-start_date", "-id").first()
     available_period = current_period or latest_period
     if scope == "period" and available_period:

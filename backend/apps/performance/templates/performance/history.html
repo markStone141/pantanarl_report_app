@@ -51,7 +51,7 @@
       <div data-performance-scope-field="period"{% if dashboard_scope != 'period' %} hidden{% endif %}>
         <select id="performance-history-period" name="dashboard_period" aria-label="路程">
           {% for period_option in dashboard_periods %}
-          <option value="{{ period_option.id }}"{% if dashboard_period and period_option.id == dashboard_period.id %} selected{% endif %}>{{ period_option.name }}</option>
+          <option value="{{ period_option.id }}"{% if dashboard_period and period_option.id == dashboard_period.id %} selected{% endif %}>{{ period_option.name }}（{{ period_option.start_date|date:"Y/m/d" }} - {{ period_option.end_date|date:"Y/m/d" }}）</option>
           {% endfor %}
         </select>
       </div>

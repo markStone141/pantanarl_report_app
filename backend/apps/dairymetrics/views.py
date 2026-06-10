@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from apps.accounts.models import Department, Member
-from apps.common.target_periods import current_active_period
+from apps.common.target_periods import current_active_period, period_options_active_first
 from apps.mail.models import MailSendHistory
 from apps.mail.services import MailSendError, record_transaction_mail_failure, send_transaction_mail
 from apps.targets.models import Period
@@ -79,6 +79,8 @@ ENTRY_V2_NATIONALITY_BANDS = [
     {"key": "domestic", "label": "国内"},
     {"key": "overseas", "label": "海外"},
 ]
+
+
 ENTRY_V2_TARGET_COUNT_OPTIONS = [1, 2, 3, 4, 5]
 ENTRY_V2_TARGET_AMOUNT_OPTIONS = list(range(1000, 10001, 500))
 ENTRY_V2_DEPARTMENT_TARGET_AMOUNT_OPTIONS = list(range(15000, 30001, 1000))
@@ -860,7 +862,7 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
             detail_urls.append(detail_url)
         metric_payload["detail_urls"] = detail_urls
     payload_json = {**payload, "scope": {"scope": scope.scope, "label": scope.label}}
-    available_periods = list(Period.objects.order_by("-end_date", "-start_date", "-id")[:18])
+    available_periods = period_options_active_first(target_date=today, limit=18)
 
     context = {
         "is_admin": request.user.is_staff,
@@ -910,7 +912,7 @@ def metrics_report(request: HttpRequest) -> HttpResponse:
         scope = resolve_metrics_v2_scope(today=today, scope="month", requested_month=requested_month)
 
     report = build_metrics_scope_report(department=selected_department, scope=scope)
-    period_options = list(Period.objects.order_by("-end_date", "-start_date", "-id")[:24])
+    period_options = period_options_active_first(target_date=today)
 
     context = {
         "is_admin": request.user.is_staff,

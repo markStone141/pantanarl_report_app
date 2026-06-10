@@ -132,6 +132,10 @@ def _format_number(value: float | int | None, unit: str = "") -> str:
     return f"{int(value):,}{unit}"
 
 
+def _period_display_label(period: Period) -> str:
+    return f"{period.name}（{period.start_date:%Y/%m/%d} - {period.end_date:%Y/%m/%d}）"
+
+
 def resolve_metrics_v2_scope(
     *,
     today: date,
@@ -154,7 +158,7 @@ def resolve_metrics_v2_scope(
     if scope == "period" and requested_period:
         return MetricsV2Scope(
             scope="period",
-            label=requested_period.name,
+            label=_period_display_label(requested_period),
             start_date=requested_period.start_date,
             end_date=requested_period.end_date,
             period=requested_period,

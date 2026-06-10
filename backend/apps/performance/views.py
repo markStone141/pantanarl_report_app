@@ -15,7 +15,7 @@ from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, resolve_request_role
 from apps.accounts.models import Department, Member, MemberDepartment
-from apps.common.target_periods import current_active_period
+from apps.common.target_periods import current_active_period, period_options_active_first
 from apps.dairymetrics.forms import DairyMetricsLoginForm, DairymetricsV2TransactionForm, MemberScopeTargetForm
 from apps.dairymetrics.models import (
     DepartmentDailyMetricSummary,
@@ -326,6 +326,18 @@ def _field_amount_text(entry):
 
 def _resolve_current_period(today):
     return current_active_period(target_date=today)
+
+
+def _period_range_label(period):
+    if period is None:
+        return ""
+    return f"{period.start_date:%Y/%m/%d} - {period.end_date:%Y/%m/%d}"
+
+
+def _period_display_label(period):
+    if period is None:
+        return "路程未設定"
+    return f"{period.name}（{_period_range_label(period)}）"
 
 
 def _build_activity_member_rows(entries):
@@ -682,7 +694,7 @@ def _resolve_performance_history_scope(*, today, scope_value, requested_month=No
     if scope_value == "period" and requested_period is not None:
         return PerformanceHistoryScope(
             scope="period",
-            label=requested_period.name,
+            label=_period_display_label(requested_period),
             start_date=requested_period.start_date,
             end_date=min(requested_period.end_date, today),
             period=requested_period,
@@ -923,7 +935,7 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
                 + int(period_totals.get("return_postal_amount") or 0)
                 + int(period_totals.get("return_qr_amount") or 0),
                 target_amount=int(period_target_amounts.get(current_department.code) or 0),
-                summary_text=period.name if period else "路程未設定",
+                summary_text=_period_display_label(period),
                 base_actual_amount=max(
                     (
                         int(period_totals.get("support_amount") or 0)
@@ -970,6 +982,7 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
         "month_progress_cards": month_progress_cards,
         "period_progress_cards": period_progress_cards,
         "current_period": period,
+        "current_period_display": _period_display_label(period),
     }
 
 
@@ -1315,7 +1328,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         label="全体の路程目標",
         actual_amount=department_period_actual_amount,
         target_amount=department_period_target_amount,
-        summary_text=f"{department.code} 全体の現在路程進捗",
+        summary_text=f"{department.code} 全体の{_period_display_label(current_period)}進捗",
         base_actual_amount=int(department_period_totals.get("support_amount") or 0),
         adjustment_amount=(
             int(department_period_totals.get("return_postal_amount") or 0)
@@ -1337,6 +1350,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "department": department,
         "month_label": selected_month.strftime("%Y/%m"),
         "period_label": current_period.name if current_period else "路程未設定",
+        "period_range_label": _period_range_label(current_period),
         "selected_month": selected_month,
         "entry_rows": entry_rows,
         "adjustment_rows": adjustment_rows,
@@ -1404,7 +1418,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
             label="個人の路程目標",
             actual_amount=member_period_actual_amount,
             target_amount=int(member_period_target.target_amount if member_period_target else 0),
-            summary_text=f"{member.name} さんの現在路程進捗",
+            summary_text=f"{member.name} さんの{_period_display_label(current_period)}進捗",
             base_actual_amount=int(member_period_totals.get("support_amount") or 0),
             adjustment_amount=(
                 int(member_period_totals.get("return_postal_amount") or 0)
@@ -1615,7 +1629,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
         "dashboard_scope": dashboard_scope,
         "dashboard_month": dashboard_month,
         "dashboard_period": dashboard_period,
-        "dashboard_periods": Period.objects.order_by("-end_date", "-start_date", "-id")[:24],
+        "dashboard_periods": period_options_active_first(target_date=today),
         "dashboard_start": dashboard_start,
         "dashboard_end": dashboard_end,
         "history_scope": scope,
@@ -1672,7 +1686,7 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         "dashboard_department": dashboard_department,
         "dashboard_month": dashboard_month,
         "dashboard_period": dashboard_period,
-        "dashboard_periods": Period.objects.order_by("-end_date", "-start_date", "-id")[:24],
+        "dashboard_periods": period_options_active_first(target_date=today),
         "dashboard_scope": "month",
         "dashboard_start": dashboard_start,
         "dashboard_end": dashboard_end,
@@ -1759,7 +1773,7 @@ def performance_history(request: HttpRequest) -> HttpResponse:
         "dashboard_department": dashboard_department,
         "dashboard_month": dashboard_month,
         "dashboard_period": dashboard_period,
-        "dashboard_periods": Period.objects.order_by("-end_date", "-start_date", "-id")[:24],
+        "dashboard_periods": period_options_active_first(target_date=today),
         "dashboard_scope": dashboard_scope,
         "dashboard_start": dashboard_start,
         "dashboard_end": dashboard_end,

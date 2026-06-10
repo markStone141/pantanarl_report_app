@@ -661,6 +661,27 @@ class TargetStatusBoundaryTests(TestCase):
             selected = target_views._current_period()
         self.assertEqual(selected.id, active.id)
 
+    def test_current_period_prefers_active_status_even_outside_today(self):
+        today = timezone.datetime(2026, 3, 15).date()
+        Period.objects.create(
+            month=timezone.datetime(2026, 3, 1).date(),
+            name="2026年度3月 第1次路程",
+            status="finished",
+            start_date=today - timedelta(days=1),
+            end_date=today + timedelta(days=1),
+        )
+        active = Period.objects.create(
+            month=timezone.datetime(2026, 4, 1).date(),
+            name="2026年度4月 第1次路程",
+            status="active",
+            start_date=today + timedelta(days=10),
+            end_date=today + timedelta(days=20),
+        )
+
+        with patch("apps.targets.views.timezone.localdate", return_value=today):
+            selected = target_views._current_period()
+        self.assertEqual(selected.id, active.id)
+
     def test_current_period_falls_back_to_latest_period(self):
         old = Period.objects.create(
             month=timezone.datetime(2026, 1, 1).date(),
