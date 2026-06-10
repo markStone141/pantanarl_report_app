@@ -2616,6 +2616,37 @@
   padding: 9px 10px;
 }
 
+.metrics-report-sort-btn {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.metrics-report-sort-btn::after {
+  content: "-";
+  display: inline-block;
+  margin-left: 5px;
+  color: #94a3b8;
+  font-size: 0.72rem;
+}
+
+.metrics-report-sort-btn[data-sort-active="asc"]::after {
+  content: "^";
+  color: #1d7dfa;
+}
+
+.metrics-report-sort-btn[data-sort-active="desc"]::after {
+  content: "v";
+  color: #1d7dfa;
+}
+
 @media print {
   .no-print,
   .dashboard-drawer-toggle,

@@ -177,35 +177,35 @@
     <h3>メンバー別集計</h3>
     {% if report.member_rows %}
     <div class="table-scroll mt-12">
-      <table class="dairymetrics-admin-table metrics-report-table metrics-report-member-table">
+      <table class="dairymetrics-admin-table metrics-report-table metrics-report-member-table" data-metrics-report-member-table>
         <thead>
           <tr>
-            <th>メンバー</th>
-            <th>件数</th>
-            <th>金額</th>
-            <th>AP</th>
-            <th>CM</th>
-            <th>コミュ率</th>
-            <th>決済率</th>
-            <th>平均/決済</th>
-            <th>平均/稼働</th>
-            <th>稼働日数</th>
+            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="0" data-sort-type="text">メンバー</button></th>
+            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="1" data-sort-type="number">件数</button></th>
+            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="2" data-sort-type="number">金額</button></th>
+            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="3" data-sort-type="number">AP</button></th>
+            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="4" data-sort-type="number">CM</button></th>
+            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="5" data-sort-type="number">コミュ率</button></th>
+            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="6" data-sort-type="number">決済率</button></th>
+            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="7" data-sort-type="number">平均/決済</button></th>
+            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="8" data-sort-type="number">平均/稼働</button></th>
+            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="9" data-sort-type="number">稼働日数</button></th>
             {% if selected_department.code == "WV" %}<th>内訳</th>{% endif %}
           </tr>
         </thead>
         <tbody>
           {% for row in report.member_rows %}
           <tr>
-            <td>{{ row.member_name }}</td>
-            <td>{{ row.count_text }}</td>
-            <td>{{ row.amount_text }}</td>
-            <td>{{ row.approach_text }}</td>
-            <td>{{ row.communication_text }}</td>
-            <td>{{ row.communication_rate_text }}</td>
-            <td>{{ row.conversion_rate_text }}</td>
-            <td>{{ row.average_amount_per_decision_text }}</td>
-            <td>{{ row.average_amount_per_active_day_text }}</td>
-            <td>{{ row.active_days_text }}</td>
+            <td data-sort="{{ row.member_sort_value }}">{{ row.member_name }}</td>
+            <td data-sort="{{ row.count_value }}">{{ row.count_text }}</td>
+            <td data-sort="{{ row.amount_value }}">{{ row.amount_text }}</td>
+            <td data-sort="{{ row.approach_value }}">{{ row.approach_text }}</td>
+            <td data-sort="{{ row.communication_value }}">{{ row.communication_text }}</td>
+            <td data-sort="{{ row.communication_rate_value }}">{{ row.communication_rate_text }}</td>
+            <td data-sort="{{ row.conversion_rate_value }}">{{ row.conversion_rate_text }}</td>
+            <td data-sort="{{ row.average_amount_per_decision_value }}">{{ row.average_amount_per_decision_text }}</td>
+            <td data-sort="{{ row.average_amount_per_active_day_value }}">{{ row.average_amount_per_active_day_text }}</td>
+            <td data-sort="{{ row.active_days_value }}">{{ row.active_days_text }}</td>
             {% if selected_department.code == "WV" %}<td>{{ row.breakdown_text }}</td>{% endif %}
           </tr>
           {% endfor %}
@@ -233,6 +233,47 @@
       scopeSelect.addEventListener("change", syncFields);
       syncFields();
     }
+  })();
+
+  (() => {
+    const table = document.querySelector("[data-metrics-report-member-table]");
+    if (!table || !table.tBodies.length) return;
+
+    const tbody = table.tBodies[0];
+    const buttons = table.querySelectorAll("[data-sort-index]");
+    let activeIndex = -1;
+    let activeDirection = "asc";
+
+    const valueFor = (row, index, type) => {
+      const rawValue = row.cells[index]?.dataset.sort || "";
+      if (type === "number") {
+        const numericValue = Number(rawValue);
+        return Number.isFinite(numericValue) ? numericValue : 0;
+      }
+      return rawValue;
+    };
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const index = Number(button.dataset.sortIndex);
+        const type = button.dataset.sortType || "text";
+        activeDirection = activeIndex === index && activeDirection === "asc" ? "desc" : "asc";
+        activeIndex = index;
+
+        const sortedRows = Array.from(tbody.rows).sort((left, right) => {
+          const leftValue = valueFor(left, index, type);
+          const rightValue = valueFor(right, index, type);
+          const comparison = type === "number"
+            ? leftValue - rightValue
+            : String(leftValue).localeCompare(String(rightValue), "ja");
+          return activeDirection === "asc" ? comparison : -comparison;
+        });
+
+        sortedRows.forEach((row) => tbody.appendChild(row));
+        buttons.forEach((item) => item.removeAttribute("data-sort-active"));
+        button.dataset.sortActive = activeDirection;
+      });
+    });
   })();
 </script>
 {% endblock %}

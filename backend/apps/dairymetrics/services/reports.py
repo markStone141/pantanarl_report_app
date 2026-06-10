@@ -162,17 +162,31 @@ def _member_report_rows(*, department, scope):
         base_approach_count = int(base_totals.get("approach_count") or 0)
         base_communication_count = int(base_totals.get("communication_count") or 0)
         active_days = active_days_by_member_id.get(member.id, 0)
+        communication_rate = _percentage(base_communication_count, base_approach_count)
+        conversion_rate = _percentage(base_decision_count, base_communication_count)
+        average_amount_per_decision = _safe_average(amount, decision_count)
+        average_amount_per_active_day = _safe_average(amount, active_days)
         rows.append(
             {
                 "member_name": member.name,
+                "member_sort_value": member.name,
+                "count_value": decision_count,
                 "count_text": _format_number(decision_count),
+                "amount_value": amount,
                 "amount_text": _format_number(amount, "円"),
+                "approach_value": approach_count,
                 "approach_text": _format_number(approach_count),
+                "communication_value": communication_count,
                 "communication_text": _format_number(communication_count),
-                "communication_rate_text": _format_percentage(_percentage(base_communication_count, base_approach_count)),
-                "conversion_rate_text": _format_percentage(_percentage(base_decision_count, base_communication_count)),
-                "average_amount_per_decision_text": _format_number(_safe_average(amount, decision_count), "円"),
-                "average_amount_per_active_day_text": _format_number(_safe_average(amount, active_days), "円"),
+                "communication_rate_value": communication_rate or 0,
+                "communication_rate_text": _format_percentage(communication_rate),
+                "conversion_rate_value": conversion_rate or 0,
+                "conversion_rate_text": _format_percentage(conversion_rate),
+                "average_amount_per_decision_value": average_amount_per_decision or 0,
+                "average_amount_per_decision_text": _format_number(average_amount_per_decision, "円"),
+                "average_amount_per_active_day_value": average_amount_per_active_day or 0,
+                "average_amount_per_active_day_text": _format_number(average_amount_per_active_day, "円"),
+                "active_days_value": active_days,
                 "active_days_text": _format_number(active_days),
                 "breakdown_text": _wv_count_breakdown_text(totals) if department.code == "WV" else "",
             }
