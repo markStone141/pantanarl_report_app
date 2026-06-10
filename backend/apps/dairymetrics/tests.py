@@ -4343,8 +4343,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "出力条件")
         self.assertContains(response, "目標との差分")
         self.assertContains(response, "補正実績")
-        self.assertContains(response, "ランキング")
-        self.assertContains(response, "各項目の上位3名")
+        self.assertNotContains(response, "各項目の上位3名")
         self.assertContains(response, "合計支援金額")
         self.assertContains(response, "即決 16,000円 / 補正 1,000円")
         self.assertContains(response, "AP / CM数")
@@ -4374,7 +4373,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "50,000円")
         self.assertContains(response, "片山")
         self.assertContains(response, "印刷 / PDF保存")
-        self.assertTrue(all(len(section["rows"]) <= 3 for section in response.context["report"]["ranking_sections"]))
+        self.assertNotIn("ranking_sections", response.context["report"])
         member_rows = {row["member_name"]: row for row in response.context["report"]["member_rows"]}
         self.assertEqual(member_rows[self.member.name]["amount_text"], "13,000円")
         self.assertEqual(member_rows[self.member.name]["count_text"], "5")
@@ -4434,8 +4433,6 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "CS件数")
-        self.assertContains(response, "難民件数")
         self.assertContains(response, "合計 3件 / CS 2件 / 難民 1件")
         self.assertEqual(response.context["report"]["member_rows"][0]["breakdown_text"], "CS 2件 / 難民 1件")
 

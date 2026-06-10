@@ -12,7 +12,6 @@ from apps.dairymetrics.services.final_actuals import (
     zero_final_actual_totals,
 )
 from apps.dairymetrics.services.metrics_v2 import (
-    _build_ranking_payload,
     _count_value,
     _department_target_amount_for_scope,
     _format_number,
@@ -24,15 +23,6 @@ from apps.dairymetrics.services.metrics_v2 import (
     _safe_average,
     _wv_count_breakdown_text,
 )
-
-
-REPORT_RANKING_KEYS = [
-    "support_amount",
-    "decision_count",
-    "conversion_rate",
-    "communication_rate",
-]
-WV_REPORT_RANKING_KEYS = ["cs_count", "refugee_count"]
 
 
 def _format_diff(value: int, *, unit: str) -> str:
@@ -125,28 +115,6 @@ def _daily_report_rows(*, department, scope):
             }
         )
     return rows
-
-
-def _ranking_sections(*, department, scope):
-    ranking_payload = _build_ranking_payload(department=department, scope=scope)
-    ranking_keys = [*REPORT_RANKING_KEYS]
-    if department.code == "WV":
-        ranking_keys.extend(WV_REPORT_RANKING_KEYS)
-
-    sections = []
-    metric_map = ranking_payload["metric_map"]
-    for key in ranking_keys:
-        metric = metric_map.get(key)
-        if not metric:
-            continue
-        sections.append(
-            {
-                "key": key,
-                "label": metric["label"],
-                "rows": metric["rows"][:3],
-            }
-        )
-    return sections
 
 
 def _member_report_rows(*, department, scope):
@@ -301,6 +269,5 @@ def build_metrics_scope_report(*, department, scope):
             {"label": "戻り金額", "value": _format_number(_return_amount_value(final_totals), "円")},
         ],
         "daily_rows": daily_rows,
-        "ranking_sections": _ranking_sections(department=department, scope=scope),
         "member_rows": _member_report_rows(department=department, scope=scope),
     }

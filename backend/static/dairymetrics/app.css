@@ -2588,21 +2588,13 @@
   gap: 10px;
 }
 
-.metrics-report-kpi-list > div,
-.metrics-report-ranking-list li {
+.metrics-report-kpi-list > div {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
   padding: 10px 0;
   border-bottom: 1px solid rgba(148, 163, 184, 0.22);
-}
-
-.metrics-report-ranking-list {
-  display: grid;
-  gap: 2px;
-  margin: 0;
-  padding-left: 1.2rem;
 }
 
 .metrics-report-table th,

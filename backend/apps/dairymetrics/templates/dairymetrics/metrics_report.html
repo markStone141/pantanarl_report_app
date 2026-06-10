@@ -118,28 +118,6 @@
   </section>
 
   <section class="card mt-16">
-    <h3>ランキング</h3>
-    <div class="muted mt-6">各項目の上位3名を簡易表示します。</div>
-    <div class="grid grid-2 mt-12 metrics-report-ranking-grid">
-      {% for section in report.ranking_sections %}
-      <article class="metric-card">
-        <strong>{{ section.label }}</strong>
-        <ol class="metrics-report-ranking-list mt-10">
-          {% for row in section.rows %}
-          <li>
-            <span>{{ row.member_name }}</span>
-            <strong>{{ row.value_text }}</strong>
-          </li>
-          {% empty %}
-          <li><span class="muted">データなし</span></li>
-          {% endfor %}
-        </ol>
-      </article>
-      {% endfor %}
-    </div>
-  </section>
-
-  <section class="card mt-16">
     <h3>日別推移</h3>
     {% if report.daily_rows %}
     <div class="table-scroll mt-12">
