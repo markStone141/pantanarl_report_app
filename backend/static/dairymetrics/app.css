@@ -2640,6 +2640,8 @@
 .metrics-report-transaction-row td {
   padding-top: 0;
   background: #f8fbff;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .metrics-report-transaction-detail {
@@ -2647,6 +2649,8 @@
   border: 1px solid rgba(29, 125, 250, 0.16);
   border-radius: 0 0 14px 14px;
   background: #f8fbff;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .metrics-report-transaction-list {
@@ -2661,16 +2665,21 @@
   display: grid;
   gap: 4px;
   min-width: 0;
+  max-width: 100%;
   padding: 10px;
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 12px;
   background: rgba(248, 250, 252, 0.85);
+  white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 
 .metrics-report-transaction-item > * {
   min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .metrics-report-daily-card-list {
