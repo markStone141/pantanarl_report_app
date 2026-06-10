@@ -124,7 +124,12 @@
         <thead>
           <tr>
             <th>日付</th>
+            {% if selected_department.code == "WV" %}
+            <th>CS件数</th>
+            <th>難民件数</th>
+            {% else %}
             <th>件数</th>
+            {% endif %}
             <th>金額</th>
             <th>AP</th>
             <th>CM</th>
@@ -134,14 +139,19 @@
           {% for row in report.daily_rows %}
           <tr>
             <td>{{ row.date_text }}</td>
+            {% if selected_department.code == "WV" %}
+            <td>{{ row.cs_count_text }}</td>
+            <td>{{ row.refugee_count_text }}</td>
+            {% else %}
             <td>{{ row.count_text }}</td>
+            {% endif %}
             <td>{{ row.amount_text }}</td>
             <td>{{ row.approach_text }}</td>
             <td>{{ row.communication_text }}</td>
           </tr>
           {% if row.transactions %}
           <tr class="metrics-report-transaction-row">
-            <td colspan="5">
+            <td colspan="{% if selected_department.code == 'WV' %}6{% else %}5{% endif %}">
               <details class="metrics-report-transaction-detail">
                 <summary>{{ row.transactions|length }}件を見る</summary>
                 <div class="metrics-report-transaction-list">
@@ -177,6 +187,18 @@
         <thead>
           <tr>
             <th class="metrics-report-sort-heading" data-sort-index="0" data-sort-type="text" tabindex="0">メンバー</th>
+            {% if selected_department.code == "WV" %}
+            <th class="metrics-report-sort-heading" data-sort-index="1" data-sort-type="number" tabindex="0">CS件数</th>
+            <th class="metrics-report-sort-heading" data-sort-index="2" data-sort-type="number" tabindex="0">難民件数</th>
+            <th class="metrics-report-sort-heading" data-sort-index="3" data-sort-type="number" tabindex="0">金額</th>
+            <th class="metrics-report-sort-heading" data-sort-index="4" data-sort-type="number" tabindex="0">AP</th>
+            <th class="metrics-report-sort-heading" data-sort-index="5" data-sort-type="number" tabindex="0">CM</th>
+            <th class="metrics-report-sort-heading" data-sort-index="6" data-sort-type="number" tabindex="0">コミュ率</th>
+            <th class="metrics-report-sort-heading" data-sort-index="7" data-sort-type="number" tabindex="0">決済率</th>
+            <th class="metrics-report-sort-heading" data-sort-index="8" data-sort-type="number" tabindex="0">平均/決済</th>
+            <th class="metrics-report-sort-heading" data-sort-index="9" data-sort-type="number" tabindex="0">平均/稼働</th>
+            <th class="metrics-report-sort-heading" data-sort-index="10" data-sort-type="number" tabindex="0">稼働日数</th>
+            {% else %}
             <th class="metrics-report-sort-heading" data-sort-index="1" data-sort-type="number" tabindex="0">件数</th>
             <th class="metrics-report-sort-heading" data-sort-index="2" data-sort-type="number" tabindex="0">金額</th>
             <th class="metrics-report-sort-heading" data-sort-index="3" data-sort-type="number" tabindex="0">AP</th>
@@ -186,13 +208,19 @@
             <th class="metrics-report-sort-heading" data-sort-index="7" data-sort-type="number" tabindex="0">平均/決済</th>
             <th class="metrics-report-sort-heading" data-sort-index="8" data-sort-type="number" tabindex="0">平均/稼働</th>
             <th class="metrics-report-sort-heading" data-sort-index="9" data-sort-type="number" tabindex="0">稼働日数</th>
+            {% endif %}
           </tr>
         </thead>
         <tbody>
           {% for row in report.member_rows %}
           <tr>
             <td data-sort="{{ row.member_sort_value }}">{{ row.member_name }}</td>
+            {% if selected_department.code == "WV" %}
+            <td data-sort="{{ row.cs_count_value }}">{{ row.cs_count_text }}</td>
+            <td data-sort="{{ row.refugee_count_value }}">{{ row.refugee_count_text }}</td>
+            {% else %}
             <td data-sort="{{ row.count_value }}">{{ row.count_text }}</td>
+            {% endif %}
             <td data-sort="{{ row.amount_value }}">{{ row.amount_text }}</td>
             <td data-sort="{{ row.approach_value }}">{{ row.approach_text }}</td>
             <td data-sort="{{ row.communication_value }}">{{ row.communication_text }}</td>

@@ -4435,9 +4435,15 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "CS 2件 / 難民 1件")
         self.assertNotContains(response, "合計 3件 / CS 2件 / 難民 1件")
+        self.assertContains(response, "CS件数")
+        self.assertContains(response, "難民件数")
+        self.assertContains(response, 'data-sort-index="1"', html=False)
+        self.assertContains(response, 'data-sort-index="2"', html=False)
         self.assertEqual(response.context["report"]["summary_cards"][1]["value"], "CS 2件 / 難民 1件")
-        self.assertEqual(response.context["report"]["daily_rows"][0]["count_text"], "CS 2件 / 難民 1件")
-        self.assertEqual(response.context["report"]["member_rows"][0]["count_text"], "CS 2件 / 難民 1件")
+        self.assertEqual(response.context["report"]["daily_rows"][0]["cs_count_text"], "2")
+        self.assertEqual(response.context["report"]["daily_rows"][0]["refugee_count_text"], "1")
+        self.assertEqual(response.context["report"]["member_rows"][0]["cs_count_text"], "2")
+        self.assertEqual(response.context["report"]["member_rows"][0]["refugee_count_text"], "1")
 
     def test_metrics_v2_demo_renders_admin_overall_mode(self):
         self.client.force_login(self.admin)
