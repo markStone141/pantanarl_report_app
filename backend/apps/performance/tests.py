@@ -70,6 +70,8 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, entry.entry_date.strftime("%m/%d"))
         self.assertContains(response, "戻り・増額登録")
         self.assertContains(response, reverse("performance_adjustments"))
+        self.assertContains(response, "振り返りレポート")
+        self.assertContains(response, reverse("dairymetrics_metrics_report"))
 
     def test_performance_index_wv_overall_activity_trend_does_not_double_count_counts(self):
         wv_department = self.create_department("WV")
@@ -264,6 +266,8 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("report_index"))
+        self.assertContains(response, "振り返りレポート")
+        self.assertContains(response, reverse("dairymetrics_metrics_report"))
 
     def test_performance_member_dashboard_redirects_to_performance_login(self):
         self.client.logout()
@@ -1981,6 +1985,8 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "決済入力")
         self.assertContains(response, "過去の実績を見る")
         self.assertContains(response, "分析する")
+        self.assertContains(response, "振り返りレポート")
+        self.assertContains(response, reverse("dairymetrics_metrics_report"))
         self.assertNotContains(response, "総合管理者ページ")
 
     def test_performance_member_can_open_overall_dashboard_and_history(self):

@@ -2653,16 +2653,24 @@
   display: grid;
   gap: 8px;
   margin-top: 10px;
-  min-width: 420px;
+  min-width: 0;
+  width: 100%;
 }
 
 .metrics-report-transaction-item {
   display: grid;
   gap: 4px;
+  min-width: 0;
   padding: 10px;
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 12px;
   background: rgba(248, 250, 252, 0.85);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.metrics-report-transaction-item > * {
+  min-width: 0;
 }
 
 .metrics-report-daily-card-list {
