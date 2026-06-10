@@ -152,7 +152,6 @@
             <th>AP</th>
             <th>CM</th>
             {% if selected_department.code == "WV" %}<th>内訳</th>{% endif %}
-            <th>決済明細</th>
           </tr>
         </thead>
         <tbody>
@@ -164,8 +163,10 @@
             <td>{{ row.approach_text }}</td>
             <td>{{ row.communication_text }}</td>
             {% if selected_department.code == "WV" %}<td>{{ row.breakdown_text }}</td>{% endif %}
-            <td>
-              {% if row.transactions %}
+          </tr>
+          {% if row.transactions %}
+          <tr class="metrics-report-transaction-row">
+            <td colspan="{% if selected_department.code == 'WV' %}6{% else %}5{% endif %}">
               <details class="metrics-report-transaction-detail">
                 <summary>{{ row.transactions|length }}件を見る</summary>
                 <div class="metrics-report-transaction-list">
@@ -181,11 +182,9 @@
                   {% endfor %}
                 </div>
               </details>
-              {% else %}
-              <span class="muted">なし</span>
-              {% endif %}
             </td>
           </tr>
+          {% endif %}
           {% endfor %}
         </tbody>
       </table>
