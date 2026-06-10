@@ -2665,6 +2665,54 @@
   background: rgba(248, 250, 252, 0.85);
 }
 
+.metrics-report-daily-card-list {
+  display: none;
+}
+
+.metrics-report-daily-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+}
+
+.metrics-report-daily-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.metrics-report-daily-card-head span {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.metrics-report-daily-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.metrics-report-daily-card-grid > div {
+  min-width: 0;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(226, 240, 255, 0.64);
+}
+
+.metrics-report-daily-card-grid span,
+.metrics-report-daily-card-grid strong {
+  display: block;
+}
+
+.metrics-report-daily-card-detail {
+  border-radius: 14px;
+}
+
 @media print {
   .no-print,
   .dashboard-drawer-toggle,
@@ -2726,5 +2774,18 @@
   .metrics-report-ranking-grid,
   .metrics-report-card-grid {
     grid-template-columns: 1fr;
+  }
+
+  .metrics-report-daily-table-wrap {
+    display: none;
+  }
+
+  .metrics-report-daily-card-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .metrics-report-daily-card .metrics-report-transaction-list {
+    min-width: 0;
   }
 }

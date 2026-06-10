@@ -119,7 +119,7 @@
   <section class="card mt-16">
     <h3>日別推移</h3>
     {% if report.daily_rows %}
-    <div class="table-scroll mt-12">
+    <div class="table-scroll mt-12 metrics-report-daily-table-wrap">
       <table class="dairymetrics-admin-table metrics-report-table">
         <thead>
           <tr>
@@ -173,6 +173,58 @@
           {% endfor %}
         </tbody>
       </table>
+    </div>
+    <div class="metrics-report-daily-card-list mt-12">
+      {% for row in report.daily_rows %}
+      <article class="metrics-report-daily-card">
+        <div class="metrics-report-daily-card-head">
+          <strong>{{ row.date_text }}</strong>
+          <span>{{ row.amount_text }}</span>
+        </div>
+        <div class="metrics-report-daily-card-grid">
+          {% if selected_department.code == "WV" %}
+          <div>
+            <span class="muted">CS</span>
+            <strong>{{ row.cs_count_text }}</strong>
+          </div>
+          <div>
+            <span class="muted">難民</span>
+            <strong>{{ row.refugee_count_text }}</strong>
+          </div>
+          {% else %}
+          <div>
+            <span class="muted">件数</span>
+            <strong>{{ row.count_text }}</strong>
+          </div>
+          {% endif %}
+          <div>
+            <span class="muted">AP</span>
+            <strong>{{ row.approach_text }}</strong>
+          </div>
+          <div>
+            <span class="muted">CM</span>
+            <strong>{{ row.communication_text }}</strong>
+          </div>
+        </div>
+        {% if row.transactions %}
+        <details class="metrics-report-transaction-detail metrics-report-daily-card-detail">
+          <summary>{{ row.transactions|length }}件を見る</summary>
+          <div class="metrics-report-transaction-list">
+            {% for transaction in row.transactions %}
+            <div class="metrics-report-transaction-item">
+              <strong>{{ transaction.member_name }}</strong>
+              <span>{{ transaction.amount_text }}</span>
+              <span>{{ transaction.type_text }}</span>
+              <span>{{ transaction.age_text }} / {{ transaction.gender_text }} / {{ transaction.nationality_text }}</span>
+              <span>現場: {{ transaction.location_text }}</span>
+              {% if transaction.comment %}<span>メモ: {{ transaction.comment }}</span>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </details>
+        {% endif %}
+      </article>
+      {% endfor %}
     </div>
     {% else %}
     <p class="muted mt-12">対象期間の実績はありません。</p>

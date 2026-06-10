@@ -4366,6 +4366,8 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "metrics-v2-dashboard-data")
         self.assertContains(response, "metrics-v2-distribution-chart")
         self.assertContains(response, "2件を見る")
+        self.assertContains(response, 'class="metrics-report-daily-card-list', html=False)
+        self.assertContains(response, 'class="metrics-report-daily-card"', html=False)
         self.assertContains(response, 'class="metrics-report-transaction-row"', html=False)
         self.assertContains(response, 'colspan="5"', html=False)
         self.assertContains(response, "現場: 渋谷")
