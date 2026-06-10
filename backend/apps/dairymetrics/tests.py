@@ -4386,14 +4386,14 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(response.context["report"]["distribution_cards"][0]["total_text"], "3件")
         self.assertEqual(response.context["report"]["average_amount_comparison"]["age"]["labels"], ["20代", "30代", "40代"])
         member_rows = {row["member_name"]: row for row in response.context["report"]["member_rows"]}
-        self.assertEqual(member_rows[self.member.name]["amount_text"], "13,000円")
+        self.assertEqual(member_rows[self.member.name]["amount_text"], "13,000")
         self.assertEqual(member_rows[self.member.name]["count_text"], "5")
         self.assertEqual(member_rows[self.member.name]["approach_text"], "12")
         self.assertEqual(member_rows[self.member.name]["communication_text"], "6")
         self.assertEqual(member_rows[self.member.name]["communication_rate_text"], "50.0%")
         self.assertEqual(member_rows[self.member.name]["conversion_rate_text"], "66.7%")
-        self.assertEqual(member_rows[self.member.name]["average_amount_per_decision_text"], "2,600円")
-        self.assertEqual(member_rows[self.member.name]["average_amount_per_active_day_text"], "13,000円")
+        self.assertEqual(member_rows[self.member.name]["average_amount_per_decision_text"], "2,600")
+        self.assertEqual(member_rows[self.member.name]["average_amount_per_active_day_text"], "13,000")
         self.assertEqual(member_rows[self.member.name]["active_days_text"], "1")
 
     def test_metrics_report_renders_period_scope(self):
