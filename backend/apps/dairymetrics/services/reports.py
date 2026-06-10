@@ -115,6 +115,7 @@ def _daily_report_rows(*, department, scope):
         rows.append(
             {
                 "date_text": entry_date.strftime("%Y/%m/%d"),
+                "amount_value": amount,
                 "count_text": _format_number(decision_count),
                 "amount_text": _format_number(amount, "円"),
                 "approach_text": _format_number(int(merged.get("approach_count") or 0)),
@@ -241,6 +242,8 @@ def build_metrics_scope_report(*, department, scope):
     base_support_amount = int(base_totals.get("support_amount") or 0)
     approach_count = int(final_totals.get("approach_count") or 0)
     communication_count = int(final_totals.get("communication_count") or 0)
+    base_approach_count = int(base_totals.get("approach_count") or 0)
+    base_communication_count = int(base_totals.get("communication_count") or 0)
     active_days = (
         MemberDailyMetricEntry.objects.filter(
             department=department,
@@ -250,17 +253,40 @@ def build_metrics_scope_report(*, department, scope):
         .distinct()
         .count()
     )
+    daily_rows = _daily_report_rows(department=department, scope=scope)
+    highest_amount_day = max(daily_rows, key=lambda row: row["amount_value"], default=None)
+    lowest_amount_day = min(daily_rows, key=lambda row: row["amount_value"], default=None)
 
     return {
         "department": department,
         "scope": scope,
         "summary_cards": [
-            {"label": "合計金額", "value": _format_number(support_amount, "円"), "helper": f"通常 {_format_number(base_support_amount, '円')}"},
+            {
+                "label": "合計支援金額",
+                "value": _format_number(support_amount, "円"),
+                "helper": f"即決 {_format_number(base_support_amount, '円')} / 補正 {_format_number(support_amount - base_support_amount, '円')}",
+            },
             {"label": "合計件数", "value": _format_number(decision_count), "helper": _wv_count_breakdown_text(final_totals) if department.code == "WV" else ""},
-            {"label": "AP / CM", "value": f"{approach_count:,} / {communication_count:,}", "helper": ""},
+            {"label": "AP / CM数", "value": f"{approach_count:,} / {communication_count:,}", "helper": ""},
             {"label": "稼働日数", "value": _format_number(active_days), "helper": ""},
-            {"label": "決済率", "value": _format_percentage(_percentage(base_decision_count, int(base_totals.get('communication_count') or 0))), "helper": "通常実績ベース"},
-            {"label": "平均金額", "value": _format_number(_safe_average(support_amount, decision_count), "円"), "helper": "1決済あたり"},
+            {"label": "コミュ率", "value": _format_percentage(_percentage(base_communication_count, base_approach_count)), "helper": "通常実績ベース"},
+            {"label": "決済率", "value": _format_percentage(_percentage(base_decision_count, base_communication_count)), "helper": "通常実績ベース"},
+            {"label": "1決済当たりの平均", "value": _format_number(_safe_average(support_amount, decision_count), "円"), "helper": ""},
+            {
+                "label": "1稼働当たりの平均",
+                "value": _format_number(_safe_average(support_amount, active_days), "円"),
+                "helper": f"件数 {_format_number(_safe_average(decision_count, active_days))}",
+            },
+            {
+                "label": "最高金額達成日",
+                "value": highest_amount_day["amount_text"] if highest_amount_day else "-",
+                "helper": highest_amount_day["date_text"] if highest_amount_day else "",
+            },
+            {
+                "label": "最低金額達成日",
+                "value": lowest_amount_day["amount_text"] if lowest_amount_day else "-",
+                "helper": lowest_amount_day["date_text"] if lowest_amount_day else "",
+            },
         ],
         "target_cards": [
             {"label": "目標金額", "value": _format_number(target_amount, "円")},
@@ -274,7 +300,7 @@ def build_metrics_scope_report(*, department, scope):
             {"label": "戻り件数", "value": _format_number(_return_count_value(final_totals))},
             {"label": "戻り金額", "value": _format_number(_return_amount_value(final_totals), "円")},
         ],
-        "daily_rows": _daily_report_rows(department=department, scope=scope),
+        "daily_rows": daily_rows,
         "ranking_sections": _ranking_sections(department=department, scope=scope),
         "member_rows": _member_report_rows(department=department, scope=scope),
     }

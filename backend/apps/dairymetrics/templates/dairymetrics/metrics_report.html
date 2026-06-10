@@ -277,7 +277,7 @@
     const sortBy = (heading) => {
       const index = Number(heading.dataset.sortIndex);
       const type = heading.dataset.sortType || "text";
-      activeDirection = activeIndex === index && activeDirection === "asc" ? "desc" : "asc";
+      activeDirection = activeIndex === index && activeDirection === "desc" ? "asc" : "desc";
       activeIndex = index;
 
       const sortedRows = Array.from(tbody.rows).sort((left, right) => {
