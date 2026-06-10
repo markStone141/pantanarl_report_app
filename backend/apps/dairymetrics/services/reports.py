@@ -31,6 +31,12 @@ def _format_diff(value: int, *, unit: str) -> str:
     return f"あと {abs(value):,}{unit}"
 
 
+def _report_count_text(*, department_code: str, totals: dict) -> str:
+    if department_code == "WV":
+        return _wv_count_breakdown_text(totals)
+    return _format_number(_count_value(department_code, totals))
+
+
 def _daily_report_rows(*, department, scope):
     daily_totals = {}
     transactions_by_date = {}
@@ -106,7 +112,7 @@ def _daily_report_rows(*, department, scope):
             {
                 "date_text": entry_date.strftime("%Y/%m/%d"),
                 "amount_value": amount,
-                "count_text": _format_number(decision_count),
+                "count_text": _report_count_text(department_code=department.code, totals=merged),
                 "amount_text": _format_number(amount, "円"),
                 "approach_text": _format_number(int(merged.get("approach_count") or 0)),
                 "communication_text": _format_number(int(merged.get("communication_count") or 0)),
@@ -166,7 +172,7 @@ def _member_report_rows(*, department, scope):
                 "member_name": member.name,
                 "member_sort_value": member.name,
                 "count_value": decision_count,
-                "count_text": _format_number(decision_count),
+                "count_text": _report_count_text(department_code=department.code, totals=totals),
                 "amount_value": amount,
                 "amount_text": _format_number(amount, "円"),
                 "approach_value": approach_count,
@@ -234,7 +240,7 @@ def build_metrics_scope_report(*, department, scope):
                 "value": _format_number(support_amount, "円"),
                 "helper": f"即決 {_format_number(base_support_amount, '円')} / 補正 {_format_number(support_amount - base_support_amount, '円')}",
             },
-            {"label": "合計件数", "value": _format_number(decision_count), "helper": _wv_count_breakdown_text(final_totals) if department.code == "WV" else ""},
+            {"label": "合計件数", "value": _report_count_text(department_code=department.code, totals=final_totals), "helper": ""},
             {"label": "AP / CM数", "value": f"{approach_count:,} / {communication_count:,}", "helper": ""},
             {"label": "稼働日数", "value": _format_number(active_days), "helper": ""},
             {"label": "コミュ率", "value": _format_percentage(_percentage(base_communication_count, base_approach_count)), "helper": "通常実績ベース"},

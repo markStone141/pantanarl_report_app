@@ -4433,8 +4433,11 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "合計 3件 / CS 2件 / 難民 1件")
-        self.assertEqual(response.context["report"]["member_rows"][0]["breakdown_text"], "CS 2件 / 難民 1件")
+        self.assertContains(response, "CS 2件 / 難民 1件")
+        self.assertNotContains(response, "合計 3件 / CS 2件 / 難民 1件")
+        self.assertEqual(response.context["report"]["summary_cards"][1]["value"], "CS 2件 / 難民 1件")
+        self.assertEqual(response.context["report"]["daily_rows"][0]["count_text"], "CS 2件 / 難民 1件")
+        self.assertEqual(response.context["report"]["member_rows"][0]["count_text"], "CS 2件 / 難民 1件")
 
     def test_metrics_v2_demo_renders_admin_overall_mode(self):
         self.client.force_login(self.admin)
