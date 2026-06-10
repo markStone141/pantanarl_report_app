@@ -2616,20 +2616,12 @@
   padding: 9px 10px;
 }
 
-.metrics-report-sort-btn {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  color: inherit;
+.metrics-report-sort-heading {
   cursor: pointer;
-  font: inherit;
-  font-weight: 800;
-  padding: 0;
-  text-align: left;
-  white-space: nowrap;
+  user-select: none;
 }
 
-.metrics-report-sort-btn::after {
+.metrics-report-sort-heading::after {
   content: "-";
   display: inline-block;
   margin-left: 5px;
@@ -2637,14 +2629,36 @@
   font-size: 0.72rem;
 }
 
-.metrics-report-sort-btn[data-sort-active="asc"]::after {
+.metrics-report-sort-heading[data-sort-active="asc"]::after {
   content: "^";
   color: #1d7dfa;
 }
 
-.metrics-report-sort-btn[data-sort-active="desc"]::after {
+.metrics-report-sort-heading[data-sort-active="desc"]::after {
   content: "v";
   color: #1d7dfa;
+}
+
+.metrics-report-transaction-detail summary {
+  color: #1d7dfa;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.metrics-report-transaction-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  min-width: 420px;
+}
+
+.metrics-report-transaction-item {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.85);
 }
 
 @media print {

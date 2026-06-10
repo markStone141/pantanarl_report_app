@@ -152,6 +152,7 @@
             <th>AP</th>
             <th>CM</th>
             {% if selected_department.code == "WV" %}<th>内訳</th>{% endif %}
+            <th>決済明細</th>
           </tr>
         </thead>
         <tbody>
@@ -163,6 +164,27 @@
             <td>{{ row.approach_text }}</td>
             <td>{{ row.communication_text }}</td>
             {% if selected_department.code == "WV" %}<td>{{ row.breakdown_text }}</td>{% endif %}
+            <td>
+              {% if row.transactions %}
+              <details class="metrics-report-transaction-detail">
+                <summary>{{ row.transactions|length }}件を見る</summary>
+                <div class="metrics-report-transaction-list">
+                  {% for transaction in row.transactions %}
+                  <div class="metrics-report-transaction-item">
+                    <strong>{{ transaction.member_name }}</strong>
+                    <span>{{ transaction.amount_text }}</span>
+                    <span>{{ transaction.type_text }}</span>
+                    <span>{{ transaction.age_text }} / {{ transaction.gender_text }} / {{ transaction.nationality_text }}</span>
+                    <span>現場: {{ transaction.location_text }}</span>
+                    {% if transaction.comment %}<span>メモ: {{ transaction.comment }}</span>{% endif %}
+                  </div>
+                  {% endfor %}
+                </div>
+              </details>
+              {% else %}
+              <span class="muted">なし</span>
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -180,16 +202,16 @@
       <table class="dairymetrics-admin-table metrics-report-table metrics-report-member-table" data-metrics-report-member-table>
         <thead>
           <tr>
-            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="0" data-sort-type="text">メンバー</button></th>
-            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="1" data-sort-type="number">件数</button></th>
-            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="2" data-sort-type="number">金額</button></th>
-            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="3" data-sort-type="number">AP</button></th>
-            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="4" data-sort-type="number">CM</button></th>
-            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="5" data-sort-type="number">コミュ率</button></th>
-            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="6" data-sort-type="number">決済率</button></th>
-            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="7" data-sort-type="number">平均/決済</button></th>
-            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="8" data-sort-type="number">平均/稼働</button></th>
-            <th><button type="button" class="metrics-report-sort-btn" data-sort-index="9" data-sort-type="number">稼働日数</button></th>
+            <th class="metrics-report-sort-heading" data-sort-index="0" data-sort-type="text" tabindex="0">メンバー</th>
+            <th class="metrics-report-sort-heading" data-sort-index="1" data-sort-type="number" tabindex="0">件数</th>
+            <th class="metrics-report-sort-heading" data-sort-index="2" data-sort-type="number" tabindex="0">金額</th>
+            <th class="metrics-report-sort-heading" data-sort-index="3" data-sort-type="number" tabindex="0">AP</th>
+            <th class="metrics-report-sort-heading" data-sort-index="4" data-sort-type="number" tabindex="0">CM</th>
+            <th class="metrics-report-sort-heading" data-sort-index="5" data-sort-type="number" tabindex="0">コミュ率</th>
+            <th class="metrics-report-sort-heading" data-sort-index="6" data-sort-type="number" tabindex="0">決済率</th>
+            <th class="metrics-report-sort-heading" data-sort-index="7" data-sort-type="number" tabindex="0">平均/決済</th>
+            <th class="metrics-report-sort-heading" data-sort-index="8" data-sort-type="number" tabindex="0">平均/稼働</th>
+            <th class="metrics-report-sort-heading" data-sort-index="9" data-sort-type="number" tabindex="0">稼働日数</th>
             {% if selected_department.code == "WV" %}<th>内訳</th>{% endif %}
           </tr>
         </thead>
@@ -240,7 +262,7 @@
     if (!table || !table.tBodies.length) return;
 
     const tbody = table.tBodies[0];
-    const buttons = table.querySelectorAll("[data-sort-index]");
+    const headings = table.querySelectorAll("[data-sort-index]");
     let activeIndex = -1;
     let activeDirection = "asc";
 
@@ -253,25 +275,33 @@
       return rawValue;
     };
 
-    buttons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const index = Number(button.dataset.sortIndex);
-        const type = button.dataset.sortType || "text";
-        activeDirection = activeIndex === index && activeDirection === "asc" ? "desc" : "asc";
-        activeIndex = index;
+    const sortBy = (heading) => {
+      const index = Number(heading.dataset.sortIndex);
+      const type = heading.dataset.sortType || "text";
+      activeDirection = activeIndex === index && activeDirection === "asc" ? "desc" : "asc";
+      activeIndex = index;
 
-        const sortedRows = Array.from(tbody.rows).sort((left, right) => {
-          const leftValue = valueFor(left, index, type);
-          const rightValue = valueFor(right, index, type);
-          const comparison = type === "number"
-            ? leftValue - rightValue
-            : String(leftValue).localeCompare(String(rightValue), "ja");
-          return activeDirection === "asc" ? comparison : -comparison;
-        });
+      const sortedRows = Array.from(tbody.rows).sort((left, right) => {
+        const leftValue = valueFor(left, index, type);
+        const rightValue = valueFor(right, index, type);
+        const comparison = type === "number"
+          ? leftValue - rightValue
+          : String(leftValue).localeCompare(String(rightValue), "ja");
+        return activeDirection === "asc" ? comparison : -comparison;
+      });
 
-        sortedRows.forEach((row) => tbody.appendChild(row));
-        buttons.forEach((item) => item.removeAttribute("data-sort-active"));
-        button.dataset.sortActive = activeDirection;
+      sortedRows.forEach((row) => tbody.appendChild(row));
+      headings.forEach((item) => item.removeAttribute("data-sort-active"));
+      heading.dataset.sortActive = activeDirection;
+    };
+
+    headings.forEach((heading) => {
+      heading.addEventListener("click", () => sortBy(heading));
+      heading.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          sortBy(heading);
+        }
       });
     });
   })();

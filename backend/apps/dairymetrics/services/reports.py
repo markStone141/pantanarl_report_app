@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.db.models import Count, Sum
 
-from apps.dairymetrics.models import MemberDailyMetricEntry, MetricAdjustment
+from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjustment
 from apps.dairymetrics.services.final_actuals import (
     ADJUSTMENT_METRIC_FIELDS,
     ENTRY_METRIC_FIELDS,
@@ -43,6 +43,7 @@ def _format_diff(value: int, *, unit: str) -> str:
 
 def _daily_report_rows(*, department, scope):
     daily_totals = {}
+    transactions_by_date = {}
 
     entry_annotations = {f"sum_{field}": Sum(field) for field in ENTRY_METRIC_FIELDS}
     entry_rows = (
@@ -82,6 +83,30 @@ def _daily_report_rows(*, department, scope):
         for field in ADJUSTMENT_METRIC_FIELDS:
             totals["adjustment"][field] = int(row.get(f"sum_{field}") or 0)
 
+    transactions = (
+        MemberMetricTransaction.objects.filter(
+            entry__department=department,
+            entry__entry_date__range=(scope.start_date, scope.end_date),
+        )
+        .select_related("entry", "entry__member")
+        .order_by("-entry__entry_date", "created_at", "id")
+    )
+    for transaction in transactions:
+        entry_date = transaction.entry.entry_date
+        transaction_type = transaction.get_wv_result_type_display() if department.code == "WV" and transaction.wv_result_type else "決済"
+        transactions_by_date.setdefault(entry_date, []).append(
+            {
+                "member_name": transaction.entry.member.name,
+                "amount_text": _format_number(int(transaction.support_amount or 0), "円"),
+                "type_text": transaction_type,
+                "age_text": transaction.get_age_band_display(),
+                "gender_text": transaction.get_gender_display(),
+                "nationality_text": transaction.get_nationality_type_display(),
+                "location_text": transaction.location or transaction.entry.location_name or "-",
+                "comment": transaction.comment,
+            }
+        )
+
     rows = []
     for entry_date, totals in sorted(daily_totals.items(), reverse=True):
         merged = merge_final_actual_totals(totals["entry"], totals["adjustment"])
@@ -95,6 +120,7 @@ def _daily_report_rows(*, department, scope):
                 "approach_text": _format_number(int(merged.get("approach_count") or 0)),
                 "communication_text": _format_number(int(merged.get("communication_count") or 0)),
                 "breakdown_text": _wv_count_breakdown_text(merged, include_total=True) if department.code == "WV" else "",
+                "transactions": transactions_by_date.get(entry_date, []),
             }
         )
     return rows
