@@ -798,19 +798,19 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
     active_entries = list(active_entries.order_by("department__code", "member__name"))
     activity_in_progress = [entry for entry in active_entries if not entry.activity_closed]
     activity_finished = [entry for entry in active_entries if entry.activity_closed]
-    today_totals = (
+    today_entry_totals = (
         collect_department_final_actual_totals(
             department,
             today,
             today,
-            include_adjustments=True,
+            include_adjustments=False,
         )
         if department is not None
         else collect_department_final_actual_totals_by_codes(
             target_codes=[current_department.code for current_department in departments],
             start_date=today,
             end_date=today,
-            include_adjustments=True,
+            include_adjustments=False,
         )
     )
     if department is None:
@@ -826,10 +826,10 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
             "approach_count": 0,
             "communication_count": 0,
         }
-        for department_totals in today_totals.values():
+        for department_totals in today_entry_totals.values():
             for key in merged_today_totals:
                 merged_today_totals[key] += int(department_totals.get(key) or 0)
-        today_totals = merged_today_totals
+        today_entry_totals = merged_today_totals
     summary_queryset = DepartmentDailyMetricSummary.objects.filter(entry_date=today)
     if department is not None:
         summary_queryset = summary_queryset.filter(department=department)
@@ -843,18 +843,18 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
     today_target_amount = int(today_targets.get("total_amount") or 0)
     today_actual_count = _final_count_value(
         department_code=department.code if department is not None else "",
-        totals=today_totals,
+        totals=today_entry_totals,
     ) if department is not None else (
-        int(today_totals.get("result_count") or 0)
-        + int(today_totals.get("return_postal_count") or 0)
-        + int(today_totals.get("return_qr_count") or 0)
-        + int(today_totals.get("cs_count") or 0)
-        + int(today_totals.get("refugee_count") or 0)
+        int(today_entry_totals.get("result_count") or 0)
+        + int(today_entry_totals.get("return_postal_count") or 0)
+        + int(today_entry_totals.get("return_qr_count") or 0)
+        + int(today_entry_totals.get("cs_count") or 0)
+        + int(today_entry_totals.get("refugee_count") or 0)
     )
     today_actual_amount = (
-        int(today_totals.get("support_amount") or 0)
-        + int(today_totals.get("return_postal_amount") or 0)
-        + int(today_totals.get("return_qr_amount") or 0)
+        int(today_entry_totals.get("support_amount") or 0)
+        + int(today_entry_totals.get("return_postal_amount") or 0)
+        + int(today_entry_totals.get("return_qr_amount") or 0)
     )
     if department:
         active_members = list(
@@ -951,13 +951,13 @@ def _build_performance_dashboard_snapshot(*, department=None, target_month=None,
 
     return {
         "today": today,
-        "today_total_count_text": _totals_count_text_for_dashboard(department=department, totals=today_totals),
+        "today_total_count_text": _totals_count_text_for_dashboard(department=department, totals=today_entry_totals),
         "today_total_count_subtext": (
-            _final_count_subtext(department_code=department.code, totals=today_totals)
+            _final_count_subtext(department_code=department.code, totals=today_entry_totals)
             if department is not None
             else ""
         ),
-        "today_total_amount_text": _final_amount_text(totals=today_totals),
+        "today_total_amount_text": _final_amount_text(totals=today_entry_totals),
         "today_target_text": _today_target_text_for_dashboard(
             department=department,
             count_target=today_target_count,
