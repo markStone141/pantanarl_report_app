@@ -181,8 +181,14 @@ def _stability_score(values: list[int], *, active_days: int, reference_active_da
     variance = sum((value - average) ** 2 for value in values) / active_days
     coefficient_of_variation = sqrt(variance) / average
     stability_factor = max(0.3, 1 - min(coefficient_of_variation, 1))
-    active_day_factor = min(active_days / max(reference_active_days, 1), 1)
-    return round(average * active_day_factor * stability_factor, 1)
+    active_day_factor = active_days / max(reference_active_days, 1)
+    return round(average * (active_day_factor**2) * stability_factor, 3)
+
+
+def _format_count_stability_score(value: float | int | None) -> str:
+    if value is None:
+        return "-"
+    return f"{float(value):.3f}"
 
 
 def stability_scores_for_daily_values(*, daily_values: list[dict], reference_active_days: float) -> dict:
@@ -218,8 +224,14 @@ def _format_number(value: float | int | None, unit: str = "") -> str:
     if unit == "円":
         return f"{int(round(value)):,}円"
     if isinstance(value, float) and not value.is_integer():
-        return f"{value:.1f}{unit}"
+        return f"{value:,.1f}{unit}"
     return f"{int(value):,}{unit}"
+
+
+def _format_ranking_value(metric_key: str, value: float | int | None, unit: str = "") -> str:
+    if metric_key == "count_stability_score":
+        return _format_count_stability_score(value)
+    return _format_number(value, unit)
 
 
 def _period_display_label(period: Period) -> str:
@@ -765,7 +777,7 @@ def _build_ranking_payload(*, department, scope: MetricsV2Scope):
                 {
                     "member_name": row["member"].name,
                     "member_id": row["member"].id,
-                    "value_text": _format_number(row["metrics"][option["key"]], option["unit"]),
+                    "value_text": _format_ranking_value(option["key"], row["metrics"][option["key"]], option["unit"]),
                     "detail_url": reverse("dairymetrics_member_dashboard", args=[row["member"].id]),
                 }
                 for row in ranked_rows
