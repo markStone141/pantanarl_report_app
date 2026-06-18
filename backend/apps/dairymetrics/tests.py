@@ -4342,6 +4342,78 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(_format_count_stability_score(three_day_scores["count_stability_score"]), "0.375")
         self.assertEqual(_format_count_stability_score(eight_day_scores["count_stability_score"]), "0.042")
 
+    def test_un_stability_score_penalizes_same_count_over_more_active_days(self):
+        from apps.dairymetrics.services.metrics_v2 import (
+            _daily_un_final_values,
+            _reference_active_days,
+            stability_scores_for_daily_values,
+        )
+
+        today = timezone.localdate()
+        two_day_member = self.create_member(name="二稼働", department=self.department)
+        four_day_member = self.create_member(name="四稼働", department=self.department)
+        for offset in range(2):
+            MemberDailyMetricEntry.objects.create(
+                member=two_day_member,
+                department=self.department,
+                entry_date=today - timedelta(days=offset),
+                result_count=1,
+                support_amount=3000,
+                activity_closed=True,
+            )
+        for offset in range(4):
+            MemberDailyMetricEntry.objects.create(
+                member=four_day_member,
+                department=self.department,
+                entry_date=today - timedelta(days=offset),
+                result_count=1 if offset < 2 else 0,
+                support_amount=3000 if offset < 2 else 0,
+                activity_closed=True,
+            )
+
+        daily_values_by_member_id = {
+            two_day_member.id: _daily_un_final_values(
+                member=two_day_member,
+                department=self.department,
+                start_date=today - timedelta(days=7),
+                end_date=today,
+            ),
+            four_day_member.id: _daily_un_final_values(
+                member=four_day_member,
+                department=self.department,
+                start_date=today - timedelta(days=7),
+                end_date=today,
+            ),
+        }
+        reference_active_days = _reference_active_days(
+            daily_values_by_member_id,
+            {two_day_member.id: 2, four_day_member.id: 4},
+        )
+        two_day_scores = stability_scores_for_daily_values(
+            daily_values=daily_values_by_member_id[two_day_member.id],
+            reference_active_days=reference_active_days,
+            active_days=2,
+        )
+        four_day_scores = stability_scores_for_daily_values(
+            daily_values=daily_values_by_member_id[four_day_member.id],
+            reference_active_days=reference_active_days,
+            active_days=4,
+        )
+        four_day_scores_from_missing_zero_days = stability_scores_for_daily_values(
+            daily_values=[values for values in daily_values_by_member_id[four_day_member.id] if values["count"] > 0],
+            reference_active_days=reference_active_days,
+            active_days=4,
+        )
+
+        self.assertEqual(len(daily_values_by_member_id[two_day_member.id]), 2)
+        self.assertEqual(len(daily_values_by_member_id[four_day_member.id]), 4)
+        self.assertLess(four_day_scores["count_stability_score"], two_day_scores["count_stability_score"])
+        self.assertLess(four_day_scores["amount_stability_score"], two_day_scores["amount_stability_score"])
+        self.assertEqual(
+            four_day_scores_from_missing_zero_days["count_stability_score"],
+            four_day_scores["count_stability_score"],
+        )
+
     def test_metrics_v2_demo_renders_member_sections(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("dairymetrics_metrics_v2_demo"))

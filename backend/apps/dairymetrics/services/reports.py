@@ -179,11 +179,12 @@ def _member_report_rows(*, department, scope):
             )
             for member in members
         }
-        reference_days = _reference_active_days(daily_values_by_member_id)
+        reference_days = _reference_active_days(daily_values_by_member_id, active_days_by_member_id)
         stability_scores_by_member_id = {
             member_id: stability_scores_for_daily_values(
                 daily_values=daily_values,
                 reference_active_days=reference_days,
+                active_days=active_days_by_member_id.get(member_id, 0),
             )
             for member_id, daily_values in daily_values_by_member_id.items()
         }

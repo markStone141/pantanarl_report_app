@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from math import sqrt
 
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.urls import reverse
 from django.utils import timezone
 
@@ -167,8 +167,23 @@ def _daily_un_final_values(*, member, department, start_date: date, end_date: da
     return [daily_values[target_date] for target_date in sorted(daily_values)]
 
 
-def _reference_active_days(daily_values_by_member_id: dict[int, list[dict]]) -> float:
-    active_day_counts = [len(values) for values in daily_values_by_member_id.values() if values]
+def _effective_daily_values(*, daily_values: list[dict], active_days: int | None = None) -> list[dict]:
+    effective_active_days = max(int(active_days or 0), len(daily_values))
+    if effective_active_days <= len(daily_values):
+        return daily_values
+    return daily_values + [{"amount": 0, "count": 0} for _ in range(effective_active_days - len(daily_values))]
+
+
+def _reference_active_days(
+    daily_values_by_member_id: dict[int, list[dict]],
+    active_days_by_member_id: dict[int, int] | None = None,
+) -> float:
+    active_days_by_member_id = active_days_by_member_id or {}
+    active_day_counts = [
+        max(len(values), int(active_days_by_member_id.get(member_id, 0) or 0))
+        for member_id, values in daily_values_by_member_id.items()
+        if values or active_days_by_member_id.get(member_id, 0)
+    ]
     return max(_median(active_day_counts), 1)
 
 
@@ -192,10 +207,16 @@ def _format_count_stability_score(value: float | int | None) -> str:
     return f"{float(value):.3f}"
 
 
-def stability_scores_for_daily_values(*, daily_values: list[dict], reference_active_days: float) -> dict:
-    active_days = len(daily_values)
-    amount_values = [int(values.get("amount") or 0) for values in daily_values]
-    count_values = [int(values.get("count") or 0) for values in daily_values]
+def stability_scores_for_daily_values(
+    *,
+    daily_values: list[dict],
+    reference_active_days: float,
+    active_days: int | None = None,
+) -> dict:
+    effective_daily_values = _effective_daily_values(daily_values=daily_values, active_days=active_days)
+    active_days = len(effective_daily_values)
+    amount_values = [int(values.get("amount") or 0) for values in effective_daily_values]
+    count_values = [int(values.get("count") or 0) for values in effective_daily_values]
     return {
         "amount_stability_score": _stability_score(
             amount_values,
@@ -725,6 +746,17 @@ def _build_ranking_payload(*, department, scope: MetricsV2Scope):
     members = _ranking_members(department=department, scope=scope)
     stability_scores_by_member_id = {}
     if department.code == "UN":
+        member_ids = [member.id for member in members]
+        active_day_rows = (
+            MemberDailyMetricEntry.objects.filter(
+                member_id__in=member_ids,
+                department=department,
+                entry_date__range=(scope.start_date, scope.end_date),
+            )
+            .values("member_id")
+            .annotate(active_days=Count("entry_date", distinct=True))
+        )
+        active_days_by_member_id = {row["member_id"]: int(row["active_days"] or 0) for row in active_day_rows}
         daily_values_by_member_id = {
             member.id: _daily_un_final_values(
                 member=member,
@@ -734,11 +766,12 @@ def _build_ranking_payload(*, department, scope: MetricsV2Scope):
             )
             for member in members
         }
-        reference_days = _reference_active_days(daily_values_by_member_id)
+        reference_days = _reference_active_days(daily_values_by_member_id, active_days_by_member_id)
         stability_scores_by_member_id = {
             member_id: stability_scores_for_daily_values(
                 daily_values=daily_values,
                 reference_active_days=reference_days,
+                active_days=active_days_by_member_id.get(member_id, 0),
             )
             for member_id, daily_values in daily_values_by_member_id.items()
         }
