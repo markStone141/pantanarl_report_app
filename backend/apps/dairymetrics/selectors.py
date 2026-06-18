@@ -317,7 +317,7 @@ def _resolve_scope(
     month_start = today.replace(day=1)
     month_end = today.replace(day=monthrange(today.year, today.month)[1])
     current_period = current_active_period(target_date=today)
-    latest_period = Period.objects.order_by("-end_date", "-start_date", "-id").first()
+    latest_period = Period.objects.exclude(status=TARGET_STATUS_PLANNED).order_by("-end_date", "-start_date", "-id").first()
     available_period = current_period or latest_period
     if scope == "period" and available_period:
         return {
@@ -340,7 +340,7 @@ def _resolve_scope(
     if scope == "custom" and member and department:
         selected_period = None
         if requested_period_id:
-            selected_period = Period.objects.filter(pk=requested_period_id).first()
+            selected_period = Period.objects.exclude(status=TARGET_STATUS_PLANNED).filter(pk=requested_period_id).first()
         bounds = _member_activity_bounds(member, department, today)
         start_date = selected_period.start_date if selected_period else (requested_start_date or bounds["start_date"])
         end_date = selected_period.end_date if selected_period else (requested_end_date or bounds["end_date"])
@@ -1094,7 +1094,7 @@ def build_member_dashboard_card(
             "id": period.id,
             "label": f"{period.start_date.strftime('%Y/%m/%d')} - {period.end_date.strftime('%Y/%m/%d')}",
         }
-        for period in Period.objects.order_by("-start_date", "-id")
+        for period in Period.objects.exclude(status=TARGET_STATUS_PLANNED).order_by("-start_date", "-id")
     ]
     return {
         "department": department,

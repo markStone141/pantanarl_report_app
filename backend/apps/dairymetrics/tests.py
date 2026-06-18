@@ -4452,6 +4452,28 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, f"{self.period.start_date:%Y/%m/%d} - {self.period.end_date:%Y/%m/%d}")
         self.assertContains(response, "30,000円")
 
+    def test_metrics_report_period_options_exclude_planned_periods(self):
+        today = timezone.localdate()
+        planned_period = Period.objects.create(
+            month=today.replace(day=1),
+            name="予定路程",
+            status=TARGET_STATUS_PLANNED,
+            start_date=today + timedelta(days=3),
+            end_date=today + timedelta(days=10),
+        )
+
+        self.client.force_login(self.admin)
+        response = self.client.get(
+            reverse("dairymetrics_metrics_report"),
+            {"department": self.department.code, "scope": "period", "period_id": planned_period.id},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        option_ids = [period.id for period in response.context["period_options"]]
+        self.assertNotIn(planned_period.id, option_ids)
+        self.assertEqual(response.context["scope"].period.id, self.period.id)
+        self.assertNotContains(response, "予定路程")
+
     def test_metrics_report_renders_wv_breakdowns(self):
         wv_department = self.create_department("WV")
         wv_member = self.create_member(name="WV Member", department=wv_department)

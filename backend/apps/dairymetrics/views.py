@@ -12,10 +12,10 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from apps.accounts.models import Department, Member
-from apps.common.target_periods import current_active_period, period_options_active_first
+from apps.common.target_periods import period_options_active_first
 from apps.mail.models import MailSendHistory
 from apps.mail.services import MailSendError, record_transaction_mail_failure, send_transaction_mail
-from apps.targets.models import Period
+from apps.targets.models import Period, TARGET_STATUS_PLANNED
 
 from .auth import get_member_profile, require_dairymetrics_admin, require_dairymetrics_member
 from .forms import (
@@ -833,7 +833,7 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
     requested_period = None
     raw_period_id = (request.GET.get("period_id") or "").strip()
     if raw_period_id.isdigit():
-        requested_period = Period.objects.filter(pk=int(raw_period_id)).first()
+        requested_period = Period.objects.exclude(status=TARGET_STATUS_PLANNED).filter(pk=int(raw_period_id)).first()
     requested_start_date = parse_date((request.GET.get("start_date") or "").strip())
     requested_end_date = parse_date((request.GET.get("end_date") or "").strip())
 
@@ -898,9 +898,10 @@ def metrics_report(request: HttpRequest) -> HttpResponse:
     requested_period = None
     raw_period_id = (request.GET.get("period_id") or "").strip()
     if raw_period_id.isdigit():
-        requested_period = Period.objects.filter(pk=int(raw_period_id)).first()
+        requested_period = Period.objects.exclude(status=TARGET_STATUS_PLANNED).filter(pk=int(raw_period_id)).first()
+    period_options = period_options_active_first(target_date=today)
     if requested_scope == "period" and requested_period is None:
-        requested_period = current_active_period(target_date=today) or Period.objects.order_by("-end_date", "-start_date", "-id").first()
+        requested_period = period_options[0] if period_options else None
 
     scope = resolve_metrics_v2_scope(
         today=today,
@@ -912,8 +913,6 @@ def metrics_report(request: HttpRequest) -> HttpResponse:
         scope = resolve_metrics_v2_scope(today=today, scope="month", requested_month=requested_month)
 
     report = build_metrics_scope_report(department=selected_department, scope=scope)
-    period_options = period_options_active_first(target_date=today)
-
     context = {
         "is_admin": request.user.is_staff,
         "member": viewer_member,
