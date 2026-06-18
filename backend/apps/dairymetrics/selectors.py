@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Department, Member
 from apps.common.target_periods import current_active_period
-from apps.targets.models import Period
+from apps.targets.models import Period, TARGET_STATUS_PLANNED
 
 from .models import (
     MemberDailyMetricEntry,
@@ -931,6 +931,7 @@ def _build_period_trend(member, department, *, current_period, limit=4):
         return []
     periods = list(
         Period.objects.filter(end_date__lte=current_period.end_date)
+        .exclude(status=TARGET_STATUS_PLANNED)
         .order_by("-end_date", "-id")[:limit]
     )
     periods.reverse()

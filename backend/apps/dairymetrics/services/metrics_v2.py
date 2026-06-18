@@ -16,6 +16,7 @@ from apps.targets.models import (
     MonthTargetMetricValue,
     Period,
     PeriodTargetMetricValue,
+    TARGET_STATUS_PLANNED,
 )
 
 from apps.dairymetrics.models import (
@@ -483,7 +484,9 @@ def _build_period_totals_series(*, department, member=None, periods):
 
 def _recent_period_history_periods(*, target_date: date, limit: int = 6) -> list[Period]:
     ended_periods = list(
-        Period.objects.filter(end_date__lte=target_date).order_by("-end_date", "-start_date", "-id")
+        Period.objects.filter(end_date__lte=target_date)
+        .exclude(status=TARGET_STATUS_PLANNED)
+        .order_by("-end_date", "-start_date", "-id")
     )
     active_period = current_active_period(target_date=target_date)
 

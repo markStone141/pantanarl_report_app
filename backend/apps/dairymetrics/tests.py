@@ -18,6 +18,7 @@ from apps.targets.models import (
     PeriodTargetMetricValue,
     TARGET_STATUS_ACTIVE,
     TARGET_STATUS_FINISHED,
+    TARGET_STATUS_PLANNED,
     TargetMetric,
 )
 
@@ -4337,6 +4338,39 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         }
         self.assertEqual(personal_average_values["1決済あたりの平均金額"], "3,000円")
         self.assertEqual(overall_average_values["1決済あたりの平均金額"], "2,667円")
+
+    def test_metrics_v2_period_history_excludes_planned_periods(self):
+        today = timezone.localdate()
+        Period.objects.create(
+            month=today.replace(day=1),
+            name="予定路程",
+            status=TARGET_STATUS_PLANNED,
+            start_date=today - timedelta(days=8),
+            end_date=today - timedelta(days=4),
+        )
+        finished_period = Period.objects.create(
+            month=today.replace(day=1),
+            name="終了路程",
+            status=TARGET_STATUS_FINISHED,
+            start_date=today - timedelta(days=10),
+            end_date=today - timedelta(days=9),
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=finished_period.start_date,
+            result_count=1,
+            support_amount=3000,
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_metrics_v2_demo"))
+
+        self.assertEqual(response.status_code, 200)
+        labels = response.context["metrics_v2_payload"]["period_history"]["labels"]
+        self.assertIn("終了路程", labels)
+        self.assertIn(self.period.name, labels)
+        self.assertNotIn("予定路程", labels)
 
     def test_metrics_report_renders_monthly_summary_and_rankings(self):
         self.client.force_login(self.admin)
