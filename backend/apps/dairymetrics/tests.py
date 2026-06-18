@@ -4339,7 +4339,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertLess(eight_day_scores["count_stability_score"], three_day_scores["count_stability_score"])
         self.assertEqual(zero_scores["amount_stability_score"], 0)
         self.assertEqual(zero_scores["count_stability_score"], 0)
-        self.assertEqual(_format_count_stability_score(three_day_scores["count_stability_score"]), "1.000")
+        self.assertEqual(_format_count_stability_score(three_day_scores["count_stability_score"]), "0.812")
         self.assertEqual(_format_count_stability_score(eight_day_scores["count_stability_score"]), "0.042")
 
     def test_un_stability_score_penalizes_same_count_over_more_active_days(self):
@@ -4409,7 +4409,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(len(daily_values_by_member_id[four_day_member.id]), 4)
         self.assertLess(four_day_scores["count_stability_score"], two_day_scores["count_stability_score"])
         self.assertLess(four_day_scores["amount_stability_score"], two_day_scores["amount_stability_score"])
-        self.assertEqual(f"{two_day_scores['count_stability_score']:.3f}", "1.000")
+        self.assertEqual(f"{two_day_scores['count_stability_score']:.3f}", "0.900")
         self.assertEqual(f"{four_day_scores['count_stability_score']:.3f}", "0.075")
         self.assertEqual(
             four_day_scores_from_missing_zero_days["count_stability_score"],

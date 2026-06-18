@@ -193,6 +193,7 @@ def _stability_score(
     active_days: int,
     reference_active_days: float,
     include_active_day_factor: bool = True,
+    active_day_factor_floor: float = 0,
 ) -> float:
     if not values or active_days <= 0:
         return 0
@@ -202,7 +203,11 @@ def _stability_score(
     variance = sum((value - average) ** 2 for value in values) / active_days
     coefficient_of_variation = sqrt(variance) / average
     stability_factor = max(0.3, 1 - min(coefficient_of_variation, 1))
-    active_day_factor = min(active_days / max(reference_active_days, 1), 1) if include_active_day_factor else 1
+    if include_active_day_factor:
+        active_day_ratio = min(active_days / max(reference_active_days, 1), 1)
+        active_day_factor = active_day_factor_floor + ((1 - active_day_factor_floor) * active_day_ratio)
+    else:
+        active_day_factor = 1
     productive_day_factor = sum(1 for value in values if value > 0) / active_days
     return round(average * active_day_factor * stability_factor * productive_day_factor, 3)
 
@@ -233,7 +238,7 @@ def stability_scores_for_daily_values(
             count_values,
             active_days=active_days,
             reference_active_days=reference_active_days,
-            include_active_day_factor=False,
+            active_day_factor_floor=0.7,
         ),
     }
 
