@@ -181,9 +181,9 @@ def _stability_score(values: list[int], *, active_days: int, reference_active_da
     variance = sum((value - average) ** 2 for value in values) / active_days
     coefficient_of_variation = sqrt(variance) / average
     stability_factor = max(0.3, 1 - min(coefficient_of_variation, 1))
-    active_day_factor = active_days / max(reference_active_days, 1)
+    active_day_factor = min(active_days / max(reference_active_days, 1), 1)
     productive_day_factor = sum(1 for value in values if value > 0) / active_days
-    return round(average * (active_day_factor**2) * stability_factor * productive_day_factor, 3)
+    return round(average * active_day_factor * stability_factor * productive_day_factor, 3)
 
 
 def _format_count_stability_score(value: float | int | None) -> str:

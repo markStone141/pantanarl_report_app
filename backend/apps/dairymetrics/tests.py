@@ -4339,7 +4339,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertLess(eight_day_scores["count_stability_score"], three_day_scores["count_stability_score"])
         self.assertEqual(zero_scores["amount_stability_score"], 0)
         self.assertEqual(zero_scores["count_stability_score"], 0)
-        self.assertEqual(_format_count_stability_score(three_day_scores["count_stability_score"]), "0.141")
+        self.assertEqual(_format_count_stability_score(three_day_scores["count_stability_score"]), "0.375")
         self.assertEqual(_format_count_stability_score(eight_day_scores["count_stability_score"]), "0.042")
 
     def test_metrics_v2_demo_renders_member_sections(self):
@@ -4458,8 +4458,8 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, 'class="metrics-report-sort-heading"', html=False)
         self.assertContains(response, 'data-sort-index="2"', html=False)
         self.assertContains(response, 'data-sort="13000"', html=False)
-        self.assertContains(response, 'data-sort="3466.667"', html=False)
-        self.assertContains(response, 'data-sort="1.778"', html=False)
+        self.assertContains(response, 'data-sort="1950.0"', html=False)
+        self.assertContains(response, 'data-sort="1.0"', html=False)
         self.assertContains(response, 'data-metrics-report-sortable-table', html=False)
         self.assertContains(response, 'data-sort-index="4"', html=False)
         self.assertContains(response, "増額")
@@ -4491,8 +4491,8 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(member_rows[self.member.name]["conversion_rate_text"], "66.7%")
         self.assertEqual(member_rows[self.member.name]["average_amount_per_decision_text"], "3,000")
         self.assertEqual(member_rows[self.member.name]["average_amount_per_active_day_text"], "13,000")
-        self.assertEqual(member_rows[self.member.name]["amount_stability_score_text"], "3,466.7")
-        self.assertEqual(member_rows[self.member.name]["count_stability_score_text"], "1.778")
+        self.assertEqual(member_rows[self.member.name]["amount_stability_score_text"], "1,950")
+        self.assertEqual(member_rows[self.member.name]["count_stability_score_text"], "1.000")
         self.assertEqual(member_rows[self.member.name]["active_days_text"], "1")
 
     def test_metrics_report_renders_period_scope(self):
