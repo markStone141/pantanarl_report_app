@@ -232,10 +232,42 @@
   </section>
 
   <section class="card mt-16">
+    <h3>補正実績一覧</h3>
+    {% if report.adjustment_rows %}
+    <div class="table-scroll mt-12">
+      <table class="dairymetrics-admin-table metrics-report-table metrics-report-member-table" data-metrics-report-sortable-table>
+        <thead>
+          <tr>
+            <th class="metrics-report-sort-heading" data-sort-index="0" data-sort-type="text" tabindex="0">名前</th>
+            <th class="metrics-report-sort-heading" data-sort-index="1" data-sort-type="text" tabindex="0">日付</th>
+            <th class="metrics-report-sort-heading" data-sort-index="2" data-sort-type="text" tabindex="0">種別</th>
+            <th class="metrics-report-sort-heading" data-sort-index="3" data-sort-type="number" tabindex="0">金額</th>
+            <th class="metrics-report-sort-heading" data-sort-index="4" data-sort-type="text" tabindex="0">現場</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in report.adjustment_rows %}
+          <tr>
+            <td data-sort="{{ row.member_name }}">{{ row.member_name }}</td>
+            <td data-sort="{{ row.date_sort_value }}">{{ row.date_text }}</td>
+            <td data-sort="{{ row.type_text }}">{{ row.type_text }}</td>
+            <td data-sort="{{ row.amount_value }}">{{ row.amount_text }}</td>
+            <td data-sort="{{ row.location_text }}">{{ row.location_text }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted mt-12">対象期間の補正実績はありません。</p>
+    {% endif %}
+  </section>
+
+  <section class="card mt-16">
     <h3>メンバー別集計</h3>
     {% if report.member_rows %}
     <div class="table-scroll mt-12">
-      <table class="dairymetrics-admin-table metrics-report-table metrics-report-member-table" data-metrics-report-member-table>
+      <table class="dairymetrics-admin-table metrics-report-table metrics-report-member-table" data-metrics-report-member-table data-metrics-report-sortable-table>
         <thead>
           <tr>
             <th class="metrics-report-sort-heading" data-sort-index="0" data-sort-type="text" tabindex="0">メンバー</th>
@@ -371,50 +403,51 @@
   })();
 
   (() => {
-    const table = document.querySelector("[data-metrics-report-member-table]");
-    if (!table || !table.tBodies.length) return;
+    document.querySelectorAll("[data-metrics-report-sortable-table]").forEach((table) => {
+      if (!table.tBodies.length) return;
 
-    const tbody = table.tBodies[0];
-    const headings = table.querySelectorAll("[data-sort-index]");
-    let activeIndex = -1;
-    let activeDirection = "asc";
+      const tbody = table.tBodies[0];
+      const headings = table.querySelectorAll("[data-sort-index]");
+      let activeIndex = -1;
+      let activeDirection = "asc";
 
-    const valueFor = (row, index, type) => {
-      const rawValue = row.cells[index]?.dataset.sort || "";
-      if (type === "number") {
-        const numericValue = Number(rawValue);
-        return Number.isFinite(numericValue) ? numericValue : 0;
-      }
-      return rawValue;
-    };
-
-    const sortBy = (heading) => {
-      const index = Number(heading.dataset.sortIndex);
-      const type = heading.dataset.sortType || "text";
-      activeDirection = activeIndex === index && activeDirection === "desc" ? "asc" : "desc";
-      activeIndex = index;
-
-      const sortedRows = Array.from(tbody.rows).sort((left, right) => {
-        const leftValue = valueFor(left, index, type);
-        const rightValue = valueFor(right, index, type);
-        const comparison = type === "number"
-          ? leftValue - rightValue
-          : String(leftValue).localeCompare(String(rightValue), "ja");
-        return activeDirection === "asc" ? comparison : -comparison;
-      });
-
-      sortedRows.forEach((row) => tbody.appendChild(row));
-      headings.forEach((item) => item.removeAttribute("data-sort-active"));
-      heading.dataset.sortActive = activeDirection;
-    };
-
-    headings.forEach((heading) => {
-      heading.addEventListener("click", () => sortBy(heading));
-      heading.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          sortBy(heading);
+      const valueFor = (row, index, type) => {
+        const rawValue = row.cells[index]?.dataset.sort || "";
+        if (type === "number") {
+          const numericValue = Number(rawValue);
+          return Number.isFinite(numericValue) ? numericValue : 0;
         }
+        return rawValue;
+      };
+
+      const sortBy = (heading) => {
+        const index = Number(heading.dataset.sortIndex);
+        const type = heading.dataset.sortType || "text";
+        activeDirection = activeIndex === index && activeDirection === "desc" ? "asc" : "desc";
+        activeIndex = index;
+
+        const sortedRows = Array.from(tbody.rows).sort((left, right) => {
+          const leftValue = valueFor(left, index, type);
+          const rightValue = valueFor(right, index, type);
+          const comparison = type === "number"
+            ? leftValue - rightValue
+            : String(leftValue).localeCompare(String(rightValue), "ja");
+          return activeDirection === "asc" ? comparison : -comparison;
+        });
+
+        sortedRows.forEach((row) => tbody.appendChild(row));
+        headings.forEach((item) => item.removeAttribute("data-sort-active"));
+        heading.dataset.sortActive = activeDirection;
+      };
+
+      headings.forEach((heading) => {
+        heading.addEventListener("click", () => sortBy(heading));
+        heading.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            sortBy(heading);
+          }
+        });
       });
     });
   })();

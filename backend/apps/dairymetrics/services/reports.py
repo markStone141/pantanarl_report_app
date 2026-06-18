@@ -221,6 +221,40 @@ def _member_report_rows(*, department, scope):
     return sorted(rows, key=lambda row: row["member_name"])
 
 
+def _adjustment_amount_value(adjustment: MetricAdjustment) -> int:
+    if adjustment.source_type == MetricAdjustment.SOURCE_POSTAL:
+        return int(adjustment.return_postal_amount or 0)
+    if adjustment.source_type == MetricAdjustment.SOURCE_QR:
+        return int(adjustment.return_qr_amount or 0)
+    return int(adjustment.support_amount or 0)
+
+
+def _adjustment_report_rows(*, department, scope):
+    adjustments = (
+        MetricAdjustment.objects.filter(
+            department=department,
+            target_date__range=(scope.start_date, scope.end_date),
+        )
+        .select_related("member")
+        .order_by("-target_date", "member__name", "id")
+    )
+    rows = []
+    for adjustment in adjustments:
+        amount = _adjustment_amount_value(adjustment)
+        rows.append(
+            {
+                "member_name": adjustment.member.name,
+                "date_text": adjustment.target_date.strftime("%Y/%m/%d"),
+                "date_sort_value": adjustment.target_date.isoformat(),
+                "type_text": adjustment.get_source_type_display(),
+                "amount_value": amount,
+                "amount_text": _format_number(amount, "円"),
+                "location_text": adjustment.location_name or "-",
+            }
+        )
+    return rows
+
+
 def _analysis_chart_payload(*, department, scope) -> dict:
     return build_metrics_v2_distribution_payload(department=department, scope=scope)
 
@@ -249,6 +283,8 @@ def build_metrics_scope_report(*, department, scope):
     base_decision_count = _count_value(department.code, base_totals)
     support_amount = int(final_totals.get("support_amount") or 0)
     base_support_amount = int(base_totals.get("support_amount") or 0)
+    increase_count = _count_value(department.code, excluded_average_adjustment_totals)
+    increase_amount = int(excluded_average_adjustment_totals.get("support_amount") or 0)
     approach_count = int(final_totals.get("approach_count") or 0)
     communication_count = int(final_totals.get("communication_count") or 0)
     base_approach_count = int(base_totals.get("approach_count") or 0)
@@ -319,11 +355,14 @@ def build_metrics_scope_report(*, department, scope):
         "adjustment_cards": [
             {"label": "補正金額", "value": _format_number(support_amount - base_support_amount, "円")},
             {"label": "補正件数", "value": _format_number(decision_count - base_decision_count)},
+            {"label": "増額件数", "value": _format_number(increase_count)},
+            {"label": "増額金額", "value": _format_number(increase_amount, "円")},
             {"label": "戻り件数", "value": _format_number(_return_count_value(final_totals))},
             {"label": "戻り金額", "value": _format_number(_return_amount_value(final_totals), "円")},
         ],
         "daily_rows": daily_rows,
         "member_rows": _member_report_rows(department=department, scope=scope),
+        "adjustment_rows": _adjustment_report_rows(department=department, scope=scope),
         "analysis_chart_payload": analysis_chart_payload,
         **analysis_chart_payload,
     }

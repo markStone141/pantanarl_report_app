@@ -4297,6 +4297,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
             source_type=MetricAdjustment.SOURCE_INCREASE,
             result_count=1,
             support_amount=1000,
+            location_name="池袋",
         )
         MetricAdjustment.objects.create(
             member=self.teammate,
@@ -4305,6 +4306,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
             source_type=MetricAdjustment.SOURCE_QR,
             return_qr_count=1,
             return_qr_amount=500,
+            location_name="新宿戻り",
         )
 
     def test_metrics_v2_demo_requires_login(self):
@@ -4374,10 +4376,11 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
 
     def test_metrics_report_renders_monthly_summary_and_rankings(self):
         self.client.force_login(self.admin)
+        today = timezone.localdate()
 
         response = self.client.get(
             reverse("dairymetrics_metrics_report"),
-            {"department": self.department.code, "scope": "month", "month": timezone.localdate().strftime("%Y-%m")},
+            {"department": self.department.code, "scope": "month", "month": today.strftime("%Y-%m")},
         )
 
         self.assertEqual(response.status_code, 200)
@@ -4385,6 +4388,9 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "出力条件")
         self.assertContains(response, "目標との差分")
         self.assertContains(response, "補正実績")
+        self.assertContains(response, "補正実績一覧")
+        self.assertContains(response, "増額件数")
+        self.assertContains(response, "増額金額")
         self.assertNotContains(response, "各項目の上位3名")
         self.assertContains(response, "合計支援金額")
         self.assertContains(response, "即決 16,000円 / 補正 1,000円")
@@ -4393,8 +4399,8 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "1稼働当たりの平均")
         self.assertContains(response, "最高金額達成日")
         self.assertContains(response, "最低金額達成日")
-        self.assertContains(response, "2026/06/08")
-        self.assertContains(response, "2026/06/09")
+        self.assertContains(response, f"{today - timedelta(days=2):%Y/%m/%d}")
+        self.assertContains(response, f"{today - timedelta(days=1):%Y/%m/%d}")
         self.assertContains(response, "日別推移")
         self.assertContains(response, "メンバー別集計")
         self.assertContains(response, "コミュ率")
@@ -4418,6 +4424,12 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, 'class="metrics-report-sort-heading"', html=False)
         self.assertContains(response, 'data-sort-index="2"', html=False)
         self.assertContains(response, 'data-sort="13000"', html=False)
+        self.assertContains(response, 'data-metrics-report-sortable-table', html=False)
+        self.assertContains(response, 'data-sort-index="4"', html=False)
+        self.assertContains(response, "増額")
+        self.assertContains(response, "池袋")
+        self.assertContains(response, "新宿戻り")
+        self.assertContains(response, 'data-sort="1000"', html=False)
         self.assertContains(response, 'activeDirection === "desc" ? "asc" : "desc"', html=False)
         self.assertNotContains(response, "metrics-report-sort-btn")
         self.assertContains(response, "17,000円")
@@ -4428,6 +4440,12 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(response.context["report"]["summary_cards"][6]["value"], "2,667円")
         self.assertEqual(response.context["report"]["distribution_cards"][0]["total_text"], "3件")
         self.assertEqual(response.context["report"]["average_amount_comparison"]["age"]["labels"], ["20代", "30代", "40代"])
+        adjustment_cards = {card["label"]: card["value"] for card in response.context["report"]["adjustment_cards"]}
+        self.assertEqual(adjustment_cards["増額件数"], "1")
+        self.assertEqual(adjustment_cards["増額金額"], "1,000円")
+        adjustment_rows = {row["type_text"]: row for row in response.context["report"]["adjustment_rows"]}
+        self.assertEqual(adjustment_rows["増額"]["amount_text"], "1,000円")
+        self.assertEqual(adjustment_rows["増額"]["location_text"], "池袋")
         member_rows = {row["member_name"]: row for row in response.context["report"]["member_rows"]}
         self.assertEqual(member_rows[self.member.name]["amount_text"], "13,000")
         self.assertEqual(member_rows[self.member.name]["count_text"], "5")
