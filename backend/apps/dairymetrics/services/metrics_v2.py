@@ -4,6 +4,7 @@ from calendar import monthrange
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, timedelta
+from math import sqrt
 
 from django.db.models import Sum
 from django.urls import reverse
@@ -42,6 +43,8 @@ RANKING_METRIC_OPTIONS = [
     {"key": "communication_count", "label": "合計コミュニケーション数", "unit": ""},
     {"key": "average_amount_per_active_day", "label": "1稼働あたりの平均金額", "unit": "円"},
     {"key": "average_amount_per_decision", "label": "1決済あたりの平均金額", "unit": "円"},
+    {"key": "amount_stability_score", "label": "金額安定スコア", "unit": ""},
+    {"key": "count_stability_score", "label": "件数安定スコア", "unit": ""},
     {"key": "support_amount", "label": "合計決済金額", "unit": "円"},
     {"key": "decision_count", "label": "合計件数", "unit": ""},
     {"key": "cs_count", "label": "CS件数", "unit": ""},
@@ -53,6 +56,7 @@ RANKING_METRIC_OPTIONS = [
 ]
 
 WV_ONLY_RANKING_METRIC_KEYS = {"cs_count", "refugee_count"}
+UN_ONLY_RANKING_METRIC_KEYS = {"amount_stability_score", "count_stability_score"}
 
 
 @dataclass(frozen=True)
@@ -112,6 +116,91 @@ def _safe_average(numerator: int, denominator: int) -> float | None:
     if denominator <= 0:
         return None
     return round(numerator / denominator, 1)
+
+
+def _median(values: list[int]) -> float:
+    if not values:
+        return 0
+    sorted_values = sorted(values)
+    midpoint = len(sorted_values) // 2
+    if len(sorted_values) % 2:
+        return float(sorted_values[midpoint])
+    return (sorted_values[midpoint - 1] + sorted_values[midpoint]) / 2
+
+
+def _daily_un_final_values(*, member, department, start_date: date, end_date: date) -> list[dict]:
+    daily_values: dict[date, dict] = {}
+    entries = (
+        MemberDailyMetricEntry.objects.filter(
+            member=member,
+            department=department,
+            entry_date__range=(start_date, end_date),
+        )
+        .values("entry_date")
+        .annotate(
+            support_amount=Sum("support_amount"),
+            result_count=Sum("result_count"),
+        )
+    )
+    for row in entries:
+        values = daily_values.setdefault(row["entry_date"], {"amount": 0, "count": 0})
+        values["amount"] += int(row.get("support_amount") or 0)
+        values["count"] += int(row.get("result_count") or 0)
+
+    adjustments = (
+        MetricAdjustment.objects.filter(
+            member=member,
+            department=department,
+            target_date__range=(start_date, end_date),
+        )
+        .values("target_date")
+        .annotate(
+            support_amount=Sum("support_amount"),
+            result_count=Sum("result_count"),
+        )
+    )
+    for row in adjustments:
+        values = daily_values.setdefault(row["target_date"], {"amount": 0, "count": 0})
+        values["amount"] += int(row.get("support_amount") or 0)
+        values["count"] += int(row.get("result_count") or 0)
+
+    return [daily_values[target_date] for target_date in sorted(daily_values)]
+
+
+def _reference_active_days(daily_values_by_member_id: dict[int, list[dict]]) -> float:
+    active_day_counts = [len(values) for values in daily_values_by_member_id.values() if values]
+    return max(_median(active_day_counts), 1)
+
+
+def _stability_score(values: list[int], *, active_days: int, reference_active_days: float) -> float:
+    if not values or active_days <= 0:
+        return 0
+    average = sum(values) / active_days
+    if average <= 0:
+        return 0
+    variance = sum((value - average) ** 2 for value in values) / active_days
+    coefficient_of_variation = sqrt(variance) / average
+    stability_factor = max(0.3, 1 - min(coefficient_of_variation, 1))
+    active_day_factor = min(active_days / max(reference_active_days, 1), 1)
+    return round(average * active_day_factor * stability_factor, 1)
+
+
+def stability_scores_for_daily_values(*, daily_values: list[dict], reference_active_days: float) -> dict:
+    active_days = len(daily_values)
+    amount_values = [int(values.get("amount") or 0) for values in daily_values]
+    count_values = [int(values.get("count") or 0) for values in daily_values]
+    return {
+        "amount_stability_score": _stability_score(
+            amount_values,
+            active_days=active_days,
+            reference_active_days=reference_active_days,
+        ),
+        "count_stability_score": _stability_score(
+            count_values,
+            active_days=active_days,
+            reference_active_days=reference_active_days,
+        ),
+    }
 
 
 def _average_amount_per_decision_value(*, department_code: str, totals: dict, excluded_adjustment_totals: dict | None = None) -> float | None:
@@ -545,7 +634,8 @@ def _build_month_totals_series(*, department, member=None, reference_month: date
     }
 
 
-def _member_metric_row(*, member, department, scope: MetricsV2Scope):
+def _member_metric_row(*, member, department, scope: MetricsV2Scope, stability_scores=None):
+    stability_scores = stability_scores or {}
     totals = collect_member_final_actual_totals(member, department, scope.start_date, scope.end_date, include_adjustments=True)
     base_totals = collect_member_final_actual_totals(member, department, scope.start_date, scope.end_date, include_adjustments=False)
     excluded_average_adjustment_totals = collect_increase_adjustment_totals(
@@ -575,6 +665,8 @@ def _member_metric_row(*, member, department, scope: MetricsV2Scope):
                 excluded_adjustment_totals=excluded_average_adjustment_totals,
             )
             or 0,
+            "amount_stability_score": stability_scores.get("amount_stability_score", 0),
+            "count_stability_score": stability_scores.get("count_stability_score", 0),
             "support_amount": support_amount,
             "decision_count": decision_count,
             "cs_count": _cs_count_value(totals),
@@ -618,11 +710,41 @@ def _ranking_members(*, department, scope: MetricsV2Scope):
 
 def _build_ranking_payload(*, department, scope: MetricsV2Scope):
     members = _ranking_members(department=department, scope=scope)
-    rows = [_member_metric_row(member=member, department=department, scope=scope) for member in members]
+    stability_scores_by_member_id = {}
+    if department.code == "UN":
+        daily_values_by_member_id = {
+            member.id: _daily_un_final_values(
+                member=member,
+                department=department,
+                start_date=scope.start_date,
+                end_date=scope.end_date,
+            )
+            for member in members
+        }
+        reference_days = _reference_active_days(daily_values_by_member_id)
+        stability_scores_by_member_id = {
+            member_id: stability_scores_for_daily_values(
+                daily_values=daily_values,
+                reference_active_days=reference_days,
+            )
+            for member_id, daily_values in daily_values_by_member_id.items()
+        }
+    rows = [
+        _member_metric_row(
+            member=member,
+            department=department,
+            scope=scope,
+            stability_scores=stability_scores_by_member_id.get(member.id, {}),
+        )
+        for member in members
+    ]
     ranking_options = [
         option
         for option in RANKING_METRIC_OPTIONS
-        if department.code == "WV" or option["key"] not in WV_ONLY_RANKING_METRIC_KEYS
+        if (
+            (department.code == "WV" or option["key"] not in WV_ONLY_RANKING_METRIC_KEYS)
+            and (department.code == "UN" or option["key"] not in UN_ONLY_RANKING_METRIC_KEYS)
+        )
     ]
     metric_map = {}
     for option in ranking_options:

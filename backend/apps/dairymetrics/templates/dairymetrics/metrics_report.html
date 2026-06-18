@@ -291,7 +291,9 @@
             <th class="metrics-report-sort-heading" data-sort-index="6" data-sort-type="number" tabindex="0">決済率</th>
             <th class="metrics-report-sort-heading" data-sort-index="7" data-sort-type="number" tabindex="0">平均/決済</th>
             <th class="metrics-report-sort-heading" data-sort-index="8" data-sort-type="number" tabindex="0">平均/稼働</th>
-            <th class="metrics-report-sort-heading" data-sort-index="9" data-sort-type="number" tabindex="0">稼働日数</th>
+            <th class="metrics-report-sort-heading" data-sort-index="9" data-sort-type="number" tabindex="0">金額安定</th>
+            <th class="metrics-report-sort-heading" data-sort-index="10" data-sort-type="number" tabindex="0">件数安定</th>
+            <th class="metrics-report-sort-heading" data-sort-index="11" data-sort-type="number" tabindex="0">稼働日数</th>
             {% endif %}
           </tr>
         </thead>
@@ -312,6 +314,10 @@
             <td data-sort="{{ row.conversion_rate_value }}">{{ row.conversion_rate_text }}</td>
             <td data-sort="{{ row.average_amount_per_decision_value }}">{{ row.average_amount_per_decision_text }}</td>
             <td data-sort="{{ row.average_amount_per_active_day_value }}">{{ row.average_amount_per_active_day_text }}</td>
+            {% if selected_department.code != "WV" %}
+            <td data-sort="{{ row.amount_stability_score_value }}">{{ row.amount_stability_score_text }}</td>
+            <td data-sort="{{ row.count_stability_score_value }}">{{ row.count_stability_score_text }}</td>
+            {% endif %}
             <td data-sort="{{ row.active_days_value }}">{{ row.active_days_text }}</td>
           </tr>
           {% endfor %}

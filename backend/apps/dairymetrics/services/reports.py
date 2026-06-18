@@ -17,15 +17,18 @@ from apps.dairymetrics.services.metrics_v2 import (
     _average_amount_per_decision_value,
     _count_value,
     _department_target_amount_for_scope,
+    _daily_un_final_values,
     _format_number,
     _format_percentage,
     _percentage,
+    _reference_active_days,
     _return_amount_value,
     _return_count_value,
     _ranking_members,
     _safe_average,
     _wv_count_breakdown_text,
     build_metrics_v2_distribution_payload,
+    stability_scores_for_daily_values,
 )
 
 
@@ -164,6 +167,25 @@ def _member_report_rows(*, department, scope):
         .annotate(active_days=Count("entry_date", distinct=True))
     )
     active_days_by_member_id = {row["member_id"]: int(row["active_days"] or 0) for row in active_day_rows}
+    stability_scores_by_member_id = {}
+    if department.code == "UN":
+        daily_values_by_member_id = {
+            member.id: _daily_un_final_values(
+                member=member,
+                department=department,
+                start_date=scope.start_date,
+                end_date=scope.end_date,
+            )
+            for member in members
+        }
+        reference_days = _reference_active_days(daily_values_by_member_id)
+        stability_scores_by_member_id = {
+            member_id: stability_scores_for_daily_values(
+                daily_values=daily_values,
+                reference_active_days=reference_days,
+            )
+            for member_id, daily_values in daily_values_by_member_id.items()
+        }
 
     rows = []
     for member in members:
@@ -189,6 +211,7 @@ def _member_report_rows(*, department, scope):
             excluded_adjustment_totals=excluded_average_adjustment_totals,
         )
         average_amount_per_active_day = _safe_average(amount, active_days)
+        stability_scores = stability_scores_by_member_id.get(member.id, {})
         rows.append(
             {
                 "member_name": member.name,
@@ -213,6 +236,10 @@ def _member_report_rows(*, department, scope):
                 "average_amount_per_decision_text": _format_number(average_amount_per_decision),
                 "average_amount_per_active_day_value": average_amount_per_active_day or 0,
                 "average_amount_per_active_day_text": _format_number(average_amount_per_active_day),
+                "amount_stability_score_value": stability_scores.get("amount_stability_score", 0),
+                "amount_stability_score_text": _format_number(stability_scores.get("amount_stability_score", 0)),
+                "count_stability_score_value": stability_scores.get("count_stability_score", 0),
+                "count_stability_score_text": _format_number(stability_scores.get("count_stability_score", 0)),
                 "active_days_value": active_days,
                 "active_days_text": _format_number(active_days),
                 "breakdown_text": _wv_count_breakdown_text(totals) if department.code == "WV" else "",

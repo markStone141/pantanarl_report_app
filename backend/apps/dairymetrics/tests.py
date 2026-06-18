@@ -4332,6 +4332,9 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, reverse("dairymetrics_metrics_report"))
         self.assertNotContains(response, "現行 Metrics")
         self.assertNotContains(response, "総合管理者ページ")
+        ranking_options = {option["key"]: option["label"] for option in response.context["metrics_v2_payload"]["ranking"]["options"]}
+        self.assertEqual(ranking_options["amount_stability_score"], "金額安定スコア")
+        self.assertEqual(ranking_options["count_stability_score"], "件数安定スコア")
         personal_average_values = {
             item["label"]: item["value"] for item in response.context["metrics_v2_payload"]["personal_summary"]["averages"]
         }
@@ -4406,6 +4409,8 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "コミュ率")
         self.assertContains(response, "平均/決済")
         self.assertContains(response, "平均/稼働")
+        self.assertContains(response, "金額安定")
+        self.assertContains(response, "件数安定")
         self.assertContains(response, "属性別分析")
         self.assertContains(response, "年代別決済比率")
         self.assertContains(response, "男女比")
@@ -4424,6 +4429,8 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, 'class="metrics-report-sort-heading"', html=False)
         self.assertContains(response, 'data-sort-index="2"', html=False)
         self.assertContains(response, 'data-sort="13000"', html=False)
+        self.assertContains(response, 'data-sort="1950.0"', html=False)
+        self.assertContains(response, 'data-sort="1.0"', html=False)
         self.assertContains(response, 'data-metrics-report-sortable-table', html=False)
         self.assertContains(response, 'data-sort-index="4"', html=False)
         self.assertContains(response, "増額")
@@ -4455,6 +4462,8 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(member_rows[self.member.name]["conversion_rate_text"], "66.7%")
         self.assertEqual(member_rows[self.member.name]["average_amount_per_decision_text"], "3,000")
         self.assertEqual(member_rows[self.member.name]["average_amount_per_active_day_text"], "13,000")
+        self.assertEqual(member_rows[self.member.name]["amount_stability_score_text"], "1,950")
+        self.assertEqual(member_rows[self.member.name]["count_stability_score_text"], "1")
         self.assertEqual(member_rows[self.member.name]["active_days_text"], "1")
 
     def test_metrics_report_renders_period_scope(self):
@@ -4532,6 +4541,8 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertNotContains(response, "合計 3件 / CS 2件 / 難民 1件")
         self.assertContains(response, "CS件数")
         self.assertContains(response, "難民件数")
+        self.assertNotContains(response, "金額安定")
+        self.assertNotContains(response, "件数安定")
         self.assertContains(response, "CS限定の年代別決済比率")
         self.assertContains(response, "CS限定の男女比")
         self.assertContains(response, "CS限定の国籍比")
