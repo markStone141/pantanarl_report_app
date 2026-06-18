@@ -4330,11 +4330,17 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
             daily_values=eight_active_days,
             reference_active_days=8,
         )
+        zero_scores = stability_scores_for_daily_values(
+            daily_values=[{"amount": 0, "count": 0} for _ in range(8)],
+            reference_active_days=8,
+        )
 
-        self.assertNotEqual(eight_day_scores["amount_stability_score"], three_day_scores["amount_stability_score"])
-        self.assertNotEqual(eight_day_scores["count_stability_score"], three_day_scores["count_stability_score"])
+        self.assertLess(eight_day_scores["amount_stability_score"], three_day_scores["amount_stability_score"])
+        self.assertLess(eight_day_scores["count_stability_score"], three_day_scores["count_stability_score"])
+        self.assertEqual(zero_scores["amount_stability_score"], 0)
+        self.assertEqual(zero_scores["count_stability_score"], 0)
         self.assertEqual(_format_count_stability_score(three_day_scores["count_stability_score"]), "0.141")
-        self.assertEqual(_format_count_stability_score(eight_day_scores["count_stability_score"]), "0.112")
+        self.assertEqual(_format_count_stability_score(eight_day_scores["count_stability_score"]), "0.042")
 
     def test_metrics_v2_demo_renders_member_sections(self):
         self.client.force_login(self.user)
