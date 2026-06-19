@@ -432,6 +432,7 @@ def _member_form(*, data=None, initial=None) -> MemberRegistrationForm:
 def _member_form_initial(member: Member) -> dict:
     return {
         "name": member.name,
+        "un_activity_code": member.un_activity_code or "",
         "email": member.email,
         "departments": list(member.department_links.values_list("department_id", flat=True)),
         "default_department": member.default_department_id,
@@ -446,6 +447,7 @@ def _save_member_form(*, form: MemberRegistrationForm, member: Member | None = N
     departments = form.cleaned_data["departments"]
     default_department = form.cleaned_data["default_department"]
     member_name = form.cleaned_data["name"].strip()
+    un_activity_code = form.cleaned_data.get("un_activity_code")
     member_email = (form.cleaned_data.get("email") or "").strip()
     auth_login_id = (form.cleaned_data.get("auth_login_id") or "").strip()
     auth_password = (form.cleaned_data.get("auth_password") or "").strip()
@@ -455,8 +457,17 @@ def _save_member_form(*, form: MemberRegistrationForm, member: Member | None = N
         form.add_error("default_department", "メイン部署は所属部署から選択してください。")
         return None, None
 
+    if un_activity_code:
+        duplicate_code = Member.objects.filter(un_activity_code=un_activity_code)
+        if member:
+            duplicate_code = duplicate_code.exclude(id=member.id)
+        if duplicate_code.exists():
+            form.add_error("un_activity_code", "このUN活動コードはすでに使用されています。")
+            return None, None
+
     if member:
         member.name = member_name
+        member.un_activity_code = un_activity_code
         member.email = member_email
         member.default_department = default_department
         if auth_password and not auth_login_id and not linked_user:
@@ -484,7 +495,7 @@ def _save_member_form(*, form: MemberRegistrationForm, member: Member | None = N
             linked_user.set_password(auth_password)
             linked_user.save(update_fields=["password"])
         member.user = linked_user
-        member.save(update_fields=["name", "email", "user", "default_department"])
+        member.save(update_fields=["name", "un_activity_code", "email", "user", "default_department"])
         status_message = f"{member.name} を更新しました。"
     else:
         if auth_login_id and not auth_password:
@@ -503,6 +514,7 @@ def _save_member_form(*, form: MemberRegistrationForm, member: Member | None = N
             )
         member = Member.objects.create(
             name=member_name,
+            un_activity_code=un_activity_code,
             email=member_email,
             user=linked_user,
             default_department=default_department,
@@ -532,6 +544,7 @@ def _build_member_settings_queryset(*, query: str, sort: str, active_only: bool,
     if query:
         members_qs = members_qs.filter(
             Q(name__icontains=query)
+            | Q(un_activity_code__icontains=query)
             | Q(email__icontains=query)
             | Q(user__username__icontains=query)
             | Q(default_department__name__icontains=query)

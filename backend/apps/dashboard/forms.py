@@ -9,6 +9,12 @@ class MemberRegistrationForm(forms.Form):
         max_length=64,
         widget=forms.TextInput(attrs={"placeholder": "メンバー名"}),
     )
+    un_activity_code = forms.CharField(
+        label="UN活動コード",
+        required=False,
+        max_length=5,
+        widget=forms.TextInput(attrs={"placeholder": "5桁の数字", "inputmode": "numeric", "pattern": "[0-9]{5}"}),
+    )
     email = forms.EmailField(
         label="メールアドレス",
         required=False,
@@ -41,6 +47,14 @@ class MemberRegistrationForm(forms.Form):
             render_value=False,
         ),
     )
+
+    def clean_un_activity_code(self):
+        code = (self.cleaned_data.get("un_activity_code") or "").strip()
+        if not code:
+            return None
+        if len(code) != 5 or not code.isdigit():
+            raise forms.ValidationError("UN活動コードは5桁の数字で入力してください。")
+        return code
 
 
 class DepartmentForm(forms.Form):

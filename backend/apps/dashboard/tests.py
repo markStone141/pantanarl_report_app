@@ -53,6 +53,55 @@ class MemberSettingsViewTests(TestCase):
         member = Member.objects.get(name="Mail Member")
         self.assertEqual(member.email, "mail.member@example.com")
 
+    def test_register_member_saves_optional_un_activity_code(self):
+        response = self.client.post(
+            reverse("member_create"),
+            {
+                "name": "UN Code Member",
+                "un_activity_code": "12345",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        member = Member.objects.get(name="UN Code Member")
+        self.assertEqual(member.un_activity_code, "12345")
+
+    def test_register_member_allows_blank_un_activity_code_as_null(self):
+        response = self.client.post(
+            reverse("member_create"),
+            {
+                "name": "No UN Code Member",
+                "un_activity_code": "",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        member = Member.objects.get(name="No UN Code Member")
+        self.assertIsNone(member.un_activity_code)
+
+    def test_register_member_rejects_invalid_un_activity_code(self):
+        response = self.client.post(
+            reverse("member_create"),
+            {
+                "name": "Invalid UN Code Member",
+                "un_activity_code": "1234a",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "UN活動コードは5桁の数字で入力してください。")
+        self.assertFalse(Member.objects.filter(name="Invalid UN Code Member").exists())
+
+    def test_register_member_rejects_duplicate_un_activity_code(self):
+        Member.objects.create(name="Existing UN Code Member", un_activity_code="12345")
+        response = self.client.post(
+            reverse("member_create"),
+            {
+                "name": "Duplicate UN Code Member",
+                "un_activity_code": "12345",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "このUN活動コードはすでに使用されています。")
+        self.assertFalse(Member.objects.filter(name="Duplicate UN Code Member").exists())
+
     def test_edit_member_updates_name(self):
         member = Member.objects.create(name="Old Name", login_id="old", password="")
         response = self.client.post(
@@ -77,6 +126,19 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         member.refresh_from_db()
         self.assertEqual(member.email, "new@example.com")
+
+    def test_edit_member_updates_un_activity_code(self):
+        member = Member.objects.create(name="UN Code Edit", un_activity_code="11111")
+        response = self.client.post(
+            reverse("member_edit", args=[member.id]),
+            {
+                "name": "UN Code Edit",
+                "un_activity_code": "22222",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        member.refresh_from_db()
+        self.assertEqual(member.un_activity_code, "22222")
 
     def test_delete_member_removes_record(self):
         member = Member.objects.create(name="Delete User", login_id="del_id", password="")
@@ -182,6 +244,7 @@ class MemberSettingsViewTests(TestCase):
         response = self.client.get(reverse("member_create"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "新規メンバー追加")
+        self.assertContains(response, "UN活動コード")
         self.assertContains(response, "メールアドレス")
 
     def test_member_settings_filters_by_query(self):
@@ -193,6 +256,16 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Alpha User")
         self.assertNotContains(response, "Beta User")
+
+    def test_member_settings_filters_by_un_activity_code(self):
+        Member.objects.create(name="UN Code Search", un_activity_code="54321")
+        Member.objects.create(name="Other Search", un_activity_code="11111")
+
+        response = self.client.get(reverse("member_settings"), {"q": "54321", "active_only": "0"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "UN Code Search")
+        self.assertNotContains(response, "Other Search")
 
     def test_member_settings_sorts_by_name(self):
         Member.objects.create(name="Alpha User")

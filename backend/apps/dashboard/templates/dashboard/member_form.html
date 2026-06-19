@@ -38,6 +38,12 @@
         <div class="error-text">{{ form.name.errors|striptags }}</div>
         {% endif %}
 
+        <label for="id_un_activity_code">{{ form.un_activity_code.label }}</label>
+        {{ form.un_activity_code }}
+        {% if form.un_activity_code.errors %}
+        <div class="error-text">{{ form.un_activity_code.errors|striptags }}</div>
+        {% endif %}
+
         <label>{{ form.departments.label }}</label>
         <div id="department_choices" class="selection-card-grid">
           {% for department in department_choices %}
