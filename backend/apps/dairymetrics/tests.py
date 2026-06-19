@@ -4551,8 +4551,11 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(response.context["report"]["distribution_cards"][0]["total_text"], "3件")
         self.assertEqual(response.context["report"]["average_amount_comparison"]["age"]["labels"], ["20代", "30代", "40代"])
         adjustment_cards = {card["label"]: card["value"] for card in response.context["report"]["adjustment_cards"]}
+        self.assertEqual(adjustment_cards["補正金額"], "1,500円")
+        self.assertNotIn("補正件数", adjustment_cards)
         self.assertEqual(adjustment_cards["増額件数"], "1")
         self.assertEqual(adjustment_cards["増額金額"], "1,000円")
+        self.assertEqual(adjustment_cards["戻り金額"], "500円")
         adjustment_rows = {row["type_text"]: row for row in response.context["report"]["adjustment_rows"]}
         self.assertEqual(adjustment_rows["増額"]["amount_text"], "1,000円")
         self.assertEqual(adjustment_rows["増額"]["location_text"], "池袋")

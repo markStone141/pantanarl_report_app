@@ -314,6 +314,7 @@ def build_metrics_scope_report(*, department, scope):
     base_support_amount = int(base_totals.get("support_amount") or 0)
     increase_count = _count_value(department.code, excluded_average_adjustment_totals)
     increase_amount = int(excluded_average_adjustment_totals.get("support_amount") or 0)
+    return_amount = _return_amount_value(final_totals)
     approach_count = int(final_totals.get("approach_count") or 0)
     communication_count = int(final_totals.get("communication_count") or 0)
     base_approach_count = int(base_totals.get("approach_count") or 0)
@@ -382,12 +383,11 @@ def build_metrics_scope_report(*, department, scope):
             {"label": "達成率", "value": _format_percentage(_percentage(support_amount, target_amount))},
         ],
         "adjustment_cards": [
-            {"label": "補正金額", "value": _format_number(support_amount - base_support_amount, "円")},
-            {"label": "補正件数", "value": _format_number(decision_count - base_decision_count)},
+            {"label": "補正金額", "value": _format_number(increase_amount + return_amount, "円")},
             {"label": "増額件数", "value": _format_number(increase_count)},
             {"label": "増額金額", "value": _format_number(increase_amount, "円")},
             {"label": "戻り件数", "value": _format_number(_return_count_value(final_totals))},
-            {"label": "戻り金額", "value": _format_number(_return_amount_value(final_totals), "円")},
+            {"label": "戻り金額", "value": _format_number(return_amount, "円")},
         ],
         "daily_rows": daily_rows,
         "member_rows": _member_report_rows(department=department, scope=scope),
