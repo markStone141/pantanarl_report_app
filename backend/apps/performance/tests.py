@@ -863,6 +863,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "UNコード")
+        self.assertContains(response, "performance-selected-member-preview")
         options = response.context["member_options"][str(self.department.id)]
         self.assertEqual(options[0]["id"], self.member.id)
         self.assertEqual(options[0]["name"], self.member.name)

@@ -52,7 +52,7 @@
         <select id="performance-adjustment-un-code-select">
           <option value="">UNコードを選択</option>
         </select>
-        <div class="topbar-muted" id="performance-adjustment-un-code-member-name">UNコードを選択するとメンバー名が表示されます。</div>
+        <div class="performance-selected-member-preview" id="performance-adjustment-un-code-member-name">UNコードを選択するとメンバー名が表示されます。</div>
         {% if form.member.errors %}
         <div class="error-text">{{ form.member.errors|striptags }}</div>
         {% endif %}
@@ -248,13 +248,15 @@
       });
       if (selected) {
         memberSelect.value = String(selected.id);
-        unCodeMemberName.textContent = "メンバー: " + selected.name;
+        unCodeMemberName.textContent = "選択中のメンバー: " + selected.name;
+        unCodeMemberName.classList.add("is-selected");
         return;
       }
       if (isUnSelected()) {
         memberSelect.value = "";
       }
       unCodeMemberName.textContent = "UNコードを選択するとメンバー名が表示されます。";
+      unCodeMemberName.classList.remove("is-selected");
     }
 
     function syncMemberInputMode() {

@@ -618,6 +618,24 @@
   min-width: 0;
 }
 
+.performance-selected-member-preview {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(49, 88, 127, 0.16);
+  border-radius: 12px;
+  background: rgba(247, 251, 255, 0.72);
+  color: #5f7288;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.performance-selected-member-preview.is-selected {
+  border-color: rgba(10, 132, 255, 0.28);
+  background: rgba(10, 132, 255, 0.10);
+  color: #17324d;
+  font-weight: 700;
+}
+
 .dairymetrics-field input:not([type="date"]):not([type="month"]),
 .dairymetrics-field select,
 .dairymetrics-field textarea {
