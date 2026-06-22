@@ -4560,6 +4560,10 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         adjustment_rows = {row["type_text"]: row for row in response.context["report"]["adjustment_rows"]}
         self.assertEqual(adjustment_rows["増額"]["amount_text"], "1,000円")
         self.assertEqual(adjustment_rows["増額"]["location_text"], "池袋")
+        daily_rows = {row["date_text"]: row for row in response.context["report"]["daily_rows"]}
+        adjustment_target_date = (today - timedelta(days=1)).strftime("%Y/%m/%d")
+        self.assertEqual(daily_rows[adjustment_target_date]["amount_text"], "4,000円")
+        self.assertEqual(daily_rows[adjustment_target_date]["count_text"], "2")
         member_rows = {row["member_name"]: row for row in response.context["report"]["member_rows"]}
         self.assertEqual(member_rows[self.member.name]["amount_text"], "13,000")
         self.assertEqual(member_rows[self.member.name]["count_text"], "5")

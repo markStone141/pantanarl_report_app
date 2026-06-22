@@ -4,13 +4,11 @@ from django.db.models import Count, Sum
 
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjustment
 from apps.dairymetrics.services.final_actuals import (
-    ADJUSTMENT_METRIC_FIELDS,
     ENTRY_METRIC_FIELDS,
     collect_department_final_actual_totals,
     collect_increase_adjustment_totals,
     collect_increase_adjustment_totals_by_member_ids,
     collect_member_final_actual_totals_by_ids,
-    merge_final_actual_totals,
     zero_final_actual_totals,
 )
 from apps.dairymetrics.services.metrics_v2 import (
@@ -61,31 +59,9 @@ def _daily_report_rows(*, department, scope):
     )
     for row in entry_rows:
         entry_date = row["entry_date"]
-        totals = daily_totals.setdefault(
-            entry_date,
-            {"entry": zero_final_actual_totals(), "adjustment": zero_final_actual_totals()},
-        )
+        totals = daily_totals.setdefault(entry_date, zero_final_actual_totals())
         for field in ENTRY_METRIC_FIELDS:
-            totals["entry"][field] = int(row.get(f"sum_{field}") or 0)
-
-    adjustment_annotations = {f"sum_{field}": Sum(field) for field in ADJUSTMENT_METRIC_FIELDS}
-    adjustment_rows = (
-        MetricAdjustment.objects.filter(
-            department=department,
-            target_date__range=(scope.start_date, scope.end_date),
-        )
-        .values("target_date")
-        .annotate(**adjustment_annotations)
-        .order_by("target_date")
-    )
-    for row in adjustment_rows:
-        target_date = row["target_date"]
-        totals = daily_totals.setdefault(
-            target_date,
-            {"entry": zero_final_actual_totals(), "adjustment": zero_final_actual_totals()},
-        )
-        for field in ADJUSTMENT_METRIC_FIELDS:
-            totals["adjustment"][field] = int(row.get(f"sum_{field}") or 0)
+            totals[field] = int(row.get(f"sum_{field}") or 0)
 
     transactions = (
         MemberMetricTransaction.objects.filter(
@@ -113,22 +89,21 @@ def _daily_report_rows(*, department, scope):
 
     rows = []
     for entry_date, totals in sorted(daily_totals.items(), reverse=True):
-        merged = merge_final_actual_totals(totals["entry"], totals["adjustment"])
-        decision_count = _count_value(department.code, merged)
-        amount = int(merged.get("support_amount") or 0)
+        decision_count = _count_value(department.code, totals)
+        amount = int(totals.get("support_amount") or 0)
         rows.append(
             {
                 "date_text": entry_date.strftime("%Y/%m/%d"),
                 "amount_value": amount,
-                "cs_count_value": int(merged.get("cs_count") or 0),
-                "cs_count_text": _format_number(int(merged.get("cs_count") or 0)),
-                "refugee_count_value": int(merged.get("refugee_count") or 0),
-                "refugee_count_text": _format_number(int(merged.get("refugee_count") or 0)),
-                "count_text": _report_count_text(department_code=department.code, totals=merged),
+                "cs_count_value": int(totals.get("cs_count") or 0),
+                "cs_count_text": _format_number(int(totals.get("cs_count") or 0)),
+                "refugee_count_value": int(totals.get("refugee_count") or 0),
+                "refugee_count_text": _format_number(int(totals.get("refugee_count") or 0)),
+                "count_text": _report_count_text(department_code=department.code, totals=totals),
                 "amount_text": _format_number(amount, "円"),
-                "approach_text": _format_number(int(merged.get("approach_count") or 0)),
-                "communication_text": _format_number(int(merged.get("communication_count") or 0)),
-                "breakdown_text": _wv_count_breakdown_text(merged, include_total=True) if department.code == "WV" else "",
+                "approach_text": _format_number(int(totals.get("approach_count") or 0)),
+                "communication_text": _format_number(int(totals.get("communication_count") or 0)),
+                "breakdown_text": _wv_count_breakdown_text(totals, include_total=True) if department.code == "WV" else "",
                 "transactions": transactions_by_date.get(entry_date, []),
             }
         )
