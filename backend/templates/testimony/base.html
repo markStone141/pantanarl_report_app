@@ -446,16 +446,13 @@
       {% endif %}
       <a class="btn-inline" href="{% url 'testimony_article_list' %}">記事一覧</a>
       <a class="btn-inline" href="{% url 'performance_member_dashboard' %}">実績管理</a>
-      <a class="btn-inline" href="{% url 'home' %}">Report App</a>
+      <a class="btn-inline" href="{% url 'home' %}">総合管理ページ</a>
       {% if request.user.is_staff or request.user.is_superuser or request.user.username == "admin" %}
       <a class="btn-inline" href="{% url 'testimony_article_create' %}">新規投稿</a>
       <a class="btn-inline" href="{% url 'testimony_product_list' %}">商材管理</a>
       {% endif %}
       <a class="btn-inline" href="{% url 'testimony_mypage_favorites' %}">お気に入り</a>
       <a class="btn-inline" href="{% url 'testimony_mypage_history' %}">閲覧履歴</a>
-      {% if request.user.is_staff or request.user.is_superuser or request.user.username == "admin" %}
-      <a class="btn-inline" href="{% url 'testimony_admin_import' %}">管理者</a>
-      {% endif %}
       <a class="btn-inline logout-link" href="{% url 'testimony_logout' %}">ログアウト</a>
     </nav>
   </header>
