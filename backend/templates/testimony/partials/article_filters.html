@@ -1,0 +1,45 @@
+<article class="card testimony-section testimony-filter-desktop">
+  <form method="get" class="testimony-filter-form" data-testimony-filter-form data-results-url="{{ ajax_results_url }}">
+    <input type="search" name="q" value="{{ q }}" placeholder="キーワード・投稿者" autocomplete="off" data-testimony-autofill>
+    <select name="department" aria-label="部署で絞り込み">
+      <option value="">すべての部署</option>
+      {% for department in departments %}
+        <option value="{{ department.id }}" {% if selected_department == department.id|stringformat:"s" %}selected{% endif %}>{{ department.code }}{% if department.name != department.code %} / {{ department.name }}{% endif %}</option>
+      {% endfor %}
+    </select>
+    <select name="sort" aria-label="並べ替え">
+      {% for value, label in sort_options %}
+        <option value="{{ value }}" {% if selected_sort == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</article>
+
+<button id="testimony-open-filter" class="testimony-filter-fab" type="button" aria-label="フィルターを開く">
+  <i class="fa-solid fa-filter" aria-hidden="true"></i>
+</button>
+
+<div id="testimony-filter-overlay" class="testimony-filter-overlay" aria-hidden="true">
+  <section class="testimony-filter-sheet">
+    <div class="testimony-filter-head">
+      <strong>フィルター</strong>
+      <button id="testimony-close-filter" class="testimony-filter-close" type="button" aria-label="閉じる">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <form method="get" class="testimony-filter-form" data-testimony-filter-form data-results-url="{{ ajax_results_url }}">
+      <input type="search" name="q" value="{{ q }}" placeholder="キーワード・投稿者" autocomplete="off" data-testimony-autofill>
+      <select name="department" aria-label="部署で絞り込み">
+        <option value="">すべての部署</option>
+        {% for department in departments %}
+          <option value="{{ department.id }}" {% if selected_department == department.id|stringformat:"s" %}selected{% endif %}>{{ department.code }}{% if department.name != department.code %} / {{ department.name }}{% endif %}</option>
+        {% endfor %}
+      </select>
+      <select name="sort" aria-label="並べ替え">
+        {% for value, label in sort_options %}
+          <option value="{{ value }}" {% if selected_sort == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </section>
+</div>

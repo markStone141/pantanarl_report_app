@@ -11,13 +11,16 @@
     }
     .testimony-filter-form {
       display: grid;
-      grid-template-columns: 1fr 220px auto;
+      grid-template-columns: minmax(220px, 1fr) 220px 220px;
       gap: 8px;
       align-items: end;
     }
     .testimony-list-item {
       padding: 12px 0;
       border-bottom: 1px solid #e2ebef;
+    }
+    .testimony-section h2 {
+      margin-bottom: 12px;
     }
     .testimony-list-item-title {
       display: inline-block;
@@ -391,7 +394,7 @@
       </div>
       {% endif %}
       <a class="btn-inline" href="{% url 'testimony_article_list' %}">記事一覧</a>
-      <a class="btn-inline" href="{% url 'performance_login' %}">実績管理</a>
+      <a class="btn-inline" href="{% url 'performance_member_dashboard' %}">実績管理</a>
       <a class="btn-inline" href="{% url 'home' %}">Report App</a>
       {% if request.user.is_staff or request.user.is_superuser or request.user.username == "admin" %}
       <a class="btn-inline" href="{% url 'testimony_article_create' %}">新規投稿</a>

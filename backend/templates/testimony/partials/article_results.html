@@ -1,0 +1,54 @@
+<section class="card testimony-section" data-testimony-results>
+  <h2>{{ list_title }}</h2>
+  {% for article in articles %}
+    <div class="testimony-list-item">
+      <a class="testimony-list-item-title" href="{% url 'testimony_article_detail' article.id %}">{{ article.title }}</a>
+      <div class="testimony-list-item-meta">
+        <span><i class="fa-solid fa-user" aria-hidden="true"></i> {{ article.author }}</span>
+        {% if article.testimonied_at %}
+          <span><i class="fa-regular fa-calendar" aria-hidden="true"></i> 証日 {{ article.testimonied_at|date:"Y/m/d" }}</span>
+        {% endif %}
+        {% if article.product %}
+          <span><i class="fa-solid fa-tag" aria-hidden="true"></i> {{ article.product.name }}</span>
+        {% endif %}
+        <span><i class="fa-solid fa-eye" aria-hidden="true"></i> {{ article.view_count }}</span>
+        <span><i class="fa-solid fa-thumbs-up" aria-hidden="true"></i> {{ article.like_count }}</span>
+        <span><i class="fa-solid fa-star" aria-hidden="true"></i> {{ article.favorite_count }}</span>
+      </div>
+    </div>
+  {% empty %}
+    <p>{{ empty_message }}</p>
+  {% endfor %}
+
+  {% if is_paginated %}
+    <div class="knowledge-pagination">
+      <div class="knowledge-pagination-main">
+        {% if page_obj.has_previous %}
+          <a class="btn-inline" data-testimony-page-link href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}">前へ</a>
+        {% endif %}
+        <div class="knowledge-page-numbers">
+          {% for num in paginator.page_range %}
+            {% if num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+              {% if num == page_obj.number %}
+                <span class="knowledge-page-link is-active">{{ num }}</span>
+              {% else %}
+                <a class="knowledge-page-link" data-testimony-page-link href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ num }}">{{ num }}</a>
+              {% endif %}
+            {% elif num == 2 and page_obj.number|add:"-2" > 2 %}
+              <span class="knowledge-page-ellipsis">…</span>
+            {% elif num == paginator.num_pages|add:"-1" and page_obj.number|add:"2" < paginator.num_pages|add:"-1" %}
+              <span class="knowledge-page-ellipsis">…</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% if page_obj.has_next %}
+          <a class="btn-inline" data-testimony-page-link href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}">次へ</a>
+        {% endif %}
+      </div>
+      <div class="knowledge-pagination-meta">
+        <span class="knowledge-pagination-status">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
+        <span class="knowledge-pagination-size">20件/ページ</span>
+      </div>
+    </div>
+  {% endif %}
+</section>

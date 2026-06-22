@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -8,9 +9,9 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.accounts.models import Member
+from apps.accounts.models import Department, Member, MemberDepartment
 
-from .models import Article, ArticleFavorite, ArticleViewHistory, Product
+from .models import Article, ArticleFavorite, ArticleLike, ArticleViewHistory, Product
 
 
 class TestimonyImportTests(TestCase):
@@ -125,3 +126,84 @@ class TestimonyCreatePermissionTests(TestCase):
         self.client.force_login(admin_user)
         response = self.client.get(reverse("testimony_article_create"))
         self.assertEqual(response.status_code, 200)
+
+
+class TestimonyArticleListTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username="m1", password="pass")
+        self.other_user = User.objects.create_user(username="m2", password="pass")
+        self.department = Department.objects.create(code="UN", name="UN")
+        self.other_department = Department.objects.create(code="WV", name="WV")
+        self.member = Member.objects.create(name="Member1", user=self.user, is_active=True)
+        self.other_member = Member.objects.create(name="Member2", user=self.other_user, is_active=True)
+        MemberDepartment.objects.create(member=self.member, department=self.department)
+        MemberDepartment.objects.create(member=self.other_member, department=self.other_department)
+        self.product = Product.objects.create(name="Product")
+        now = timezone.now()
+        self.article = Article.objects.create(
+            title="Alpha testimony",
+            body="Body",
+            author="佐藤",
+            product=self.product,
+            created_by=self.user,
+            testimonied_at=now.date(),
+            view_count=3,
+            created_at=now,
+            updated_at=now,
+        )
+        self.other_article = Article.objects.create(
+            title="Beta story",
+            body="Other body",
+            author="田中",
+            product=self.product,
+            created_by=self.other_user,
+            testimonied_at=now.date() - timedelta(days=1),
+            view_count=9,
+            created_at=now - timedelta(days=1),
+            updated_at=now - timedelta(days=1),
+        )
+        ArticleFavorite.objects.create(user=self.user, article=self.article)
+        ArticleLike.objects.create(user=self.user, article=self.other_article)
+
+    def test_article_list_filters_by_department_and_keyword(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("testimony_article_list"),
+            {"department": self.department.id, "q": "佐藤"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Alpha testimony")
+        self.assertNotContains(response, "Beta story")
+        self.assertContains(response, "すべての部署")
+        self.assertContains(response, "お気に入りが多い順")
+        self.assertNotContains(response, "適用")
+
+    def test_article_list_ajax_returns_results_html(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("testimony_article_list"),
+            {"sort": "views"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn("data-testimony-results", payload["html"])
+        self.assertLess(payload["html"].find("Beta story"), payload["html"].find("Alpha testimony"))
+
+    def test_favorite_page_uses_article_list_ui_and_filters(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("testimony_mypage_favorites"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "お気に入り記事")
+        self.assertContains(response, "Alpha testimony")
+        self.assertNotContains(response, "Beta story")
+        self.assertContains(response, "data-testimony-filter-form", html=False)
+        self.assertContains(response, "data-testimony-results", html=False)
+
+    def test_performance_member_dashboard_links_to_testimony(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("performance_member_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("testimony_article_list"))
+        self.assertContains(response, "証を見る")
