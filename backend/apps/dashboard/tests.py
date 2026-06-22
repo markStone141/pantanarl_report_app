@@ -395,11 +395,18 @@ class MemberSettingsViewTests(TestCase):
         self.assertTrue(member.user.check_password("NewPass123"))
 
     def test_member_auth_bulk_settings_renders(self):
+        user = User.objects.create_user(username="render_bulk_user", password="OldPass123")
+        Member.objects.create(name="Render Bulk User", user=user)
+
         response = self.client.get(reverse("member_auth_bulk_settings"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "ID・パスワード一括管理")
         self.assertContains(response, "UN活動コード")
         self.assertContains(response, "メールアドレス")
+        self.assertContains(response, 'id="member-auth-bulk-form" autocomplete="off"')
+        self.assertContains(response, 'name="member_auth_bulk_dummy_username"')
+        self.assertContains(response, 'autocomplete="new-password"')
+        self.assertContains(response, "data-autofill-guard")
 
     def test_member_auth_bulk_settings_updates_existing_user(self):
         user = User.objects.create_user(username="bulk_user_old", password="OldPass123")

@@ -34,8 +34,10 @@
       </form>
     </div>
 
-    <form method="post" id="member-auth-bulk-form">
+    <form method="post" id="member-auth-bulk-form" autocomplete="off">
       {% csrf_token %}
+      <input type="text" name="member_auth_bulk_dummy_username" autocomplete="username" tabindex="-1" aria-hidden="true" class="visually-hidden" value="">
+      <input type="password" name="member_auth_bulk_dummy_password" autocomplete="current-password" tabindex="-1" aria-hidden="true" class="visually-hidden" value="">
       <input type="hidden" name="page" value="{{ current_page_number }}">
       <div class="table-scroll">
         <table>
@@ -109,6 +111,21 @@
     resetConfirmState();
     window.addEventListener("pageshow", resetConfirmState);
 
+    function bindAutofillGuards() {
+      rowsWrap.querySelectorAll("[data-autofill-guard]").forEach(function (input) {
+        if (input.dataset.autofillGuardBound === "1") {
+          return;
+        }
+        input.dataset.autofillGuardBound = "1";
+        const unlock = function () {
+          input.readOnly = false;
+        };
+        input.addEventListener("focus", unlock);
+        input.addEventListener("pointerdown", unlock);
+        input.addEventListener("keydown", unlock);
+      });
+    }
+
     function updateLoadMore(meta) {
       if (!meta.has_next) {
         loadMoreButton.hidden = true;
@@ -138,6 +155,7 @@
       }
       bulkForm.querySelector('input[name="page"]').value = String(payload.page_number || 1);
       updateLoadMore(payload);
+      bindAutofillGuards();
     }
 
     function collectChanges() {
@@ -212,6 +230,8 @@
       confirmedSubmit = true;
       bulkForm.submit();
     });
+
+    bindAutofillGuards();
   })();
 </script>
 {% endblock %}

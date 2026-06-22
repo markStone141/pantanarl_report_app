@@ -33,6 +33,9 @@
           name="login_id_{{ row.member.id }}"
           value="{{ row.login_input }}"
           placeholder="{% if row.member.user %}現在: {{ row.member.user.username }}{% else %}未連携{% endif %}"
+          autocomplete="off"
+          readonly
+          data-autofill-guard
           data-original-login="{% if row.member.user %}{{ row.member.user.username }}{% endif %}"
           data-member-name="{{ row.member.name }}"
         >
@@ -43,6 +46,9 @@
           name="password_{{ row.member.id }}"
           value=""
           placeholder="変更時のみ入力"
+          autocomplete="new-password"
+          readonly
+          data-autofill-guard
           data-member-name="{{ row.member.name }}"
         >
       </td>
