@@ -1,0 +1,14 @@
+{% extends "testimony/base.html" %}
+
+{% block testimony_title %}商材削除{% endblock %}
+
+{% block testimony_content %}
+<article class="card testimony-section">
+  <h2>商材を削除</h2>
+  <p>「{{ object.name }}」を削除します。紐づいている記事は削除されず、商材未設定になります。</p>
+  <form method="post" class="testimony-form-actions" style="margin-top:10px;">{% csrf_token %}
+    <button type="submit" class="btn-danger">削除</button>
+    <a class="btn-inline" href="{% url 'testimony_product_list' %}">キャンセル</a>
+  </form>
+</article>
+{% endblock %}

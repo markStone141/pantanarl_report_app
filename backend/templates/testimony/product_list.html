@@ -1,0 +1,37 @@
+{% extends "testimony/base.html" %}
+
+{% block testimony_title %}商材管理{% endblock %}
+
+{% block testimony_content %}
+<section class="card testimony-section">
+  <div class="row">
+    <h2>商材管理</h2>
+    <a class="btn-inline" href="{% url 'testimony_product_create' %}">
+      <i class="fa-solid fa-plus" aria-hidden="true"></i> 商材を追加
+    </a>
+  </div>
+  <div class="testimony-product-list">
+    {% for product in products %}
+      <article class="testimony-product-row">
+        <div>
+          <strong>{{ product.name }}</strong>
+          {% if product.description %}
+            <p class="muted">{{ product.description }}</p>
+          {% endif %}
+          <div class="muted">記事 {{ product.article_count }}件</div>
+        </div>
+        <div class="testimony-product-actions">
+          <a class="btn-inline" href="{% url 'testimony_product_edit' product.id %}">
+            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> 編集
+          </a>
+          <a class="btn-inline btn-danger" href="{% url 'testimony_product_delete' product.id %}">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i> 削除
+          </a>
+        </div>
+      </article>
+    {% empty %}
+      <p class="muted">商材はまだ登録されていません。</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

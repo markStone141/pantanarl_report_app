@@ -11,9 +11,6 @@
         {% if article.product %}
           <span><i class="fa-solid fa-tag" aria-hidden="true"></i> {{ article.product.name }}</span>
         {% endif %}
-        {% if article.department %}
-          <span><i class="fa-solid fa-building" aria-hidden="true"></i> {{ article.department.code }}</span>
-        {% endif %}
         <span><i class="fa-solid fa-eye" aria-hidden="true"></i> {{ article.view_count }}</span>
         <span><i class="fa-solid fa-thumbs-up" aria-hidden="true"></i> {{ article.like_count }}</span>
         <span><i class="fa-solid fa-star" aria-hidden="true"></i> {{ article.favorite_count }}</span>

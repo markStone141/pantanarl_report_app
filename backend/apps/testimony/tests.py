@@ -139,14 +139,14 @@ class TestimonyArticleListTests(TestCase):
         self.other_member = Member.objects.create(name="Member2", user=self.other_user, is_active=True)
         MemberDepartment.objects.create(member=self.member, department=self.department)
         MemberDepartment.objects.create(member=self.other_member, department=self.other_department)
-        self.product = Product.objects.create(name="Product")
+        self.product = Product.objects.create(name="UN商材")
+        self.other_product = Product.objects.create(name="WV商材")
         now = timezone.now()
         self.article = Article.objects.create(
             title="Alpha testimony",
             body="Body",
             author="佐藤",
             product=self.product,
-            department=self.department,
             created_by=self.user,
             testimonied_at=now.date(),
             view_count=3,
@@ -157,8 +157,7 @@ class TestimonyArticleListTests(TestCase):
             title="Beta story",
             body="Other body",
             author="田中",
-            product=self.product,
-            department=self.other_department,
+            product=self.other_product,
             created_by=self.other_user,
             testimonied_at=now.date() - timedelta(days=1),
             view_count=9,
@@ -168,16 +167,16 @@ class TestimonyArticleListTests(TestCase):
         ArticleFavorite.objects.create(user=self.user, article=self.article)
         ArticleLike.objects.create(user=self.user, article=self.other_article)
 
-    def test_article_list_filters_by_department_and_keyword(self):
+    def test_article_list_filters_by_product_and_keyword(self):
         self.client.force_login(self.user)
         response = self.client.get(
             reverse("testimony_article_list"),
-            {"department": self.department.id, "q": "佐藤"},
+            {"product": self.product.id, "q": "佐藤"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Alpha testimony")
         self.assertNotContains(response, "Beta story")
-        self.assertContains(response, "すべての部署")
+        self.assertContains(response, "すべての商材")
         self.assertContains(response, "お気に入りが多い順")
         self.assertNotContains(response, "適用")
 
@@ -210,12 +209,11 @@ class TestimonyArticleListTests(TestCase):
         self.assertContains(response, reverse("testimony_article_list"))
         self.assertContains(response, "証を見る")
 
-    def test_article_without_department_renders_and_is_not_department_filtered(self):
+    def test_article_without_product_renders_and_is_not_product_filtered(self):
         orphan_article = Article.objects.create(
-            title="No department",
+            title="No product",
             body="Body",
-            author="部署なし",
-            product=self.product,
+            author="商材なし",
             created_by=self.user,
             created_at=timezone.now(),
             updated_at=timezone.now(),
@@ -224,23 +222,59 @@ class TestimonyArticleListTests(TestCase):
 
         list_response = self.client.get(reverse("testimony_article_list"))
         self.assertEqual(list_response.status_code, 200)
-        self.assertContains(list_response, "No department")
+        self.assertContains(list_response, "No product")
 
-        filtered_response = self.client.get(reverse("testimony_article_list"), {"department": self.department.id})
+        filtered_response = self.client.get(reverse("testimony_article_list"), {"product": self.product.id})
         self.assertEqual(filtered_response.status_code, 200)
-        self.assertNotContains(filtered_response, "No department")
+        self.assertNotContains(filtered_response, "No product")
 
         detail_response = self.client.get(reverse("testimony_article_detail", args=[orphan_article.id]))
         self.assertEqual(detail_response.status_code, 200)
-        self.assertContains(detail_response, "No department")
+        self.assertContains(detail_response, "No product")
 
-    def test_article_form_uses_japanese_labels_and_optional_department(self):
+    def test_article_form_uses_japanese_labels_and_optional_product(self):
         admin_user = get_user_model().objects.create_user(username="admin", password="admin-pass", is_staff=True)
         self.client.force_login(admin_user)
         response = self.client.get(reverse("testimony_article_create"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "タイトル")
-        self.assertContains(response, "部署を選択しない")
+        self.assertContains(response, "商材")
         self.assertContains(response, "証者・投稿者名")
         self.assertContains(response, "証日")
         self.assertNotContains(response, ">Title<", html=False)
+
+    def test_product_management_is_admin_only(self):
+        self.client.force_login(self.user)
+        user_response = self.client.get(reverse("testimony_product_list"))
+        self.assertEqual(user_response.status_code, 404)
+
+        admin_user = get_user_model().objects.create_user(username="admin", password="admin-pass", is_staff=True)
+        self.client.force_login(admin_user)
+        admin_response = self.client.get(reverse("testimony_product_list"))
+        self.assertEqual(admin_response.status_code, 200)
+        self.assertContains(admin_response, "商材管理")
+        self.assertContains(admin_response, "商材を追加")
+
+    def test_admin_can_create_update_and_delete_product(self):
+        admin_user = get_user_model().objects.create_user(username="admin", password="admin-pass", is_staff=True)
+        self.client.force_login(admin_user)
+
+        create_response = self.client.post(
+            reverse("testimony_product_create"),
+            {"name": "新商材", "description": "説明"},
+        )
+        self.assertEqual(create_response.status_code, 302)
+        product = Product.objects.get(name="新商材")
+        self.assertEqual(product.description, "説明")
+
+        update_response = self.client.post(
+            reverse("testimony_product_edit", args=[product.id]),
+            {"name": "更新商材", "description": "更新説明"},
+        )
+        self.assertEqual(update_response.status_code, 302)
+        product.refresh_from_db()
+        self.assertEqual(product.name, "更新商材")
+
+        delete_response = self.client.post(reverse("testimony_product_delete", args=[product.id]))
+        self.assertEqual(delete_response.status_code, 302)
+        self.assertFalse(Product.objects.filter(id=product.id).exists())

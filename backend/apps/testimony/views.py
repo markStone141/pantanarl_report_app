@@ -16,10 +16,8 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
-from apps.accounts.models import Department
-
-from .forms import ArticleForm, TestimonyLoginForm
-from .models import Article, ArticleFavorite, ArticleLike, ArticleViewHistory
+from .forms import ArticleForm, ProductForm, TestimonyLoginForm
+from .models import Article, ArticleFavorite, ArticleLike, ArticleViewHistory, Product
 
 ADMIN_USERNAME = os.getenv("ADMIN_LOGIN_USERNAME", "admin")
 
@@ -43,15 +41,15 @@ TESTIMONY_SORT_OPTIONS = [
 def _testimony_article_queryset(request: HttpRequest):
     sort = request.GET.get("sort", "latest")
     keyword = (request.GET.get("q") or "").strip()
-    department_id = (request.GET.get("department") or "").strip()
+    product_id = (request.GET.get("product") or "").strip()
     queryset = (
         Article.objects.select_related("product", "created_by")
         .annotate(favorite_count=Count("favorites", distinct=True), like_count=Count("likes", distinct=True))
     )
     if keyword:
         queryset = queryset.filter(Q(title__icontains=keyword) | Q(body__icontains=keyword) | Q(author__icontains=keyword))
-    if department_id.isdigit():
-        queryset = queryset.filter(department_id=int(department_id))
+    if product_id.isdigit():
+        queryset = queryset.filter(product_id=int(product_id))
 
     if sort == "views":
         return queryset.order_by("-view_count", "-updated_at", "-id")
@@ -71,8 +69,8 @@ def _testimony_filter_context(request: HttpRequest) -> dict:
     return {
         "q": (request.GET.get("q") or "").strip(),
         "selected_sort": selected_sort,
-        "selected_department": (request.GET.get("department") or "").strip(),
-        "departments": Department.objects.filter(is_active=True).order_by("code", "id"),
+        "selected_product": (request.GET.get("product") or "").strip(),
+        "products": Product.objects.order_by("name", "id"),
         "sort_options": TESTIMONY_SORT_OPTIONS,
     }
 
@@ -293,6 +291,55 @@ class ArticleDeleteView(TestimonyLoginRequiredMixin, OwnerOrAdminMixin, DeleteVi
     model = Article
     template_name = "testimony/article_confirm_delete.html"
     success_url = reverse_lazy("testimony_article_list")
+
+
+class ProductAdminRequiredMixin(TestimonyLoginRequiredMixin):
+    def dispatch(self, request: HttpRequest, *args, **kwargs):
+        if not _is_testimony_admin(request.user):
+            raise Http404()
+        return super().dispatch(request, *args, **kwargs)
+
+
+class ProductListView(ProductAdminRequiredMixin, ListView):
+    model = Product
+    template_name = "testimony/product_list.html"
+    context_object_name = "products"
+    paginate_by = 50
+
+    def get_queryset(self):
+        return Product.objects.annotate(article_count=Count("articles")).order_by("name", "id")
+
+
+class ProductCreateView(ProductAdminRequiredMixin, CreateView):
+    model = Product
+    form_class = ProductForm
+    template_name = "testimony/product_form.html"
+    success_url = reverse_lazy("testimony_product_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, "商材を追加しました。")
+        return super().form_valid(form)
+
+
+class ProductUpdateView(ProductAdminRequiredMixin, UpdateView):
+    model = Product
+    form_class = ProductForm
+    template_name = "testimony/product_form.html"
+    success_url = reverse_lazy("testimony_product_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, "商材を更新しました。")
+        return super().form_valid(form)
+
+
+class ProductDeleteView(ProductAdminRequiredMixin, DeleteView):
+    model = Product
+    template_name = "testimony/product_confirm_delete.html"
+    success_url = reverse_lazy("testimony_product_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, "商材を削除しました。")
+        return super().form_valid(form)
 
 
 class ToggleFavoriteView(TestimonyLoginRequiredMixin, View):

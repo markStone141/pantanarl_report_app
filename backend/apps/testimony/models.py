@@ -1,18 +1,18 @@
 from django.conf import settings
 from django.db import models
 
-from apps.accounts.models import Department
-
 
 class Product(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    description = models.TextField(blank=True)
+    name = models.CharField("商材名", max_length=255, unique=True)
+    description = models.TextField("説明", blank=True)
     legacy_product_id = models.BigIntegerField(null=True, blank=True, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["name"]
+        verbose_name = "商材"
+        verbose_name_plural = "商材"
 
     def __str__(self) -> str:
         return self.name
@@ -32,15 +32,7 @@ class Article(models.Model):
         null=True,
         blank=True,
         related_name="articles",
-        verbose_name="商品",
-    )
-    department = models.ForeignKey(
-        Department,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="testimony_articles",
-        verbose_name="部署",
+        verbose_name="商材",
     )
     title = models.CharField("タイトル", max_length=255)
     body = models.TextField("本文")

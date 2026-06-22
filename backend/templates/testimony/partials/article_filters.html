@@ -1,10 +1,10 @@
 <article class="card testimony-section testimony-filter-desktop">
   <form method="get" class="testimony-filter-form" data-testimony-filter-form data-results-url="{{ ajax_results_url }}">
     <input type="search" name="q" value="{{ q }}" placeholder="キーワード・投稿者" autocomplete="off" data-testimony-autofill>
-    <select name="department" aria-label="部署で絞り込み">
-      <option value="">すべての部署</option>
-      {% for department in departments %}
-        <option value="{{ department.id }}" {% if selected_department == department.id|stringformat:"s" %}selected{% endif %}>{{ department.code }}{% if department.name != department.code %} / {{ department.name }}{% endif %}</option>
+    <select name="product" aria-label="商材で絞り込み">
+      <option value="">すべての商材</option>
+      {% for product in products %}
+        <option value="{{ product.id }}" {% if selected_product == product.id|stringformat:"s" %}selected{% endif %}>{{ product.name }}</option>
       {% endfor %}
     </select>
     <select name="sort" aria-label="並べ替え">
@@ -29,10 +29,10 @@
     </div>
     <form method="get" class="testimony-filter-form" data-testimony-filter-form data-results-url="{{ ajax_results_url }}">
       <input type="search" name="q" value="{{ q }}" placeholder="キーワード・投稿者" autocomplete="off" data-testimony-autofill>
-      <select name="department" aria-label="部署で絞り込み">
-        <option value="">すべての部署</option>
-        {% for department in departments %}
-          <option value="{{ department.id }}" {% if selected_department == department.id|stringformat:"s" %}selected{% endif %}>{{ department.code }}{% if department.name != department.code %} / {{ department.name }}{% endif %}</option>
+      <select name="product" aria-label="商材で絞り込み">
+        <option value="">すべての商材</option>
+        {% for product in products %}
+          <option value="{{ product.id }}" {% if selected_product == product.id|stringformat:"s" %}selected{% endif %}>{{ product.name }}</option>
         {% endfor %}
       </select>
       <select name="sort" aria-label="並べ替え">

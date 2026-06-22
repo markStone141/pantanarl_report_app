@@ -100,6 +100,30 @@
       min-height: 0;
       padding: 8px 12px;
     }
+    .testimony-product-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .testimony-product-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #e2ebef;
+    }
+    .testimony-product-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .testimony-product-actions .btn-inline {
+      width: auto;
+      min-height: 0;
+      padding: 8px 12px;
+    }
     .testimony-login-card {
       width: min(560px, calc(100vw - 28px));
       margin: 40px auto;
@@ -368,6 +392,18 @@
         width: 100%;
         justify-content: center;
       }
+      .testimony-product-row {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      .testimony-product-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .testimony-product-actions .btn-inline {
+        width: 100%;
+        justify-content: center;
+      }
       .testimony-login-card {
         margin: 24px auto;
       }
@@ -398,6 +434,7 @@
       <a class="btn-inline" href="{% url 'home' %}">Report App</a>
       {% if request.user.is_staff or request.user.is_superuser or request.user.username == "admin" %}
       <a class="btn-inline" href="{% url 'testimony_article_create' %}">新規投稿</a>
+      <a class="btn-inline" href="{% url 'testimony_product_list' %}">商材管理</a>
       {% endif %}
       <a class="btn-inline" href="{% url 'testimony_mypage_favorites' %}">お気に入り</a>
       <a class="btn-inline" href="{% url 'testimony_mypage_history' %}">閲覧履歴</a>

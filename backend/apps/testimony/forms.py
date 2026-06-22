@@ -3,9 +3,9 @@ import os
 from django import forms
 from django.contrib.auth import get_user_model
 
-from apps.accounts.models import Department, Member
+from apps.accounts.models import Member
 
-from .models import Article
+from .models import Article, Product
 
 User = get_user_model()
 REPORT_USERNAME = os.getenv("REPORT_LOGIN_USERNAME", "report")
@@ -45,29 +45,31 @@ class TestimonyLoginForm(forms.Form):
 
 
 class ArticleForm(forms.ModelForm):
-    department = forms.ModelChoiceField(
-        label="部署",
-        queryset=Department.objects.none(),
-        required=False,
-        empty_label="部署を選択しない",
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["department"].queryset = Department.objects.filter(is_active=True).order_by("code", "id")
-
     class Meta:
         model = Article
-        fields = ["title", "department", "author", "testimonied_at", "body", "video_url", "product"]
+        fields = ["title", "product", "author", "testimonied_at", "body", "video_url"]
         labels = {
             "title": "タイトル",
             "author": "証者・投稿者名",
             "testimonied_at": "証日",
             "body": "本文",
             "video_url": "動画URL",
-            "product": "商品",
+            "product": "商材",
         }
         widgets = {
             "testimonied_at": forms.DateInput(attrs={"type": "date"}),
             "body": forms.Textarea(attrs={"rows": 10}),
+        }
+
+
+class ProductForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = ["name", "description"]
+        labels = {
+            "name": "商材名",
+            "description": "説明",
+        }
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 5}),
         }
