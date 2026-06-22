@@ -568,11 +568,19 @@ def _member_settings_redirect(status_message: str) -> HttpResponse:
     return redirect(f"{reverse('member_settings')}?{urlencode({'status': status_message})}")
 
 
-def _build_member_row_payload(member: Member, *, login_input: str = "", email_input: str | None = None, errors: list[str] | None = None):
+def _build_member_row_payload(
+    member: Member,
+    *,
+    login_input: str = "",
+    email_input: str | None = None,
+    un_activity_code_input: str | None = None,
+    errors: list[str] | None = None,
+):
     return {
         "member": member,
         "login_input": login_input,
         "email_input": member.email if email_input is None else email_input,
+        "un_activity_code_input": member.un_activity_code if un_activity_code_input is None else un_activity_code_input,
         "errors": errors or [],
     }
 
@@ -583,6 +591,7 @@ def _build_member_bulk_queryset(*, query: str):
         members_qs = members_qs.filter(
             Q(name__icontains=query)
             | Q(email__icontains=query)
+            | Q(un_activity_code__icontains=query)
             | Q(user__username__icontains=query)
         ).distinct()
     return members_qs
@@ -590,7 +599,7 @@ def _build_member_bulk_queryset(*, query: str):
 
 def _extract_bulk_member_ids(post_data) -> list[int]:
     member_ids = set()
-    prefixes = ("login_id_", "password_", "email_")
+    prefixes = ("login_id_", "password_", "email_", "un_activity_code_")
     for key in post_data.keys():
         for prefix in prefixes:
             if key.startswith(prefix):
@@ -969,6 +978,7 @@ def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
     row_errors = {}
     row_login_inputs = {}
     row_email_inputs = {}
+    row_un_activity_code_inputs = {}
 
     if request.method == "POST":
         updated_count = 0
@@ -985,14 +995,17 @@ def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
             login_key = f"login_id_{member.id}"
             password_key = f"password_{member.id}"
             email_key = f"email_{member.id}"
+            un_activity_code_key = f"un_activity_code_{member.id}"
             auth_login_id = (request.POST.get(login_key) or "").strip()
             auth_password = (request.POST.get(password_key) or "").strip()
             email_value = (request.POST.get(email_key) or "").strip()
+            un_activity_code_value = (request.POST.get(un_activity_code_key) or "").strip()
             row_login_inputs[member.id] = auth_login_id
             row_email_inputs[member.id] = email_value
+            row_un_activity_code_inputs[member.id] = un_activity_code_value
             errors = []
 
-            if not auth_login_id and not auth_password and not email_value:
+            if not auth_login_id and not auth_password and not email_value and not un_activity_code_value:
                 continue
 
             linked_user = member.user
@@ -1003,6 +1016,13 @@ def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
                     validate_email(email_value)
                 except ValidationError:
                     errors.append("メールアドレスの形式が正しくありません。")
+            if un_activity_code_value:
+                if len(un_activity_code_value) != 5 or not un_activity_code_value.isdigit():
+                    errors.append("UN活動コードは5桁の数字で入力してください。")
+                else:
+                    duplicate_code = Member.objects.filter(un_activity_code=un_activity_code_value).exclude(id=member.id)
+                    if duplicate_code.exists():
+                        errors.append("このUN活動コードはすでに使用されています。")
 
             if linked_user:
                 if auth_login_id:
@@ -1038,6 +1058,10 @@ def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
                 member.email = email_value
                 member.save(update_fields=["email"])
                 changed = True
+            if not errors and un_activity_code_value and member.un_activity_code != un_activity_code_value:
+                member.un_activity_code = un_activity_code_value
+                member.save(update_fields=["un_activity_code"])
+                changed = True
 
             if errors:
                 row_errors[member.id] = errors
@@ -1056,6 +1080,7 @@ def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
             member,
             login_input=row_login_inputs.get(member.id, ""),
             email_input=row_email_inputs.get(member.id, member.email or ""),
+            un_activity_code_input=row_un_activity_code_inputs.get(member.id, member.un_activity_code or ""),
             errors=row_errors.get(member.id, []),
         ))
 

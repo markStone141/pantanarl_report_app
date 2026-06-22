@@ -398,6 +398,7 @@ class MemberSettingsViewTests(TestCase):
         response = self.client.get(reverse("member_auth_bulk_settings"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "ID・パスワード一括管理")
+        self.assertContains(response, "UN活動コード")
         self.assertContains(response, "メールアドレス")
 
     def test_member_auth_bulk_settings_updates_existing_user(self):
@@ -430,6 +431,19 @@ class MemberSettingsViewTests(TestCase):
         member.refresh_from_db()
         self.assertEqual(member.email, "new@example.com")
 
+    def test_member_auth_bulk_settings_updates_un_activity_code(self):
+        member = Member.objects.create(name="Bulk UN Code User", un_activity_code="11111")
+        response = self.client.post(
+            reverse("member_auth_bulk_settings"),
+            {
+                "page": "1",
+                f"un_activity_code_{member.id}": "22222",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        member.refresh_from_db()
+        self.assertEqual(member.un_activity_code, "22222")
+
     def test_member_auth_bulk_settings_rejects_invalid_email(self):
         member = Member.objects.create(name="Invalid Mail User")
         response = self.client.post(
@@ -444,6 +458,35 @@ class MemberSettingsViewTests(TestCase):
         member.refresh_from_db()
         self.assertEqual(member.email, "")
 
+    def test_member_auth_bulk_settings_rejects_invalid_un_activity_code(self):
+        member = Member.objects.create(name="Invalid UN Code Bulk User")
+        response = self.client.post(
+            reverse("member_auth_bulk_settings"),
+            {
+                "page": "1",
+                f"un_activity_code_{member.id}": "12A45",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "UN活動コードは5桁の数字で入力してください。")
+        member.refresh_from_db()
+        self.assertIsNone(member.un_activity_code)
+
+    def test_member_auth_bulk_settings_rejects_duplicate_un_activity_code(self):
+        Member.objects.create(name="Existing Bulk UN Code User", un_activity_code="12345")
+        member = Member.objects.create(name="Duplicate Bulk UN Code User")
+        response = self.client.post(
+            reverse("member_auth_bulk_settings"),
+            {
+                "page": "1",
+                f"un_activity_code_{member.id}": "12345",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "このUN活動コードはすでに使用されています。")
+        member.refresh_from_db()
+        self.assertIsNone(member.un_activity_code)
+
     def test_member_auth_bulk_settings_ajax_returns_rows(self):
         Member.objects.create(name="Ajax Bulk User", email="bulk@example.com")
 
@@ -455,6 +498,16 @@ class MemberSettingsViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("rows_html", response.json())
+
+    def test_member_auth_bulk_settings_searches_un_activity_code(self):
+        Member.objects.create(name="Bulk Code Search", un_activity_code="54321")
+        Member.objects.create(name="Bulk Other Search", un_activity_code="11111")
+
+        response = self.client.get(reverse("member_auth_bulk_settings"), {"q": "54321"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Bulk Code Search")
+        self.assertNotContains(response, "Bulk Other Search")
 
 
 class DepartmentSettingsViewTests(TestCase):

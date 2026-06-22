@@ -30,7 +30,7 @@
 
     <div class="dashboard-toolbar mb-10">
       <form method="get" id="member-auth-search-form" class="member-settings-filter-form" action="{% url 'member_auth_bulk_settings' %}">
-        <input type="search" name="q" value="{{ query }}" placeholder="名前・メール・ログインIDで検索">
+        <input type="search" name="q" value="{{ query }}" placeholder="名前・メール・ログインID・UN活動コードで検索">
       </form>
     </div>
 
@@ -42,6 +42,7 @@
           <thead>
             <tr>
               <th>名前</th>
+              <th>UN活動コード</th>
               <th>メールアドレス</th>
               <th>ログインID</th>
               <th>パスワード</th>
@@ -143,14 +144,19 @@
       const changes = [];
       rowsWrap.querySelectorAll("tr").forEach(function (row) {
         const emailInput = row.querySelector('input[name^="email_"]');
+        const unActivityCodeInput = row.querySelector('input[name^="un_activity_code_"]');
         const loginInput = row.querySelector('input[name^="login_id_"]');
         const passwordInput = row.querySelector('input[name^="password_"]');
-        if (!emailInput || !loginInput || !passwordInput) {
+        if (!emailInput || !unActivityCodeInput || !loginInput || !passwordInput) {
           return;
         }
-        const memberName = emailInput.dataset.memberName || loginInput.dataset.memberName || passwordInput.dataset.memberName || "メンバー";
+        const memberName = emailInput.dataset.memberName || unActivityCodeInput.dataset.memberName || loginInput.dataset.memberName || passwordInput.dataset.memberName || "メンバー";
         const originalEmail = emailInput.dataset.originalEmail || "";
+        const originalUnActivityCode = unActivityCodeInput.dataset.originalUnActivityCode || "";
         const originalLogin = loginInput.dataset.originalLogin || "";
+        if ((unActivityCodeInput.value || "") !== originalUnActivityCode && (unActivityCodeInput.value || "")) {
+          changes.push(`${memberName}: UN活動コード -> ${unActivityCodeInput.value}`);
+        }
         if ((emailInput.value || "") !== originalEmail) {
           changes.push(`${memberName}: メールアドレス -> ${emailInput.value || "未設定"}`);
         }

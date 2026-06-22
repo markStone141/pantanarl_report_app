@@ -4,6 +4,18 @@
       <td>{{ row.member.name }}</td>
       <td>
         <input
+          type="text"
+          name="un_activity_code_{{ row.member.id }}"
+          value="{{ row.un_activity_code_input|default:'' }}"
+          placeholder="5桁"
+          inputmode="numeric"
+          pattern="[0-9]{5}"
+          data-original-un-activity-code="{{ row.member.un_activity_code|default:'' }}"
+          data-member-name="{{ row.member.name }}"
+        >
+      </td>
+      <td>
+        <input
           type="email"
           name="email_{{ row.member.id }}"
           value="{{ row.email_input }}"
@@ -38,6 +50,6 @@
   {% endfor %}
 {% else %}
   <tr>
-    <td colspan="4">メンバーが存在しません。</td>
+    <td colspan="5">メンバーが存在しません。</td>
   </tr>
 {% endif %}
