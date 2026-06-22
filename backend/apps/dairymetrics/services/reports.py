@@ -43,6 +43,30 @@ def _report_count_text(*, department_code: str, totals: dict) -> str:
     return _format_number(_count_value(department_code, totals))
 
 
+def _report_total_count_text(*, department_code: str, totals: dict, return_count: int) -> str:
+    if department_code == "WV":
+        cs_count = int(totals.get("cs_count") or 0)
+        refugee_count = int(totals.get("refugee_count") or 0)
+        if return_count:
+            return f"CS {cs_count:,}件 / 難民 {refugee_count:,}件 / 戻り {return_count:,}件"
+        return _wv_count_breakdown_text(totals)
+    return _format_number(_count_value(department_code, totals) + return_count)
+
+
+def _report_count_breakdown_text(
+    *,
+    department_code: str,
+    base_totals: dict,
+    increase_count: int,
+    return_count: int,
+) -> str:
+    base_count_text = _report_count_text(department_code=department_code, totals=base_totals)
+    if department_code == "WV":
+        return f"現場 {base_count_text} / 増額 {increase_count:,}件 / 戻り {return_count:,}件"
+    base_count = _count_value(department_code, base_totals)
+    return f"現場 {base_count:,}件 / 増額 {increase_count:,}件 / 戻り {return_count:,}件"
+
+
 def _daily_report_rows(*, department, scope):
     daily_totals = {}
     transactions_by_date = {}
@@ -289,8 +313,11 @@ def build_metrics_scope_report(*, department, scope):
     base_support_amount = int(base_totals.get("support_amount") or 0)
     increase_count = _count_value(department.code, excluded_average_adjustment_totals)
     increase_amount = int(excluded_average_adjustment_totals.get("support_amount") or 0)
+    return_count = _return_count_value(final_totals)
     return_amount = _return_amount_value(final_totals)
     adjustment_amount = increase_amount + return_amount
+    report_support_amount = support_amount + return_amount
+    report_decision_count = decision_count + return_count
     approach_count = int(final_totals.get("approach_count") or 0)
     communication_count = int(final_totals.get("communication_count") or 0)
     base_approach_count = int(base_totals.get("approach_count") or 0)
@@ -316,10 +343,23 @@ def build_metrics_scope_report(*, department, scope):
         "summary_cards": [
             {
                 "label": "合計支援金額",
-                "value": _format_number(support_amount, "円"),
+                "value": _format_number(report_support_amount, "円"),
                 "helper": f"即決 {_format_number(base_support_amount, '円')} / 補正 {_format_number(adjustment_amount, '円')}",
             },
-            {"label": "合計件数", "value": _report_count_text(department_code=department.code, totals=final_totals), "helper": ""},
+            {
+                "label": "合計件数",
+                "value": _report_total_count_text(
+                    department_code=department.code,
+                    totals=final_totals,
+                    return_count=return_count,
+                ),
+                "helper": _report_count_breakdown_text(
+                    department_code=department.code,
+                    base_totals=base_totals,
+                    increase_count=increase_count,
+                    return_count=return_count,
+                ),
+            },
             {"label": "AP / CM数", "value": f"{approach_count:,} / {communication_count:,}", "helper": ""},
             {"label": "稼働日数", "value": _format_number(active_days), "helper": ""},
             {"label": "コミュ率", "value": _format_percentage(_percentage(base_communication_count, base_approach_count)), "helper": "通常実績ベース"},
@@ -338,8 +378,8 @@ def build_metrics_scope_report(*, department, scope):
             },
             {
                 "label": "1稼働当たりの平均",
-                "value": _format_number(_safe_average(support_amount, active_days), "円"),
-                "helper": f"件数 {_format_number(_safe_average(decision_count, active_days))}",
+                "value": _format_number(_safe_average(report_support_amount, active_days), "円"),
+                "helper": f"件数 {_format_number(_safe_average(report_decision_count, active_days))}",
             },
             {
                 "label": "最高金額達成日",
@@ -354,15 +394,15 @@ def build_metrics_scope_report(*, department, scope):
         ],
         "target_cards": [
             {"label": "目標金額", "value": _format_number(target_amount, "円")},
-            {"label": "補正込み実績", "value": _format_number(support_amount, "円")},
-            {"label": "目標差分", "value": _format_diff(support_amount - target_amount, unit="円")},
-            {"label": "達成率", "value": _format_percentage(_percentage(support_amount, target_amount))},
+            {"label": "補正込み実績", "value": _format_number(report_support_amount, "円")},
+            {"label": "目標差分", "value": _format_diff(report_support_amount - target_amount, unit="円")},
+            {"label": "達成率", "value": _format_percentage(_percentage(report_support_amount, target_amount))},
         ],
         "adjustment_cards": [
             {"label": "補正金額", "value": _format_number(adjustment_amount, "円")},
             {"label": "増額件数", "value": _format_number(increase_count)},
             {"label": "増額金額", "value": _format_number(increase_amount, "円")},
-            {"label": "戻り件数", "value": _format_number(_return_count_value(final_totals))},
+            {"label": "戻り件数", "value": _format_number(return_count)},
             {"label": "戻り金額", "value": _format_number(return_amount, "円")},
         ],
         "daily_rows": daily_rows,
