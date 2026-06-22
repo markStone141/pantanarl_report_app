@@ -223,6 +223,7 @@
       const options = (memberOptions[selectedDepartmentId] || []).filter(function (item) {
         return item.un_activity_code;
       });
+      const hasInputCode = Boolean(unCodeInput.value);
       const currentMemberValue = memberSelect.value;
       unCodeDatalist.innerHTML = "";
       options.forEach(function (item) {
@@ -234,7 +235,7 @@
       const currentMember = options.find(function (item) {
         return String(item.id) === String(currentMemberValue);
       });
-      if (currentMember) {
+      if (hasInputCode && currentMember) {
         unCodeInput.value = currentMember.un_activity_code;
       }
       syncUnCodeMemberName();
