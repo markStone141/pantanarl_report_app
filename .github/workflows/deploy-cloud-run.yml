@@ -53,15 +53,6 @@ jobs:
       - name: Push container image
         run: docker push "${IMAGE}"
 
-      - name: Deploy to Cloud Run
-        run: |
-          gcloud run deploy "${SERVICE}" \
-            --project="${PROJECT_ID}" \
-            --region="${REGION}" \
-            --platform=managed \
-            --allow-unauthenticated \
-            --image="${IMAGE}"
-
       - name: Upsert migration job
         env:
           JOB_SECRETS: ${{ vars.CLOUD_RUN_MIGRATE_JOB_SECRETS }}
@@ -85,6 +76,15 @@ jobs:
           SERVICE="${SERVICE}" \
           JOB_NAME="${MIGRATE_JOB}" \
           ./backend/scripts/cloud_run_migrate_job.sh run
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy "${SERVICE}" \
+            --project="${PROJECT_ID}" \
+            --region="${REGION}" \
+            --platform=managed \
+            --allow-unauthenticated \
+            --image="${IMAGE}"
 
       - name: Upsert activity reminder job
         env:
