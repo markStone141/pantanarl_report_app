@@ -474,6 +474,8 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "dashboard/mobile_drawer.js")
 
     def test_performance_past_entry_member_options_returns_department_members(self):
+        self.member.un_activity_code = "12345"
+        self.member.save(update_fields=["un_activity_code"])
         other_department = self.create_department("WV")
         other_member = self.create_member(name="Other Member", department=other_department)
 
@@ -485,8 +487,14 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(payload["options"], [{"id": self.member.id, "name": self.member.name}])
-        self.assertNotIn({"id": other_member.id, "name": other_member.name}, payload["options"])
+        self.assertEqual(
+            payload["options"],
+            [{"id": self.member.id, "name": self.member.name, "un_activity_code": "12345"}],
+        )
+        self.assertNotIn(
+            {"id": other_member.id, "name": other_member.name, "un_activity_code": other_member.un_activity_code},
+            payload["options"],
+        )
 
     def test_performance_admin_entries_page_shows_summary_and_entry_actions(self):
         entry = MemberDailyMetricEntry.objects.create(
@@ -846,6 +854,19 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(adjustment.result_count, 1)
         self.assertEqual(adjustment.support_amount, 6200)
         self.assertEqual(adjustment.location_name, "池袋駅前")
+
+    def test_performance_adjustment_member_options_include_un_activity_code(self):
+        self.member.un_activity_code = "12345"
+        self.member.save(update_fields=["un_activity_code"])
+
+        response = self.client.get(reverse("performance_adjustments"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "UNコード")
+        options = response.context["member_options"][str(self.department.id)]
+        self.assertEqual(options[0]["id"], self.member.id)
+        self.assertEqual(options[0]["name"], self.member.name)
+        self.assertEqual(options[0]["un_activity_code"], "12345")
 
     def test_performance_adjustment_create_wv_cs_sets_fixed_amount_and_count(self):
         self.department.code = "WV"

@@ -40,9 +40,19 @@
         <div class="error-text">{{ form.department.errors|striptags }}</div>
         {% endif %}
       </div>
-      <div class="dairymetrics-field">
+      <div class="dairymetrics-field" id="performance-adjustment-member-field">
         <label for="{{ form.member.id_for_label }}">{{ form.member.label }}</label>
         {{ form.member }}
+        {% if form.member.errors %}
+        <div class="error-text">{{ form.member.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="dairymetrics-field" id="performance-adjustment-un-code-field" hidden>
+        <label for="performance-adjustment-un-code-select">UNコード</label>
+        <select id="performance-adjustment-un-code-select">
+          <option value="">UNコードを選択</option>
+        </select>
+        <div class="topbar-muted" id="performance-adjustment-un-code-member-name">UNコードを選択するとメンバー名が表示されます。</div>
         {% if form.member.errors %}
         <div class="error-text">{{ form.member.errors|striptags }}</div>
         {% endif %}
@@ -119,6 +129,10 @@
   (function () {
     const departmentSelect = document.getElementById("{{ form.department.id_for_label }}");
     const memberSelect = document.getElementById("{{ form.member.id_for_label }}");
+    const memberField = document.getElementById("performance-adjustment-member-field");
+    const unCodeField = document.getElementById("performance-adjustment-un-code-field");
+    const unCodeSelect = document.getElementById("performance-adjustment-un-code-select");
+    const unCodeMemberName = document.getElementById("performance-adjustment-un-code-member-name");
     const sourceTypeSelect = document.getElementById("{{ form.source_type.id_for_label }}");
     const amountChoiceSelect = document.getElementById("{{ form.amount_choice.id_for_label }}");
     const directAmountField = document.getElementById("performance-adjustment-direct-amount-field");
@@ -133,6 +147,7 @@
     const directAmountLabel = document.querySelector('label[for="{{ form.amount.id_for_label }}"]');
     const listForm = document.getElementById("performance-adjustments-filter-form");
     const listContainer = document.getElementById("performance-adjustments-list");
+    const memberOptionsUrl = "{% url 'performance_past_entry_member_options' %}";
     let memberOptions = {};
     let departmentCodeMap = {};
     try {
@@ -160,14 +175,99 @@
       if (preserved) {
         memberSelect.value = initialMemberValue;
       }
+      renderUnCodeOptions(selectedDepartmentId);
+      syncMemberInputMode();
+    }
+
+    async function loadMemberOptions(selectedDepartmentId) {
+      if (!selectedDepartmentId) {
+        renderMembers(selectedDepartmentId);
+        return;
+      }
+      const params = new URLSearchParams({ department: selectedDepartmentId });
+      try {
+        const response = await fetch(memberOptionsUrl + "?" + params.toString(), {
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        if (!response.ok || departmentSelect.value !== selectedDepartmentId) {
+          return;
+        }
+        const payload = await response.json();
+        memberOptions[selectedDepartmentId] = payload.options || [];
+        renderMembers(selectedDepartmentId);
+      } catch (error) {
+        renderMembers(selectedDepartmentId);
+      }
     }
 
     function selectedDepartmentCode() {
       return String(departmentCodeMap[departmentSelect.value] || "");
     }
 
+    function isUnSelected() {
+      return selectedDepartmentCode() === "UN";
+    }
+
     function isWvSelected() {
       return selectedDepartmentCode() === "WV";
+    }
+
+    function renderUnCodeOptions(selectedDepartmentId) {
+      if (!unCodeSelect) {
+        return;
+      }
+      const options = (memberOptions[selectedDepartmentId] || []).filter(function (item) {
+        return item.un_activity_code;
+      });
+      const currentMemberValue = memberSelect.value;
+      unCodeSelect.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = options.length ? "UNコードを選択" : "UNコード登録済みメンバーなし";
+      unCodeSelect.appendChild(placeholder);
+      options.forEach(function (item) {
+        const option = document.createElement("option");
+        option.value = String(item.id);
+        option.textContent = item.un_activity_code;
+        unCodeSelect.appendChild(option);
+      });
+      const hasCurrentMember = options.some(function (item) {
+        return String(item.id) === String(currentMemberValue);
+      });
+      unCodeSelect.value = hasCurrentMember ? currentMemberValue : "";
+      syncUnCodeMemberName();
+    }
+
+    function syncUnCodeMemberName() {
+      if (!unCodeSelect || !unCodeMemberName) {
+        return;
+      }
+      const options = memberOptions[departmentSelect.value] || [];
+      const selected = options.find(function (item) {
+        return String(item.id) === String(unCodeSelect.value);
+      });
+      if (selected) {
+        memberSelect.value = String(selected.id);
+        unCodeMemberName.textContent = "メンバー: " + selected.name;
+        return;
+      }
+      if (isUnSelected()) {
+        memberSelect.value = "";
+      }
+      unCodeMemberName.textContent = "UNコードを選択するとメンバー名が表示されます。";
+    }
+
+    function syncMemberInputMode() {
+      const useUnCode = isUnSelected();
+      if (memberField) {
+        memberField.hidden = useUnCode;
+      }
+      if (unCodeField) {
+        unCodeField.hidden = !useUnCode;
+      }
+      if (useUnCode) {
+        syncUnCodeMemberName();
+      }
     }
 
     function renderSourceTypeOptions() {
@@ -201,10 +301,13 @@
     }
 
     departmentSelect.addEventListener("change", function () {
-      renderMembers(departmentSelect.value);
+      loadMemberOptions(departmentSelect.value);
       renderSourceTypeOptions();
       toggleDirectAmount();
     });
+    if (unCodeSelect) {
+      unCodeSelect.addEventListener("change", syncUnCodeMemberName);
+    }
     renderMembers(departmentSelect.value);
 
     function toggleDirectAmount() {

@@ -2645,7 +2645,7 @@ def performance_past_entry_member_options(request: HttpRequest) -> HttpResponse:
         Member.objects.filter(department_links__department=department)
         .distinct()
         .order_by("name")
-        .values("id", "name")
+        .values("id", "name", "un_activity_code")
     )
     return JsonResponse({"options": options})
 
@@ -2733,7 +2733,11 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
             if link.department_id is None or not link.department.is_active:
                 continue
             member_options.setdefault(str(link.department_id), []).append(
-                {"id": member.id, "name": member.name}
+                {
+                    "id": member.id,
+                    "name": member.name,
+                    "un_activity_code": member.un_activity_code or "",
+                }
             )
     list_context = {
         "adjustments": page_obj.object_list,
