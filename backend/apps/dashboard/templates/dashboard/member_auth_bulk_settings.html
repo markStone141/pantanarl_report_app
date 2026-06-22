@@ -31,6 +31,22 @@
     <div class="dashboard-toolbar mb-10">
       <form method="get" id="member-auth-search-form" class="member-settings-filter-form" action="{% url 'member_auth_bulk_settings' %}">
         <input type="search" name="q" value="{{ query }}" placeholder="名前・メール・ログインID・UN活動コードで検索">
+        <div class="mail-group-department-grid member-auth-department-filter" id="member-auth-departments" aria-label="部署で絞り込み">
+          {% for department in departments %}
+          <label class="mail-group-department-card" for="member-auth-department-{{ department.id }}">
+            <input
+              type="checkbox"
+              name="departments"
+              value="{{ department.id }}"
+              id="member-auth-department-{{ department.id }}"
+              {% if department.id|stringformat:"s" in selected_department_ids %}checked{% endif %}
+            >
+            <span class="mail-group-department-card__name">{{ department.code }}</span>
+          </label>
+          {% empty %}
+          <div class="muted">有効な部署がありません。</div>
+          {% endfor %}
+        </div>
       </form>
     </div>
 
@@ -77,6 +93,7 @@
 <script>
   (function () {
     const searchForm = document.getElementById("member-auth-search-form");
+    const departmentFilter = document.getElementById("member-auth-departments");
     const bulkForm = document.getElementById("member-auth-bulk-form");
     const rowsWrap = document.getElementById("member-auth-bulk-rows");
     const loadMoreButton = document.getElementById("member-auth-load-more-btn");
@@ -84,7 +101,7 @@
     const confirmSummary = document.getElementById("member-auth-confirm-summary");
     const confirmCancel = document.getElementById("member-auth-confirm-cancel");
     const confirmSubmit = document.getElementById("member-auth-confirm-submit");
-    if (!searchForm || !bulkForm || !rowsWrap || !loadMoreButton || !confirmWrap || !confirmSummary || !confirmCancel || !confirmSubmit) {
+    if (!searchForm || !departmentFilter || !bulkForm || !rowsWrap || !loadMoreButton || !confirmWrap || !confirmSummary || !confirmCancel || !confirmSubmit) {
       return;
     }
 
@@ -196,6 +213,14 @@
       debounceTimer = window.setTimeout(function () {
         fetchRows(1, false);
       }, 180);
+    });
+
+    departmentFilter.addEventListener("change", function (event) {
+      if (!event.target.matches('input[name="departments"]')) {
+        return;
+      }
+      resetConfirmState();
+      fetchRows(1, false);
     });
 
     loadMoreButton.addEventListener("click", function () {

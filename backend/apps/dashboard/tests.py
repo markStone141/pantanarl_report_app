@@ -506,6 +506,43 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("rows_html", response.json())
 
+    def test_member_auth_bulk_settings_filters_by_departments(self):
+        un_member = Member.objects.create(name="Bulk UN Member")
+        wv_member = Member.objects.create(name="Bulk WV Member")
+        MemberDepartment.objects.create(member=un_member, department=self.depts["UN"])
+        MemberDepartment.objects.create(member=wv_member, department=self.depts["WV"])
+
+        response = self.client.get(
+            reverse("member_auth_bulk_settings"),
+            {"departments": [self.depts["UN"].id]},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Bulk UN Member")
+        self.assertNotContains(response, "Bulk WV Member")
+        self.assertContains(response, f'id="member-auth-department-{self.depts["UN"].id}"')
+        self.assertContains(response, "mail-group-department-card")
+
+    def test_member_auth_bulk_settings_ajax_filters_by_multiple_departments(self):
+        un_member = Member.objects.create(name="Bulk Ajax UN")
+        wv_member = Member.objects.create(name="Bulk Ajax WV")
+        style_member = Member.objects.create(name="Bulk Ajax Style")
+        MemberDepartment.objects.create(member=un_member, department=self.depts["UN"])
+        MemberDepartment.objects.create(member=wv_member, department=self.depts["WV"])
+        MemberDepartment.objects.create(member=style_member, department=self.depts["STYLE1"])
+
+        response = self.client.get(
+            reverse("member_auth_bulk_settings"),
+            {"departments": [self.depts["UN"].id, self.depts["WV"].id]},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        rows_html = response.json()["rows_html"]
+        self.assertIn("Bulk Ajax UN", rows_html)
+        self.assertIn("Bulk Ajax WV", rows_html)
+        self.assertNotIn("Bulk Ajax Style", rows_html)
+
     def test_member_auth_bulk_settings_searches_un_activity_code(self):
         Member.objects.create(name="Bulk Code Search", un_activity_code="54321")
         Member.objects.create(name="Bulk Other Search", un_activity_code="11111")

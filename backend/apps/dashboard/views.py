@@ -585,8 +585,10 @@ def _build_member_row_payload(
     }
 
 
-def _build_member_bulk_queryset(*, query: str):
+def _build_member_bulk_queryset(*, query: str, department_ids: list[int] | None = None):
     members_qs = Member.objects.select_related("user").order_by("name", "id")
+    if department_ids:
+        members_qs = members_qs.filter(department_links__department_id__in=department_ids).distinct()
     if query:
         members_qs = members_qs.filter(
             Q(name__icontains=query)
@@ -970,7 +972,12 @@ def member_edit(request: HttpRequest, member_id: int) -> HttpResponse:
 @require_roles(ROLE_ADMIN)
 def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
     query = (request.GET.get("q") or "").strip()
-    members_qs = _build_member_bulk_queryset(query=query)
+    selected_department_ids = [
+        int(value)
+        for value in request.GET.getlist("departments")
+        if str(value).isdigit()
+    ]
+    members_qs = _build_member_bulk_queryset(query=query, department_ids=selected_department_ids)
     paginator = Paginator(members_qs, 20)
     current_page_number = request.GET.get("page") or "1"
     page_obj = paginator.get_page(current_page_number)
@@ -1091,6 +1098,8 @@ def member_auth_bulk_settings(request: HttpRequest) -> HttpResponse:
         "member_rows": member_rows,
         "current_page_number": str(page_obj.number),
         "query": query,
+        "departments": Department.objects.filter(is_active=True).order_by("code"),
+        "selected_department_ids": [str(value) for value in selected_department_ids],
     }
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse(
