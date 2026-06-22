@@ -9,7 +9,7 @@
           <span><i class="fa-regular fa-calendar" aria-hidden="true"></i> 証日 {{ article.testimonied_at|date:"Y/m/d" }}</span>
         {% endif %}
         {% if article.product %}
-          <span><i class="fa-solid fa-tag" aria-hidden="true"></i> {{ article.product.name }}</span>
+          <span class="testimony-product-badge"><i class="fa-solid fa-tag" aria-hidden="true"></i> {{ article.product.name }}</span>
         {% endif %}
         <span><i class="fa-solid fa-eye" aria-hidden="true"></i> {{ article.view_count }}</span>
         <span><i class="fa-solid fa-thumbs-up" aria-hidden="true"></i> {{ article.like_count }}</span>

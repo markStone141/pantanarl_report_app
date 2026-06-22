@@ -241,7 +241,26 @@ class TestimonyArticleListTests(TestCase):
         self.assertContains(response, "商材")
         self.assertContains(response, "証者・投稿者名")
         self.assertContains(response, "証日")
+        self.assertContains(response, "2026/06/22")
+        self.assertContains(response, "年/月/日 の形式で入力してください。")
         self.assertNotContains(response, ">Title<", html=False)
+
+    def test_article_form_accepts_slash_separated_testimony_date(self):
+        admin_user = get_user_model().objects.create_user(username="admin", password="admin-pass", is_staff=True)
+        self.client.force_login(admin_user)
+        response = self.client.post(
+            reverse("testimony_article_create"),
+            {
+                "title": "Slash date",
+                "product": self.product.id,
+                "author": "佐藤",
+                "testimonied_at": "2026/06/22",
+                "body": "Body",
+                "video_url": "",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Article.objects.get(title="Slash date").testimonied_at.isoformat(), "2026-06-22")
 
     def test_product_management_is_admin_only(self):
         self.client.force_login(self.user)
@@ -254,6 +273,14 @@ class TestimonyArticleListTests(TestCase):
         self.assertEqual(admin_response.status_code, 200)
         self.assertContains(admin_response, "商材管理")
         self.assertContains(admin_response, "商材を追加")
+        self.assertContains(admin_response, "testimony-product-actions .btn-danger")
+
+    def test_article_list_emphasizes_product_as_badge(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("testimony_article_list"), {"product": self.product.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "testimony-product-badge")
+        self.assertContains(response, "UN商材")
 
     def test_admin_can_create_update_and_delete_product(self):
         admin_user = get_user_model().objects.create_user(username="admin", password="admin-pass", is_staff=True)

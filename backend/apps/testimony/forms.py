@@ -57,9 +57,20 @@ class ArticleForm(forms.ModelForm):
             "product": "商材",
         }
         widgets = {
-            "testimonied_at": forms.DateInput(attrs={"type": "date"}),
+            "testimonied_at": forms.DateInput(
+                attrs={
+                    "placeholder": "2026/06/22",
+                    "inputmode": "numeric",
+                },
+                format="%Y/%m/%d",
+            ),
             "body": forms.Textarea(attrs={"rows": 10}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["testimonied_at"].input_formats = ["%Y/%m/%d", "%Y-%m-%d"]
+        self.fields["testimonied_at"].help_text = "年/月/日 の形式で入力してください。例: 2026/06/22"
 
 
 class ProductForm(forms.ModelForm):
