@@ -2641,8 +2641,12 @@ def performance_past_entry_member_options(request: HttpRequest) -> HttpResponse:
     department = Department.objects.filter(pk=int(department_id), is_active=True).first()
     if department is None:
         return JsonResponse({"options": []})
+    queryset = Member.objects.filter(department_links__department=department).distinct().order_by("name")
+    un_code = "".join(character for character in request.GET.get("un_code", "").strip() if character.isdigit())[:5]
+    if un_code:
+        queryset = queryset.filter(un_activity_code__startswith=un_code)
     options = list(
-        Member.objects.filter(department_links__department=department)
+        queryset
         .distinct()
         .order_by("name")
         .values("id", "name", "un_activity_code")

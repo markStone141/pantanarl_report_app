@@ -478,10 +478,13 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.member.save(update_fields=["un_activity_code"])
         other_department = self.create_department("WV")
         other_member = self.create_member(name="Other Member", department=other_department)
+        un_matched_member = self.create_member(name="UN Other", department=self.department)
+        un_matched_member.un_activity_code = "98765"
+        un_matched_member.save(update_fields=["un_activity_code"])
 
         response = self.client.get(
             reverse("performance_past_entry_member_options"),
-            {"department": self.department.id},
+            {"department": self.department.id, "un_code": "123"},
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
 
@@ -493,6 +496,10 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         )
         self.assertNotIn(
             {"id": other_member.id, "name": other_member.name, "un_activity_code": other_member.un_activity_code},
+            payload["options"],
+        )
+        self.assertNotIn(
+            {"id": un_matched_member.id, "name": un_matched_member.name, "un_activity_code": "98765"},
             payload["options"],
         )
 

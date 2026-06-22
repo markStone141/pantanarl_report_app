@@ -48,10 +48,9 @@
         {% endif %}
       </div>
       <div class="dairymetrics-field" id="performance-adjustment-un-code-field" hidden>
-        <label for="performance-adjustment-un-code-select">UNコード</label>
-        <select id="performance-adjustment-un-code-select">
-          <option value="">UNコードを選択</option>
-        </select>
+        <label for="performance-adjustment-un-code-input">UNコード</label>
+        <input id="performance-adjustment-un-code-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="off" list="performance-adjustment-un-code-options" placeholder="5桁のUNコードを入力">
+        <datalist id="performance-adjustment-un-code-options"></datalist>
         <div class="performance-selected-member-preview" id="performance-adjustment-un-code-member-name">UNコードを選択するとメンバー名が表示されます。</div>
         {% if form.member.errors %}
         <div class="error-text">{{ form.member.errors|striptags }}</div>
@@ -131,7 +130,8 @@
     const memberSelect = document.getElementById("{{ form.member.id_for_label }}");
     const memberField = document.getElementById("performance-adjustment-member-field");
     const unCodeField = document.getElementById("performance-adjustment-un-code-field");
-    const unCodeSelect = document.getElementById("performance-adjustment-un-code-select");
+    const unCodeInput = document.getElementById("performance-adjustment-un-code-input");
+    const unCodeDatalist = document.getElementById("performance-adjustment-un-code-options");
     const unCodeMemberName = document.getElementById("performance-adjustment-un-code-member-name");
     const sourceTypeSelect = document.getElementById("{{ form.source_type.id_for_label }}");
     const amountChoiceSelect = document.getElementById("{{ form.amount_choice.id_for_label }}");
@@ -157,6 +157,7 @@
       return;
     }
     const initialMemberValue = memberSelect.value;
+    let unCodeSearchTimer = null;
 
     function renderMembers(selectedDepartmentId) {
       const options = memberOptions[selectedDepartmentId] || [];
@@ -179,12 +180,15 @@
       syncMemberInputMode();
     }
 
-    async function loadMemberOptions(selectedDepartmentId) {
+    async function loadMemberOptions(selectedDepartmentId, unCodePrefix) {
       if (!selectedDepartmentId) {
         renderMembers(selectedDepartmentId);
         return;
       }
       const params = new URLSearchParams({ department: selectedDepartmentId });
+      if (unCodePrefix) {
+        params.set("un_code", unCodePrefix);
+      }
       try {
         const response = await fetch(memberOptionsUrl + "?" + params.toString(), {
           headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -213,38 +217,40 @@
     }
 
     function renderUnCodeOptions(selectedDepartmentId) {
-      if (!unCodeSelect) {
+      if (!unCodeInput || !unCodeDatalist) {
         return;
       }
       const options = (memberOptions[selectedDepartmentId] || []).filter(function (item) {
         return item.un_activity_code;
       });
       const currentMemberValue = memberSelect.value;
-      unCodeSelect.innerHTML = "";
-      const placeholder = document.createElement("option");
-      placeholder.value = "";
-      placeholder.textContent = options.length ? "UNコードを選択" : "UNコード登録済みメンバーなし";
-      unCodeSelect.appendChild(placeholder);
+      unCodeDatalist.innerHTML = "";
       options.forEach(function (item) {
         const option = document.createElement("option");
-        option.value = String(item.id);
-        option.textContent = item.un_activity_code;
-        unCodeSelect.appendChild(option);
+        option.value = item.un_activity_code;
+        option.label = item.name;
+        unCodeDatalist.appendChild(option);
       });
-      const hasCurrentMember = options.some(function (item) {
+      const currentMember = options.find(function (item) {
         return String(item.id) === String(currentMemberValue);
       });
-      unCodeSelect.value = hasCurrentMember ? currentMemberValue : "";
+      if (currentMember) {
+        unCodeInput.value = currentMember.un_activity_code;
+      }
       syncUnCodeMemberName();
     }
 
     function syncUnCodeMemberName() {
-      if (!unCodeSelect || !unCodeMemberName) {
+      if (!unCodeInput || !unCodeMemberName) {
         return;
+      }
+      const normalizedCode = unCodeInput.value.replace(/\D/g, "").slice(0, 5);
+      if (unCodeInput.value !== normalizedCode) {
+        unCodeInput.value = normalizedCode;
       }
       const options = memberOptions[departmentSelect.value] || [];
       const selected = options.find(function (item) {
-        return String(item.id) === String(unCodeSelect.value);
+        return String(item.un_activity_code || "") === normalizedCode;
       });
       if (selected) {
         memberSelect.value = String(selected.id);
@@ -255,7 +261,13 @@
       if (isUnSelected()) {
         memberSelect.value = "";
       }
-      unCodeMemberName.textContent = "UNコードを選択するとメンバー名が表示されます。";
+      if (!normalizedCode) {
+        unCodeMemberName.textContent = "UNコードを入力するとメンバー名が表示されます。";
+      } else if (options.some(function (item) { return String(item.un_activity_code || "").startsWith(normalizedCode); })) {
+        unCodeMemberName.textContent = "候補からUNコードを選択してください。";
+      } else {
+        unCodeMemberName.textContent = "該当するUNコードがありません。";
+      }
       unCodeMemberName.classList.remove("is-selected");
     }
 
@@ -270,6 +282,18 @@
       if (useUnCode) {
         syncUnCodeMemberName();
       }
+    }
+
+    function searchUnCodeOptions() {
+      if (!isUnSelected() || !unCodeInput) {
+        return;
+      }
+      syncUnCodeMemberName();
+      window.clearTimeout(unCodeSearchTimer);
+      const code = unCodeInput.value;
+      unCodeSearchTimer = window.setTimeout(function () {
+        loadMemberOptions(departmentSelect.value, code);
+      }, 180);
     }
 
     function renderSourceTypeOptions() {
@@ -303,12 +327,16 @@
     }
 
     departmentSelect.addEventListener("change", function () {
+      if (unCodeInput) {
+        unCodeInput.value = "";
+      }
       loadMemberOptions(departmentSelect.value);
       renderSourceTypeOptions();
       toggleDirectAmount();
     });
-    if (unCodeSelect) {
-      unCodeSelect.addEventListener("change", syncUnCodeMemberName);
+    if (unCodeInput) {
+      unCodeInput.addEventListener("input", searchUnCodeOptions);
+      unCodeInput.addEventListener("change", searchUnCodeOptions);
     }
     renderMembers(departmentSelect.value);
 
