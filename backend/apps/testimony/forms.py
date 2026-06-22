@@ -3,7 +3,7 @@ import os
 from django import forms
 from django.contrib.auth import get_user_model
 
-from apps.accounts.models import Member
+from apps.accounts.models import Department, Member
 
 from .models import Article
 
@@ -45,6 +45,29 @@ class TestimonyLoginForm(forms.Form):
 
 
 class ArticleForm(forms.ModelForm):
+    department = forms.ModelChoiceField(
+        label="部署",
+        queryset=Department.objects.none(),
+        required=False,
+        empty_label="部署を選択しない",
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["department"].queryset = Department.objects.filter(is_active=True).order_by("code", "id")
+
     class Meta:
         model = Article
-        fields = ["title", "body", "author", "video_url", "product", "testimonied_at"]
+        fields = ["title", "department", "author", "testimonied_at", "body", "video_url", "product"]
+        labels = {
+            "title": "タイトル",
+            "author": "証者・投稿者名",
+            "testimonied_at": "証日",
+            "body": "本文",
+            "video_url": "動画URL",
+            "product": "商品",
+        }
+        widgets = {
+            "testimonied_at": forms.DateInput(attrs={"type": "date"}),
+            "body": forms.Textarea(attrs={"rows": 10}),
+        }

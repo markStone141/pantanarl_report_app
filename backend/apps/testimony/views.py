@@ -51,10 +51,7 @@ def _testimony_article_queryset(request: HttpRequest):
     if keyword:
         queryset = queryset.filter(Q(title__icontains=keyword) | Q(body__icontains=keyword) | Q(author__icontains=keyword))
     if department_id.isdigit():
-        queryset = queryset.filter(
-            Q(created_by__member_profile__department_links__department_id=int(department_id))
-            | Q(created_by__member_profile__default_department_id=int(department_id))
-        ).distinct()
+        queryset = queryset.filter(department_id=int(department_id))
 
     if sort == "views":
         return queryset.order_by("-view_count", "-updated_at", "-id")

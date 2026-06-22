@@ -9,6 +9,12 @@
   <p class="muted testimony-detail-meta">
     <span><i class="fa-solid fa-user" aria-hidden="true"></i> {{ article.author }}</span>
     <span><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> {{ article.created_at|date:"Y-m-d H:i" }}</span>
+    {% if article.department %}
+      <span><i class="fa-solid fa-building" aria-hidden="true"></i> {{ article.department.code }}</span>
+    {% endif %}
+    {% if article.testimonied_at %}
+      <span><i class="fa-regular fa-calendar" aria-hidden="true"></i> 証日 {{ article.testimonied_at|date:"Y/m/d" }}</span>
+    {% endif %}
   </p>
   <div style="white-space:pre-wrap; margin-top:20px;">{{ article.body }}</div>
   {% if article.video_url %}

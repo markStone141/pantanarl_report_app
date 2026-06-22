@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from apps.accounts.models import Department
+
 
 class Product(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -30,12 +32,21 @@ class Article(models.Model):
         null=True,
         blank=True,
         related_name="articles",
+        verbose_name="商品",
     )
-    title = models.CharField(max_length=255)
-    body = models.TextField()
-    author = models.CharField(max_length=255)
-    video_url = models.URLField(blank=True)
-    testimonied_at = models.DateField(null=True, blank=True)
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="testimony_articles",
+        verbose_name="部署",
+    )
+    title = models.CharField("タイトル", max_length=255)
+    body = models.TextField("本文")
+    author = models.CharField("証者・投稿者名", max_length=255)
+    video_url = models.URLField("動画URL", blank=True)
+    testimonied_at = models.DateField("証日", null=True, blank=True)
     view_count = models.PositiveIntegerField(default=0)
     legacy_article_id = models.BigIntegerField(null=True, blank=True, unique=True)
     migrated_at = models.DateTimeField(null=True, blank=True)

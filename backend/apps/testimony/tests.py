@@ -146,6 +146,7 @@ class TestimonyArticleListTests(TestCase):
             body="Body",
             author="佐藤",
             product=self.product,
+            department=self.department,
             created_by=self.user,
             testimonied_at=now.date(),
             view_count=3,
@@ -157,6 +158,7 @@ class TestimonyArticleListTests(TestCase):
             body="Other body",
             author="田中",
             product=self.product,
+            department=self.other_department,
             created_by=self.other_user,
             testimonied_at=now.date() - timedelta(days=1),
             view_count=9,
@@ -207,3 +209,38 @@ class TestimonyArticleListTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("testimony_article_list"))
         self.assertContains(response, "証を見る")
+
+    def test_article_without_department_renders_and_is_not_department_filtered(self):
+        orphan_article = Article.objects.create(
+            title="No department",
+            body="Body",
+            author="部署なし",
+            product=self.product,
+            created_by=self.user,
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+        )
+        self.client.force_login(self.user)
+
+        list_response = self.client.get(reverse("testimony_article_list"))
+        self.assertEqual(list_response.status_code, 200)
+        self.assertContains(list_response, "No department")
+
+        filtered_response = self.client.get(reverse("testimony_article_list"), {"department": self.department.id})
+        self.assertEqual(filtered_response.status_code, 200)
+        self.assertNotContains(filtered_response, "No department")
+
+        detail_response = self.client.get(reverse("testimony_article_detail", args=[orphan_article.id]))
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertContains(detail_response, "No department")
+
+    def test_article_form_uses_japanese_labels_and_optional_department(self):
+        admin_user = get_user_model().objects.create_user(username="admin", password="admin-pass", is_staff=True)
+        self.client.force_login(admin_user)
+        response = self.client.get(reverse("testimony_article_create"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "タイトル")
+        self.assertContains(response, "部署を選択しない")
+        self.assertContains(response, "証者・投稿者名")
+        self.assertContains(response, "証日")
+        self.assertNotContains(response, ">Title<", html=False)
