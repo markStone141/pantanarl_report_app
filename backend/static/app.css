@@ -722,8 +722,27 @@ label {
 }
 
 .member-auth-department-filter {
+  display: flex;
+  grid-template-columns: none;
+  flex-wrap: nowrap;
+  gap: 8px;
   width: 100%;
   margin-top: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.member-auth-department-filter .mail-group-department-card {
+  flex: 0 0 auto;
+  min-width: 92px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  box-shadow: 0 8px 18px rgba(15, 39, 73, 0.06);
+}
+
+.member-auth-department-filter .mail-group-department-card__name {
+  font-size: 0.9rem;
 }
 
 .mail-group-member-grid {
