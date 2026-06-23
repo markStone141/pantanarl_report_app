@@ -318,8 +318,8 @@ class TestimonyArticleListTests(TestCase):
         self.assertContains(response, "商材")
         self.assertContains(response, "証者・投稿者名")
         self.assertContains(response, "証日")
-        self.assertContains(response, "2026/06/22")
-        self.assertContains(response, "年/月/日 の形式で入力してください。")
+        self.assertContains(response, 'type="date"', html=False)
+        self.assertContains(response, "カレンダーから選択できます。")
         self.assertNotContains(response, ">Title<", html=False)
 
     def test_article_form_accepts_slash_separated_testimony_date(self):
