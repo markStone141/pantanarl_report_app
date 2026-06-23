@@ -208,6 +208,14 @@ class TestimonyArticleListTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "総合管理ページ")
 
+    def test_mobile_drawer_has_foreground_stacking_context(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("testimony_article_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, ".testimony-topbar")
+        self.assertContains(response, "z-index: 1520")
+        self.assertContains(response, "z-index: 1510")
+
     def test_performance_member_dashboard_links_to_testimony(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("performance_member_dashboard"))
