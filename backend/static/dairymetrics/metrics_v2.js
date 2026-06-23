@@ -280,7 +280,6 @@
           {
             label: metricPayload.label,
             data: metricPayload.values,
-            detailUrls: metricPayload.detail_urls || [],
             backgroundColor: "#1d7dfa",
             borderRadius: 8,
           },
@@ -294,7 +293,7 @@
             return;
           }
           const point = elements[0];
-          const url = rankingChart.data.datasets[point.datasetIndex].detailUrls[point.index];
+          const url = (metricPayload.detail_urls || [])[point.index];
           if (url) {
             window.location.href = url;
           }
