@@ -822,6 +822,70 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(history_response, "本日の送信メール詳細")
         self.assertContains(history_response, "【UN】当日送信")
 
+    def test_performance_today_transaction_detail_shows_admin_cancel_action(self):
+        today = timezone.localdate()
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+        )
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("performance_transaction_edit", args=[transaction.id]))
+        self.assertContains(response, reverse("performance_transaction_delete", args=[transaction.id]))
+        self.assertContains(response, "決済を取り消す")
+
+    def test_admin_can_cancel_transaction_and_revert_totals(self):
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 6, 20),
+            result_count=0,
+            support_amount=0,
+        )
+        transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷駅前",
+        )
+        mail_history = MailSendHistory.objects.create(
+            department=self.department,
+            activity_date=entry.entry_date,
+            sender_member=self.member,
+            transaction=transaction,
+            subject_snapshot="送信済み",
+            body_snapshot="本文",
+            status=MailSendHistory.STATUS_SENT,
+            is_test=False,
+            sent_at=timezone.now(),
+        )
+
+        response = self.client.post(
+            reverse("performance_transaction_delete", args=[transaction.id]),
+            {"next": reverse("performance_index")},
+        )
+
+        self.assertRedirects(response, f"{reverse('performance_index')}?deleted=transaction")
+        self.assertFalse(MemberMetricTransaction.objects.filter(pk=transaction.pk).exists())
+        entry.refresh_from_db()
+        self.assertEqual(entry.result_count, 0)
+        self.assertEqual(entry.support_amount, 0)
+        mail_history.refresh_from_db()
+        self.assertIsNone(mail_history.transaction_id)
+
     def test_performance_entry_edit_updates_daily_entry_and_department_summary(self):
         entry = MemberDailyMetricEntry.objects.create(
             member=self.member,

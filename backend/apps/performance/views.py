@@ -1195,12 +1195,15 @@ def _department_today_transaction_detail_rows(*, department, target_date):
             type_text = "1件"
         rows.append(
             {
+                "id": tx.id,
                 "member_name": tx.entry.member.name,
                 "location_name": tx.location or tx.entry.location_name or "-",
                 "amount_text": f"{int(tx.support_amount or 0):,}円",
                 "type_text": type_text,
                 "detail_text": f"{tx.get_age_band_display()} / {tx.get_gender_display()} / {tx.get_nationality_type_display()}",
                 "comment": tx.comment,
+                "edit_url": reverse("performance_transaction_edit", args=[tx.id]),
+                "delete_url": reverse("performance_transaction_delete", args=[tx.id]),
             }
         )
     return rows
@@ -1234,9 +1237,10 @@ def _department_today_mail_detail_rows(*, department, target_date):
     return rows
 
 
-def _build_department_today_detail_context(*, department, target_date):
+def _build_department_today_detail_context(*, department, target_date, next_url=""):
     return {
         "today_detail_date": target_date,
+        "today_detail_next_url": next_url,
         "today_transaction_rows": _department_today_transaction_detail_rows(
             department=department,
             target_date=target_date,
@@ -1785,6 +1789,7 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         **_build_department_today_detail_context(
             department=dashboard_department,
             target_date=today,
+            next_url=request.get_full_path(),
         ),
     }
     return render(request, "performance/index.html", context)
@@ -1872,6 +1877,7 @@ def performance_history(request: HttpRequest) -> HttpResponse:
         **_build_department_today_detail_context(
             department=dashboard_department,
             target_date=today,
+            next_url=request.get_full_path(),
         ),
     }
     return render(request, "performance/history.html", context)
@@ -2030,10 +2036,28 @@ def performance_transaction_edit(request: HttpRequest, transaction_id: int) -> H
         "status_message": status_message,
         "next_url": next_url,
         "back_url": back_url,
+        "delete_url": reverse("performance_transaction_delete", args=[transaction.id]),
+        "is_admin": is_admin,
         "is_wv": transaction.entry.department.code == "WV",
         "nav_items": _performance_nav_items() if is_admin else _performance_member_nav_items(is_admin=False),
     }
     return render(request, "performance/transaction_edit.html", context)
+
+
+@require_performance_roles(ROLE_ADMIN)
+def performance_transaction_delete(request: HttpRequest, transaction_id: int) -> HttpResponse:
+    if request.method != "POST":
+        raise Http404
+    transaction = get_object_or_404(
+        MemberMetricTransaction.objects.select_related("entry", "entry__member", "entry__department"),
+        pk=transaction_id,
+    )
+    next_url = request.POST.get("next") or request.GET.get("next") or ""
+    fallback_url = reverse("performance_member_history_detail", args=[transaction.entry.member_id, transaction.entry.department_id])
+    back_url = _performance_next_url(next_url, fallback=fallback_url)
+    transaction.delete()
+    separator = "&" if "?" in back_url else "?"
+    return redirect(f"{back_url}{separator}deleted=transaction")
 
 
 @require_performance_roles(ROLE_ADMIN)

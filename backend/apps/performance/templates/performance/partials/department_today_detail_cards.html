@@ -15,6 +15,7 @@
           <th>区分</th>
           <th>金額</th>
           <th>詳細</th>
+          <th>操作</th>
         </tr>
       </thead>
       <tbody>
@@ -32,6 +33,18 @@
               <div class="mt-8">{{ row.comment }}</div>
               {% endif %}
             </details>
+          </td>
+          <td data-label="操作">
+            <a class="icon-btn" href="{{ row.edit_url }}?next={{ today_detail_next_url|urlencode }}" aria-label="{{ row.member_name }}の決済を編集">
+              <i class="fa-solid fa-pen"></i>
+            </a>
+            <form method="post" action="{{ row.delete_url }}" style="display:inline;" onsubmit="return confirm('この決済明細を取り消します。日次実績と部署サマリからも差し引かれます。よろしいですか？');">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ today_detail_next_url }}">
+              <button class="icon-btn icon-btn-danger" type="submit" aria-label="{{ row.member_name }}の決済を取り消す">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </form>
           </td>
         </tr>
         {% endfor %}
