@@ -16,6 +16,11 @@ from apps.dairymetrics.models import (
     MemberMonthMetricTarget,
     MemberPeriodMetricTarget,
     MetricAdjustment,
+    WVMetricCancellation,
+)
+from apps.dairymetrics.services.final_actuals import (
+    collect_department_final_actual_totals,
+    collect_member_final_actual_totals,
 )
 from apps.mail.models import MailSendHistory
 from apps.performance.services.activity_reminders import (
@@ -104,6 +109,73 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(response.context["dashboard_snapshot"]["overall_activity_trend"]["counts"], [3])
         self.assertEqual(response.context["dashboard_snapshot"]["overall_activity_trend"]["cs_counts"], [2])
         self.assertEqual(response.context["dashboard_snapshot"]["overall_activity_trend"]["refugee_counts"], [1])
+
+    def test_wv_cancellation_subtracts_from_final_actuals_without_changing_field_entry(self):
+        wv_department = self.create_department("WV")
+        wv_member = self.create_member(name="WV Cancel Member", department=wv_department)
+        entry = MemberDailyMetricEntry.objects.create(
+            member=wv_member,
+            department=wv_department,
+            entry_date=date(2026, 6, 7),
+            result_count=2,
+            support_amount=6500,
+            cs_count=1,
+            refugee_count=1,
+        )
+        WVMetricCancellation.objects.create(
+            member=wv_member,
+            department=wv_department,
+            target_date=entry.entry_date,
+            wv_result_type=MemberMetricTransaction.WV_RESULT_CS,
+            wv_cs_count=1,
+            location_name="横浜駅前",
+        )
+
+        entry.refresh_from_db()
+        totals = collect_member_final_actual_totals(
+            wv_member,
+            wv_department,
+            date(2026, 6, 1),
+            date(2026, 6, 30),
+        )
+
+        self.assertEqual(entry.result_count, 2)
+        self.assertEqual(entry.support_amount, 6500)
+        self.assertEqual(totals["result_count"], 1)
+        self.assertEqual(totals["support_amount"], 2000)
+        self.assertEqual(totals["cs_count"], 0)
+        self.assertEqual(totals["refugee_count"], 1)
+
+    def test_wv_refugee_cancellation_subtracts_only_refugee_side(self):
+        wv_department = self.create_department("WV")
+        wv_member = self.create_member(name="WV Refugee Cancel", department=wv_department)
+        MemberDailyMetricEntry.objects.create(
+            member=wv_member,
+            department=wv_department,
+            entry_date=date(2026, 6, 8),
+            result_count=2,
+            support_amount=7500,
+            cs_count=1,
+            refugee_count=1,
+        )
+        WVMetricCancellation.objects.create(
+            member=wv_member,
+            department=wv_department,
+            target_date=date(2026, 6, 8),
+            wv_result_type=MemberMetricTransaction.WV_RESULT_REFUGEE,
+            wv_refugee_amount=3000,
+        )
+
+        totals = collect_department_final_actual_totals(
+            wv_department,
+            date(2026, 6, 1),
+            date(2026, 6, 30),
+        )
+
+        self.assertEqual(totals["result_count"], 1)
+        self.assertEqual(totals["support_amount"], MemberMetricTransaction.WV_CS_UNIT_AMOUNT)
+        self.assertEqual(totals["cs_count"], 1)
+        self.assertEqual(totals["refugee_count"], 0)
 
     def test_performance_past_entry_create_renders_department_specific_transaction_inputs(self):
         wv_department = self.create_department("WV")

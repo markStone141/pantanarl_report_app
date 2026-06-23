@@ -1,6 +1,6 @@
 from django.db.models import Sum
 
-from apps.dairymetrics.models import MemberDailyMetricEntry, MetricAdjustment
+from apps.dairymetrics.models import MemberDailyMetricEntry, MetricAdjustment, WVMetricCancellation
 
 ENTRY_METRIC_FIELDS = [
     "approach_count",
@@ -24,6 +24,13 @@ ADJUSTMENT_METRIC_FIELDS = [
     "refugee_count",
 ]
 
+CANCELLATION_METRIC_FIELDS = [
+    "result_count",
+    "support_amount",
+    "cs_count",
+    "refugee_count",
+]
+
 
 def zero_final_actual_totals():
     return {field: 0 for field in {*ENTRY_METRIC_FIELDS, *ADJUSTMENT_METRIC_FIELDS}}
@@ -42,16 +49,24 @@ def aggregate_adjustment_totals(adjustments):
     return _aggregate_queryset(adjustments, ADJUSTMENT_METRIC_FIELDS)
 
 
-def merge_final_actual_totals(entry_totals=None, adjustment_totals=None):
+def aggregate_cancellation_totals(cancellations):
+    return _aggregate_queryset(cancellations, CANCELLATION_METRIC_FIELDS)
+
+
+def merge_final_actual_totals(entry_totals=None, adjustment_totals=None, cancellation_totals=None):
     totals = zero_final_actual_totals()
     entry_totals = entry_totals or {}
     adjustment_totals = adjustment_totals or {}
+    cancellation_totals = cancellation_totals or {}
 
     for field in ENTRY_METRIC_FIELDS:
         totals[field] = int(entry_totals.get(field) or 0)
 
     for field in ADJUSTMENT_METRIC_FIELDS:
         totals[field] = int(totals.get(field) or 0) + int(adjustment_totals.get(field) or 0)
+
+    for field in CANCELLATION_METRIC_FIELDS:
+        totals[field] = int(totals.get(field) or 0) - int(cancellation_totals.get(field) or 0)
 
     return totals
 
@@ -71,7 +86,15 @@ def collect_member_final_actual_totals(member, department, start_date, end_date,
             target_date__range=(start_date, end_date),
         )
         adjustment_totals = aggregate_adjustment_totals(adjustments)
-    return merge_final_actual_totals(entry_totals, adjustment_totals)
+        cancellations = WVMetricCancellation.objects.filter(
+            member=member,
+            department=department,
+            target_date__range=(start_date, end_date),
+        )
+        cancellation_totals = aggregate_cancellation_totals(cancellations)
+    else:
+        cancellation_totals = {}
+    return merge_final_actual_totals(entry_totals, adjustment_totals, cancellation_totals)
 
 
 def collect_department_final_actual_totals(department, start_date, end_date, *, include_adjustments=True):
@@ -87,7 +110,14 @@ def collect_department_final_actual_totals(department, start_date, end_date, *, 
             target_date__range=(start_date, end_date),
         )
         adjustment_totals = aggregate_adjustment_totals(adjustments)
-    return merge_final_actual_totals(entry_totals, adjustment_totals)
+        cancellations = WVMetricCancellation.objects.filter(
+            department=department,
+            target_date__range=(start_date, end_date),
+        )
+        cancellation_totals = aggregate_cancellation_totals(cancellations)
+    else:
+        cancellation_totals = {}
+    return merge_final_actual_totals(entry_totals, adjustment_totals, cancellation_totals)
 
 
 def collect_increase_adjustment_totals(*, department, start_date, end_date, member=None):
@@ -170,6 +200,21 @@ def collect_member_final_actual_totals_by_ids(
         for field in ADJUSTMENT_METRIC_FIELDS:
             totals[field] = int(totals.get(field) or 0) + int(row.get(f"sum_{field}") or 0)
 
+    cancellation_annotations = {f"sum_{field}": Sum(field) for field in CANCELLATION_METRIC_FIELDS}
+    cancellation_rows = (
+        WVMetricCancellation.objects.filter(
+            member_id__in=member_ids,
+            department=department,
+            target_date__range=(start_date, end_date),
+        )
+        .values("member_id")
+        .annotate(**cancellation_annotations)
+    )
+    for row in cancellation_rows:
+        totals = totals_by_member_id.setdefault(row["member_id"], zero_final_actual_totals())
+        for field in CANCELLATION_METRIC_FIELDS:
+            totals[field] = int(totals.get(field) or 0) - int(row.get(f"sum_{field}") or 0)
+
     return totals_by_member_id
 
 
@@ -210,5 +255,20 @@ def collect_department_final_actual_totals_by_codes(*, target_codes, start_date,
         totals = totals_by_code.setdefault(code, zero_final_actual_totals())
         for field in ADJUSTMENT_METRIC_FIELDS:
             totals[field] = int(totals.get(field) or 0) + int(row.get(f"sum_{field}") or 0)
+
+    cancellation_annotations = {f"sum_{field}": Sum(field) for field in CANCELLATION_METRIC_FIELDS}
+    cancellation_rows = (
+        WVMetricCancellation.objects.filter(
+            department__code__in=target_codes,
+            target_date__range=(start_date, end_date),
+        )
+        .values("department__code")
+        .annotate(**cancellation_annotations)
+    )
+    for row in cancellation_rows:
+        code = row["department__code"]
+        totals = totals_by_code.setdefault(code, zero_final_actual_totals())
+        for field in CANCELLATION_METRIC_FIELDS:
+            totals[field] = int(totals.get(field) or 0) - int(row.get(f"sum_{field}") or 0)
 
     return totals_by_code

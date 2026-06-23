@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 
@@ -502,6 +503,95 @@ class MetricAdjustment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.member.name} {self.department.code} {self.target_date} {self.source_type}"
+
+
+class WVMetricCancellation(models.Model):
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="wv_metric_cancellations")
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="wv_metric_cancellations")
+    target_date = models.DateField(default=timezone.localdate)
+    original_transaction = models.ForeignKey(
+        MemberMetricTransaction,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="wv_cancellations",
+    )
+    wv_result_type = models.CharField(
+        max_length=16,
+        choices=MemberMetricTransaction.WV_RESULT_TYPE_CHOICES,
+        default=MemberMetricTransaction.WV_RESULT_CS,
+    )
+    wv_cs_count = models.PositiveIntegerField(default=0)
+    wv_refugee_amount = models.PositiveIntegerField(default=0)
+    result_count = models.PositiveIntegerField(default=0)
+    support_amount = models.PositiveIntegerField(default=0)
+    cs_count = models.PositiveIntegerField(default=0)
+    refugee_count = models.PositiveIntegerField(default=0)
+    age_band = models.CharField(max_length=32, choices=MemberMetricTransaction.AGE_BAND_CHOICES, blank=True)
+    is_student = models.BooleanField(default=False)
+    gender = models.CharField(max_length=16, choices=MemberMetricTransaction.GENDER_CHOICES, blank=True)
+    nationality_type = models.CharField(max_length=16, choices=MemberMetricTransaction.NATIONALITY_CHOICES, blank=True)
+    location_name = models.CharField(max_length=120, blank=True)
+    comment = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_wv_metric_cancellations",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-target_date", "-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.member.name} WV cancel {self.target_date} {self.get_wv_result_type_display()}"
+
+    def clean(self):
+        super().clean()
+        if self.department_id and self.department.code != "WV":
+            raise ValidationError({"department": "キャンセル登録はWVのみ対応しています。"})
+        if self.wv_result_type in {
+            MemberMetricTransaction.WV_RESULT_REFUGEE,
+            MemberMetricTransaction.WV_RESULT_BOTH,
+        } and int(self.wv_refugee_amount or 0) <= 0:
+            raise ValidationError({"wv_refugee_amount": "難民キャンセル金額を入力してください。"})
+
+    def _normalize_wv_fields(self):
+        result_type = self.wv_result_type or MemberMetricTransaction.WV_RESULT_CS
+        cs_count = int(self.wv_cs_count or 0)
+        refugee_amount = int(self.wv_refugee_amount or 0)
+        if result_type == MemberMetricTransaction.WV_RESULT_CS:
+            cs_count = cs_count or 1
+            refugee_amount = 0
+        elif result_type == MemberMetricTransaction.WV_RESULT_REFUGEE:
+            cs_count = 0
+        elif result_type == MemberMetricTransaction.WV_RESULT_BOTH:
+            cs_count = cs_count or 1
+        else:
+            result_type = MemberMetricTransaction.WV_RESULT_CS
+            cs_count = cs_count or 1
+            refugee_amount = 0
+        self.wv_result_type = result_type
+        self.wv_cs_count = cs_count
+        self.wv_refugee_amount = refugee_amount
+        self.cs_count = MemberMetricTransaction._wv_effective_cs_count(
+            result_type=result_type,
+            cs_count=cs_count,
+        )
+        self.refugee_count = MemberMetricTransaction._wv_effective_refugee_count(
+            result_type=result_type,
+            refugee_amount=refugee_amount,
+        )
+        self.result_count = self.cs_count + self.refugee_count
+        self.support_amount = (self.cs_count * MemberMetricTransaction.WV_CS_UNIT_AMOUNT) + refugee_amount
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        self._normalize_wv_fields()
+        super().save(*args, **kwargs)
 
 
 class MemberPeriodMetricTarget(models.Model):

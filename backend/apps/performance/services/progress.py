@@ -4,7 +4,7 @@ from datetime import date
 
 from django.db.models import Sum
 
-from apps.dairymetrics.models import MetricAdjustment
+from apps.dairymetrics.models import MetricAdjustment, WVMetricCancellation
 from apps.targets.models import (
     DepartmentMonthTarget,
     DepartmentPeriodTarget,
@@ -77,7 +77,7 @@ def collect_adjustment_amounts_by_codes(*, target_codes, start_date: date, end_d
             return_qr_amount_total=Sum("return_qr_amount"),
         )
     )
-    return {
+    adjustment_amounts = {
         row["department__code"]: (
             int(row["support_amount_total"] or 0)
             + int(row["return_postal_amount_total"] or 0)
@@ -85,6 +85,18 @@ def collect_adjustment_amounts_by_codes(*, target_codes, start_date: date, end_d
         )
         for row in rows
     }
+    cancellation_rows = (
+        WVMetricCancellation.objects.filter(
+            department__code__in=target_codes,
+            target_date__range=(start_date, end_date),
+        )
+        .values("department__code")
+        .annotate(support_amount_total=Sum("support_amount"))
+    )
+    for row in cancellation_rows:
+        code = row["department__code"]
+        adjustment_amounts[code] = int(adjustment_amounts.get(code) or 0) - int(row["support_amount_total"] or 0)
+    return adjustment_amounts
 
 
 def progress_rate(actual: int, target: int) -> float | None:
@@ -101,7 +113,7 @@ def build_progress_card(*, label, actual_amount, target_amount, summary_text, ba
     target_amount = int(target_amount or 0)
     if target_amount > 0:
         capped_base_amount = min(base_actual_amount, target_amount)
-        capped_adjustment_amount = min(adjustment_amount, max(target_amount - capped_base_amount, 0))
+        capped_adjustment_amount = min(max(adjustment_amount, 0), max(target_amount - capped_base_amount, 0))
         remaining_chart_amount = max(target_amount - capped_base_amount - capped_adjustment_amount, 0)
         chart_values = [capped_base_amount, capped_adjustment_amount, remaining_chart_amount]
     else:
@@ -179,8 +191,15 @@ def sum_adjustment_amount(*, member=None, department=None, start_date: date, end
         return_postal_amount_total=Sum("return_postal_amount"),
         return_qr_amount_total=Sum("return_qr_amount"),
     )
-    return (
+    adjustment_amount = (
         int(totals["support_amount_total"] or 0)
         + int(totals["return_postal_amount_total"] or 0)
         + int(totals["return_qr_amount_total"] or 0)
     )
+    cancellation_queryset = WVMetricCancellation.objects.filter(target_date__range=(start_date, end_date))
+    if member is not None:
+        cancellation_queryset = cancellation_queryset.filter(member=member)
+    if department is not None:
+        cancellation_queryset = cancellation_queryset.filter(department=department)
+    cancellation_totals = cancellation_queryset.aggregate(support_amount_total=Sum("support_amount"))
+    return adjustment_amount - int(cancellation_totals["support_amount_total"] or 0)
