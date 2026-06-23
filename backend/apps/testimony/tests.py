@@ -202,6 +202,12 @@ class TestimonyArticleListTests(TestCase):
         self.assertContains(response, "data-testimony-filter-form", html=False)
         self.assertContains(response, "data-testimony-results", html=False)
 
+    def test_member_navigation_hides_admin_dashboard_link(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("testimony_article_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "総合管理ページ")
+
     def test_performance_member_dashboard_links_to_testimony(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("performance_member_dashboard"))

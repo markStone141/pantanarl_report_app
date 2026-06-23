@@ -723,6 +723,13 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertContains(response, f'href="{reverse("report_index")}"', html=False)
         self.assertContains(response, "報告画面")
 
+    def test_dashboard_nav_links_to_testimony(self):
+        response = self.client.get(reverse("dashboard_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'href="{reverse("testimony_article_list")}"', html=False)
+        self.assertContains(response, "証を見る")
+
     def test_dashboard_target_progress_reflects_saved_targets_and_actuals(self):
         today = timezone.localdate()
         month = today.replace(day=1)
