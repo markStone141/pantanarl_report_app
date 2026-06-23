@@ -246,6 +246,19 @@ class TestimonyArticleListTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "総合管理ページ")
 
+    def test_article_detail_has_list_back_link_and_list_refreshes_after_bfcache_restore(self):
+        self.client.force_login(self.user)
+
+        detail_response = self.client.get(reverse("testimony_article_detail", args=[self.article.id]))
+        list_response = self.client.get(reverse("testimony_article_list"))
+
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertContains(detail_response, reverse("testimony_article_list"))
+        self.assertContains(detail_response, "記事一覧へ戻る")
+        self.assertEqual(list_response.status_code, 200)
+        self.assertContains(list_response, "pageshow")
+        self.assertContains(list_response, "event.persisted")
+
     def test_mobile_drawer_has_foreground_stacking_context(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("testimony_article_list"))

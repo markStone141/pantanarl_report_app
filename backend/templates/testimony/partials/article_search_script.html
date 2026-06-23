@@ -100,5 +100,10 @@
     overlay?.addEventListener("click", function (event) {
       if (event.target === overlay) setOpen(false);
     });
+    window.addEventListener("pageshow", function (event) {
+      if (event.persisted) {
+        fetchResults(primaryForm(), { pushState: false });
+      }
+    });
   })();
 </script>

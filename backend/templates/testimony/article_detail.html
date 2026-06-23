@@ -26,6 +26,9 @@
   {% endif %}
 
   <div class="testimony-actions">
+    <a class="btn-inline" href="{% url 'testimony_article_list' %}">
+      <i class="fa-solid fa-list" aria-hidden="true"></i> 記事一覧へ戻る
+    </a>
     <form method="post" action="{% url 'testimony_article_favorite' article.id %}" class="js-testimony-toggle" data-kind="favorite">{% csrf_token %}
       <input type="hidden" name="next" value="{{ request.path }}" />
       <button id="favorite-button" type="submit" class="testimony-react-btn testimony-favorite-btn{% if is_favorited %} is-active{% endif %}">
