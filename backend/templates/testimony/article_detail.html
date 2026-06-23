@@ -4,6 +4,12 @@
 {% block testimony_title %}{{ article.title }}{% endblock %}
 
 {% block testimony_content %}
+<div class="testimony-detail-back">
+  <a class="testimony-react-btn" href="{% url 'testimony_article_list' %}">
+    <i class="fa-solid fa-list" aria-hidden="true"></i>
+    <span>記事一覧へ戻る</span>
+  </a>
+</div>
 <article class="card testimony-section" style="padding:23px;">
   <h2 style="font-size:1.55rem; margin-bottom:10px;">{{ article.title }}</h2>
   <p class="muted testimony-detail-meta">
@@ -26,9 +32,6 @@
   {% endif %}
 
   <div class="testimony-actions">
-    <a class="btn-inline" href="{% url 'testimony_article_list' %}">
-      <i class="fa-solid fa-list" aria-hidden="true"></i> 記事一覧へ戻る
-    </a>
     <form method="post" action="{% url 'testimony_article_favorite' article.id %}" class="js-testimony-toggle" data-kind="favorite">{% csrf_token %}
       <input type="hidden" name="next" value="{{ request.path }}" />
       <button id="favorite-button" type="submit" class="testimony-react-btn testimony-favorite-btn{% if is_favorited %} is-active{% endif %}">
