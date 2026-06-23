@@ -119,6 +119,9 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertContains(response, "新しく投稿された証が1件あります。")
         self.assertContains(response, "fa-bell")
         self.assertContains(response, reverse("testimony_article_list"))
+        self.assertContains(response, "証を見る")
+        self.assertContains(response, reverse("home"))
+        self.assertContains(response, "ReportApp")
         self.assertEqual(response.context["testimony_notification"]["count"], 1)
         self.assertNotContains(response, unread_article.title)
 
