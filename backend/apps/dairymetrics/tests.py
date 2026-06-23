@@ -21,6 +21,7 @@ from apps.targets.models import (
     TARGET_STATUS_PLANNED,
     TargetMetric,
 )
+from apps.testimony.models import Article, ArticleViewHistory
 
 from .forms import MemberDailyMetricEntryForm
 from .models import (
@@ -80,6 +81,45 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         response = self.client.get(reverse("dairymetrics_logout"))
 
         self.assertRedirects(response, reverse("performance_login"))
+
+    def test_entry_v2_transaction_demo_shows_unread_recent_testimony_count(self):
+        now = timezone.now()
+        unread_article = Article.objects.create(
+            title="新しい証",
+            body="Body",
+            author="Author",
+            created_at=now,
+            updated_at=now,
+        )
+        viewed_article = Article.objects.create(
+            title="既読の証",
+            body="Body",
+            author="Author",
+            created_at=now,
+            updated_at=now,
+        )
+        Article.objects.create(
+            title="古い証",
+            body="Body",
+            author="Author",
+            created_at=now - timedelta(days=20),
+            updated_at=now - timedelta(days=20),
+        )
+        ArticleViewHistory.objects.create(
+            user=self.user,
+            article=viewed_article,
+            first_viewed_at=now,
+            last_viewed_at=now,
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_entry_v2_transaction_demo"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Testimonyに新規投稿が1件あります。")
+        self.assertContains(response, reverse("testimony_article_list"))
+        self.assertEqual(response.context["testimony_notification"]["count"], 1)
+        self.assertNotContains(response, unread_article.title)
 
     def test_entry_v2_transaction_demo_can_save_un_transaction(self):
         entry_date = timezone.localdate()

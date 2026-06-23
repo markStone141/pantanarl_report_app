@@ -16,6 +16,7 @@ from apps.common.target_periods import period_options_active_first
 from apps.mail.models import MailSendHistory
 from apps.mail.services import MailSendError, record_transaction_mail_failure, send_transaction_mail
 from apps.targets.models import Period, TARGET_STATUS_PLANNED
+from apps.testimony.services.notifications import unread_recent_article_notification
 
 from .auth import get_member_profile, require_dairymetrics_admin, require_dairymetrics_member
 from .forms import (
@@ -1404,6 +1405,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
             "time_label": timezone.localtime(duplicate_transaction.created_at).strftime("%H:%M"),
             "mail_status": transaction_mail_status(duplicate_transaction),
         }
+    context["testimony_notification"] = unread_recent_article_notification(user=request.user)
     return render(request, "dairymetrics/entry_form_v2_transaction.html", context)
 
 

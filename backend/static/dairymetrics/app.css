@@ -2763,6 +2763,41 @@
   border-radius: 14px;
 }
 
+.dairymetrics-testimony-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fff6cf, #ffe08a);
+  border: 1px solid #e2b739;
+  color: #5d4200;
+  text-decoration: none;
+  box-shadow: 0 10px 28px rgba(188, 132, 0, 0.16);
+}
+
+.dairymetrics-testimony-notice:hover {
+  color: #4b3500;
+  transform: translateY(-1px);
+}
+
+.dairymetrics-testimony-notice-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #fff;
+  color: #d39100;
+  flex: 0 0 auto;
+}
+
+.dairymetrics-testimony-notice strong {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
 @media print {
   .no-print,
   .dashboard-drawer-toggle,
