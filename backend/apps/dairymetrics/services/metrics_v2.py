@@ -818,13 +818,16 @@ def _build_ranking_payload(*, department, scope: MetricsV2Scope):
                 else ""
                 for row in ranked_rows
             ],
-            "detail_urls": [reverse("dairymetrics_member_dashboard", args=[row["member"].id]) for row in ranked_rows],
+            "detail_urls": [
+                reverse("performance_member_insight", args=[row["member"].id, department.id])
+                for row in ranked_rows
+            ],
             "rows": [
                 {
                     "member_name": row["member"].name,
                     "member_id": row["member"].id,
                     "value_text": _format_ranking_value(option["key"], row["metrics"][option["key"]], option["unit"]),
-                    "detail_url": reverse("dairymetrics_member_dashboard", args=[row["member"].id]),
+                    "detail_url": reverse("performance_member_insight", args=[row["member"].id, department.id]),
                 }
                 for row in ranked_rows
             ],

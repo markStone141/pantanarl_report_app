@@ -4725,6 +4725,9 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "総合管理者ページ")
         self.assertNotContains(response, "決済入力")
         self.assertContains(response, reverse("performance_member_insight", args=[self.member.id, self.department.id]))
+        ranking_metric = response.context["metrics_v2_payload_json"]["ranking"]["metric_map"]["support_amount"]
+        self.assertIn(reverse("performance_member_insight", args=[self.member.id, self.department.id]), ranking_metric["detail_urls"])
+        self.assertNotIn(reverse("dairymetrics_member_dashboard", args=[self.member.id]), ranking_metric["detail_urls"])
 
     def test_metrics_v2_demo_can_render_selected_member_for_admin(self):
         self.client.force_login(self.admin)
