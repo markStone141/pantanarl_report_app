@@ -192,6 +192,44 @@ class TestimonyArticleListTests(TestCase):
         self.assertIn("data-testimony-results", payload["html"])
         self.assertLess(payload["html"].find("Beta story"), payload["html"].find("Alpha testimony"))
 
+    def test_article_list_marks_recent_unread_articles_as_new(self):
+        now = timezone.now()
+        old_article = Article.objects.create(
+            title="Old testimony",
+            body="Old body",
+            author="古い証者",
+            product=self.product,
+            created_by=self.user,
+            created_at=now - timedelta(days=8),
+            updated_at=now - timedelta(days=8),
+        )
+        ArticleViewHistory.objects.create(
+            user=self.user,
+            article=self.other_article,
+            first_viewed_at=now,
+            last_viewed_at=now,
+            view_count=1,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("testimony_article_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Alpha testimony")
+        self.assertContains(response, "testimony-new-badge")
+        new_flags = {article.title: article.is_new_for_user for article in response.context["articles"]}
+        self.assertTrue(new_flags["Alpha testimony"])
+        self.assertFalse(new_flags["Beta story"])
+        self.assertFalse(new_flags["Old testimony"])
+
+        self.client.get(reverse("testimony_article_detail", args=[self.article.id]))
+        refreshed_response = self.client.get(reverse("testimony_article_list"))
+
+        self.assertEqual(refreshed_response.status_code, 200)
+        refreshed_flags = {article.title: article.is_new_for_user for article in refreshed_response.context["articles"]}
+        self.assertFalse(refreshed_flags["Alpha testimony"])
+        self.assertContains(refreshed_response, old_article.title)
+
     def test_favorite_page_uses_article_list_ui_and_filters(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("testimony_mypage_favorites"))

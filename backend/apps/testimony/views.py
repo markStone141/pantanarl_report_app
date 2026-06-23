@@ -1,5 +1,6 @@
 import os
 import tempfile
+from datetime import timedelta
 from io import StringIO
 
 from django.contrib import messages
@@ -7,7 +8,7 @@ from django.core.management import call_command
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
-from django.db.models import Count, F, Q
+from django.db.models import BooleanField, Case, Count, Exists, F, OuterRef, Q, Value, When
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -38,13 +39,26 @@ TESTIMONY_SORT_OPTIONS = [
 ]
 
 
+def _new_article_cutoff():
+    return timezone.now() - timedelta(days=7)
+
+
 def _testimony_article_queryset(request: HttpRequest):
     sort = request.GET.get("sort", "latest")
     keyword = (request.GET.get("q") or "").strip()
     product_id = (request.GET.get("product") or "").strip()
+    viewed = ArticleViewHistory.objects.filter(user=request.user, article_id=OuterRef("pk"))
     queryset = (
         Article.objects.select_related("product", "created_by")
         .annotate(favorite_count=Count("favorites", distinct=True), like_count=Count("likes", distinct=True))
+        .annotate(has_viewed_by_user=Exists(viewed))
+    )
+    queryset = queryset.annotate(
+        is_new_for_user=Case(
+            When(created_at__gte=_new_article_cutoff(), has_viewed_by_user=False, then=Value(True)),
+            default=Value(False),
+            output_field=BooleanField(),
+        )
     )
     if keyword:
         queryset = queryset.filter(Q(title__icontains=keyword) | Q(body__icontains=keyword) | Q(author__icontains=keyword))
