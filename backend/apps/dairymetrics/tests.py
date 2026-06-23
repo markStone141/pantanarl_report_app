@@ -116,7 +116,8 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         response = self.client.get(reverse("dairymetrics_entry_v2_transaction_demo"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Testimonyに新規投稿が1件あります。")
+        self.assertContains(response, "新しく投稿された証が1件あります。")
+        self.assertContains(response, "fa-bell")
         self.assertContains(response, reverse("testimony_article_list"))
         self.assertEqual(response.context["testimony_notification"]["count"], 1)
         self.assertNotContains(response, unread_article.title)
