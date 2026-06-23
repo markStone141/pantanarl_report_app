@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     performance_adjustment_delete,
     performance_adjustments,
+    performance_cancellation_delete,
     performance_admin_entries,
     performance_entry_delete,
     performance_entry_edit,
@@ -68,4 +69,5 @@ urlpatterns = [
     path("insight/<int:member_id>/<int:department_id>/history/day-detail/", performance_member_history_insight_day_detail, name="performance_member_history_insight_day_detail"),
     path("adjustments/", performance_adjustments, name="performance_adjustments"),
     path("adjustments/<int:adjustment_id>/delete/", performance_adjustment_delete, name="performance_adjustment_delete"),
+    path("adjustments/cancellations/<int:cancellation_id>/delete/", performance_cancellation_delete, name="performance_cancellation_delete"),
 ]

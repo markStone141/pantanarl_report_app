@@ -70,6 +70,20 @@
         <div class="error-text">{{ form.source_type.errors|striptags }}</div>
         {% endif %}
       </div>
+      <div class="dairymetrics-field" id="performance-adjustment-cancel-result-field">
+        <label for="{{ form.cancel_result_type.id_for_label }}">{{ form.cancel_result_type.label }}</label>
+        {{ form.cancel_result_type }}
+        {% if form.cancel_result_type.errors %}
+        <div class="error-text">{{ form.cancel_result_type.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="dairymetrics-field" id="performance-adjustment-cancel-cs-field">
+        <label for="{{ form.cancel_cs_count.id_for_label }}">{{ form.cancel_cs_count.label }}</label>
+        {{ form.cancel_cs_count }}
+        {% if form.cancel_cs_count.errors %}
+        <div class="error-text">{{ form.cancel_cs_count.errors|striptags }}</div>
+        {% endif %}
+      </div>
       <div class="dairymetrics-field">
         <label for="{{ form.location_name.id_for_label }}">{{ form.location_name.label }}</label>
         {{ form.location_name }}
@@ -134,6 +148,10 @@
     const unCodeDatalist = document.getElementById("performance-adjustment-un-code-options");
     const unCodeMemberName = document.getElementById("performance-adjustment-un-code-member-name");
     const sourceTypeSelect = document.getElementById("{{ form.source_type.id_for_label }}");
+    const cancelResultSelect = document.getElementById("{{ form.cancel_result_type.id_for_label }}");
+    const cancelResultField = document.getElementById("performance-adjustment-cancel-result-field");
+    const cancelCsField = document.getElementById("performance-adjustment-cancel-cs-field");
+    const cancelCsInput = document.getElementById("{{ form.cancel_cs_count.id_for_label }}");
     const amountChoiceSelect = document.getElementById("{{ form.amount_choice.id_for_label }}");
     const directAmountField = document.getElementById("performance-adjustment-direct-amount-field");
     const directAmountInput = document.getElementById("{{ form.amount.id_for_label }}");
@@ -306,7 +324,8 @@
         ? [
             { value: "cs", label: "CS" },
             { value: "refugee", label: "難民" },
-            { value: "cs_plus_refugee", label: "CS+難民" }
+            { value: "cs_plus_refugee", label: "CS+難民" },
+            { value: "cancel", label: "キャンセル" }
           ]
         : [
             { value: "postal", label: "郵送" },
@@ -347,8 +366,23 @@
       }
       const isWv = isWvSelected();
       const sourceType = sourceTypeSelect.value;
-      const requiresAmount = !isWv || sourceType === "refugee" || sourceType === "cs_plus_refugee";
+      const isCancel = isWv && sourceType === "cancel";
+      const cancelResultType = cancelResultSelect ? cancelResultSelect.value : "cs";
+      const cancelRequiresCs = isCancel && (cancelResultType === "cs" || cancelResultType === "both");
+      const cancelRequiresRefugee = isCancel && (cancelResultType === "refugee" || cancelResultType === "both");
+      const requiresAmount = !isWv || sourceType === "refugee" || sourceType === "cs_plus_refugee" || cancelRequiresRefugee;
       const showDirect = requiresAmount && amountChoiceSelect.value === "direct";
+      if (cancelResultField) {
+        cancelResultField.hidden = !isCancel;
+      }
+      if (cancelCsField) {
+        cancelCsField.hidden = !cancelRequiresCs;
+      }
+      if (cancelCsInput && !cancelRequiresCs) {
+        cancelCsInput.value = "0";
+      } else if (cancelCsInput && cancelRequiresCs && (!cancelCsInput.value || cancelCsInput.value === "0")) {
+        cancelCsInput.value = "1";
+      }
       amountChoiceSelect.closest(".dairymetrics-field").hidden = !requiresAmount;
       directAmountField.hidden = !showDirect;
       if (!requiresAmount || !showDirect) {
@@ -357,10 +391,10 @@
         }
       }
       if (amountChoiceLabel) {
-        amountChoiceLabel.textContent = isWv ? "難民支援金額" : "金額";
+        amountChoiceLabel.textContent = isCancel ? "難民キャンセル金額" : (isWv ? "難民支援金額" : "金額");
       }
       if (directAmountLabel) {
-        directAmountLabel.textContent = isWv ? "難民支援金額を直接入力" : "金額を直接入力";
+        directAmountLabel.textContent = isCancel ? "難民キャンセル金額を直接入力" : (isWv ? "難民支援金額を直接入力" : "金額を直接入力");
       }
     }
 
@@ -370,6 +404,9 @@
 
     if (amountChoiceSelect) {
       amountChoiceSelect.addEventListener("change", toggleDirectAmount);
+    }
+    if (cancelResultSelect) {
+      cancelResultSelect.addEventListener("change", toggleDirectAmount);
     }
 
     renderSourceTypeOptions();

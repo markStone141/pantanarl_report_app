@@ -3,7 +3,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Department, Member
 from apps.dairymetrics.forms import MemberDailyMetricEntryForm
-from apps.dairymetrics.models import MemberMetricTransaction, MetricAdjustment
+from apps.dairymetrics.models import MemberMetricTransaction, MetricAdjustment, WVMetricCancellation
 
 
 class PerformanceEntryFilterForm(forms.Form):
@@ -168,6 +168,7 @@ class PerformanceMemberDailyMetricEntryForm(MemberDailyMetricEntryForm):
 
 
 class PerformanceMetricAdjustmentForm(forms.ModelForm):
+    SOURCE_CANCEL = "cancel"
     UN_SOURCE_CHOICES = [
         (MetricAdjustment.SOURCE_POSTAL, "郵送"),
         (MetricAdjustment.SOURCE_QR, "QR"),
@@ -177,6 +178,7 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
         (MetricAdjustment.SOURCE_CS, "CS"),
         (MetricAdjustment.SOURCE_REFUGEE, "難民"),
         (MetricAdjustment.SOURCE_CS_PLUS_REFUGEE, "CS+難民"),
+        (SOURCE_CANCEL, "キャンセル"),
     ]
     AMOUNT_DIRECT = "direct"
     AMOUNT_CHOICES = [(str(value), f"{value:,}円") for value in range(500, 5001, 500)]
@@ -184,6 +186,13 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
 
     amount_choice = forms.ChoiceField(label="金額", choices=AMOUNT_SELECT_CHOICES, initial="500")
     amount = forms.IntegerField(label="金額を直接入力", min_value=0, required=False)
+    cancel_result_type = forms.ChoiceField(
+        label="キャンセル対象",
+        choices=MemberMetricTransaction.WV_RESULT_TYPE_CHOICES,
+        initial=MemberMetricTransaction.WV_RESULT_CS,
+        required=False,
+    )
+    cancel_cs_count = forms.IntegerField(label="CSキャンセル口数", min_value=0, initial=1, required=False)
 
     class Meta:
         model = MetricAdjustment
@@ -229,7 +238,18 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
             self.fields["amount"].label = "難民支援金額を直接入力"
         self.fields["target_date"].initial = self.initial.get("target_date") or timezone.localdate()
         self.fields["amount"].widget.attrs.update({"inputmode": "numeric", "min": "0"})
-        self.order_fields(["department", "member", "target_date", "source_type", "location_name", "amount_choice", "amount"])
+        self.fields["cancel_cs_count"].widget.attrs.update({"inputmode": "numeric", "min": "0"})
+        self.order_fields([
+            "department",
+            "member",
+            "target_date",
+            "source_type",
+            "cancel_result_type",
+            "cancel_cs_count",
+            "location_name",
+            "amount_choice",
+            "amount",
+        ])
         if self.instance and self.instance.pk:
             initial_amount = self._resolve_instance_amount(self.instance)
             self.fields["amount"].initial = initial_amount
@@ -281,7 +301,40 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
         amount_choice = cleaned_data.get("amount_choice")
         direct_amount = cleaned_data.get("amount")
         source_type = cleaned_data.get("source_type")
+        cleaned_data["requested_source_type"] = source_type
         is_wv_department = self._is_wv_department(cleaned_data.get("department"))
+        if is_wv_department and source_type == self.SOURCE_CANCEL:
+            cleaned_data["source_type"] = MetricAdjustment.SOURCE_OTHER
+            if self.instance and self.instance.pk:
+                self.add_error("source_type", "キャンセルは新規登録で作成してください。")
+                return cleaned_data
+            cancel_result_type = cleaned_data.get("cancel_result_type") or MemberMetricTransaction.WV_RESULT_CS
+            cancel_cs_count = int(cleaned_data.get("cancel_cs_count") or 0)
+            requires_cs = cancel_result_type in {
+                MemberMetricTransaction.WV_RESULT_CS,
+                MemberMetricTransaction.WV_RESULT_BOTH,
+            }
+            requires_refugee = cancel_result_type in {
+                MemberMetricTransaction.WV_RESULT_REFUGEE,
+                MemberMetricTransaction.WV_RESULT_BOTH,
+            }
+            if requires_cs and cancel_cs_count <= 0:
+                self.add_error("cancel_cs_count", "CSキャンセル口数を入力してください。")
+            if requires_refugee:
+                if amount_choice == self.AMOUNT_DIRECT:
+                    if direct_amount is None:
+                        self.add_error("amount", "難民キャンセル金額を入れてください。")
+                    else:
+                        cleaned_data["resolved_amount"] = int(direct_amount)
+                elif amount_choice:
+                    cleaned_data["resolved_amount"] = int(amount_choice)
+                else:
+                    self.add_error("amount_choice", "難民キャンセル金額を選択してください。")
+                if int(cleaned_data.get("resolved_amount") or 0) <= 0:
+                    self.add_error("amount_choice", "難民キャンセル金額を入力してください。")
+            else:
+                cleaned_data["resolved_amount"] = 0
+            return cleaned_data
         if is_wv_department and source_type == MetricAdjustment.SOURCE_CS:
             cleaned_data["resolved_amount"] = 0
         else:
@@ -304,8 +357,21 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
     def save(self, commit=True):
         adjustment = super().save(commit=False)
         amount = int(self.cleaned_data.get("resolved_amount") or 0)
-        source_type = self.cleaned_data["source_type"]
+        source_type = self.cleaned_data.get("requested_source_type") or self.cleaned_data["source_type"]
         is_wv_department = self._is_wv_department(adjustment.department)
+        if is_wv_department and source_type == self.SOURCE_CANCEL:
+            cancellation = WVMetricCancellation(
+                member=adjustment.member,
+                department=adjustment.department,
+                target_date=adjustment.target_date,
+                wv_result_type=self.cleaned_data.get("cancel_result_type") or MemberMetricTransaction.WV_RESULT_CS,
+                wv_cs_count=int(self.cleaned_data.get("cancel_cs_count") or 0),
+                wv_refugee_amount=amount,
+                location_name=adjustment.location_name,
+            )
+            if commit:
+                cancellation.save()
+            return cancellation
         adjustment.source_type = source_type
         adjustment.approach_count = 0
         adjustment.communication_count = 0

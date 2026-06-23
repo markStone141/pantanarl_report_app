@@ -24,6 +24,7 @@ from apps.dairymetrics.models import (
     MemberMonthMetricTarget,
     MemberPeriodMetricTarget,
     MetricAdjustment,
+    WVMetricCancellation,
 )
 from apps.mail.models import MailSendHistory
 from apps.mail.services import send_member_direct_mail
@@ -309,6 +310,81 @@ def _filtered_adjustments_list_queryset(cleaned_data):
             | Q(department__code__icontains=query)
         )
     return queryset
+
+
+def _filtered_cancellations_list_queryset(cleaned_data):
+    queryset = WVMetricCancellation.objects.select_related("member", "department", "created_by").order_by("-target_date", "-created_at")
+    department = cleaned_data.get("department")
+    query = (cleaned_data.get("q") or "").strip()
+    if department:
+        queryset = queryset.filter(department=department)
+    if query:
+        queryset = queryset.filter(
+            Q(member__name__icontains=query)
+            | Q(location_name__icontains=query)
+            | Q(comment__icontains=query)
+            | Q(department__code__icontains=query)
+        )
+        if query in "キャンセル":
+            queryset = WVMetricCancellation.objects.select_related("member", "department", "created_by").order_by(
+                "-target_date",
+                "-created_at",
+            )
+            if department:
+                queryset = queryset.filter(department=department)
+    return queryset
+
+
+def _adjustment_list_row(adjustment):
+    if adjustment.department.code == "WV":
+        amount = adjustment.support_amount
+        detail_text = f"CS {adjustment.cs_count} / 難民 {adjustment.refugee_count}"
+    elif adjustment.source_type == MetricAdjustment.SOURCE_POSTAL:
+        amount = adjustment.return_postal_amount
+        detail_text = "郵送"
+    elif adjustment.source_type == MetricAdjustment.SOURCE_QR:
+        amount = adjustment.return_qr_amount
+        detail_text = "QR"
+    else:
+        amount = adjustment.support_amount
+        detail_text = adjustment.get_source_type_display()
+    return {
+        "id": adjustment.id,
+        "record_type": "adjustment",
+        "target_date": adjustment.target_date,
+        "created_at": adjustment.created_at,
+        "member_name": adjustment.member.name,
+        "department_code": adjustment.department.code,
+        "source_label": adjustment.get_source_type_display(),
+        "location_name": adjustment.location_name,
+        "detail_text": detail_text,
+        "amount": amount,
+        "edit_url": f"{reverse('performance_adjustments')}?edit={adjustment.id}",
+        "delete_url": reverse("performance_adjustment_delete", args=[adjustment.id]),
+    }
+
+
+def _cancellation_list_row(cancellation):
+    return {
+        "id": cancellation.id,
+        "record_type": "cancellation",
+        "target_date": cancellation.target_date,
+        "created_at": cancellation.created_at,
+        "member_name": cancellation.member.name,
+        "department_code": cancellation.department.code,
+        "source_label": "キャンセル",
+        "location_name": cancellation.location_name,
+        "detail_text": f"CS {cancellation.cs_count} / 難民 {cancellation.refugee_count}",
+        "amount": cancellation.support_amount,
+        "edit_url": "",
+        "delete_url": reverse("performance_cancellation_delete", args=[cancellation.id]),
+    }
+
+
+def _combined_adjustment_list_rows(cleaned_data):
+    rows = [_adjustment_list_row(adjustment) for adjustment in _filtered_adjustments_list_queryset(cleaned_data)]
+    rows.extend(_cancellation_list_row(cancellation) for cancellation in _filtered_cancellations_list_queryset(cleaned_data))
+    return sorted(rows, key=lambda row: (row["target_date"], row["created_at"]), reverse=True)
 
 
 def _count_text(entry, adjustment_totals):
@@ -2712,10 +2788,10 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
         edit_adjustment = get_object_or_404(MetricAdjustment, pk=adjustment_id) if adjustment_id else None
         form = PerformanceMetricAdjustmentForm(request.POST, instance=edit_adjustment)
         if form.is_valid():
-            adjustment = form.save(commit=False)
-            if adjustment.created_by_id is None:
-                adjustment.created_by = request.user
-            adjustment.save()
+            record = form.save(commit=False)
+            if record.created_by_id is None:
+                record.created_by = request.user
+            record.save()
             return redirect(f"{reverse('performance_adjustments')}?saved=1")
         status_message = "入力内容を確認してください。"
     else:
@@ -2730,9 +2806,9 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
         list_filter_data["q"] = ""
     list_filter_form = PerformanceAdjustmentListFilterForm(list_filter_data)
     if list_filter_form.is_valid():
-        adjustments_queryset = _filtered_adjustments_list_queryset(list_filter_form.cleaned_data)
+        adjustments_queryset = _combined_adjustment_list_rows(list_filter_form.cleaned_data)
     else:
-        adjustments_queryset = MetricAdjustment.objects.none()
+        adjustments_queryset = []
 
     paginator = Paginator(adjustments_queryset, 20)
     page_obj = paginator.get_page(request.GET.get("page") or 1)
@@ -2795,4 +2871,12 @@ def performance_adjustment_delete(request: HttpRequest, adjustment_id: int) -> H
     adjustment = get_object_or_404(MetricAdjustment, pk=adjustment_id)
     if request.method == "POST":
         adjustment.delete()
+    return redirect(reverse("performance_adjustments"))
+
+
+@require_performance_roles(ROLE_ADMIN)
+def performance_cancellation_delete(request: HttpRequest, cancellation_id: int) -> HttpResponse:
+    cancellation = get_object_or_404(WVMetricCancellation, pk=cancellation_id)
+    if request.method == "POST":
+        cancellation.delete()
     return redirect(reverse("performance_adjustments"))

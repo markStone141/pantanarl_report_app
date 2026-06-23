@@ -15,31 +15,25 @@
       {% for adjustment in adjustments %}
       <tr>
         <td data-label="対象日">{{ adjustment.target_date|date:"Y/m/d" }}</td>
-        <td data-label="メンバー">{{ adjustment.member.name }}</td>
-        <td data-label="部署">{{ adjustment.department.code }}</td>
-        <td data-label="種別">{{ adjustment.get_source_type_display }}</td>
+        <td data-label="メンバー">{{ adjustment.member_name }}</td>
+        <td data-label="部署">{{ adjustment.department_code }}</td>
+        <td data-label="種別">{{ adjustment.source_label }}</td>
         <td data-label="内容">
           {% if adjustment.location_name %}
           <div>{{ adjustment.location_name }}</div>
           {% endif %}
-          {% if adjustment.department.code == "WV" %}
-          <div class="muted">CS {{ adjustment.cs_count }} / 難民 {{ adjustment.refugee_count }}</div>
-          {{ adjustment.support_amount }}円
-          {% elif adjustment.source_type == "postal" %}
-          {{ adjustment.return_postal_amount }}円
-          {% elif adjustment.source_type == "qr" %}
-          {{ adjustment.return_qr_amount }}円
-          {% else %}
-          {{ adjustment.support_amount }}円
-          {% endif %}
+          <div class="muted">{{ adjustment.detail_text }}</div>
+          {{ adjustment.amount }}円
         </td>
         <td data-label="操作">
-          <a class="icon-btn" href="{% url 'performance_adjustments' %}?edit={{ adjustment.id }}" aria-label="{{ adjustment.member.name }}の補正実績を編集">
+          {% if adjustment.edit_url %}
+          <a class="icon-btn" href="{{ adjustment.edit_url }}" aria-label="{{ adjustment.member_name }}の補正実績を編集">
             <i class="fa-solid fa-pen"></i>
           </a>
-          <form method="post" action="{% url 'performance_adjustment_delete' adjustment.id %}" style="display:inline;" onsubmit="return confirm('この補正実績を削除します。よろしいですか？');">
+          {% endif %}
+          <form method="post" action="{{ adjustment.delete_url }}" style="display:inline;" onsubmit="return confirm('この補正実績を削除します。よろしいですか？');">
             {% csrf_token %}
-            <button class="icon-btn icon-btn-danger" type="submit" aria-label="{{ adjustment.member.name }}の補正実績を削除">
+            <button class="icon-btn icon-btn-danger" type="submit" aria-label="{{ adjustment.member_name }}の補正実績を削除">
               <i class="fa-solid fa-trash"></i>
             </button>
           </form>

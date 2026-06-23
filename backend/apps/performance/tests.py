@@ -23,6 +23,7 @@ from apps.dairymetrics.services.final_actuals import (
     collect_member_final_actual_totals,
 )
 from apps.mail.models import MailSendHistory
+from apps.performance.forms import PerformanceMetricAdjustmentForm
 from apps.performance.services.activity_reminders import (
     activity_close_reminder_subject,
     send_pending_activity_close_reminders,
@@ -1001,6 +1002,66 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(adjustment.refugee_count, 1)
         self.assertEqual(adjustment.support_amount, MemberMetricTransaction.WV_CS_UNIT_AMOUNT + 1500)
         self.assertEqual(adjustment.location_name, "川崎駅前")
+
+    def test_performance_adjustment_create_wv_cancel_saves_cancellation_record(self):
+        self.department.code = "WV"
+        self.department.name = "WV"
+        self.department.save(update_fields=["code", "name"])
+
+        response = self.client.post(
+            reverse("performance_adjustments"),
+            {
+                "department": self.department.id,
+                "member": self.member.id,
+                "target_date": "2026-05-18",
+                "source_type": PerformanceMetricAdjustmentForm.SOURCE_CANCEL,
+                "cancel_result_type": MemberMetricTransaction.WV_RESULT_BOTH,
+                "cancel_cs_count": "1",
+                "location_name": "横浜駅前",
+                "amount_choice": "2000",
+                "amount": "",
+            },
+        )
+
+        self.assertRedirects(response, reverse("performance_adjustments") + "?saved=1")
+        self.assertFalse(MetricAdjustment.objects.filter(member=self.member, target_date=date(2026, 5, 18)).exists())
+        cancellation = WVMetricCancellation.objects.get(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 5, 18),
+        )
+        self.assertEqual(cancellation.created_by, self.user)
+        self.assertEqual(cancellation.wv_result_type, MemberMetricTransaction.WV_RESULT_BOTH)
+        self.assertEqual(cancellation.cs_count, 1)
+        self.assertEqual(cancellation.refugee_count, 1)
+        self.assertEqual(cancellation.support_amount, MemberMetricTransaction.WV_CS_UNIT_AMOUNT + 2000)
+        self.assertEqual(cancellation.location_name, "横浜駅前")
+
+    def test_performance_adjustments_list_shows_wv_cancellation_and_can_delete(self):
+        self.department.code = "WV"
+        self.department.name = "WV"
+        self.department.save(update_fields=["code", "name"])
+        cancellation = WVMetricCancellation.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 5, 19),
+            wv_result_type=MemberMetricTransaction.WV_RESULT_CS,
+            wv_cs_count=1,
+            location_name="川崎駅前",
+            created_by=self.user,
+        )
+
+        response = self.client.get(reverse("performance_adjustments"), {"department": self.department.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "キャンセル")
+        self.assertContains(response, "川崎駅前")
+        self.assertContains(response, "CS 1 / 難民 0")
+
+        delete_response = self.client.post(reverse("performance_cancellation_delete", args=[cancellation.id]))
+
+        self.assertRedirects(delete_response, reverse("performance_adjustments"))
+        self.assertFalse(WVMetricCancellation.objects.filter(pk=cancellation.pk).exists())
 
     def test_performance_adjustments_ajax_filters_by_department(self):
         other_department = self.create_department("WV")
