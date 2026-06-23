@@ -192,6 +192,18 @@ class TestimonyArticleListTests(TestCase):
         self.assertIn("data-testimony-results", payload["html"])
         self.assertLess(payload["html"].find("Beta story"), payload["html"].find("Alpha testimony"))
 
+    def test_article_list_uses_compact_three_row_markup(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("testimony_article_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "testimony-list-title-row")
+        self.assertContains(response, "testimony-list-item-meta-primary")
+        self.assertContains(response, "testimony-list-item-meta-stats")
+        self.assertContains(response, "閲覧 3")
+        self.assertContains(response, "いいね 1")
+        self.assertContains(response, "お気に入り 1")
+
     def test_article_list_marks_recent_unread_articles_as_new(self):
         now = timezone.now()
         old_article = Article.objects.create(

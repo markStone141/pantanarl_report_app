@@ -8,7 +8,7 @@
           <span class="testimony-new-badge"><i class="fa-solid fa-bell" aria-hidden="true"></i> New</span>
         {% endif %}
       </div>
-      <div class="testimony-list-item-meta">
+      <div class="testimony-list-item-meta testimony-list-item-meta-primary">
         <span><i class="fa-solid fa-user" aria-hidden="true"></i> {{ article.author }}</span>
         {% if article.testimonied_at %}
           <span><i class="fa-regular fa-calendar" aria-hidden="true"></i> 証日 {{ article.testimonied_at|date:"Y/m/d" }}</span>
@@ -16,9 +16,11 @@
         {% if article.product %}
           <span class="testimony-product-badge"><i class="fa-solid fa-tag" aria-hidden="true"></i> {{ article.product.name }}</span>
         {% endif %}
-        <span><i class="fa-solid fa-eye" aria-hidden="true"></i> {{ article.view_count }}</span>
-        <span><i class="fa-solid fa-thumbs-up" aria-hidden="true"></i> {{ article.like_count }}</span>
-        <span><i class="fa-solid fa-star" aria-hidden="true"></i> {{ article.favorite_count }}</span>
+      </div>
+      <div class="testimony-list-item-meta testimony-list-item-meta-stats">
+        <span><i class="fa-solid fa-eye" aria-hidden="true"></i> 閲覧 {{ article.view_count }}</span>
+        <span><i class="fa-solid fa-thumbs-up" aria-hidden="true"></i> いいね {{ article.like_count }}</span>
+        <span><i class="fa-solid fa-star" aria-hidden="true"></i> お気に入り {{ article.favorite_count }}</span>
       </div>
     </div>
   {% empty %}

@@ -56,6 +56,15 @@
       flex-wrap: wrap;
       align-items: center;
     }
+    .testimony-list-item-meta-stats {
+      color: #415866;
+      gap: 14px;
+    }
+    .testimony-list-item-meta-stats span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
     .testimony-product-badge {
       display: inline-flex;
       align-items: center;
@@ -376,6 +385,30 @@
       }
       .testimony-filter-form {
         grid-template-columns: 1fr;
+      }
+      .testimony-list-item {
+        padding: 14px 0;
+      }
+      .testimony-list-title-row,
+      .testimony-list-item-meta-primary,
+      .testimony-list-item-meta-stats {
+        width: 100%;
+      }
+      .testimony-list-item-meta {
+        gap: 7px 9px;
+        line-height: 1.55;
+      }
+      .testimony-list-item-meta-primary {
+        margin-top: 8px;
+      }
+      .testimony-list-item-meta-stats {
+        margin-top: 8px;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+      }
+      .testimony-list-item-meta-stats span {
+        min-width: 0;
+        white-space: nowrap;
       }
       .testimony-filter-desktop {
         display: none;
