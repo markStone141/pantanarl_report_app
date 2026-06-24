@@ -9,7 +9,6 @@ from apps.common.report_metrics import (
     SPLIT_COUNT_CODES,
     collect_actual_totals,
     format_metric_triples,
-    period_status as calc_period_status,
 )
 from apps.dairymetrics.models import MemberDailyMetricEntry
 from apps.targets.models import MonthTargetMetricValue, PeriodTargetMetricValue, TargetMetric
@@ -74,11 +73,7 @@ def build_report_dashboard_cards_context():
         period_target_values_by_code = {code: {} for code in target_codes}
         for row in period_rows:
             period_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
-        period_status = calc_period_status(
-            today=today,
-            start_date=current_period.start_date,
-            end_date=current_period.end_date,
-        )
+        period_status = current_period.status
         period_start = current_period.start_date
         period_end = current_period.end_date
         current_period_label = current_period.name

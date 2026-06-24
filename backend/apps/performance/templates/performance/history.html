@@ -121,7 +121,7 @@
   </section>
   {% elif dashboard_scope == 'period' %}
   <section class="card mt-16">
-    <h3>路程目標達成率</h3>
+    <h3>選択路程の目標達成率</h3>
     {% if history_snapshot.period_progress_cards %}
     <div class="grid grid-2 mt-12">
       {% for card in history_snapshot.period_progress_cards %}
@@ -134,7 +134,7 @@
           <div class="performance-progress-donut">
             <canvas
               class="performance-progress-donut-chart"
-              aria-label="{{ card.label }} 路程目標達成率"
+              aria-label="{{ card.label }} 選択路程の目標達成率"
               data-rate="{{ card.rate|default:'' }}"
               data-rate-text="{{ card.rate_text }}"
               data-chart-values="{{ card.chart_values|join:',' }}"
@@ -168,7 +168,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <p class="muted mt-12">対象部署の路程目標データがありません。</p>
+    <p class="muted mt-12">対象部署の選択路程データがありません。</p>
     {% endif %}
   </section>
   {% endif %}

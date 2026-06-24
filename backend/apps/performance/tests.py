@@ -387,6 +387,35 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "現在Active路程")
         self.assertNotContains(response, "終了済み路程進捗")
 
+    def test_performance_history_ignores_finished_period_param_unless_period_scope(self):
+        today = timezone.localdate()
+        finished_period = Period.objects.create(
+            month=today.replace(day=1),
+            name="終了済み路程",
+            status="finished",
+            start_date=today - timedelta(days=14),
+            end_date=today - timedelta(days=7),
+        )
+        active_period = Period.objects.create(
+            month=today.replace(day=1),
+            name="現在Active路程",
+            status="active",
+            start_date=today,
+            end_date=today + timedelta(days=6),
+        )
+
+        response = self.client.get(
+            reverse("performance_history"),
+            {
+                "dashboard_scope": "month",
+                "dashboard_department": str(self.department.id),
+                "dashboard_period": str(finished_period.id),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["dashboard_period"].id, active_period.id)
+
     def test_performance_index_can_switch_dashboard_department(self):
         other_department = Department.objects.create(code="WV", name="WV", is_active=True)
 
@@ -1436,6 +1465,45 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "9,999円")
         self.assertContains(response, "現在の路程が未設定です。")
+
+    def test_performance_member_detail_uses_active_period_even_if_finished_period_param_exists(self):
+        today = timezone.localdate()
+        finished_period = Period.objects.create(
+            month=today.replace(day=1),
+            name="終了済み個人路程",
+            status="finished",
+            start_date=today - timedelta(days=14),
+            end_date=today - timedelta(days=7),
+        )
+        active_period = Period.objects.create(
+            month=today.replace(day=1),
+            name="現在Active個人路程",
+            status="active",
+            start_date=today,
+            end_date=today + timedelta(days=6),
+        )
+        MemberPeriodMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            period=finished_period,
+            target_amount=9999,
+        )
+        MemberPeriodMetricTarget.objects.create(
+            member=self.member,
+            department=self.department,
+            period=active_period,
+            target_amount=20000,
+        )
+
+        response = self.client.get(
+            reverse("performance_member_detail", args=[self.member.id, self.department.id]),
+            {"dashboard_period": str(finished_period.id)},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["period_label"], active_period.name)
+        self.assertContains(response, "現在Active個人路程")
+        self.assertNotContains(response, "終了済み個人路程進捗")
 
     def test_performance_index_shows_wv_total_count_with_breakdown_subtext(self):
         today = timezone.localdate()

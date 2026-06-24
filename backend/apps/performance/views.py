@@ -419,7 +419,9 @@ def _resolve_current_period(today):
     return current_active_period(target_date=today)
 
 
-def _resolve_history_period_from_request(request, *, today):
+def _resolve_history_period_from_request(request, *, today, scope_value):
+    if scope_value != "period":
+        return _resolve_current_period(today)
     period_id = request.GET.get("dashboard_period")
     if period_id:
         return Period.objects.filter(pk=period_id).first()
@@ -1555,7 +1557,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
     if dashboard_scope not in {"month", "period", "range"}:
         dashboard_scope = "month"
     dashboard_month = _parse_selected_month(request.GET.get("dashboard_month"), default=today)
-    dashboard_period = _resolve_history_period_from_request(request, today=today)
+    dashboard_period = _resolve_history_period_from_request(request, today=today, scope_value=dashboard_scope)
     dashboard_start = request.GET.get("dashboard_start") or ""
     dashboard_end = request.GET.get("dashboard_end") or ""
     scope = _resolve_performance_history_scope(
@@ -1689,7 +1691,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
             period=scope.period,
         ).first()
         department_card = build_progress_card(
-            label="全体の路程目標",
+            label="全体の選択路程目標",
             actual_amount=department_actual_amount,
             target_amount=department_target_amount,
             summary_text=f"{department.code} 全体の{scope.period.name}進捗",
@@ -1703,7 +1705,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
         department_progress_cards.append(department_card)
         member_progress_cards.append(
             build_progress_card(
-                label="個人の路程目標",
+                label="個人の選択路程目標",
                 actual_amount=member_actual_amount,
                 target_amount=int(member_target.target_amount if member_target else 0),
                 summary_text=f"{member.name} さんの{scope.period.name}進捗",
@@ -1842,7 +1844,7 @@ def performance_history(request: HttpRequest) -> HttpResponse:
     if dashboard_department is None:
         dashboard_department = _resolve_default_dashboard_department_for_request(request)
     dashboard_month = _parse_selected_month(request.GET.get("dashboard_month"), default=today)
-    dashboard_period = _resolve_history_period_from_request(request, today=today)
+    dashboard_period = _resolve_history_period_from_request(request, today=today, scope_value=dashboard_scope)
     dashboard_start = request.GET.get("dashboard_start") or ""
     dashboard_end = request.GET.get("dashboard_end") or ""
     scope = _resolve_performance_history_scope(
@@ -2169,7 +2171,7 @@ def _render_member_history_list_response(
     if dashboard_scope not in {"month", "period", "range"}:
         dashboard_scope = "month"
     dashboard_month = _parse_selected_month(request.GET.get("dashboard_month"), default=today)
-    dashboard_period = _resolve_history_period_from_request(request, today=today)
+    dashboard_period = _resolve_history_period_from_request(request, today=today, scope_value=dashboard_scope)
     dashboard_start = request.GET.get("dashboard_start") or ""
     dashboard_end = request.GET.get("dashboard_end") or ""
     scope = _resolve_performance_history_scope(

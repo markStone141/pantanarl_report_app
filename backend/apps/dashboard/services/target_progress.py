@@ -3,12 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 from apps.common.target_periods import current_active_period
-from apps.common.report_metrics import (
-    collect_actual_totals,
-    collect_adjustment_totals,
-    metric_detail_rows,
-    period_status as calc_period_status,
-)
+from apps.common.report_metrics import collect_actual_totals, collect_adjustment_totals, metric_detail_rows
 from apps.targets.models import MonthTargetMetricValue, PeriodTargetMetricValue, TargetMetric
 
 
@@ -65,11 +60,7 @@ def build_target_scope_snapshot(*, target_date, target_codes, metrics_by_code):
             f"{current_period.start_date.month}/{current_period.start_date.day}"
             f"～{current_period.end_date.month}/{current_period.end_date.day}"
         )
-        period_status = calc_period_status(
-            today=target_date,
-            start_date=current_period.start_date,
-            end_date=current_period.end_date,
-        )
+        period_status = current_period.status
     else:
         period_target_values_by_code = {code: {} for code in target_codes}
         period_start = None
