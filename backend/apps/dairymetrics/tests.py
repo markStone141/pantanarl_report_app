@@ -4755,6 +4755,54 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(response.context["selected_period_id"], self.period.id)
         self.assertNotEqual(response.context["selected_period_id"], finished_period.id)
 
+    def test_metrics_v2_period_scope_ignores_finished_period_id_when_active_exists(self):
+        finished_period = Period.objects.create(
+            month=self.period.month,
+            name="URLに残った終了済み路程",
+            status=TARGET_STATUS_FINISHED,
+            start_date=self.period.start_date - timedelta(days=10),
+            end_date=self.period.start_date - timedelta(days=1),
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_metrics_v2_demo"),
+            {
+                "department": self.department.code,
+                "scope": "period",
+                "period_id": str(finished_period.id),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["scope"].scope, "period")
+        self.assertEqual(response.context["scope"].period.id, self.period.id)
+        self.assertEqual(response.context["selected_period_id"], self.period.id)
+
+    def test_metrics_report_period_scope_ignores_finished_period_id_when_active_exists(self):
+        finished_period = Period.objects.create(
+            month=self.period.month,
+            name="レポートURLに残った終了済み路程",
+            status=TARGET_STATUS_FINISHED,
+            start_date=self.period.start_date - timedelta(days=10),
+            end_date=self.period.start_date - timedelta(days=1),
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_metrics_report"),
+            {
+                "department": self.department.code,
+                "scope": "period",
+                "period_id": str(finished_period.id),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["scope"].scope, "period")
+        self.assertEqual(response.context["scope"].period.id, self.period.id)
+        self.assertEqual(response.context["selected_period_id"], self.period.id)
+
     def test_metrics_v2_period_scope_without_active_period_uses_recent_not_finished(self):
         self.period.status = TARGET_STATUS_FINISHED
         self.period.save(update_fields=["status"])

@@ -88,6 +88,12 @@ ENTRY_V2_DEPARTMENT_TARGET_AMOUNT_OPTIONS = list(range(15000, 30001, 1000))
 ENTRY_V2_TRANSACTION_AMOUNT_OPTIONS = list(range(1000, 5001, 500))
 ENTRY_V2_WV_REFUGEE_AMOUNT_OPTIONS = list(range(500, 4001, 500))
 
+
+def _period_scope_current_active_period(*, today):
+    """Current-period screens must never default to finished periods."""
+    return current_active_period(target_date=today)
+
+
 def _login_redirect_url(user, *, fallback=""):
     if fallback:
         return fallback
@@ -836,8 +842,8 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
     if raw_period_id.isdigit():
         requested_period = Period.objects.exclude(status=TARGET_STATUS_PLANNED).filter(pk=int(raw_period_id)).first()
     available_periods = period_options_active_first(target_date=today, limit=18)
-    if requested_scope == "period" and requested_period is None:
-        requested_period = current_active_period(target_date=today)
+    if requested_scope == "period":
+        requested_period = _period_scope_current_active_period(today=today)
     requested_start_date = parse_date((request.GET.get("start_date") or "").strip())
     requested_end_date = parse_date((request.GET.get("end_date") or "").strip())
 
@@ -902,8 +908,8 @@ def metrics_report(request: HttpRequest) -> HttpResponse:
     if raw_period_id.isdigit():
         requested_period = Period.objects.exclude(status=TARGET_STATUS_PLANNED).filter(pk=int(raw_period_id)).first()
     period_options = period_options_active_first(target_date=today)
-    if requested_scope == "period" and requested_period is None:
-        requested_period = current_active_period(target_date=today)
+    if requested_scope == "period":
+        requested_period = _period_scope_current_active_period(today=today)
 
     scope = resolve_metrics_v2_scope(
         today=today,
