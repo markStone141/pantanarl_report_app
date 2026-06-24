@@ -1195,6 +1195,53 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
         self.assertNotIn("9999", row["period_target"])
 
+    def test_dashboard_uses_active_period_after_period_boundary(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        finished_period = Period.objects.create(
+            month=current_month,
+            name=f"{today.year}年度{today.month}月 第3次路程",
+            status="finished",
+            start_date=today - timedelta(days=7),
+            end_date=today - timedelta(days=1),
+        )
+        active_period = Period.objects.create(
+            month=current_month,
+            name=f"{today.year}年度{today.month}月 第4次路程",
+            status="active",
+            start_date=today,
+            end_date=today + timedelta(days=6),
+        )
+        metric = TargetMetric.objects.create(
+            department=self.depts["UN"],
+            code="amount",
+            label="Amount",
+            unit="yen",
+            display_order=1,
+            is_active=True,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=finished_period,
+            department=self.depts["UN"],
+            metric=metric,
+            value=1111,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=active_period,
+            department=self.depts["UN"],
+            metric=metric,
+            value=2222,
+        )
+
+        response = self.client.get(reverse("dashboard_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["target_period_summary"], active_period.name)
+        self.assertEqual(response.context["target_period_range"], f"{today.month}/{today.day}～{active_period.end_date.month}/{active_period.end_date.day}")
+        row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
+        self.assertIn("2222", row["period_target"])
+        self.assertNotIn("1111", row["period_target"])
+
     def test_dashboard_reflects_existing_actuals_when_target_created_later(self):
         today = timezone.localdate()
         month = today.replace(day=1)

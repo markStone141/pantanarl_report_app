@@ -2,17 +2,6 @@ from apps.targets.models import Period, TARGET_STATUS_ACTIVE, TARGET_STATUS_PLAN
 
 
 def current_active_period(*, target_date):
-    active_in_range = (
-        Period.objects.filter(
-            status=TARGET_STATUS_ACTIVE,
-            start_date__lte=target_date,
-            end_date__gte=target_date,
-        )
-        .order_by("-start_date", "-end_date", "-id")
-        .first()
-    )
-    if active_in_range:
-        return active_in_range
     return Period.objects.filter(status=TARGET_STATUS_ACTIVE).order_by("-start_date", "-end_date", "-id").first()
 
 

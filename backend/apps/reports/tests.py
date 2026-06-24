@@ -752,6 +752,53 @@ class ReportTargetMonthSelectionTests(TestCase):
         self.assertEqual(response.context["target_period_summary"], "-")
         self.assertEqual(response.context["target_period_status"], "-")
 
+    def test_report_index_uses_active_period_after_period_boundary(self):
+        today = timezone.localdate()
+        current_month = today.replace(day=1)
+        un = Department.objects.create(name="UN", code="UN")
+        finished_period = Period.objects.create(
+            month=current_month,
+            name=f"{today.year}年度{today.month}月 第3次路程",
+            status="finished",
+            start_date=today - timedelta(days=7),
+            end_date=today - timedelta(days=1),
+        )
+        active_period = Period.objects.create(
+            month=current_month,
+            name=f"{today.year}年度{today.month}月 第4次路程",
+            status="active",
+            start_date=today,
+            end_date=today + timedelta(days=6),
+        )
+        metric = TargetMetric.objects.create(
+            department=un,
+            code="amount",
+            label="Amount",
+            unit="yen",
+            display_order=1,
+            is_active=True,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=finished_period,
+            department=un,
+            metric=metric,
+            value=7777,
+        )
+        PeriodTargetMetricValue.objects.create(
+            period=active_period,
+            department=un,
+            metric=metric,
+            value=8888,
+        )
+
+        response = self.client.get(reverse("report_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["target_period_summary"], active_period.name)
+        row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
+        self.assertIn("8,888", row["period_target"])
+        self.assertNotIn("7,777", row["period_target"])
+
     def test_report_index_month_and_period_actuals_include_adjustments(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)
