@@ -451,10 +451,7 @@ def _current_month() -> date:
 
 def _current_period() -> Period | None:
     today = timezone.localdate()
-    active = current_active_period(target_date=today)
-    if active:
-        return active
-    return Period.objects.order_by("-month", "start_date", "id").first()
+    return current_active_period(target_date=today)
 
 
 def _save_month_targets(*, selected_month: date, configs, post_data) -> None:

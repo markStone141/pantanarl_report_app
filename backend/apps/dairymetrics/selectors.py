@@ -317,16 +317,14 @@ def _resolve_scope(
     month_start = today.replace(day=1)
     month_end = today.replace(day=monthrange(today.year, today.month)[1])
     current_period = current_active_period(target_date=today)
-    latest_period = Period.objects.exclude(status=TARGET_STATUS_PLANNED).order_by("-end_date", "-start_date", "-id").first()
-    available_period = current_period or latest_period
-    if scope == "period" and available_period:
+    if scope == "period" and current_period:
         return {
             "scope": "period",
             "label": "今路程",
-            "summary": available_period.name,
-            "start_date": available_period.start_date,
-            "end_date": available_period.end_date if available_period.end_date < today else today,
-            "period": available_period,
+            "summary": current_period.name,
+            "start_date": current_period.start_date,
+            "end_date": current_period.end_date if current_period.end_date < today else today,
+            "period": current_period,
         }
     if scope == "month":
         return {
@@ -335,7 +333,7 @@ def _resolve_scope(
             "summary": today.strftime("%Y/%m"),
             "start_date": month_start,
             "end_date": today,
-            "period": available_period,
+            "period": current_period,
         }
     if scope == "custom" and member and department:
         selected_period = None
@@ -358,7 +356,7 @@ def _resolve_scope(
             ),
             "start_date": start_date,
             "end_date": end_date,
-            "period": available_period,
+            "period": current_period,
             "custom_start_date": start_date,
             "custom_end_date": end_date,
             "is_lifetime": is_lifetime,
@@ -370,7 +368,7 @@ def _resolve_scope(
         "summary": today.strftime("%Y/%m/%d"),
         "start_date": today,
         "end_date": today,
-        "period": available_period,
+        "period": current_period,
     }
 
 

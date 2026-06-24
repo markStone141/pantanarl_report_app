@@ -2023,7 +2023,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertContains(response, f">{period.start_date.strftime('%Y/%m/%d')} - {period.end_date.strftime('%Y/%m/%d')}<", html=False)
         self.assertNotContains(response, period.name)
 
-    def test_member_dashboard_period_scope_falls_back_to_latest_saved_period(self):
+    def test_member_dashboard_period_scope_does_not_fallback_to_finished_period(self):
         today = timezone.localdate()
         target_user = get_user_model().objects.create_user(username="member-period-fallback", password="pass123")
         target_member = Member.objects.create(name="Period Fallback Member", user=target_user)
@@ -2054,8 +2054,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertIn("今路程: 第4路程", payload["card_html"])
-        self.assertNotIn('aria-disabled="true"', payload["card_html"])
+        self.assertNotIn("今路程: 第4路程", payload["card_html"])
+        self.assertIn("今日:", payload["card_html"])
 
     def test_comparison_ranking_detail_returns_full_modal_html(self):
         today = timezone.localdate()
@@ -4754,6 +4754,20 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(response.context["scope"].period.id, self.period.id)
         self.assertEqual(response.context["selected_period_id"], self.period.id)
         self.assertNotEqual(response.context["selected_period_id"], finished_period.id)
+
+    def test_metrics_v2_period_scope_without_active_period_uses_recent_not_finished(self):
+        self.period.status = TARGET_STATUS_FINISHED
+        self.period.save(update_fields=["status"])
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_metrics_v2_demo"),
+            {"department": self.department.code, "scope": "period"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["scope"].scope, "recent")
+        self.assertEqual(response.context["selected_period_id"], "")
 
     def test_metrics_v2_demo_can_render_selected_member_for_admin(self):
         self.client.force_login(self.admin)

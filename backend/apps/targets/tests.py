@@ -710,15 +710,15 @@ class TargetStatusBoundaryTests(TestCase):
             selected = target_views._current_period()
         self.assertEqual(selected.id, latest_active.id)
 
-    def test_current_period_falls_back_to_latest_period(self):
-        old = Period.objects.create(
+    def test_current_period_returns_none_when_only_finished_periods_exist(self):
+        Period.objects.create(
             month=timezone.datetime(2026, 1, 1).date(),
             name="2026年度1月 第1次路程",
             status="finished",
             start_date=timezone.datetime(2026, 1, 1).date(),
             end_date=timezone.datetime(2026, 1, 5).date(),
         )
-        latest = Period.objects.create(
+        Period.objects.create(
             month=timezone.datetime(2026, 2, 1).date(),
             name="2026年度2月 第1次路程",
             status="finished",
@@ -728,8 +728,7 @@ class TargetStatusBoundaryTests(TestCase):
 
         with patch("apps.targets.views.timezone.localdate", return_value=timezone.datetime(2026, 3, 15).date()):
             selected = target_views._current_period()
-        self.assertEqual(selected.id, latest.id)
-        self.assertNotEqual(selected.id, old.id)
+        self.assertIsNone(selected)
 
     def test_month_history_entry_includes_adjustments_in_actuals(self):
         metric = self._make_un_amount_metric()

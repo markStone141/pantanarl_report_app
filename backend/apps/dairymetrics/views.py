@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from apps.accounts.models import Department, Member
-from apps.common.target_periods import period_options_active_first
+from apps.common.target_periods import current_active_period, period_options_active_first
 from apps.mail.models import MailSendHistory
 from apps.mail.services import MailSendError, record_transaction_mail_failure, send_transaction_mail
 from apps.targets.models import Period, TARGET_STATUS_PLANNED
@@ -837,7 +837,7 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
         requested_period = Period.objects.exclude(status=TARGET_STATUS_PLANNED).filter(pk=int(raw_period_id)).first()
     available_periods = period_options_active_first(target_date=today, limit=18)
     if requested_scope == "period" and requested_period is None:
-        requested_period = available_periods[0] if available_periods else None
+        requested_period = current_active_period(target_date=today)
     requested_start_date = parse_date((request.GET.get("start_date") or "").strip())
     requested_end_date = parse_date((request.GET.get("end_date") or "").strip())
 
@@ -903,7 +903,7 @@ def metrics_report(request: HttpRequest) -> HttpResponse:
         requested_period = Period.objects.exclude(status=TARGET_STATUS_PLANNED).filter(pk=int(raw_period_id)).first()
     period_options = period_options_active_first(target_date=today)
     if requested_scope == "period" and requested_period is None:
-        requested_period = period_options[0] if period_options else None
+        requested_period = current_active_period(target_date=today)
 
     scope = resolve_metrics_v2_scope(
         today=today,
