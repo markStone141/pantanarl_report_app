@@ -142,6 +142,12 @@ def _period_status(start_date: date, end_date: date, today: date | None = None) 
     return TARGET_STATUS_FINISHED
 
 
+def _stored_period_status(period: Period | None) -> str:
+    if not period:
+        return TARGET_STATUS_PLANNED
+    return period.status
+
+
 def _build_target_rows(*, configs, values):
     rows = []
     for config in configs:
@@ -230,13 +236,14 @@ def _month_history_rows(selected_month: date | None = None, include_selected: bo
 def _period_history_rows():
     rows = []
     for period in Period.objects.order_by("-month", "start_date", "id"):
+        status = _stored_period_status(period)
         rows.append(
             {
                 "id": period.id,
                 "name": period.name,
-                "status": _period_status(period.start_date, period.end_date),
-                "status_label": STATUS_LABELS.get(_period_status(period.start_date, period.end_date), _period_status(period.start_date, period.end_date)),
-                "status_class": f"is-{_period_status(period.start_date, period.end_date)}",
+                "status": status,
+                "status_label": STATUS_LABELS.get(status, status),
+                "status_class": f"is-{status}",
                 "month_label": f"{period.month.year}年{period.month.month}月",
                 "month_param": _month_value_from_date(period.month),
                 "start_date": period.start_date.isoformat(),
@@ -344,7 +351,7 @@ def _period_target_values_by_department(*, period: Period):
 
 
 def _build_period_history_entry(*, period: Period, configs):
-    status = _period_status(period.start_date, period.end_date)
+    status = _stored_period_status(period)
     target_values_by_department = _period_target_values_by_department(period=period)
     actual_totals_by_code = collect_actual_totals(
         start_date=period.start_date,
@@ -385,7 +392,7 @@ def _build_period_history_entry(*, period: Period, configs):
 
 
 def _build_period_history_summary(*, period: Period):
-    status = _period_status(period.start_date, period.end_date)
+    status = _stored_period_status(period)
     return {
         "id": period.id,
         "name": period.name,
@@ -583,7 +590,7 @@ def _period_form_values(selected_period: Period | None, *, include_edit_id: bool
     if selected_period:
         selected_month = selected_period.month
         selected_sequence = _sequence_from_period_name(selected_period.name)
-        selected_status = _period_status(selected_period.start_date, selected_period.end_date)
+        selected_status = _stored_period_status(selected_period)
         selected_start = selected_period.start_date.isoformat()
         selected_end = selected_period.end_date.isoformat()
         if include_edit_id:
@@ -605,7 +612,7 @@ def _period_options():
             "id": period.id,
             "label": (
                 f"{period.name} "
-                f"[{_period_status(period.start_date, period.end_date)}] "
+                f"[{_stored_period_status(period)}] "
                 f"({period.start_date:%Y/%m/%d} - {period.end_date:%Y/%m/%d})"
             ),
         }
@@ -639,9 +646,7 @@ def target_index(request: HttpRequest) -> HttpResponse:
             "current_month_label": f"{current_month.year}年{current_month.month}月",
             "current_month_status": _month_status(current_month),
             "current_period_label": _period_label(current_period),
-            "current_period_status": _period_status(current_period.start_date, current_period.end_date)
-            if current_period
-            else TARGET_STATUS_PLANNED,
+            "current_period_status": _stored_period_status(current_period),
             "month_rows": _build_month_rows(target_month=current_month, configs=configs),
             "period_rows": _build_period_rows(period=current_period, configs=configs),
             "month_history_rows": month_history_rows,

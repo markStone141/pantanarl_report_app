@@ -710,6 +710,39 @@ class TargetStatusBoundaryTests(TestCase):
             selected = target_views._current_period()
         self.assertEqual(selected.id, latest_active.id)
 
+    def test_current_period_status_display_uses_stored_status(self):
+        today = timezone.datetime(2026, 6, 24).date()
+        active = Period.objects.create(
+            month=timezone.datetime(2026, 6, 1).date(),
+            name="2026年度6月 第4次路程",
+            status="active",
+            start_date=today - timedelta(days=7),
+            end_date=today - timedelta(days=1),
+        )
+
+        with patch("apps.targets.views.timezone.localdate", return_value=today):
+            response = self.client.get(reverse("target_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["current_period_label"], target_views._period_label(active))
+        self.assertEqual(response.context["current_period_status"], "active")
+
+    def test_period_history_status_filter_uses_stored_status(self):
+        today = timezone.datetime(2026, 6, 24).date()
+        active = Period.objects.create(
+            month=timezone.datetime(2026, 6, 1).date(),
+            name="2026年度6月 第4次路程",
+            status="active",
+            start_date=today - timedelta(days=7),
+            end_date=today - timedelta(days=1),
+        )
+
+        with patch("apps.targets.views.timezone.localdate", return_value=today):
+            response = self.client.get(reverse("target_index"), {"period_status": "active"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(active.id, [row["id"] for row in response.context["period_history_rows"]])
+
     def test_current_period_returns_none_when_only_finished_periods_exist(self):
         Period.objects.create(
             month=timezone.datetime(2026, 1, 1).date(),
