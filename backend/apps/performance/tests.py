@@ -360,6 +360,33 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(response.context["dashboard_department"].code, "UN")
         self.assertContains(response, "月目標達成率")
 
+    def test_performance_index_uses_active_period_even_if_finished_period_param_exists(self):
+        today = timezone.localdate()
+        finished_period = Period.objects.create(
+            month=today.replace(day=1),
+            name="終了済み路程",
+            status="finished",
+            start_date=today - timedelta(days=14),
+            end_date=today - timedelta(days=7),
+        )
+        active_period = Period.objects.create(
+            month=today.replace(day=1),
+            name="現在Active路程",
+            status="active",
+            start_date=today,
+            end_date=today + timedelta(days=6),
+        )
+
+        response = self.client.get(
+            reverse("performance_index"),
+            {"dashboard_period": str(finished_period.id)},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["dashboard_period"].id, active_period.id)
+        self.assertContains(response, "現在Active路程")
+        self.assertNotContains(response, "終了済み路程進捗")
+
     def test_performance_index_can_switch_dashboard_department(self):
         other_department = Department.objects.create(code="WV", name="WV", is_active=True)
 

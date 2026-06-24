@@ -419,6 +419,13 @@ def _resolve_current_period(today):
     return current_active_period(target_date=today)
 
 
+def _resolve_history_period_from_request(request, *, today):
+    period_id = request.GET.get("dashboard_period")
+    if period_id:
+        return Period.objects.filter(pk=period_id).first()
+    return _resolve_current_period(today)
+
+
 def _period_range_label(period):
     if period is None:
         return ""
@@ -1548,12 +1555,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
     if dashboard_scope not in {"month", "period", "range"}:
         dashboard_scope = "month"
     dashboard_month = _parse_selected_month(request.GET.get("dashboard_month"), default=today)
-    dashboard_period = None
-    dashboard_period_id = request.GET.get("dashboard_period")
-    if dashboard_period_id:
-        dashboard_period = Period.objects.filter(pk=dashboard_period_id).first()
-    if dashboard_period is None:
-        dashboard_period = _resolve_current_period(today)
+    dashboard_period = _resolve_history_period_from_request(request, today=today)
     dashboard_start = request.GET.get("dashboard_start") or ""
     dashboard_end = request.GET.get("dashboard_end") or ""
     scope = _resolve_performance_history_scope(
@@ -1840,12 +1842,7 @@ def performance_history(request: HttpRequest) -> HttpResponse:
     if dashboard_department is None:
         dashboard_department = _resolve_default_dashboard_department_for_request(request)
     dashboard_month = _parse_selected_month(request.GET.get("dashboard_month"), default=today)
-    dashboard_period = None
-    dashboard_period_id = request.GET.get("dashboard_period")
-    if dashboard_period_id:
-        dashboard_period = Period.objects.filter(pk=dashboard_period_id).first()
-    if dashboard_period is None:
-        dashboard_period = _resolve_current_period(today)
+    dashboard_period = _resolve_history_period_from_request(request, today=today)
     dashboard_start = request.GET.get("dashboard_start") or ""
     dashboard_end = request.GET.get("dashboard_end") or ""
     scope = _resolve_performance_history_scope(
@@ -2172,12 +2169,7 @@ def _render_member_history_list_response(
     if dashboard_scope not in {"month", "period", "range"}:
         dashboard_scope = "month"
     dashboard_month = _parse_selected_month(request.GET.get("dashboard_month"), default=today)
-    dashboard_period = None
-    dashboard_period_id = request.GET.get("dashboard_period")
-    if dashboard_period_id:
-        dashboard_period = Period.objects.filter(pk=dashboard_period_id).first()
-    if dashboard_period is None:
-        dashboard_period = _resolve_current_period(today)
+    dashboard_period = _resolve_history_period_from_request(request, today=today)
     dashboard_start = request.GET.get("dashboard_start") or ""
     dashboard_end = request.GET.get("dashboard_end") or ""
     scope = _resolve_performance_history_scope(
