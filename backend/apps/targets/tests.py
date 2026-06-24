@@ -682,6 +682,34 @@ class TargetStatusBoundaryTests(TestCase):
             selected = target_views._current_period()
         self.assertEqual(selected.id, active.id)
 
+    def test_current_period_prefers_latest_active_when_multiple_active_periods_exist(self):
+        today = timezone.datetime(2026, 6, 24).date()
+        Period.objects.create(
+            month=timezone.datetime(2026, 6, 1).date(),
+            name="2026年度6月 第1次路程",
+            status="active",
+            start_date=today - timedelta(days=14),
+            end_date=today - timedelta(days=7),
+        )
+        latest_active = Period.objects.create(
+            month=timezone.datetime(2026, 6, 1).date(),
+            name="2026年度6月 第2次路程",
+            status="active",
+            start_date=today,
+            end_date=today + timedelta(days=6),
+        )
+        Period.objects.create(
+            month=timezone.datetime(2026, 6, 1).date(),
+            name="2026年度6月 第0次路程",
+            status="finished",
+            start_date=today - timedelta(days=21),
+            end_date=today - timedelta(days=15),
+        )
+
+        with patch("apps.targets.views.timezone.localdate", return_value=today):
+            selected = target_views._current_period()
+        self.assertEqual(selected.id, latest_active.id)
+
     def test_current_period_falls_back_to_latest_period(self):
         old = Period.objects.create(
             month=timezone.datetime(2026, 1, 1).date(),

@@ -835,6 +835,9 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
     raw_period_id = (request.GET.get("period_id") or "").strip()
     if raw_period_id.isdigit():
         requested_period = Period.objects.exclude(status=TARGET_STATUS_PLANNED).filter(pk=int(raw_period_id)).first()
+    available_periods = period_options_active_first(target_date=today, limit=18)
+    if requested_scope == "period" and requested_period is None:
+        requested_period = available_periods[0] if available_periods else None
     requested_start_date = parse_date((request.GET.get("start_date") or "").strip())
     requested_end_date = parse_date((request.GET.get("end_date") or "").strip())
 
@@ -863,8 +866,6 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
             detail_urls.append(detail_url)
         metric_payload["detail_urls"] = detail_urls
     payload_json = {**payload, "scope": {"scope": scope.scope, "label": scope.label}}
-    available_periods = period_options_active_first(target_date=today, limit=18)
-
     context = {
         "is_admin": request.user.is_staff,
         "member": viewer_member,

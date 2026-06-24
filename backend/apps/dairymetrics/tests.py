@@ -4734,6 +4734,27 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertIn(reverse("performance_member_insight", args=[self.member.id, self.department.id]), ranking_metric["detail_urls"])
         self.assertNotIn(reverse("dairymetrics_member_dashboard", args=[self.member.id]), ranking_metric["detail_urls"])
 
+    def test_metrics_v2_period_scope_without_period_id_defaults_to_active_period(self):
+        finished_period = Period.objects.create(
+            month=self.period.month,
+            name="終了済み路程",
+            status=TARGET_STATUS_FINISHED,
+            start_date=self.period.start_date - timedelta(days=10),
+            end_date=self.period.start_date - timedelta(days=1),
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("dairymetrics_metrics_v2_demo"),
+            {"department": self.department.code, "scope": "period"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["scope"].scope, "period")
+        self.assertEqual(response.context["scope"].period.id, self.period.id)
+        self.assertEqual(response.context["selected_period_id"], self.period.id)
+        self.assertNotEqual(response.context["selected_period_id"], finished_period.id)
+
     def test_metrics_v2_demo_can_render_selected_member_for_admin(self):
         self.client.force_login(self.admin)
 

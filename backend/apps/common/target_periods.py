@@ -8,12 +8,12 @@ def current_active_period(*, target_date):
             start_date__lte=target_date,
             end_date__gte=target_date,
         )
-        .order_by("-month", "start_date", "id")
+        .order_by("-start_date", "-end_date", "-id")
         .first()
     )
     if active_in_range:
         return active_in_range
-    return Period.objects.filter(status=TARGET_STATUS_ACTIVE).order_by("-month", "start_date", "id").first()
+    return Period.objects.filter(status=TARGET_STATUS_ACTIVE).order_by("-start_date", "-end_date", "-id").first()
 
 
 def period_options_active_first(*, target_date, limit=24):
