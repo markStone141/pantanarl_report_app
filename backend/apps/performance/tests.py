@@ -1220,6 +1220,38 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertNotIn("Alice", payload["list_html"])
         self.assertNotIn("UN", payload["list_html"])
 
+    def test_performance_adjustments_ajax_searches_source_type_display_label(self):
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 5, 10),
+            source_type=MetricAdjustment.SOURCE_INCREASE,
+            result_count=1,
+            support_amount=3000,
+            location_name="東京A現場",
+        )
+        MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 5, 11),
+            source_type=MetricAdjustment.SOURCE_POSTAL,
+            return_postal_count=1,
+            return_postal_amount=1500,
+            location_name="東京B現場",
+        )
+
+        response = self.client.get(
+            reverse("performance_adjustments"),
+            {"q": "増額"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        list_html = response.json()["list_html"]
+        self.assertIn("東京A現場", list_html)
+        self.assertIn("増額", list_html)
+        self.assertNotIn("東京B現場", list_html)
+
     def test_performance_adjustments_ajax_returns_load_more_button(self):
         for index in range(21):
             MetricAdjustment.objects.create(

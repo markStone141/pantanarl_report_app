@@ -271,6 +271,30 @@ def _filtered_entries_queryset(cleaned_data):
     return queryset
 
 
+def _adjustment_source_types_matching_query(query):
+    normalized_query = (query or "").strip().casefold()
+    if not normalized_query:
+        return []
+    return [
+        source_type
+        for source_type, label in MetricAdjustment.SOURCE_CHOICES
+        if normalized_query in label.casefold()
+    ]
+
+
+def _adjustment_search_filter(query):
+    filters = (
+        Q(member__name__icontains=query)
+        | Q(location_name__icontains=query)
+        | Q(source_type__icontains=query)
+        | Q(department__code__icontains=query)
+    )
+    source_types = _adjustment_source_types_matching_query(query)
+    if source_types:
+        filters |= Q(source_type__in=source_types)
+    return filters
+
+
 def _filtered_adjustments_queryset(cleaned_data):
     queryset = MetricAdjustment.objects.select_related("member", "department", "created_by").order_by("-target_date", "-created_at")
     department = cleaned_data.get("department")
@@ -287,12 +311,7 @@ def _filtered_adjustments_queryset(cleaned_data):
     if date_to:
         queryset = queryset.filter(target_date__lte=date_to)
     if query:
-        queryset = queryset.filter(
-            Q(member__name__icontains=query)
-            | Q(location_name__icontains=query)
-            | Q(source_type__icontains=query)
-            | Q(department__code__icontains=query)
-        )
+        queryset = queryset.filter(_adjustment_search_filter(query))
     return queryset
 
 
@@ -303,12 +322,7 @@ def _filtered_adjustments_list_queryset(cleaned_data):
     if department:
         queryset = queryset.filter(department=department)
     if query:
-        queryset = queryset.filter(
-            Q(member__name__icontains=query)
-            | Q(location_name__icontains=query)
-            | Q(source_type__icontains=query)
-            | Q(department__code__icontains=query)
-        )
+        queryset = queryset.filter(_adjustment_search_filter(query))
     return queryset
 
 
