@@ -720,7 +720,7 @@ class ReportTargetMonthSelectionTests(TestCase):
             f"{current_month.year}/{current_month.month}",
         )
 
-    def test_report_index_ignores_finished_period_even_if_dates_overlap_today(self):
+    def test_report_index_syncs_finished_period_when_dates_overlap_today(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)
         un = Department.objects.create(name="UN", code="UN")
@@ -749,8 +749,10 @@ class ReportTargetMonthSelectionTests(TestCase):
         response = self.client.get(reverse("report_index"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["target_period_summary"], "-")
-        self.assertEqual(response.context["target_period_status"], "-")
+        self.assertEqual(response.context["target_period_summary"], period.name)
+        self.assertEqual(response.context["target_period_status"], "active")
+        period.refresh_from_db()
+        self.assertEqual(period.status, "active")
 
     def test_report_index_uses_active_period_after_period_boundary(self):
         today = timezone.localdate()

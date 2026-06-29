@@ -1439,7 +1439,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
             activity_closed=True,
         )
 
-    def test_performance_member_dashboard_ignores_finished_period_even_if_dates_overlap_today(self):
+    def test_performance_member_dashboard_syncs_finished_period_when_dates_overlap_today(self):
         today = timezone.localdate()
         period = Period.objects.create(
             month=today.replace(day=1),
@@ -1463,8 +1463,9 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         response = self.client.get(reverse("performance_member_dashboard"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "9,999円")
-        self.assertContains(response, "現在の路程が未設定です。")
+        self.assertContains(response, "9,999円")
+        period.refresh_from_db()
+        self.assertEqual(period.status, "active")
 
     def test_performance_member_detail_uses_active_period_even_if_finished_period_param_exists(self):
         today = timezone.localdate()

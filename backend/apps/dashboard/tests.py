@@ -1162,7 +1162,7 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
         self.assertNotIn("9999", row["month_target"])
 
-    def test_dashboard_ignores_finished_period_even_if_dates_overlap_today(self):
+    def test_dashboard_syncs_finished_period_when_dates_overlap_today(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)
         period = Period.objects.create(
@@ -1190,10 +1190,12 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         response = self.client.get(reverse("dashboard_index"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["target_period_summary"], "-")
-        self.assertEqual(response.context["target_period_status"], "-")
+        self.assertEqual(response.context["target_period_summary"], period.name)
+        self.assertEqual(response.context["target_period_status"], "active")
         row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
-        self.assertNotIn("9999", row["period_target"])
+        self.assertIn("9999", row["period_target"])
+        period.refresh_from_db()
+        self.assertEqual(period.status, "active")
 
     def test_dashboard_uses_active_period_after_period_boundary(self):
         today = timezone.localdate()

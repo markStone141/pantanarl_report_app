@@ -4805,7 +4805,9 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
 
     def test_metrics_v2_period_scope_without_active_period_uses_recent_not_finished(self):
         self.period.status = TARGET_STATUS_FINISHED
-        self.period.save(update_fields=["status"])
+        self.period.start_date = timezone.localdate() - timedelta(days=14)
+        self.period.end_date = timezone.localdate() - timedelta(days=7)
+        self.period.save(update_fields=["status", "start_date", "end_date"])
         self.client.force_login(self.admin)
 
         response = self.client.get(

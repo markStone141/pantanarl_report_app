@@ -1,7 +1,20 @@
-from apps.targets.models import Period, TARGET_STATUS_ACTIVE, TARGET_STATUS_PLANNED
+from apps.targets.models import Period, TARGET_STATUS_ACTIVE, TARGET_STATUS_FINISHED, TARGET_STATUS_PLANNED
+
+
+def sync_period_statuses(*, target_date):
+    Period.objects.filter(start_date__lte=target_date, end_date__gte=target_date).exclude(
+        status=TARGET_STATUS_ACTIVE
+    ).update(status=TARGET_STATUS_ACTIVE)
+    Period.objects.filter(end_date__lt=target_date).exclude(status=TARGET_STATUS_FINISHED).update(
+        status=TARGET_STATUS_FINISHED
+    )
+    Period.objects.filter(start_date__gt=target_date).exclude(status=TARGET_STATUS_PLANNED).update(
+        status=TARGET_STATUS_PLANNED
+    )
 
 
 def current_active_period(*, target_date):
+    sync_period_statuses(target_date=target_date)
     return Period.objects.filter(status=TARGET_STATUS_ACTIVE).order_by("-start_date", "-end_date", "-id").first()
 
 
