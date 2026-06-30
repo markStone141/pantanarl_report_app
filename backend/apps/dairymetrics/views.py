@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+from urllib.parse import urlencode
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.db import transaction
@@ -47,6 +48,7 @@ from .services.entry_v2 import (
 )
 from .services.metrics_v2 import build_metrics_v2_dashboard_payload, resolve_metrics_v2_scope
 from .services.reports import build_metrics_scope_report
+from .services.report_exports import build_report_ai_text, build_report_export_payload
 from .selectors import (
     build_admin_daily_overview,
     build_admin_ranking_overview,
@@ -888,12 +890,11 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
     return render(request, "dairymetrics/metrics_v2.html", context)
 
 
-@require_dairymetrics_member
-def metrics_report(request: HttpRequest) -> HttpResponse:
+def _metrics_report_data(request):
     viewer_member = get_member_profile(request.user)
     departments, selected_department = resolve_metrics_v2_department(request=request, member=viewer_member)
     if not selected_department:
-        return redirect("dairymetrics_dashboard")
+        return None
 
     today = timezone.localdate()
     requested_scope = (request.GET.get("scope") or "month").strip()
@@ -915,7 +916,15 @@ def metrics_report(request: HttpRequest) -> HttpResponse:
         scope = resolve_metrics_v2_scope(today=today, scope="month", requested_month=requested_month)
 
     report = build_metrics_scope_report(department=selected_department, scope=scope)
-    context = {
+    export_query = urlencode(
+        {
+            "department": selected_department.code,
+            "scope": scope.scope,
+            "month": (scope.month_start or today.replace(day=1)).strftime("%Y-%m"),
+            "period_id": scope.period.id if scope.period else "",
+        }
+    )
+    return {
         "is_admin": request.user.is_staff,
         "member": viewer_member,
         "departments": departments,
@@ -926,8 +935,48 @@ def metrics_report(request: HttpRequest) -> HttpResponse:
         "period_options": period_options,
         "selected_period_id": scope.period.id if scope.period else "",
         "report": report,
+        "report_export_query": export_query,
     }
+
+
+@require_dairymetrics_member
+def metrics_report(request: HttpRequest) -> HttpResponse:
+    context = _metrics_report_data(request)
+    if context is None:
+        return redirect("dairymetrics_dashboard")
     return render(request, "dairymetrics/metrics_report.html", context)
+
+
+@require_dairymetrics_member
+def metrics_report_export(request: HttpRequest) -> HttpResponse:
+    context = _metrics_report_data(request)
+    if context is None:
+        return redirect("dairymetrics_dashboard")
+
+    payload = build_report_export_payload(
+        department=context["selected_department"],
+        scope=context["scope"],
+        report=context["report"],
+    )
+    export_format = (request.GET.get("format") or "txt").strip().lower()
+    filename_base = (
+        f"metrics-report-{context['selected_department'].code}-"
+        f"{context['scope'].start_date:%Y%m%d}-{context['scope'].end_date:%Y%m%d}"
+    )
+    if export_format == "json":
+        response = JsonResponse(
+            payload,
+            json_dumps_params={"ensure_ascii": False, "indent": 2},
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename_base}.json"'
+        return response
+
+    response = HttpResponse(
+        build_report_ai_text(payload),
+        content_type="text/plain; charset=utf-8",
+    )
+    response["Content-Disposition"] = f'attachment; filename="{filename_base}.txt"'
+    return response
 
 
 @require_dairymetrics_member

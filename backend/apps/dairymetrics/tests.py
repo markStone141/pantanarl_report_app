@@ -4676,6 +4676,54 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, f"{self.period.start_date:%Y/%m/%d} - {self.period.end_date:%Y/%m/%d}")
         self.assertContains(response, "30,000円")
 
+    def test_metrics_report_exports_ai_text_and_json_with_mail_details(self):
+        today = timezone.localdate()
+        MailSendHistory.objects.create(
+            department=self.department,
+            activity_date=today,
+            sender_member=self.member,
+            subject_snapshot="獲得報告テスト",
+            body_snapshot="本文の詳細です。\n目標まであと1,000円",
+            sent_to_snapshot="member@example.com",
+            status=MailSendHistory.STATUS_SENT,
+            sent_at=timezone.now(),
+        )
+        query = {
+            "department": self.department.code,
+            "scope": "month",
+            "month": today.strftime("%Y-%m"),
+        }
+        self.client.force_login(self.admin)
+
+        report_response = self.client.get(reverse("dairymetrics_metrics_report"), query)
+        text_response = self.client.get(
+            reverse("dairymetrics_metrics_report_export"),
+            {**query, "format": "txt"},
+        )
+        json_response = self.client.get(
+            reverse("dairymetrics_metrics_report_export"),
+            {**query, "format": "json"},
+        )
+
+        self.assertEqual(report_response.status_code, 200)
+        self.assertContains(report_response, "AI用テキスト")
+        self.assertContains(report_response, "JSON")
+        self.assertEqual(text_response.status_code, 200)
+        self.assertEqual(text_response["Content-Type"], "text/plain; charset=utf-8")
+        text = text_response.content.decode("utf-8")
+        self.assertIn("以下は活動実績の振り返りデータです。", text)
+        self.assertIn("## 送信メール", text)
+        self.assertIn("獲得報告テスト", text)
+        self.assertIn("本文の詳細です。", text)
+        self.assertIn("member@example.com", text)
+        self.assertEqual(json_response.status_code, 200)
+        payload = json_response.json()
+        self.assertEqual(payload["report"]["department_code"], self.department.code)
+        self.assertEqual(payload["emails"][0]["subject"], "獲得報告テスト")
+        self.assertEqual(payload["emails"][0]["body"], "本文の詳細です。\n目標まであと1,000円")
+        self.assertEqual(payload["emails"][0]["recipients"], "member@example.com")
+        self.assertEqual(payload["emails"][0]["status"], MailSendHistory.STATUS_SENT)
+
     def test_metrics_report_period_options_exclude_planned_periods(self):
         today = timezone.localdate()
         planned_period = Period.objects.create(
