@@ -1897,6 +1897,7 @@ def performance_closeout_notes(request: HttpRequest) -> HttpResponse:
             "query": query,
             "date_from": date_from,
             "date_to": date_to,
+            "today": today,
         },
     )
 

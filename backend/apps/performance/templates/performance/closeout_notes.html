@@ -3,12 +3,19 @@
 
 {% block title %}あと一歩ケース | 実績管理{% endblock %}
 
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kurenaido&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'performance/closeout_notes.css' %}?v=1">
+{% endblock %}
+
 {% block content %}
-<div class="container">
+<div class="container closeout-notebook">
   <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
     <div>
-      <strong>あと一歩ケース</strong>
-      <div class="muted topbar-muted">活動終了時に記録された、決済に至らなかった印象的なケースを確認します。</div>
+      <strong>今日のあと一歩ノート</strong>
+      <div class="muted topbar-muted">決まらなかった理由を、次の一歩に変えるための記録です。</div>
     </div>
     <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
       <i class="fa-solid fa-bars" aria-hidden="true"></i>
@@ -23,8 +30,27 @@
   </header>
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
-  <section class="card mt-16">
-    <form method="get" class="grid performance-dashboard-filter-grid">
+  <section class="closeout-notebook-hero">
+    <div>
+      <span class="closeout-notebook-kicker">NEAR MISS JOURNAL</span>
+      <h1>惜しかった場面には、<br>次のヒントが残っている。</h1>
+      <p>うまくいかなかった話を責める場所ではなく、チームで次の打ち手を見つけるためのノートです。</p>
+    </div>
+    <div class="closeout-notebook-count" aria-label="該当する記録数">
+      <strong>{{ page_obj.paginator.count }}</strong>
+      <span>cases</span>
+    </div>
+  </section>
+
+  <section class="closeout-filter-panel">
+    <div class="closeout-filter-heading">
+      <div>
+        <span class="closeout-filter-eyebrow">FIND A CASE</span>
+        <strong>記録を探す</strong>
+      </div>
+      <a class="closeout-today-link" href="?date_from={{ today|date:'Y-m-d' }}&date_to={{ today|date:'Y-m-d' }}">今日を見る</a>
+    </div>
+    <form method="get" class="closeout-filter-grid">
       <div>
         <input type="search" name="q" value="{{ query }}" placeholder="メンバー・現場・内容で検索">
       </div>
@@ -46,26 +72,53 @@
       </div>
       <div><input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" aria-label="開始日"></div>
       <div><input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" aria-label="終了日"></div>
-      <div><button type="submit">表示</button></div>
+      <div><button type="submit">ノートを開く</button></div>
     </form>
   </section>
 
-  <section class="grid mt-16">
-    {% for entry in entries %}
-    <article class="card">
-      <div class="row">
-        <div>
-          <strong>{{ entry.entry_date|date:"Y/m/d" }} / {{ entry.member.name }}</strong>
-          <div class="muted mt-6">{{ entry.department.code }}{% if entry.location_name %} / {{ entry.location_name }}{% endif %}</div>
-        </div>
-        <span class="badge">{% if entry.activity_closed %}活動終了{% else %}活動中{% endif %}</span>
+  {% regroup entries by entry_date as day_groups %}
+  <div class="closeout-days">
+    {% for day in day_groups %}
+    <section class="closeout-day">
+      <header class="closeout-day-heading">
+        <time datetime="{{ day.grouper|date:'Y-m-d' }}">
+          <span>{{ day.grouper|date:"Y" }}</span>
+          <strong>{{ day.grouper|date:"m.d" }}</strong>
+          <small>{{ day.grouper|date:"D" }}</small>
+        </time>
+        <div class="closeout-day-rule"></div>
+        <span class="closeout-day-count">{{ day.list|length }}件</span>
+      </header>
+      <div class="closeout-case-grid">
+        {% for entry in day.list %}
+        <article class="closeout-case-card">
+          <div class="closeout-case-tape" aria-hidden="true"></div>
+          <header>
+            <div>
+              <strong>{{ entry.member.name }}</strong>
+              <span>{{ entry.department.code }}</span>
+            </div>
+            {% if entry.location_name %}
+            <p><i class="fa-solid fa-location-dot" aria-hidden="true"></i>{{ entry.location_name }}</p>
+            {% endif %}
+          </header>
+          <div class="closeout-case-note">{{ entry.memo|linebreaksbr }}</div>
+          <footer>
+            <span><i class="fa-regular fa-lightbulb" aria-hidden="true"></i> NEXT HINT</span>
+            <small>{% if entry.activity_closed %}活動終了後の記録{% else %}活動中の記録{% endif %}</small>
+          </footer>
+        </article>
+        {% endfor %}
       </div>
-      <div class="mt-12">{{ entry.memo|linebreaksbr }}</div>
-    </article>
+    </section>
     {% empty %}
-    <article class="card"><p class="muted">条件に一致する記録はありません。</p></article>
+    <section class="closeout-empty">
+      <i class="fa-regular fa-note-sticky" aria-hidden="true"></i>
+      <strong>条件に一致する記録はありません</strong>
+      <p>活動終了時に書かれたケースが、ここに蓄積されます。</p>
+    </section>
     {% endfor %}
-  </section>
+  </div>
 
   {% if page_obj.paginator.num_pages > 1 %}
   <nav class="pagination mt-16">
