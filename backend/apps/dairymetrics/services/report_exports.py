@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from apps.dairymetrics.models import MemberDailyMetricEntry
 from apps.mail.models import MailSendHistory
 
 
@@ -44,6 +45,29 @@ def _mail_rows(*, department, scope) -> list[dict]:
     return rows
 
 
+def _closeout_note_rows(*, department, scope) -> list[dict]:
+    entries = (
+        MemberDailyMetricEntry.objects.filter(
+            department=department,
+            entry_date__range=(scope.start_date, scope.end_date),
+        )
+        .exclude(memo="")
+        .select_related("member", "department")
+        .order_by("entry_date", "member__name", "id")
+    )
+    return [
+        {
+            "date": entry.entry_date.isoformat(),
+            "member": entry.member.name,
+            "department": entry.department.code,
+            "location": entry.location_name,
+            "memo": entry.memo,
+            "activity_closed": entry.activity_closed,
+        }
+        for entry in entries
+    ]
+
+
 def build_report_export_payload(*, department, scope, report) -> dict:
     return {
         "report": {
@@ -73,6 +97,7 @@ def build_report_export_payload(*, department, scope, report) -> dict:
             }
             for card in report["distribution_cards"]
         ],
+        "closeout_notes": _closeout_note_rows(department=department, scope=scope),
         "emails": _mail_rows(department=department, scope=scope),
     }
 
@@ -153,6 +178,19 @@ def build_report_ai_text(payload: dict) -> str:
             lines.append(
                 f"- {row['label']}: {row['count_text']} / {row['percent_text']}{average_text}"
             )
+
+    lines.extend(["", "## あと一歩だったケース"])
+    if not payload["closeout_notes"]:
+        lines.append("- 記録はありません。")
+    for note in payload["closeout_notes"]:
+        lines.extend(
+            [
+                f"### {note['date']} / {note['member']} / {note['department']}",
+                f"- 現場: {note['location'] or '-'}",
+                "- 内容:",
+                note["memo"],
+            ]
+        )
 
     lines.extend(["", "## 送信メール"])
     if not payload["emails"]:

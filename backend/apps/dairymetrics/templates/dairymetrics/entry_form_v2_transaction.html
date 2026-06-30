@@ -514,7 +514,7 @@
     <section class="dairymetrics-v2-demo-card dairymetrics-v2-closeout-card">
       <div class="dairymetrics-v2-demo-head">
         <h3>活動終了時の最終確認</h3>
-        <p class="muted">決済明細の合計件数・金額は自動反映し、最後にアプローチとコミュニケーションだけ入れて締めます。</p>
+        <p class="muted">決済明細の合計件数・金額は自動反映し、最後に数値と印象的だったケースを記録します。</p>
       </div>
       <div class="dairymetrics-v2-transaction-actions">
         <button type="button" class="btn-inline dairymetrics-close-activity-btn" data-open-closeout>活動終了時の最終実績を確認</button>
@@ -558,6 +558,15 @@
             <div class="dairymetrics-field">
               <label>支援金額</label>
               <input type="number" value="{{ entry.support_amount|default:0 }}" readonly>
+            </div>
+            <div class="dairymetrics-field dairymetrics-field-full">
+              <label for="{{ closeout_form.memo.id_for_label }}">{{ closeout_form.memo.label }}</label>
+              <div class="dairymetrics-subtext">
+                今日一日で印象的だった、あと一歩で決済になりそうだったケースを記録してください。
+                トーク内容、決めきれなかった原因、次に変えたい点などが分析材料になります。
+              </div>
+              {{ closeout_form.memo }}
+              {% if closeout_form.memo.errors %}<div class="error-text">{{ closeout_form.memo.errors|striptags }}</div>{% endif %}
             </div>
             <div class="dairymetrics-field-full dairymetrics-form-actions">
               <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-closeout>閉じる</button>

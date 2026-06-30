@@ -136,6 +136,7 @@ def _performance_nav_items():
         ("dairymetrics_entry_v2_transaction_demo", "決済入力"),
         ("performance_history", "過去の実績を見る"),
         ("performance_admin_entries", "全体エントリー管理"),
+        ("performance_closeout_notes", "あと一歩ケース"),
         ("performance_past_entry_create", "過去実績入力"),
         ("performance_adjustments", "戻り・増額登録"),
         ("testimony_article_list", "証を見る"),
@@ -1846,6 +1847,58 @@ def performance_admin_entries(request: HttpRequest) -> HttpResponse:
         "current_query_string": current_query.urlencode(),
     }
     return render(request, "performance/admin_entries.html", context)
+
+
+@require_performance_roles(ROLE_ADMIN)
+def performance_closeout_notes(request: HttpRequest) -> HttpResponse:
+    today = timezone.localdate()
+    default_start = today.replace(day=1)
+    selected_department = (request.GET.get("department") or "").strip()
+    selected_member = (request.GET.get("member") or "").strip()
+    query = (request.GET.get("q") or "").strip()
+    date_from = _parse_selected_date(request.GET.get("date_from")) or default_start
+    date_to = _parse_selected_date(request.GET.get("date_to")) or today
+    if date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    entries = (
+        MemberDailyMetricEntry.objects.filter(
+            entry_date__range=(date_from, date_to),
+        )
+        .exclude(memo="")
+        .select_related("member", "department")
+        .order_by("-entry_date", "member__name", "department__code", "-id")
+    )
+    if selected_department.isdigit():
+        entries = entries.filter(department_id=int(selected_department))
+    if selected_member.isdigit():
+        entries = entries.filter(member_id=int(selected_member))
+    if query:
+        entries = entries.filter(
+            Q(memo__icontains=query)
+            | Q(member__name__icontains=query)
+            | Q(department__code__icontains=query)
+            | Q(location_name__icontains=query)
+        )
+
+    paginator = Paginator(entries, 30)
+    page_obj = paginator.get_page(request.GET.get("page") or 1)
+    return render(
+        request,
+        "performance/closeout_notes.html",
+        {
+            "nav_items": _performance_nav_items(),
+            "page_obj": page_obj,
+            "entries": page_obj.object_list,
+            "departments": Department.objects.filter(is_active=True).order_by("code", "id"),
+            "members": Member.objects.order_by("name", "id"),
+            "selected_department": selected_department,
+            "selected_member": selected_member,
+            "query": query,
+            "date_from": date_from,
+            "date_to": date_to,
+        },
+    )
 
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)

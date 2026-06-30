@@ -667,6 +667,43 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, reverse("performance_entry_edit", args=[entry.id]))
         self.assertContains(response, reverse("performance_entry_delete", args=[entry.id]))
 
+    def test_performance_closeout_notes_lists_and_filters_member_memos(self):
+        today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            location_name="新宿駅前",
+            memo="話は進んだが予算の確認が必要だった。次は比較資料を準備する。",
+            activity_closed=True,
+        )
+        other_member = self.create_member(name="Bob", department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=other_member,
+            department=self.department,
+            entry_date=today,
+            memo="別のケース",
+            activity_closed=True,
+        )
+
+        response = self.client.get(
+            reverse("performance_closeout_notes"),
+            {
+                "department": self.department.id,
+                "member": self.member.id,
+                "q": "比較資料",
+                "date_from": today.strftime("%Y-%m-%d"),
+                "date_to": today.strftime("%Y-%m-%d"),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "あと一歩ケース")
+        self.assertContains(response, self.member.name)
+        self.assertContains(response, "新宿駅前")
+        self.assertContains(response, "次は比較資料を準備する。")
+        self.assertNotContains(response, "別のケース")
+
     def test_performance_admin_entries_includes_inactive_member_filter_option(self):
         inactive_member = self.create_member(name="Inactive Entry", department=self.department)
         inactive_member.is_active = False

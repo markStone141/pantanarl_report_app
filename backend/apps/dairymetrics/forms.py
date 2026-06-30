@@ -499,10 +499,22 @@ class DairymetricsV2TransactionForm(forms.ModelForm):
 class DairymetricsV2CloseoutForm(forms.ModelForm):
     class Meta:
         model = MemberDailyMetricEntry
-        fields = ["approach_count", "communication_count"]
+        fields = ["approach_count", "communication_count", "memo"]
         labels = {
             "approach_count": "アプローチ",
             "communication_count": "コミュニケーション",
+            "memo": "あと一歩だったケース",
+        }
+        widgets = {
+            "memo": forms.Textarea(
+                attrs={
+                    "rows": 6,
+                    "placeholder": (
+                        "どういうトークだったか、決めきれなかった原因、"
+                        "次に試したい改善点などを自由に記入してください。"
+                    ),
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -511,6 +523,7 @@ class DairymetricsV2CloseoutForm(forms.ModelForm):
             self.fields[field_name].min_value = 0
             self.fields[field_name].required = False
             self.fields[field_name].initial = self.initial.get(field_name, 0)
+        self.fields["memo"].required = False
 
     def clean(self):
         cleaned_data = super().clean()

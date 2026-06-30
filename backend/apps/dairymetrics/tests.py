@@ -1158,6 +1158,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
                 "entry_date": entry_date.strftime("%Y-%m-%d"),
                 "approach_count": "12",
                 "communication_count": "7",
+                "memo": "相手の関心は高かったが、費用説明で決めきれなかった。次回は活用例を先に伝える。",
             },
         )
 
@@ -1168,6 +1169,10 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         entry.refresh_from_db()
         self.assertEqual(entry.approach_count, 12)
         self.assertEqual(entry.communication_count, 7)
+        self.assertEqual(
+            entry.memo,
+            "相手の関心は高かったが、費用説明で決めきれなかった。次回は活用例を先に伝える。",
+        )
         self.assertTrue(entry.activity_closed)
 
         response = self.client.get(
@@ -4678,6 +4683,14 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
 
     def test_metrics_report_exports_ai_text_and_json_with_mail_details(self):
         today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            location_name="駅前",
+            memo="説明には納得されたが、検討時間が必要とのこと。次回は判断材料を早めに提示する。",
+            activity_closed=True,
+        )
         MailSendHistory.objects.create(
             department=self.department,
             activity_date=today,
@@ -4716,6 +4729,8 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertIn("獲得報告テスト", text)
         self.assertIn("本文の詳細です。", text)
         self.assertIn("member@example.com", text)
+        self.assertIn("## あと一歩だったケース", text)
+        self.assertIn("説明には納得されたが、検討時間が必要とのこと。", text)
         self.assertEqual(json_response.status_code, 200)
         payload = json_response.json()
         self.assertEqual(payload["report"]["department_code"], self.department.code)
@@ -4723,6 +4738,11 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(payload["emails"][0]["body"], "本文の詳細です。\n目標まであと1,000円")
         self.assertEqual(payload["emails"][0]["recipients"], "member@example.com")
         self.assertEqual(payload["emails"][0]["status"], MailSendHistory.STATUS_SENT)
+        self.assertEqual(
+            payload["closeout_notes"][0]["memo"],
+            "説明には納得されたが、検討時間が必要とのこと。次回は判断材料を早めに提示する。",
+        )
+        self.assertEqual(payload["closeout_notes"][0]["location"], "駅前")
 
     def test_metrics_report_period_options_exclude_planned_periods(self):
         today = timezone.localdate()

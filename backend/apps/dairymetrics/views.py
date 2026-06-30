@@ -1377,6 +1377,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                             update_fields=[
                                 "approach_count",
                                 "communication_count",
+                                "memo",
                                 "activity_closed",
                                 "activity_closed_at",
                                 "input_source",
