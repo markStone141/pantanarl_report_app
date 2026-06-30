@@ -158,6 +158,14 @@ class TalksModelTests(TalksBaseTestCase):
 
 
 class TalksAuthTests(TalksBaseTestCase):
+    def test_linked_authenticated_member_can_open_talks_without_second_login(self):
+        self.client.force_login(self.member1.user)
+
+        response = self.client.get(reverse("talks_index"), {"unread": "1"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.client.session.get(TALKS_SESSION_MEMBER_ID_KEY), self.member1.id)
+
     def test_member_login_sets_report_role_and_redirects(self):
         response = self._login_talks_member("alice", "pass1")
         self.assertRedirects(response, reverse("talks_index"))

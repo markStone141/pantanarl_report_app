@@ -43,6 +43,13 @@
         <strong>確認する</strong>
       </a>
       {% endif %}
+      {% if talks_notification.count %}
+      <a class="dairymetrics-testimony-notice" href="{{ talks_notification.url }}">
+        <span class="dairymetrics-testimony-notice-icon"><i class="fa-solid fa-bell" aria-hidden="true"></i></span>
+        <span>新しいお知らせが{{ talks_notification.count }}件あります。</span>
+        <strong>確認する</strong>
+      </a>
+      {% endif %}
       {% if duplicate_transaction %}
       <div class="note">
         同一内容の既存決済: {{ duplicate_transaction.time_label }} / {{ duplicate_transaction.amount|intcomma }}円 / {{ duplicate_transaction.mail_status }}

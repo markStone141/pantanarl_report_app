@@ -16,7 +16,15 @@ TALKS_ADMIN_LOGIN_ID = os.getenv("TALKS_ADMIN_LOGIN_ID", "admin")
 def get_talks_member(request: HttpRequest) -> Member | None:
     member_id = request.session.get(TALKS_SESSION_MEMBER_ID_KEY)
     if not member_id:
-        return None
+        if not request.user.is_authenticated:
+            return None
+        member = Member.objects.active().filter(user=request.user).first()
+        if not member:
+            return None
+        request.session[TALKS_SESSION_MEMBER_ID_KEY] = member.id
+        request.session[TALKS_SESSION_MEMBER_NAME_KEY] = member.name
+        request.session[TALKS_SESSION_IS_ADMIN_KEY] = False
+        return member
 
     member = Member.objects.active().filter(id=member_id).first()
     if not member:

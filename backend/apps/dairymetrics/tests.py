@@ -22,6 +22,7 @@ from apps.targets.models import (
     TargetMetric,
 )
 from apps.testimony.models import Article, ArticleViewHistory
+from apps.talks.models import KnowledgePost, KnowledgePostRead
 
 from .forms import MemberDailyMetricEntryForm
 from .models import (
@@ -124,6 +125,38 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertContains(response, "ReportApp")
         self.assertEqual(response.context["testimony_notification"]["count"], 1)
         self.assertNotContains(response, unread_article.title)
+
+    def test_entry_v2_transaction_demo_shows_unread_recent_talks_count(self):
+        now = timezone.now()
+        unread_post = KnowledgePost.objects.create(
+            title="未読投稿A",
+            body="Body",
+            status=KnowledgePost.Status.PUBLISHED,
+        )
+        viewed_post = KnowledgePost.objects.create(
+            title="既読のお知らせ",
+            body="Body",
+            status=KnowledgePost.Status.PUBLISHED,
+        )
+        old_post = KnowledgePost.objects.create(
+            title="古いお知らせ",
+            body="Body",
+            status=KnowledgePost.Status.PUBLISHED,
+        )
+        KnowledgePost.objects.filter(pk=old_post.pk).update(
+            created_at=now - timedelta(days=20),
+            updated_at=now - timedelta(days=20),
+        )
+        KnowledgePostRead.objects.create(user=self.user, post=viewed_post)
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_entry_v2_transaction_demo"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "新しいお知らせが1件あります。")
+        self.assertContains(response, f"{reverse('talks_index')}?unread=1")
+        self.assertEqual(response.context["talks_notification"]["count"], 1)
+        self.assertNotContains(response, unread_post.title)
 
     def test_entry_v2_transaction_demo_can_save_un_transaction(self):
         entry_date = timezone.localdate()
