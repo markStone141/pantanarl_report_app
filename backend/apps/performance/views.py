@@ -136,7 +136,7 @@ def _performance_nav_items():
         ("dairymetrics_entry_v2_transaction_demo", "決済入力"),
         ("performance_history", "過去の実績を見る"),
         ("performance_admin_entries", "全体エントリー管理"),
-        ("performance_closeout_notes", "あと一歩ケース"),
+        ("performance_closeout_notes", "今日のあと一歩ノート"),
         ("performance_past_entry_create", "過去実績入力"),
         ("performance_adjustments", "戻り・増額登録"),
         ("testimony_article_list", "証を見る"),
@@ -149,12 +149,14 @@ def _performance_member_nav_items(*, is_admin=False):
         return [
             ("performance_index", "実績管理ダッシュボード"),
             ("dairymetrics_entry_v2_transaction_demo", "決済入力"),
+            ("performance_closeout_notes", "今日のあと一歩ノート"),
             ("performance_history", "過去の実績を見る"),
             ("testimony_article_list", "証を見る"),
         ]
     return [
         ("performance_member_dashboard", "実績管理ダッシュボード"),
         ("dairymetrics_entry_v2_transaction_demo", "決済入力"),
+        ("performance_closeout_notes", "今日のあと一歩ノート"),
         ("performance_index", "全体実績"),
         ("performance_member_history", "過去の実績を見る"),
         ("testimony_article_list", "証を見る"),
@@ -1849,7 +1851,7 @@ def performance_admin_entries(request: HttpRequest) -> HttpResponse:
     return render(request, "performance/admin_entries.html", context)
 
 
-@require_performance_roles(ROLE_ADMIN)
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_closeout_notes(request: HttpRequest) -> HttpResponse:
     today = timezone.localdate()
     default_start = today.replace(day=1)
@@ -1883,11 +1885,14 @@ def performance_closeout_notes(request: HttpRequest) -> HttpResponse:
 
     paginator = Paginator(entries, 30)
     page_obj = paginator.get_page(request.GET.get("page") or 1)
+    nav_items = _performance_nav_items()
+    if resolve_request_role(request) == ROLE_REPORT:
+        nav_items = _performance_member_nav_items(is_admin=False)
     return render(
         request,
         "performance/closeout_notes.html",
         {
-            "nav_items": _performance_nav_items(),
+            "nav_items": nav_items,
             "page_obj": page_obj,
             "entries": page_obj.object_list,
             "departments": Department.objects.filter(is_active=True).order_by("code", "id"),

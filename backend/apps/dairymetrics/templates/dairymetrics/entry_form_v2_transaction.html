@@ -19,6 +19,7 @@
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
       <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
+      <a href="{% url 'performance_closeout_notes' %}">今日のあと一歩ノート</a>
       {% if is_admin %}
       <a href="{% url 'performance_index' %}">全体実績</a>
       <a href="{% url 'dashboard_index' %}">総合管理者画面</a>

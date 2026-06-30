@@ -704,6 +704,29 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "次は比較資料を準備する。")
         self.assertNotContains(response, "別のケース")
 
+    def test_member_can_open_closeout_notes_from_performance_navigation(self):
+        member_user, member_profile = self.create_member_user(
+            username="notes-member",
+            name="Notes Member",
+            department=self.department,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=member_profile,
+            department=self.department,
+            entry_date=timezone.localdate(),
+            memo="次は質問の順番を変えて試す。",
+            activity_closed=True,
+        )
+        self.client.force_login(member_user)
+
+        dashboard_response = self.client.get(reverse("performance_index"))
+        notes_response = self.client.get(reverse("performance_closeout_notes"))
+
+        self.assertContains(dashboard_response, reverse("performance_closeout_notes"))
+        self.assertContains(dashboard_response, "今日のあと一歩ノート")
+        self.assertEqual(notes_response.status_code, 200)
+        self.assertContains(notes_response, "次は質問の順番を変えて試す。")
+
     def test_performance_admin_entries_includes_inactive_member_filter_option(self):
         inactive_member = self.create_member(name="Inactive Entry", department=self.department)
         inactive_member.is_active = False
