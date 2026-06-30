@@ -36,9 +36,10 @@
       {% else %}
       <a href="{% url 'performance_history' %}">過去の実績を見る</a>
       {% endif %}
+      <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
       <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
       <a href="{% url 'dairymetrics_metrics_report' %}">振り返りレポート</a>
-      <a href="{% url 'dashboard_index' %}">総合管理者ページ</a>
+      <a href="{% url 'dashboard_index' %}">総合管理者画面</a>
       {% else %}
       <a href="{% url 'performance_member_dashboard' %}">実績管理ダッシュボード</a>
       <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>

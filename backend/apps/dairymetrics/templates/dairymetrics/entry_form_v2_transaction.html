@@ -18,8 +18,10 @@
       <i class="fa-solid fa-bars" aria-hidden="true"></i>
     </button>
     <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
+      <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
       {% if is_admin %}
       <a href="{% url 'performance_index' %}">全体実績</a>
+      <a href="{% url 'dashboard_index' %}">総合管理者画面</a>
       {% else %}
       <a href="{% url 'performance_member_dashboard' %}">実績管理ダッシュボード</a>
       {% endif %}

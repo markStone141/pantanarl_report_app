@@ -133,6 +133,7 @@ def require_performance_roles(*allowed_roles: str):
 def _performance_nav_items():
     return [
         ("performance_index", "実績管理ダッシュボード"),
+        ("dairymetrics_entry_v2_transaction_demo", "決済入力"),
         ("performance_history", "過去の実績を見る"),
         ("performance_admin_entries", "全体エントリー管理"),
         ("performance_past_entry_create", "過去実績入力"),
@@ -146,11 +147,13 @@ def _performance_member_nav_items(*, is_admin=False):
     if is_admin:
         return [
             ("performance_index", "実績管理ダッシュボード"),
+            ("dairymetrics_entry_v2_transaction_demo", "決済入力"),
             ("performance_history", "過去の実績を見る"),
             ("testimony_article_list", "証を見る"),
         ]
     return [
         ("performance_member_dashboard", "実績管理ダッシュボード"),
+        ("dairymetrics_entry_v2_transaction_demo", "決済入力"),
         ("performance_index", "全体実績"),
         ("performance_member_history", "過去の実績を見る"),
         ("testimony_article_list", "証を見る"),

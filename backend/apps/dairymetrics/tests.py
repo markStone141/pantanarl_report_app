@@ -121,6 +121,9 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertContains(response, "fa-bell")
         self.assertContains(response, reverse("testimony_article_list"))
         self.assertContains(response, "証を見る")
+        self.assertContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
+        self.assertContains(response, reverse("performance_member_dashboard"))
+        self.assertContains(response, reverse("dairymetrics_metrics_v2_demo"))
         self.assertContains(response, reverse("home"))
         self.assertContains(response, "ReportApp")
         self.assertEqual(response.context["testimony_notification"]["count"], 1)
@@ -4530,8 +4533,8 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
             month=today.replace(day=1),
             name="予定路程",
             status=TARGET_STATUS_PLANNED,
-            start_date=today - timedelta(days=8),
-            end_date=today - timedelta(days=4),
+            start_date=today + timedelta(days=1),
+            end_date=today + timedelta(days=7),
         )
         finished_period = Period.objects.create(
             month=today.replace(day=1),
@@ -4758,8 +4761,9 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "属性別の平均金額")
         self.assertContains(response, "管理者用ダッシュボード")
         self.assertContains(response, "過去の実績を見る")
-        self.assertContains(response, "総合管理者ページ")
-        self.assertNotContains(response, "決済入力")
+        self.assertContains(response, "総合管理者画面")
+        self.assertContains(response, "決済入力")
+        self.assertContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
         self.assertContains(response, "metrics_v2.js")
         self.assertContains(response, "?v=7")
         self.assertContains(response, reverse("performance_member_insight", args=[self.member.id, self.department.id]))

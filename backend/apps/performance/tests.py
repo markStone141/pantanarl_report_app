@@ -76,6 +76,9 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, entry.entry_date.strftime("%m/%d"))
         self.assertContains(response, "戻り・増額登録")
         self.assertContains(response, reverse("performance_adjustments"))
+        self.assertContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
+        self.assertContains(response, reverse("dairymetrics_metrics_v2_demo"))
+        self.assertContains(response, reverse("dashboard_index"))
         self.assertContains(response, "振り返りレポート")
         self.assertContains(response, reverse("dairymetrics_metrics_report"))
 

@@ -730,6 +730,14 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertContains(response, f'href="{reverse("testimony_article_list")}"', html=False)
         self.assertContains(response, "証を見る")
 
+    def test_dashboard_nav_links_to_payment_performance_and_analysis(self):
+        response = self.client.get(reverse("dashboard_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
+        self.assertContains(response, reverse("performance_index"))
+        self.assertContains(response, reverse("dairymetrics_metrics_v2_demo"))
+
     def test_dashboard_target_progress_reflects_saved_targets_and_actuals(self):
         today = timezone.localdate()
         month = today.replace(day=1)
