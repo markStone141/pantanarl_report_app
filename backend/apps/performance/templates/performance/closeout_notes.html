@@ -30,6 +30,18 @@
   </header>
   <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
+  <section class="closeout-notebook-hero">
+    <div>
+      <span class="closeout-notebook-kicker">NEAR MISS JOURNAL</span>
+      <h1>惜しかった場面には、次のヒントが残っている。</h1>
+      <p>うまくいかなかった話を責める場所ではなく、チームで次の打ち手を見つけるためのノートです。</p>
+    </div>
+    <div class="closeout-notebook-count" aria-label="該当する記録数">
+      <strong data-closeout-count>{{ page_obj.paginator.count }}</strong>
+      <span>cases</span>
+    </div>
+  </section>
+
   <section class="closeout-scope-bar">
     <nav class="closeout-scope-tabs" aria-label="表示期間">
       <a href="?scope=today" data-closeout-scope="today" class="{% if notes_scope.key == 'today' %}is-active{% endif %}">今日</a>
@@ -37,9 +49,6 @@
       <a href="?scope=period" data-closeout-scope="period" class="{% if notes_scope.key == 'period' %}is-active{% endif %}">現路程</a>
       <a href="?scope=month" data-closeout-scope="month" class="{% if notes_scope.key == 'month' %}is-active{% endif %}">今月</a>
     </nav>
-    <div class="closeout-scope-count" aria-label="該当する記録数">
-      <strong data-closeout-count>{{ page_obj.paginator.count }}</strong><span>件</span>
-    </div>
   </section>
 
   <section id="closeout-filter-panel" class="closeout-filter-panel" role="dialog" aria-modal="true" aria-labelledby="closeout-filter-title">
