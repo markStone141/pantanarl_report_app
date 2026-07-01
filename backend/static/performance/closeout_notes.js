@@ -1,6 +1,6 @@
 (() => {
   const panel = document.querySelector("#closeout-filter-panel");
-  const openButton = document.querySelector("[data-closeout-filter-open]");
+  const openButtons = document.querySelectorAll("[data-closeout-filter-open]");
   const closeButton = document.querySelector("[data-closeout-filter-close]");
   const backdrop = document.querySelector("[data-closeout-filter-backdrop]");
   const form = document.querySelector("[data-closeout-filter-form]");
@@ -10,25 +10,37 @@
   const scopeInput = document.querySelector("[data-closeout-scope-input]");
   const scopeLinks = document.querySelectorAll("[data-closeout-scope]");
 
-  if (!panel || !openButton || !closeButton || !backdrop || !form || !results) return;
+  if (!panel || !openButtons.length || !closeButton || !backdrop || !form || !results) return;
 
+  let lastOpenButton = openButtons[0];
   const closeFilter = (restoreFocus = true) => {
     panel.classList.remove("is-open");
     backdrop.hidden = true;
-    openButton.setAttribute("aria-expanded", "false");
+    openButtons.forEach((button) => button.setAttribute("aria-expanded", "false"));
     document.body.classList.remove("closeout-filter-open");
-    if (restoreFocus) openButton.focus();
+    if (restoreFocus && lastOpenButton) lastOpenButton.focus();
   };
 
-  const openFilter = () => {
+  const openFilter = (button) => {
+    lastOpenButton = button;
     panel.classList.add("is-open");
-    backdrop.hidden = false;
-    openButton.setAttribute("aria-expanded", "true");
-    document.body.classList.add("closeout-filter-open");
+    openButtons.forEach((item) => item.setAttribute("aria-expanded", "true"));
+    if (window.matchMedia("(max-width: 700px)").matches) {
+      backdrop.hidden = false;
+      document.body.classList.add("closeout-filter-open");
+    }
     closeButton.focus();
   };
 
-  openButton.addEventListener("click", openFilter);
+  openButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      if (panel.classList.contains("is-open")) {
+        closeFilter(false);
+      } else {
+        openFilter(button);
+      }
+    });
+  });
   closeButton.addEventListener("click", closeFilter);
   backdrop.addEventListener("click", closeFilter);
   document.addEventListener("keydown", (event) => {

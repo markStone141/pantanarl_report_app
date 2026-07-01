@@ -705,6 +705,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertNotContains(response, "別のケース")
         self.assertContains(response, 'data-closeout-filter-open', html=False)
         self.assertContains(response, 'id="closeout-filter-panel"', html=False)
+        self.assertContains(response, "詳細検索")
 
     def test_member_can_open_closeout_notes_from_performance_navigation(self):
         member_user, member_profile = self.create_member_user(

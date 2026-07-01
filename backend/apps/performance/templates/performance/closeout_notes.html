@@ -49,6 +49,16 @@
       <a href="?scope=period" data-closeout-scope="period" class="{% if notes_scope.key == 'period' %}is-active{% endif %}">現路程</a>
       <a href="?scope=month" data-closeout-scope="month" class="{% if notes_scope.key == 'month' %}is-active{% endif %}">今月</a>
     </nav>
+    <button
+      type="button"
+      class="closeout-filter-trigger"
+      data-closeout-filter-open
+      aria-controls="closeout-filter-panel"
+      aria-expanded="false"
+    >
+      <i class="fa-solid fa-filter" aria-hidden="true"></i>
+      詳細検索
+    </button>
   </section>
 
   <section id="closeout-filter-panel" class="closeout-filter-panel" role="dialog" aria-modal="true" aria-labelledby="closeout-filter-title">
@@ -116,5 +126,5 @@
 </button>
 <div class="closeout-filter-backdrop" data-closeout-filter-backdrop hidden></div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=5"></script>
-<script src="{% static 'performance/closeout_notes.js' %}?v=2" defer></script>
+<script src="{% static 'performance/closeout_notes.js' %}?v=3" defer></script>
 {% endblock %}
