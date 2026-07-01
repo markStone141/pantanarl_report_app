@@ -434,27 +434,30 @@ body:has(.closeout-notebook) {
   }
 
   .closeout-notebook-hero {
-    align-items: flex-start;
-    padding: 28px 24px;
-    border-radius: 22px;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    border-radius: 18px;
   }
 
   .closeout-notebook-hero h1 {
-    font-size: 2rem;
+    margin: 5px 0 0;
+    font-size: clamp(0.7rem, 3.2vw, 0.9rem);
+    line-height: 1.3;
+    white-space: nowrap;
   }
 
   .closeout-notebook-hero p {
-    font-size: 0.86rem;
+    display: none;
+  }
+
+  .closeout-notebook-kicker {
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
   }
 
   .closeout-notebook-count {
-    flex-basis: 76px;
-    width: 76px;
-    height: 76px;
-  }
-
-  .closeout-notebook-count strong {
-    font-size: 1.8rem;
+    display: none;
   }
 
   .closeout-filter-panel {
@@ -552,11 +555,7 @@ body:has(.closeout-notebook) {
 
 @media (max-width: 430px) {
   .closeout-notebook-hero {
-    display: block;
-  }
-
-  .closeout-notebook-count {
-    margin: 20px 0 0 auto;
+    display: flex;
   }
 
   .closeout-scope-tabs {
