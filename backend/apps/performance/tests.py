@@ -703,6 +703,8 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "新宿駅前")
         self.assertContains(response, "次は比較資料を準備する。")
         self.assertNotContains(response, "別のケース")
+        self.assertContains(response, 'data-closeout-filter-open', html=False)
+        self.assertContains(response, 'id="closeout-filter-panel"', html=False)
 
     def test_member_can_open_closeout_notes_from_performance_navigation(self):
         member_user, member_profile = self.create_member_user(

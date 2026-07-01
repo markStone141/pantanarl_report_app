@@ -42,12 +42,15 @@
     </div>
   </section>
 
-  <section class="closeout-filter-panel">
+  <section id="closeout-filter-panel" class="closeout-filter-panel" role="dialog" aria-modal="true" aria-labelledby="closeout-filter-title">
     <div class="closeout-filter-heading">
       <div>
         <span class="closeout-filter-eyebrow">FIND A CASE</span>
-        <strong>{{ notes_scope.label }}</strong>
+        <strong id="closeout-filter-title">{{ notes_scope.label }}</strong>
       </div>
+      <button type="button" class="closeout-filter-close" data-closeout-filter-close aria-label="検索条件を閉じる">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
     </div>
     <nav class="closeout-scope-tabs" aria-label="表示期間">
       <a href="?scope=today" class="{% if notes_scope.key == 'today' %}is-active{% endif %}">今日</a>
@@ -149,5 +152,18 @@
   </nav>
   {% endif %}
 </div>
+<button
+  type="button"
+  class="closeout-filter-fab"
+  data-closeout-filter-open
+  aria-controls="closeout-filter-panel"
+  aria-expanded="false"
+  aria-label="検索条件を開く"
+>
+  <i class="fa-solid fa-filter" aria-hidden="true"></i>
+  <span>絞り込み</span>
+</button>
+<div class="closeout-filter-backdrop" data-closeout-filter-backdrop hidden></div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+<script src="{% static 'performance/closeout_notes.js' %}?v=1" defer></script>
 {% endblock %}

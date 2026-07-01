@@ -98,6 +98,16 @@
   font-size: 1.08rem;
 }
 
+.closeout-filter-close,
+.closeout-filter-fab,
+.closeout-filter-backdrop {
+  display: none;
+}
+
+.closeout-filter-backdrop[hidden] {
+  display: none;
+}
+
 .closeout-scope-tabs {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -375,7 +385,78 @@
   }
 
   .closeout-filter-panel {
-    padding: 18px;
+    position: fixed;
+    z-index: 1201;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    max-height: min(82dvh, 720px);
+    margin: 0;
+    padding: 20px;
+    overflow-y: auto;
+    border-radius: 22px;
+    box-shadow: 0 24px 70px rgba(25, 45, 37, 0.3);
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(calc(100% + 28px));
+    transition:
+      transform 180ms ease,
+      opacity 180ms ease,
+      visibility 180ms;
+  }
+
+  .closeout-filter-panel.is-open {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .closeout-filter-close {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    place-items: center;
+    color: var(--note-ink);
+    border: 1px solid #d9d5c8;
+    border-radius: 50%;
+    background: #fffef9;
+    box-shadow: none;
+  }
+
+  .closeout-filter-fab {
+    position: fixed;
+    z-index: 1199;
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    left: 18px;
+    display: inline-flex;
+    width: auto;
+    min-width: 54px;
+    height: 54px;
+    padding: 0 18px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #fff;
+    font-weight: 800;
+    border: 0;
+    border-radius: 999px;
+    background: var(--note-green);
+    box-shadow: 0 12px 30px rgba(34, 75, 58, 0.32);
+  }
+
+  .closeout-filter-fab[aria-expanded="true"] {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  .closeout-filter-backdrop {
+    position: fixed;
+    z-index: 1200;
+    inset: 0;
+    display: block;
+    background: rgba(22, 34, 29, 0.48);
+    backdrop-filter: blur(3px);
   }
 
   .closeout-filter-grid,
@@ -389,6 +470,10 @@
 
   .closeout-case-card {
     padding: 28px 22px 18px;
+  }
+
+  body.closeout-filter-open {
+    overflow: hidden;
   }
 }
 
