@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}投稿編集 | Talks{% endblock %}
+{% block title %}投稿編集 | お知らせ{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'talks/post_edit.css' %}?v=1">
@@ -10,24 +10,7 @@
 
 {% block content %}
 <div class="container">
-  <header id="talks-topbar" class="topbar topbar-desktop-expanded topbar-nav-always talks-drawer-topbar talks-topbar-spaced">
-    <div>
-      <a href="{% url 'talks_index' %}" aria-label="Talksホームへ" class="talks-home-link">
-        <img src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks" class="talks-logo">
-      </a>
-    </div>
-    <button id="talks-drawer-toggle" type="button" class="btn-inline talks-drawer-toggle" aria-label="Open menu" aria-expanded="false">
-      <i class="fa-solid fa-bars" aria-hidden="true"></i>
-    </button>
-    <nav id="talks-drawer-nav" class="talks-drawer-nav">
-      <div class="talks-drawer-greeting">{{ talks_member_name }}さん、お疲れ様です</div>
-      <span class="talks-drawer-welcome">おかえりなさい！{{ talks_member_name }}さん</span>
-      <a href="{% url 'home' %}" class="btn-inline talks-nav-link">Report App</a>
-      <a href="{% url 'testimony_article_list' %}" class="btn-inline talks-nav-link">Testimony</a>
-      <a href="{% url 'talks_logout' %}" class="logout-link talks-drawer-logout">ログアウト</a>
-    </nav>
-  </header>
-  <div id="talks-drawer-backdrop" class="talks-drawer-backdrop" hidden></div>
+  {% include "talks/_app_header.html" %}
 
   <section class="card">
     <h2 class="post-edit-title">投稿を編集</h2>

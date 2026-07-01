@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Talks ログイン | Report App{% endblock %}
+{% block title %}お知らせ ログイン | Report App{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -41,7 +41,7 @@
 <div class="login-wrap">
   <section class="card login-card">
     <div class="talks-login-brand">
-      <img class="talks-login-logo" src="{% static 'img/talks_logo.png' %}?v=4" alt="Talks">
+      <img class="talks-login-logo" src="{% static 'img/notice_logo.svg' %}?v=1" alt="お知らせ">
     </div>
     <form method="post" class="grid talks-login-form">
       {% csrf_token %}
@@ -73,7 +73,7 @@
       <a href="{% url 'testimony_login' %}?next={% url 'testimony_article_list' %}">
         <span class="reportapp-login-shortcuts-icon"><i class="fa-solid fa-quote-left" aria-hidden="true"></i></span>
         <span>
-          <strong>Testimony</strong>
+          <strong>証を見る</strong>
           <small>証の確認へ</small>
         </span>
       </a>

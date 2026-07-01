@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 180" role="img" aria-labelledby="title">
+  <title id="title">お知らせ</title>
+  <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="9" d="M72 120h94c-14-16-21-35-21-57 0-35-20-58-51-58S43 28 43 63c0 22-7 41-21 57h50Z"/>
+    <path stroke-width="9" d="M72 120c0 16 10 27 22 27s22-11 22-27"/>
+    <path stroke-width="8" d="M94 3v-1"/>
+  </g>
+  <circle cx="151" cy="27" r="18" fill="#ff8b6c"/>
+  <text x="205" y="125" fill="#fff" font-family="'Hiragino Sans','Yu Gothic',sans-serif" font-size="88" font-weight="700" letter-spacing="8">お知らせ</text>
+</svg>

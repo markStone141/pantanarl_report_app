@@ -165,6 +165,14 @@ class TalksAuthTests(TalksBaseTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.client.session.get(TALKS_SESSION_MEMBER_ID_KEY), self.member1.id)
+        self.assertContains(response, "お知らせ")
+        self.assertContains(response, "img/notice_logo.svg")
+        self.assertContains(response, reverse("performance_member_dashboard"))
+        self.assertContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
+        self.assertContains(response, reverse("testimony_article_list"))
+        self.assertNotContains(response, f'href="{reverse("dashboard_index")}"', html=False)
+        self.assertNotContains(response, f'href="{reverse("talks_tag_manage")}"', html=False)
+        self.assertNotContains(response, f'href="{reverse("talks_deleted_posts_manage")}"', html=False)
 
     def test_member_login_sets_report_role_and_redirects(self):
         response = self._login_talks_member("alice", "pass1")
@@ -178,6 +186,19 @@ class TalksAuthTests(TalksBaseTestCase):
         )
         self.assertRedirects(response, reverse("talks_index"))
         self.assertEqual(self.client.session.get(SESSION_ROLE_KEY), ROLE_ADMIN)
+
+    def test_admin_notice_navigation_includes_management_links(self):
+        self._set_role_admin_session()
+
+        response = self.client.get(reverse("talks_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("performance_index"))
+        self.assertContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
+        self.assertContains(response, reverse("testimony_article_list"))
+        self.assertContains(response, reverse("dashboard_index"))
+        self.assertContains(response, reverse("talks_tag_manage"))
+        self.assertContains(response, reverse("talks_deleted_posts_manage"))
 
     def test_talks_index_requires_authentication(self):
         response = self.client.get(reverse("talks_index"))
