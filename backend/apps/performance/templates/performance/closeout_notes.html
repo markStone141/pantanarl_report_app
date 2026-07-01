@@ -46,11 +46,17 @@
     <div class="closeout-filter-heading">
       <div>
         <span class="closeout-filter-eyebrow">FIND A CASE</span>
-        <strong>記録を探す</strong>
+        <strong>{{ notes_scope.label }}</strong>
       </div>
-      <a class="closeout-today-link" href="?date_from={{ today|date:'Y-m-d' }}&date_to={{ today|date:'Y-m-d' }}">今日を見る</a>
     </div>
+    <nav class="closeout-scope-tabs" aria-label="表示期間">
+      <a href="?scope=today" class="{% if notes_scope.key == 'today' %}is-active{% endif %}">今日</a>
+      <a href="?scope=yesterday" class="{% if notes_scope.key == 'yesterday' %}is-active{% endif %}">昨日</a>
+      <a href="?scope=period" class="{% if notes_scope.key == 'period' %}is-active{% endif %}">現路程</a>
+      <a href="?scope=month" class="{% if notes_scope.key == 'month' %}is-active{% endif %}">今月</a>
+    </nav>
     <form method="get" class="closeout-filter-grid">
+      <input type="hidden" name="scope" value="custom">
       <div>
         <input type="search" name="q" value="{{ query }}" placeholder="メンバー・現場・内容で検索">
       </div>
@@ -70,8 +76,19 @@
           {% endfor %}
         </select>
       </div>
-      <div><input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" aria-label="開始日"></div>
-      <div><input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" aria-label="終了日"></div>
+      <div>
+        <input type="month" name="month" value="{{ selected_month }}" aria-label="対象月">
+      </div>
+      <div>
+        <select name="period_id" aria-label="対象路程">
+          <option value="">路程を指定しない</option>
+          {% for period in period_options %}
+          <option value="{{ period.id }}"{% if selected_period_id == period.id|stringformat:"s" %} selected{% endif %}>{{ period.name }}（{{ period.start_date|date:"m/d" }} - {{ period.end_date|date:"m/d" }}）</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div><input type="date" name="date_from" value="{% if notes_scope.key == 'custom' %}{{ date_from|date:'Y-m-d' }}{% endif %}" aria-label="開始日"></div>
+      <div><input type="date" name="date_to" value="{% if notes_scope.key == 'custom' %}{{ date_to|date:'Y-m-d' }}{% endif %}" aria-label="終了日"></div>
       <div><button type="submit">ノートを開く</button></div>
     </form>
   </section>
@@ -123,11 +140,11 @@
   {% if page_obj.paginator.num_pages > 1 %}
   <nav class="pagination mt-16">
     {% if page_obj.has_previous %}
-    <a class="btn-inline" href="?q={{ query|urlencode }}&department={{ selected_department }}&member={{ selected_member }}&date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&page={{ page_obj.previous_page_number }}">前へ</a>
+    <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}">前へ</a>
     {% endif %}
     <span class="muted">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
     {% if page_obj.has_next %}
-    <a class="btn-inline" href="?q={{ query|urlencode }}&department={{ selected_department }}&member={{ selected_member }}&date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&page={{ page_obj.next_page_number }}">次へ</a>
+    <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}">次へ</a>
     {% endif %}
   </nav>
   {% endif %}

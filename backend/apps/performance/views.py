@@ -52,6 +52,7 @@ from apps.performance.services.member_details import (
     build_trend_date_links,
 )
 from apps.performance.services.admin_entries import build_admin_entry_management_page
+from apps.performance.services.closeout_notes import resolve_closeout_notes_scope
 from apps.performance.services.past_entries import (
     create_past_entry_with_transactions,
     normalize_transaction_payloads,
@@ -187,6 +188,10 @@ def _performance_member_page_nav_links(*, member, department, is_admin=False, re
                     "label": "過去の実績を見る",
                 },
                 {
+                    "href": reverse("performance_closeout_notes"),
+                    "label": "今日のあと一歩ノート",
+                },
+                {
                     "href": reverse("testimony_article_list"),
                     "label": "証を見る",
                 },
@@ -207,6 +212,10 @@ def _performance_member_page_nav_links(*, member, department, is_admin=False, re
                 {
                     "href": reverse("performance_member_history_detail", args=[member.id, department.id]),
                     "label": "過去の実績を見る",
+                },
+                {
+                    "href": reverse("performance_closeout_notes"),
+                    "label": "今日のあと一歩ノート",
                 },
                 {
                     "href": reverse("testimony_article_list"),
@@ -231,6 +240,10 @@ def _performance_member_page_nav_links(*, member, department, is_admin=False, re
         {
             "href": reverse("performance_member_history"),
             "label": "過去の実績を見る",
+        },
+        {
+            "href": reverse("performance_closeout_notes"),
+            "label": "今日のあと一歩ノート",
         },
         {
             "href": reverse("testimony_article_list"),
@@ -1869,18 +1882,14 @@ def performance_admin_entries(request: HttpRequest) -> HttpResponse:
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_closeout_notes(request: HttpRequest) -> HttpResponse:
     today = timezone.localdate()
-    default_start = today.replace(day=1)
+    notes_scope = resolve_closeout_notes_scope(request.GET, today=today)
     selected_department = (request.GET.get("department") or "").strip()
     selected_member = (request.GET.get("member") or "").strip()
     query = (request.GET.get("q") or "").strip()
-    date_from = _parse_selected_date(request.GET.get("date_from")) or default_start
-    date_to = _parse_selected_date(request.GET.get("date_to")) or today
-    if date_from > date_to:
-        date_from, date_to = date_to, date_from
 
     entries = (
         MemberDailyMetricEntry.objects.filter(
-            entry_date__range=(date_from, date_to),
+            entry_date__range=(notes_scope.start_date, notes_scope.end_date),
         )
         .exclude(memo="")
         .select_related("member", "department")
@@ -1903,6 +1912,8 @@ def performance_closeout_notes(request: HttpRequest) -> HttpResponse:
     nav_items = _performance_nav_items()
     if resolve_request_role(request) == ROLE_REPORT:
         nav_items = _performance_member_nav_items(is_admin=False)
+    pagination_query = request.GET.copy()
+    pagination_query.pop("page", None)
     return render(
         request,
         "performance/closeout_notes.html",
@@ -1915,9 +1926,14 @@ def performance_closeout_notes(request: HttpRequest) -> HttpResponse:
             "selected_department": selected_department,
             "selected_member": selected_member,
             "query": query,
-            "date_from": date_from,
-            "date_to": date_to,
+            "date_from": notes_scope.start_date,
+            "date_to": notes_scope.end_date,
             "today": today,
+            "notes_scope": notes_scope,
+            "selected_month": (request.GET.get("month") or "").strip(),
+            "selected_period_id": (request.GET.get("period_id") or "").strip(),
+            "period_options": period_options_active_first(target_date=today),
+            "pagination_query": pagination_query.urlencode(),
         },
     )
 

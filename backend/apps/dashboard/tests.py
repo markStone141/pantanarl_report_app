@@ -735,6 +735,7 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("performance_index"))
+        self.assertContains(response, reverse("performance_closeout_notes"))
         self.assertContains(response, reverse("dairymetrics_metrics_v2_demo"))
         self.assertContains(response, reverse("talks_index"))
         self.assertNotContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))

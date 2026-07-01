@@ -727,6 +727,60 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(notes_response.status_code, 200)
         self.assertContains(notes_response, "次は質問の順番を変えて試す。")
 
+    def test_closeout_notes_defaults_today_and_supports_scope_and_period_search(self):
+        today = timezone.localdate()
+        yesterday = today - timedelta(days=1)
+        previous_month_day = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
+        current_period = Period.objects.create(
+            month=today.replace(day=1),
+            name="現在路程",
+            status="active",
+            start_date=yesterday,
+            end_date=today + timedelta(days=2),
+        )
+        previous_period = Period.objects.create(
+            month=previous_month_day.replace(day=1),
+            name="前月路程",
+            status="finished",
+            start_date=previous_month_day - timedelta(days=2),
+            end_date=previous_month_day,
+        )
+        for entry_date, memo in (
+            (today, "今日のケース"),
+            (yesterday, "昨日のケース"),
+            (previous_month_day, "前月のケース"),
+        ):
+            MemberDailyMetricEntry.objects.create(
+                member=self.member,
+                department=self.department,
+                entry_date=entry_date,
+                memo=memo,
+                activity_closed=True,
+            )
+
+        today_response = self.client.get(reverse("performance_closeout_notes"))
+        yesterday_response = self.client.get(reverse("performance_closeout_notes"), {"scope": "yesterday"})
+        current_period_response = self.client.get(reverse("performance_closeout_notes"), {"scope": "period"})
+        month_response = self.client.get(
+            reverse("performance_closeout_notes"),
+            {"month": previous_month_day.strftime("%Y-%m")},
+        )
+        period_response = self.client.get(
+            reverse("performance_closeout_notes"),
+            {"period_id": previous_period.id},
+        )
+
+        self.assertContains(today_response, "今日のケース")
+        self.assertNotContains(today_response, "昨日のケース")
+        self.assertContains(yesterday_response, "昨日のケース")
+        self.assertNotContains(yesterday_response, "今日のケース")
+        self.assertContains(current_period_response, current_period.name)
+        self.assertContains(current_period_response, "今日のケース")
+        self.assertContains(current_period_response, "昨日のケース")
+        self.assertContains(month_response, "前月のケース")
+        self.assertContains(period_response, previous_period.name)
+        self.assertContains(period_response, "前月のケース")
+
     def test_performance_admin_entries_includes_inactive_member_filter_option(self):
         inactive_member = self.create_member(name="Inactive Entry", department=self.department)
         inactive_member.is_active = False
@@ -2408,6 +2462,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "振り返りレポート")
         self.assertContains(response, reverse("dairymetrics_metrics_report"))
         self.assertContains(response, reverse("talks_index"))
+        self.assertContains(response, reverse("performance_closeout_notes"))
         self.assertNotContains(response, "総合管理者ページ")
 
     def test_performance_member_can_open_overall_dashboard_and_history(self):
