@@ -4,7 +4,7 @@
 {% block title %}お知らせ | Report App{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'talks/thread_index.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'talks/thread_index.css' %}?v=2">
 <link rel="stylesheet" href="{% static 'talks/mobile_drawer.css' %}?v=2">
 {% endblock %}
 
@@ -126,7 +126,7 @@
     {% if threads %}
       <div class="grid knowledge-grid-gap-12">
         {% for thread in threads %}
-          <article class="card knowledge-thread-link knowledge-thread-link-card js-thread-card" data-href="{% url 'talks_detail' thread.id %}">
+          <article class="card knowledge-thread-link knowledge-thread-link-card js-thread-card{% if thread.is_unread %} is-unread{% endif %}" data-href="{% url 'talks_detail' thread.id %}">
             <div class="knowledge-thread-head">
               <a href="{% url 'talks_detail' thread.id %}" class="knowledge-title-link">
                 <strong class="knowledge-thread-title">{{ thread.title }}</strong>

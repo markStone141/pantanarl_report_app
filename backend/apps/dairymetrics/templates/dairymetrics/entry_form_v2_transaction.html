@@ -4,7 +4,7 @@
 {% block title %}決済登録 | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=24" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=25" />
 {% endblock %}
 
 {% block content %}
@@ -48,7 +48,7 @@
       </a>
       {% endif %}
       {% if talks_notification.count %}
-      <a class="dairymetrics-testimony-notice" href="{{ talks_notification.url }}">
+      <a class="dairymetrics-testimony-notice dairymetrics-talks-notice" href="{{ talks_notification.url }}">
         <span class="dairymetrics-testimony-notice-icon"><i class="fa-solid fa-bell" aria-hidden="true"></i></span>
         <span>新しいお知らせが{{ talks_notification.count }}件あります。</span>
         <strong>確認する</strong>

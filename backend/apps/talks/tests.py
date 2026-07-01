@@ -170,6 +170,7 @@ class TalksAuthTests(TalksBaseTestCase):
         self.assertContains(response, reverse("performance_member_dashboard"))
         self.assertContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
         self.assertContains(response, reverse("testimony_article_list"))
+        self.assertContains(response, "knowledge-thread-link-card js-thread-card is-unread")
         self.assertNotContains(response, f'href="{reverse("dashboard_index")}"', html=False)
         self.assertNotContains(response, f'href="{reverse("talks_tag_manage")}"', html=False)
         self.assertNotContains(response, f'href="{reverse("talks_deleted_posts_manage")}"', html=False)

@@ -158,6 +158,7 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "新しいお知らせが1件あります。")
         self.assertContains(response, f"{reverse('talks_index')}?unread=1")
+        self.assertContains(response, "dairymetrics-talks-notice")
         self.assertEqual(response.context["talks_notification"]["count"], 1)
         self.assertNotContains(response, unread_post.title)
 
