@@ -518,7 +518,7 @@ def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
         KnowledgePostRead.objects.update_or_create(
             user=request.user,
             post=post,
-            defaults={},
+            defaults={"read_at": timezone.now()},
         )
 
     top_level_comments = [c for c in post.comments.all() if c.parent_id is None and not c.is_deleted]

@@ -1,7 +1,7 @@
 <section class="card testimony-section" data-testimony-results>
   <h2>{{ list_title }}</h2>
   {% for article in articles %}
-    <div class="testimony-list-item">
+    <div class="testimony-list-item{% if article.is_new_for_user %} is-unread{% endif %}">
       <div class="testimony-list-title-row">
         <a class="testimony-list-item-title" href="{% url 'testimony_article_detail' article.id %}">{{ article.title }}</a>
         {% if article.is_new_for_user %}

@@ -158,6 +158,18 @@ class TalksModelTests(TalksBaseTestCase):
 
 
 class TalksAuthTests(TalksBaseTestCase):
+    def test_notice_login_links_to_performance_and_payment_logins(self):
+        response = self.client.get(reverse("talks_login"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("performance_login"))
+        self.assertContains(
+            response,
+            f"{reverse('dairymetrics_login')}?next={reverse('dairymetrics_entry_v2_transaction_demo')}",
+        )
+        self.assertContains(response, "実績管理ログインへ")
+        self.assertContains(response, "決済登録ログインへ")
+
     def test_linked_authenticated_member_can_open_talks_without_second_login(self):
         self.client.force_login(self.member1.user)
 
@@ -356,6 +368,14 @@ class TalksFilteringAndUnreadTests(TalksBaseTestCase):
         only_unread = self.client.get(reverse("talks_index"), {"unread": "1"})
         ids = [item["id"] for item in only_unread.context["threads"]]
         self.assertIn(self.post1.id, ids)
+
+        detail = self.client.get(reverse("talks_detail", args=[self.post1.id]))
+        refreshed = self.client.get(reverse("talks_index"))
+        refreshed_map = {t["id"]: t for t in refreshed.context["threads"]}
+
+        self.assertContains(detail, "お知らせ一覧へ戻る")
+        self.assertFalse(refreshed_map[self.post1.id]["is_unread"])
+        self.assertContains(refreshed, "talks/thread_index.js?v=2")
 
     def test_favorite_only_filter(self):
         self._login_talks_member("alice", "pass1")

@@ -1,6 +1,15 @@
 .knowledge-detail-page {
   padding-bottom: 24px;
 }
+.knowledge-detail-back {
+  margin-bottom: 12px;
+}
+.knowledge-detail-back .btn-inline {
+  display: inline-flex;
+  width: auto;
+  align-items: center;
+  gap: 7px;
+}
 .knowledge-thread-card {
   margin-bottom: 16px;
   padding: 20px !important;

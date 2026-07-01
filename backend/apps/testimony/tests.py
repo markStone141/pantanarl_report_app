@@ -229,6 +229,7 @@ class TestimonyArticleListTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Alpha testimony")
         self.assertContains(response, "testimony-new-badge")
+        self.assertContains(response, "testimony-list-item is-unread")
         new_flags = {article.title: article.is_new_for_user for article in response.context["articles"]}
         self.assertTrue(new_flags["Alpha testimony"])
         self.assertFalse(new_flags["Beta story"])
@@ -240,6 +241,7 @@ class TestimonyArticleListTests(TestCase):
         self.assertEqual(refreshed_response.status_code, 200)
         refreshed_flags = {article.title: article.is_new_for_user for article in refreshed_response.context["articles"]}
         self.assertFalse(refreshed_flags["Alpha testimony"])
+        self.assertNotContains(refreshed_response, "testimony-list-item is-unread")
         self.assertContains(refreshed_response, old_article.title)
 
     def test_favorite_page_uses_article_list_ui_and_filters(self):

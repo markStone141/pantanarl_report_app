@@ -1,4 +1,8 @@
 (function () {
+    window.addEventListener("pageshow", function (event) {
+      if (event.persisted) window.location.reload();
+    });
+
     const openFilter = document.getElementById("knowledge-open-filter");
     const closeFilter = document.getElementById("knowledge-close-filter");
     const filterOverlay = document.getElementById("knowledge-filter-overlay");
