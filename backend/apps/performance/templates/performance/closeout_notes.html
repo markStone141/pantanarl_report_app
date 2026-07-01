@@ -37,7 +37,7 @@
       <p>うまくいかなかった話を責める場所ではなく、チームで次の打ち手を見つけるためのノートです。</p>
     </div>
     <div class="closeout-notebook-count" aria-label="該当する記録数">
-      <strong>{{ page_obj.paginator.count }}</strong>
+      <strong data-closeout-count>{{ page_obj.paginator.count }}</strong>
       <span>cases</span>
     </div>
   </section>
@@ -53,13 +53,13 @@
       </button>
     </div>
     <nav class="closeout-scope-tabs" aria-label="表示期間">
-      <a href="?scope=today" class="{% if notes_scope.key == 'today' %}is-active{% endif %}">今日</a>
-      <a href="?scope=yesterday" class="{% if notes_scope.key == 'yesterday' %}is-active{% endif %}">昨日</a>
-      <a href="?scope=period" class="{% if notes_scope.key == 'period' %}is-active{% endif %}">現路程</a>
-      <a href="?scope=month" class="{% if notes_scope.key == 'month' %}is-active{% endif %}">今月</a>
+      <a href="?scope=today" data-closeout-scope="today" class="{% if notes_scope.key == 'today' %}is-active{% endif %}">今日</a>
+      <a href="?scope=yesterday" data-closeout-scope="yesterday" class="{% if notes_scope.key == 'yesterday' %}is-active{% endif %}">昨日</a>
+      <a href="?scope=period" data-closeout-scope="period" class="{% if notes_scope.key == 'period' %}is-active{% endif %}">現路程</a>
+      <a href="?scope=month" data-closeout-scope="month" class="{% if notes_scope.key == 'month' %}is-active{% endif %}">今月</a>
     </nav>
-    <form method="get" class="closeout-filter-grid">
-      <input type="hidden" name="scope" value="custom">
+    <form method="get" class="closeout-filter-grid" data-closeout-filter-form>
+      <input type="hidden" name="scope" value="{{ notes_scope.key }}" data-closeout-scope-input>
       <div>
         <input type="search" name="q" value="{{ query }}" placeholder="メンバー・現場・内容で検索">
       </div>
@@ -96,61 +96,9 @@
     </form>
   </section>
 
-  {% regroup entries by entry_date as day_groups %}
-  <div class="closeout-days">
-    {% for day in day_groups %}
-    <section class="closeout-day">
-      <header class="closeout-day-heading">
-        <time datetime="{{ day.grouper|date:'Y-m-d' }}">
-          <span>{{ day.grouper|date:"Y" }}</span>
-          <strong>{{ day.grouper|date:"m.d" }}</strong>
-          <small>{{ day.grouper|date:"D" }}</small>
-        </time>
-        <div class="closeout-day-rule"></div>
-        <span class="closeout-day-count">{{ day.list|length }}件</span>
-      </header>
-      <div class="closeout-case-grid">
-        {% for entry in day.list %}
-        <article class="closeout-case-card">
-          <div class="closeout-case-tape" aria-hidden="true"></div>
-          <header>
-            <div>
-              <strong>{{ entry.member.name }}</strong>
-              <span>{{ entry.department.code }}</span>
-            </div>
-            {% if entry.location_name %}
-            <p><i class="fa-solid fa-location-dot" aria-hidden="true"></i>{{ entry.location_name }}</p>
-            {% endif %}
-          </header>
-          <div class="closeout-case-note">{{ entry.memo|linebreaksbr }}</div>
-          <footer>
-            <span><i class="fa-regular fa-lightbulb" aria-hidden="true"></i> NEXT HINT</span>
-            <small>{% if entry.activity_closed %}活動終了後の記録{% else %}活動中の記録{% endif %}</small>
-          </footer>
-        </article>
-        {% endfor %}
-      </div>
-    </section>
-    {% empty %}
-    <section class="closeout-empty">
-      <i class="fa-regular fa-note-sticky" aria-hidden="true"></i>
-      <strong>条件に一致する記録はありません</strong>
-      <p>活動終了時に書かれたケースが、ここに蓄積されます。</p>
-    </section>
-    {% endfor %}
+  <div data-closeout-results aria-live="polite">
+    {% include "performance/partials/closeout_note_results.html" %}
   </div>
-
-  {% if page_obj.paginator.num_pages > 1 %}
-  <nav class="pagination mt-16">
-    {% if page_obj.has_previous %}
-    <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}">前へ</a>
-    {% endif %}
-    <span class="muted">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-    {% if page_obj.has_next %}
-    <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}">次へ</a>
-    {% endif %}
-  </nav>
-  {% endif %}
 </div>
 <button
   type="button"
@@ -165,5 +113,5 @@
 </button>
 <div class="closeout-filter-backdrop" data-closeout-filter-backdrop hidden></div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=5"></script>
-<script src="{% static 'performance/closeout_notes.js' %}?v=1" defer></script>
+<script src="{% static 'performance/closeout_notes.js' %}?v=2" defer></script>
 {% endblock %}

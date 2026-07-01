@@ -211,6 +211,15 @@ body:has(.closeout-notebook) {
   margin-top: 30px;
 }
 
+[data-closeout-results] {
+  transition: opacity 140ms ease;
+}
+
+[data-closeout-results].is-loading {
+  opacity: 0.46;
+  pointer-events: none;
+}
+
 .closeout-day + .closeout-day {
   margin-top: 38px;
 }

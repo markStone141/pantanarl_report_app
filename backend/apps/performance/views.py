@@ -113,7 +113,7 @@ def _can_edit_member_performance(*, is_admin: bool, readonly_member_view: bool) 
     return bool(is_admin or not readonly_member_view)
 
 
-def require_performance_roles(*allowed_roles: str):
+def require_performance_roles(*allowed_roles: str, auto_close: bool = True):
     def decorator(view_func):
         @wraps(view_func)
         def wrapper(request: HttpRequest, *args, **kwargs) -> HttpResponse:
@@ -123,7 +123,8 @@ def require_performance_roles(*allowed_roles: str):
                 query = urlencode({"next": next_url}) if next_url else ""
                 login_url = reverse("performance_login")
                 return redirect(f"{login_url}?{query}" if query else login_url)
-            auto_close_stale_entries()
+            if auto_close:
+                auto_close_stale_entries()
             return view_func(request, *args, **kwargs)
 
         return wrapper
@@ -1879,7 +1880,7 @@ def performance_admin_entries(request: HttpRequest) -> HttpResponse:
     return render(request, "performance/admin_entries.html", context)
 
 
-@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
+@require_performance_roles(ROLE_ADMIN, ROLE_REPORT, auto_close=False)
 def performance_closeout_notes(request: HttpRequest) -> HttpResponse:
     today = timezone.localdate()
     notes_scope = resolve_closeout_notes_scope(request.GET, today=today)
@@ -1914,28 +1915,42 @@ def performance_closeout_notes(request: HttpRequest) -> HttpResponse:
         nav_items = _performance_member_nav_items(is_admin=False)
     pagination_query = request.GET.copy()
     pagination_query.pop("page", None)
-    return render(
-        request,
-        "performance/closeout_notes.html",
+    context = {
+        "nav_items": nav_items,
+        "page_obj": page_obj,
+        "entries": page_obj.object_list,
+        "selected_department": selected_department,
+        "selected_member": selected_member,
+        "query": query,
+        "date_from": notes_scope.start_date,
+        "date_to": notes_scope.end_date,
+        "today": today,
+        "notes_scope": notes_scope,
+        "selected_month": (request.GET.get("month") or "").strip(),
+        "selected_period_id": (request.GET.get("period_id") or "").strip(),
+        "pagination_query": pagination_query.urlencode(),
+    }
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "results_html": render_to_string(
+                    "performance/partials/closeout_note_results.html",
+                    context,
+                    request=request,
+                ),
+                "count": paginator.count,
+                "scope_key": notes_scope.key,
+                "scope_label": notes_scope.label,
+            }
+        )
+    context.update(
         {
-            "nav_items": nav_items,
-            "page_obj": page_obj,
-            "entries": page_obj.object_list,
             "departments": Department.objects.filter(is_active=True).order_by("code", "id"),
             "members": Member.objects.order_by("name", "id"),
-            "selected_department": selected_department,
-            "selected_member": selected_member,
-            "query": query,
-            "date_from": notes_scope.start_date,
-            "date_to": notes_scope.end_date,
-            "today": today,
-            "notes_scope": notes_scope,
-            "selected_month": (request.GET.get("month") or "").strip(),
-            "selected_period_id": (request.GET.get("period_id") or "").strip(),
             "period_options": period_options_active_first(target_date=today),
-            "pagination_query": pagination_query.urlencode(),
-        },
+        }
     )
+    return render(request, "performance/closeout_notes.html", context)
 
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)

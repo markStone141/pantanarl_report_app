@@ -783,6 +783,29 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(period_response, previous_period.name)
         self.assertContains(period_response, "前月のケース")
 
+    def test_closeout_notes_ajax_returns_only_updated_results(self):
+        today = timezone.localdate()
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+            memo="AJAXで見つかるケース",
+            activity_closed=True,
+        )
+
+        response = self.client.get(
+            reverse("performance_closeout_notes"),
+            {"scope": "today", "q": "AJAX"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["count"], 1)
+        self.assertEqual(payload["scope_key"], "today")
+        self.assertIn("AJAXで見つかるケース", payload["results_html"])
+        self.assertNotIn("closeout-filter-panel", payload["results_html"])
+
     def test_performance_admin_entries_includes_inactive_member_filter_option(self):
         inactive_member = self.create_member(name="Inactive Entry", department=self.department)
         inactive_member.is_active = False
