@@ -25,6 +25,19 @@
     setOpen(false);
   });
 
+  document.addEventListener("pointerdown", function (event) {
+    if (!topbar.classList.contains("drawer-open")) return;
+    if (nav.contains(event.target) || toggle.contains(event.target)) return;
+    setOpen(false);
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && topbar.classList.contains("drawer-open")) {
+      setOpen(false);
+      toggle.focus();
+    }
+  });
+
   window.addEventListener("resize", function () {
     if (window.innerWidth > 768) setOpen(false);
   });
