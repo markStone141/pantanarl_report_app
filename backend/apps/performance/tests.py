@@ -2407,6 +2407,7 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "分析する")
         self.assertContains(response, "振り返りレポート")
         self.assertContains(response, reverse("dairymetrics_metrics_report"))
+        self.assertContains(response, reverse("talks_index"))
         self.assertNotContains(response, "総合管理者ページ")
 
     def test_performance_member_can_open_overall_dashboard_and_history(self):

@@ -53,7 +53,7 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
             reverse("dairymetrics_login"),
             {"login_id": "member1", "password": "pass123"},
         )
-        self.assertRedirects(response, reverse("dairymetrics_dashboard"))
+        self.assertRedirects(response, reverse("performance_member_dashboard"))
 
     def test_non_member_user_is_rejected(self):
         self.create_user("outsider", password="pass123")
@@ -64,17 +64,17 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "DairyMetrics を利用できるメンバーではありません。")
 
-    def test_admin_redirects_to_admin_overview_after_login(self):
+    def test_admin_redirects_to_performance_dashboard_after_login(self):
         response = self.client.post(
             reverse("dairymetrics_login"),
             {"login_id": "dm_admin", "password": "pass123"},
         )
-        self.assertRedirects(response, reverse("dairymetrics_admin_overview"))
+        self.assertRedirects(response, reverse("performance_index"))
 
-    def test_authenticated_admin_visiting_login_redirects_to_admin_overview(self):
+    def test_authenticated_admin_visiting_login_redirects_to_performance_dashboard(self):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("dairymetrics_login"))
-        self.assertRedirects(response, reverse("dairymetrics_admin_overview"))
+        self.assertRedirects(response, reverse("performance_index"))
 
     def test_dairymetrics_logout_redirects_to_performance_login(self):
         self.client.force_login(self.user)
@@ -1182,6 +1182,7 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertContains(response, self.member.name)
         self.assertContains(response, reverse("performance_closeout_notes"))
         self.assertContains(response, "今日のあと一歩ノート")
+        self.assertContains(response, reverse("talks_index"))
 
     def test_wv_entry_v2_flow_reflects_in_performance_and_report_views(self):
         entry_date = timezone.localdate()
@@ -4520,7 +4521,9 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "過去の実績を見る")
         self.assertContains(response, "振り返りレポート")
         self.assertContains(response, reverse("dairymetrics_metrics_report"))
+        self.assertContains(response, reverse("talks_index"))
         self.assertNotContains(response, "現行 Metrics")
+        self.assertNotContains(response, f'href="{reverse("dairymetrics_dashboard")}"', html=False)
         self.assertNotContains(response, "総合管理者ページ")
         ranking_options = {option["key"]: option["label"] for option in response.context["metrics_v2_payload"]["ranking"]["options"]}
         self.assertEqual(ranking_options["amount_stability_score"], "金額安定スコア")
@@ -4578,6 +4581,8 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "振り返りレポート")
+        self.assertContains(response, reverse("talks_index"))
+        self.assertNotContains(response, f'href="{reverse("dairymetrics_dashboard")}"', html=False)
         self.assertContains(response, "出力条件")
         self.assertContains(response, "目標との差分")
         self.assertContains(response, "補正実績")

@@ -100,8 +100,8 @@ def _login_redirect_url(user, *, fallback=""):
     if fallback:
         return fallback
     if user.is_staff:
-        return reverse("dairymetrics_admin_overview")
-    return reverse("dairymetrics_dashboard")
+        return reverse("performance_index")
+    return reverse("performance_member_dashboard")
 
 
 def _admin_monthly_allowed_fields(department):

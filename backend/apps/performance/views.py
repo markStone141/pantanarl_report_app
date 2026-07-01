@@ -140,6 +140,7 @@ def _performance_nav_items():
         ("performance_past_entry_create", "過去実績入力"),
         ("performance_adjustments", "戻り・増額登録"),
         ("testimony_article_list", "証を見る"),
+        ("talks_index", "お知らせ"),
         ("dashboard_index", "総合管理者ページ"),
     ]
 
@@ -152,6 +153,7 @@ def _performance_member_nav_items(*, is_admin=False):
             ("performance_closeout_notes", "今日のあと一歩ノート"),
             ("performance_history", "過去の実績を見る"),
             ("testimony_article_list", "証を見る"),
+            ("talks_index", "お知らせ"),
         ]
     return [
         ("performance_member_dashboard", "実績管理ダッシュボード"),
@@ -160,6 +162,7 @@ def _performance_member_nav_items(*, is_admin=False):
         ("performance_index", "全体実績"),
         ("performance_member_history", "過去の実績を見る"),
         ("testimony_article_list", "証を見る"),
+        ("talks_index", "お知らせ"),
     ]
 
 
@@ -187,6 +190,10 @@ def _performance_member_page_nav_links(*, member, department, is_admin=False, re
                     "href": reverse("testimony_article_list"),
                     "label": "証を見る",
                 },
+                {
+                    "href": reverse("talks_index"),
+                    "label": "お知らせ",
+                },
             ]
         )
         return links
@@ -204,6 +211,10 @@ def _performance_member_page_nav_links(*, member, department, is_admin=False, re
                 {
                     "href": reverse("testimony_article_list"),
                     "label": "証を見る",
+                },
+                {
+                    "href": reverse("talks_index"),
+                    "label": "お知らせ",
                 },
             ]
         )
@@ -224,6 +235,10 @@ def _performance_member_page_nav_links(*, member, department, is_admin=False, re
         {
             "href": reverse("testimony_article_list"),
             "label": "証を見る",
+        },
+        {
+            "href": reverse("talks_index"),
+            "label": "お知らせ",
         },
     ]
 
