@@ -501,11 +501,11 @@ body:has(.closeout-notebook) {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    color: #fff;
+    color: var(--note-green-deep);
     font-weight: 800;
-    border: 0;
+    border: 2px solid var(--note-green);
     border-radius: 999px;
-    background: var(--note-green);
+    background: var(--note-paper);
     box-shadow: 0 12px 30px rgba(34, 75, 58, 0.32);
   }
 
