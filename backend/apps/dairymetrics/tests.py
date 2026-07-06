@@ -1184,6 +1184,8 @@ class DairyMetricsDashboardTests(AppTestMixin, TestCase):
         self.assertContains(response, reverse("performance_closeout_notes"))
         self.assertContains(response, "今日のあと一歩ノート")
         self.assertContains(response, reverse("talks_index"))
+        self.assertContains(response, "あのときこうすればよかったのでは")
+        self.assertContains(response, "感じたことをそのまま残してください")
 
     def test_wv_entry_v2_flow_reflects_in_performance_and_report_views(self):
         entry_date = timezone.localdate()

@@ -503,15 +503,18 @@ class DairymetricsV2CloseoutForm(forms.ModelForm):
         labels = {
             "approach_count": "アプローチ",
             "communication_count": "コミュニケーション",
-            "memo": "あと一歩だったケース",
+            "memo": (
+                "活動中に感じた「あのときこうすればよかったのでは」「ここが足りなかった」"
+                "「あの時どうすればよかったんだろう」などといった悔しい気持ちを入力してください（任意）"
+            ),
         }
         widgets = {
             "memo": forms.Textarea(
                 attrs={
                     "rows": 6,
                     "placeholder": (
-                        "どういうトークだったか、決めきれなかった原因、"
-                        "次に試したい改善点などを自由に記入してください。"
+                        "印象に残った状況やトーク、決めきれなかった理由、"
+                        "次に試したいことなどを自由に記入してください。"
                     ),
                 }
             ),
