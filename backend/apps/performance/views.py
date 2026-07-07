@@ -48,6 +48,7 @@ from apps.performance.services.progress import (
 from apps.performance.services.member_details import (
     attach_transaction_edit_urls,
     build_entry_adjustment_detail_payload,
+    build_member_closeout_note_rows,
     build_member_dashboard_entry_rows,
     build_trend_date_links,
 )
@@ -1544,6 +1545,11 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         ],
         "activity_trend": activity_trend,
         "trend_date_links": build_trend_date_links(activity_trend),
+        "closeout_note_rows": build_member_closeout_note_rows(
+            member=member,
+            department=department,
+            limit=5,
+        ),
         "detail_history_url": (
             reverse("performance_member_history_detail", args=[member.id, department.id])
             if is_admin

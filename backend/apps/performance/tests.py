@@ -345,6 +345,34 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertContains(response, "振り返りレポート")
         self.assertContains(response, reverse("dairymetrics_metrics_report"))
 
+    def test_performance_member_dashboard_shows_own_closeout_notes_collapsed(self):
+        self.client.logout()
+        member_user = User.objects.create_user(username="perf-member-closeout-notes", password="pass1234", is_staff=False)
+        self.member.user = member_user
+        self.member.save(update_fields=["user"])
+        other_member = self.create_member(name="Bob", department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 6, 1),
+            memo="次は質問の順番を変えて試す。",
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=other_member,
+            department=self.department,
+            entry_date=date(2026, 6, 1),
+            memo="他メンバーのメモ",
+        )
+        self.client.force_login(member_user)
+
+        response = self.client.get(reverse("performance_member_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "<details>", html=False)
+        self.assertContains(response, "自分のあと一歩ノート")
+        self.assertContains(response, "次は質問の順番を変えて試す。")
+        self.assertNotContains(response, "他メンバーのメモ")
+
     def test_performance_member_dashboard_redirects_to_performance_login(self):
         self.client.logout()
 

@@ -296,6 +296,34 @@
     </div>
   </section>
 
+  <section class="card performance-closeout-summary-card mt-16">
+    <details>
+      <summary>
+        <span>
+          <strong>自分のあと一歩ノート</strong>
+          <span class="muted">最近の記録を確認</span>
+        </span>
+        <span class="badge">{{ closeout_note_rows|length }}件</span>
+      </summary>
+      {% if closeout_note_rows %}
+      <div class="performance-closeout-note-list mt-12">
+        {% for note_entry in closeout_note_rows %}
+        <article class="performance-closeout-note-item">
+          <time datetime="{{ note_entry.entry_date|date:'Y-m-d' }}">{{ note_entry.entry_date|date:"Y/m/d" }}</time>
+          {% if note_entry.location_name %}<span class="badge">{{ note_entry.location_name }}</span>{% endif %}
+          <p>{{ note_entry.memo|linebreaksbr }}</p>
+        </article>
+        {% endfor %}
+      </div>
+      <div class="mt-12">
+        <a class="btn-inline" href="{% url 'performance_closeout_notes' %}?member={{ member.id }}&department={{ department.id }}">あと一歩ノートを開く</a>
+      </div>
+      {% else %}
+      <p class="muted mt-12">まだ記録されたあと一歩ノートはありません。</p>
+      {% endif %}
+    </details>
+  </section>
+
   {% include "performance/partials/member_day_detail_cards.html" with detail_heading="直近30日の実績" detail_adjustment_heading="直近30日の補正実績" detail_description=recent_range_label show_reset_detail=False %}
 
 </div>

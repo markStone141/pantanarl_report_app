@@ -2027,6 +2027,56 @@ th {
   background: #dbe7f5;
 }
 
+.performance-closeout-summary-card details {
+  margin: 0;
+}
+
+.performance-closeout-summary-card summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  list-style: none;
+}
+
+.performance-closeout-summary-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.performance-closeout-summary-card summary strong,
+.performance-closeout-summary-card summary span {
+  display: block;
+}
+
+.performance-closeout-note-list {
+  display: grid;
+  gap: 10px;
+}
+
+.performance-closeout-note-item {
+  background: linear-gradient(135deg, rgba(255, 253, 246, 0.96), rgba(240, 248, 255, 0.9));
+  border: 1px solid rgba(160, 184, 207, 0.35);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+
+.performance-closeout-note-item time {
+  color: #5c6f82;
+  display: inline-block;
+  font-size: 0.86rem;
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+.performance-closeout-note-item p {
+  color: #243447;
+  line-height: 1.7;
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 .performance-target-config-card .row {
   align-items: center;
   gap: 12px;

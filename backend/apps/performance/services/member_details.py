@@ -124,3 +124,15 @@ def build_trend_date_links(activity_trend):
             }
         )
     return links
+
+
+def build_member_closeout_note_rows(*, member, department, limit=5):
+    return list(
+        MemberDailyMetricEntry.objects.select_related("member", "department")
+        .filter(
+            member=member,
+            department=department,
+        )
+        .exclude(memo="")
+        .order_by("-entry_date", "-id")[:limit]
+    )
