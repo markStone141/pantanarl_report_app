@@ -70,6 +70,7 @@ def merge_adjustment_totals_into_member_totals(*, base_member_totals, report_dat
                 "amount": int(row.get("amount", 0) or 0),
                 "cs_count": int(row.get("cs_count", 0) or 0),
                 "refugee_count": int(row.get("refugee_count", 0) or 0),
+                "input_order": row.get("input_order"),
             }
             for member_name, row in base_member_totals.get(code, {}).items()
         }
@@ -104,6 +105,7 @@ def merge_adjustment_totals_into_member_totals(*, base_member_totals, report_dat
                 "amount": 0,
                 "cs_count": 0,
                 "refugee_count": 0,
+                "input_order": None,
             },
         )
         adjustment_totals = _normalized_adjustment_totals(row)

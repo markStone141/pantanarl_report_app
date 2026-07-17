@@ -949,6 +949,46 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertIn("補正 件数2件 / 金額300円", today_section["month_lines"])
         self.assertIn("補正 件数2件 / 金額300円", today_section["period_lines"])
 
+    def test_dashboard_mail_member_lines_follow_report_input_order(self):
+        today = timezone.localdate()
+        first_member = Member.objects.create(name="First Input", login_id="first_input", password="")
+        second_member = Member.objects.create(name="Second Input", login_id="second_input", password="")
+        third_member = Member.objects.create(name="Third Input", login_id="third_input", password="")
+        report = DailyDepartmentReport.objects.create(
+            department=self.depts["UN"],
+            report_date=today,
+            reporter=self.reporter,
+            total_count=6,
+            followup_count=18000,
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=first_member,
+            amount=1000,
+            count=1,
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=second_member,
+            amount=15000,
+            count=4,
+        )
+        DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=third_member,
+            amount=2000,
+            count=1,
+        )
+
+        response = self.client.get(reverse("dashboard_index"))
+
+        self.assertEqual(response.status_code, 200)
+        today_section = next(s for s in response.context["mail_template_payload_map"]["today"]["sections"] if s["code"] == "UN")
+        self.assertEqual(
+            [row["name"] for row in today_section["member_lines"]],
+            ["First Input", "Second Input", "Third Input"],
+        )
+
     def test_dashboard_mail_treats_adjustment_only_day_as_daily_actual(self):
         today = timezone.localdate()
         month = today.replace(day=1)

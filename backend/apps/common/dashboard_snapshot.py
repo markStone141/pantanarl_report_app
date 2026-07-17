@@ -101,6 +101,7 @@ def build_submission_snapshot(*, report_date, target_departments):
                 "amount": 0,
                 "cs_count": 0,
                 "refugee_count": 0,
+                "input_order": line.id,
             }
         member_totals[code][member_name]["count"] += line.count
         member_totals[code][member_name]["amount"] += line.amount
@@ -127,7 +128,7 @@ def build_submission_snapshot(*, report_date, target_departments):
     }
 
 
-def build_member_rows(*, member_totals, codes):
+def build_member_rows(*, member_totals, codes, sort_by="actual"):
     merged = {}
     for code in codes:
         for member_name, totals in member_totals.get(code, {}).items():
@@ -138,11 +139,26 @@ def build_member_rows(*, member_totals, codes):
                     "amount": 0,
                     "cs_count": 0,
                     "refugee_count": 0,
+                    "input_order": None,
                 }
             merged[member_name]["count"] += totals["count"]
             merged[member_name]["amount"] += totals["amount"]
             merged[member_name]["cs_count"] += totals["cs_count"]
             merged[member_name]["refugee_count"] += totals["refugee_count"]
+            input_order = totals.get("input_order")
+            if input_order is not None and (
+                merged[member_name]["input_order"] is None or input_order < merged[member_name]["input_order"]
+            ):
+                merged[member_name]["input_order"] = input_order
+    if sort_by == "input_order":
+        return sorted(
+            merged.values(),
+            key=lambda row: (
+                row["input_order"] is None,
+                row["input_order"] or 0,
+                row["member_name"],
+            ),
+        )
     return sorted(
         merged.values(),
         key=lambda row: (-row["amount"], -row["count"], row["member_name"]),

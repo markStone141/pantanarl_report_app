@@ -289,7 +289,7 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                     "refugee_count": row.get("refugee_count", 0),
                     "amount_text": format_yen(row["amount"]),
                 }
-                for row in build_member_rows(member_totals=base_member_totals, codes=[code])
+                for row in build_member_rows(member_totals=base_member_totals, codes=[code], sort_by="input_order")
             ]
             month_metric_lines = build_mail_metric_lines(
                 code=code,
