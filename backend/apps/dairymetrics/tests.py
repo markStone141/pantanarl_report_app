@@ -76,6 +76,13 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         response = self.client.get(reverse("dairymetrics_login"))
         self.assertRedirects(response, reverse("performance_index"))
 
+    def test_authenticated_admin_visiting_legacy_dashboard_redirects_to_performance_dashboard(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("dairymetrics_dashboard"))
+
+        self.assertRedirects(response, reverse("performance_index"))
+
     def test_dairymetrics_logout_redirects_to_performance_login(self):
         self.client.force_login(self.user)
 

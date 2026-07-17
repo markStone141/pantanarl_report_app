@@ -414,6 +414,8 @@ def logout_view(request: HttpRequest) -> HttpResponse:
 @require_dairymetrics_member
 def dashboard(request: HttpRequest) -> HttpResponse:
     member = get_member_profile(request.user)
+    if request.user.is_staff:
+        return redirect("performance_index")
     context = _build_member_dashboard_context(request=request, member=member) if member else {
         "page_title": "DairyMetrics",
         "member": None,
