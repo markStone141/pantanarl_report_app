@@ -443,6 +443,33 @@ class MailManagementTests(AppTestMixin, TestCase):
         self.assertEqual(mocked_send.call_args.kwargs["to_recipients"], ["alice@example.com"])
         self.assertEqual(mocked_send.call_args.kwargs["sender_name_override"], "")
 
+    @patch("apps.mail.services._send_via_gmail", return_value="gmail-reminder-no-log")
+    def test_send_member_direct_mail_can_skip_history(self, mocked_send):
+        MailIntegrationSetting.objects.create(
+            sender_email="sender@example.com",
+            sender_name="Sender",
+            client_id="client-id",
+            client_secret="client-secret",
+            refresh_token="refresh-token",
+            token_uri="https://oauth2.googleapis.com/token",
+            is_active=True,
+        )
+
+        history = send_member_direct_mail(
+            target_member=self.member_one,
+            department=self.department,
+            sender_member=None,
+            subject="Reminder",
+            body="Please input today's activity.",
+            record_history=False,
+        )
+
+        self.assertEqual(history.status, MailSendHistory.STATUS_SENT)
+        self.assertEqual(history.provider_message_id, "gmail-reminder-no-log")
+        self.assertIsNone(history.pk)
+        self.assertFalse(MailSendHistory.objects.filter(provider_message_id="gmail-reminder-no-log").exists())
+        self.assertEqual(mocked_send.call_args.kwargs["to_recipients"], ["alice@example.com"])
+
     def test_record_transaction_mail_failure_saves_failed_history(self):
         entry = MemberDailyMetricEntry.objects.create(
             member=self.member_one,

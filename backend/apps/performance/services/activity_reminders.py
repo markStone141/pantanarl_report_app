@@ -39,6 +39,8 @@ def activity_close_reminder_body(entry: MemberDailyMetricEntry) -> str:
 
 
 def activity_close_reminder_already_sent(entry: MemberDailyMetricEntry) -> bool:
+    if entry.activity_reminder_sent_at:
+        return True
     return MailSendHistory.objects.filter(
         activity_date=entry.entry_date,
         transaction__isnull=True,
@@ -70,6 +72,7 @@ def send_activity_close_reminder(entry: MemberDailyMetricEntry) -> MailSendHisto
         sender_name_override="活動終了リマインド",
         subject=activity_close_reminder_subject(entry),
         body=activity_close_reminder_body(entry),
+        record_history=False,
     )
 
 
@@ -90,6 +93,8 @@ def send_pending_activity_close_reminders(*, now=None, target_date=None, force=F
             continue
         history = send_activity_close_reminder(entry)
         if history.status == MailSendHistory.STATUS_SENT:
+            entry.activity_reminder_sent_at = local_now
+            entry.save(update_fields=["activity_reminder_sent_at", "updated_at"])
             result.sent += 1
         else:
             result.failed += 1

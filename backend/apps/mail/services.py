@@ -269,29 +269,32 @@ def send_member_direct_mail(
     sender_member=None,
     department=None,
     sender_name_override: str = "",
+    record_history: bool = True,
 ) -> MailSendHistory:
     setting = _active_setting()
     now = timezone.now()
     recipient_snapshot = _members_recipient_snapshot([target_member])
-    history = MailSendHistory.objects.create(
-        integration_setting=setting,
-        department=department or target_member.default_department,
-        activity_date=timezone.localdate(),
-        sender_member=sender_member,
-        transaction=None,
-        recipient_group=None,
-        subject_snapshot=subject,
-        body_snapshot=body,
-        sent_to_snapshot=recipient_snapshot,
-        provider_message_id="",
-        error_code="",
-        error_message="",
-        status=MailSendHistory.STATUS_DRAFT,
-        is_test=False,
-        is_resend=False,
-        sent_at=None,
-        last_attempt_at=now,
-    )
+    history = None
+    if record_history:
+        history = MailSendHistory.objects.create(
+            integration_setting=setting,
+            department=department or target_member.default_department,
+            activity_date=timezone.localdate(),
+            sender_member=sender_member,
+            transaction=None,
+            recipient_group=None,
+            subject_snapshot=subject,
+            body_snapshot=body,
+            sent_to_snapshot=recipient_snapshot,
+            provider_message_id="",
+            error_code="",
+            error_message="",
+            status=MailSendHistory.STATUS_DRAFT,
+            is_test=False,
+            is_resend=False,
+            sent_at=None,
+            last_attempt_at=now,
+        )
     try:
         if not target_member.email:
             raise MailSendError("メンバーのメールアドレスが未登録です。", code="missing_recipient")
@@ -307,6 +310,24 @@ def send_member_direct_mail(
         )
     except Exception as exc:
         error_code, error_message = _extract_error_detail(exc)
+        if history is None:
+            return MailSendHistory(
+                integration_setting=setting,
+                department=department or target_member.default_department,
+                activity_date=timezone.localdate(),
+                sender_member=sender_member,
+                subject_snapshot=subject,
+                body_snapshot=body,
+                sent_to_snapshot=recipient_snapshot,
+                provider_message_id="",
+                error_code=error_code,
+                error_message=error_message,
+                status=MailSendHistory.STATUS_FAILED,
+                is_test=False,
+                is_resend=False,
+                sent_at=None,
+                last_attempt_at=timezone.now(),
+            )
         history.status = MailSendHistory.STATUS_FAILED
         history.error_code = error_code
         history.error_message = error_message
@@ -316,6 +337,25 @@ def send_member_direct_mail(
         history.save(update_fields=["status", "error_code", "error_message", "provider_message_id", "sent_at", "last_attempt_at"])
         return history
 
+    if history is None:
+        sent_at = timezone.now()
+        return MailSendHistory(
+            integration_setting=setting,
+            department=department or target_member.default_department,
+            activity_date=timezone.localdate(),
+            sender_member=sender_member,
+            subject_snapshot=subject,
+            body_snapshot=body,
+            sent_to_snapshot=recipient_snapshot,
+            provider_message_id=provider_message_id,
+            error_code="",
+            error_message="",
+            status=MailSendHistory.STATUS_SENT,
+            is_test=False,
+            is_resend=False,
+            sent_at=sent_at,
+            last_attempt_at=sent_at,
+        )
     history.status = MailSendHistory.STATUS_SENT
     history.provider_message_id = provider_message_id
     history.error_code = ""

@@ -565,6 +565,9 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         self.assertEqual(mocked_send_member_direct_mail.call_args.kwargs["target_member"], reminder_member)
         self.assertEqual(mocked_send_member_direct_mail.call_args.kwargs["department"], self.department)
         self.assertEqual(mocked_send_member_direct_mail.call_args.kwargs["subject"], activity_close_reminder_subject(open_entry))
+        self.assertFalse(mocked_send_member_direct_mail.call_args.kwargs["record_history"])
+        open_entry.refresh_from_db()
+        self.assertIsNotNone(open_entry.activity_reminder_sent_at)
 
     @patch("apps.performance.services.activity_reminders.send_member_direct_mail")
     def test_auto_activity_reminder_skips_before_configured_time(self, mocked_send_member_direct_mail):
@@ -585,6 +588,29 @@ class PerformanceManagementTests(AppTestMixin, TestCase):
         result = send_pending_activity_close_reminders(now=now)
 
         self.assertEqual(result.reason, "before_reminder_time")
+        mocked_send_member_direct_mail.assert_not_called()
+
+    @patch("apps.performance.services.activity_reminders.send_member_direct_mail")
+    def test_auto_activity_reminder_skips_entry_with_reminder_marker(self, mocked_send_member_direct_mail):
+        today = timezone.localdate()
+        reminder_member = self.create_member(
+            name="Already Marked",
+            email="already-marked@example.com",
+            department=self.department,
+        )
+        MemberDailyMetricEntry.objects.create(
+            member=reminder_member,
+            department=self.department,
+            entry_date=today,
+            activity_closed=False,
+            activity_reminder_sent_at=timezone.now(),
+        )
+        now = timezone.make_aware(datetime.combine(today, time(19, 5)))
+
+        result = send_pending_activity_close_reminders(now=now)
+
+        self.assertEqual(result.checked, 1)
+        self.assertEqual(result.skipped, 1)
         mocked_send_member_direct_mail.assert_not_called()
 
     @patch("apps.performance.services.activity_reminders.send_member_direct_mail")
