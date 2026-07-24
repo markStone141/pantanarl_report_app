@@ -4877,10 +4877,10 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(response.context["selected_period_id"], self.period.id)
         self.assertNotEqual(response.context["selected_period_id"], finished_period.id)
 
-    def test_metrics_v2_period_scope_ignores_finished_period_id_when_active_exists(self):
+    def test_metrics_v2_period_scope_uses_selected_non_planned_period_id(self):
         finished_period = Period.objects.create(
             month=self.period.month,
-            name="URLに残った終了済み路程",
+            name="選択した終了済み路程",
             status=TARGET_STATUS_FINISHED,
             start_date=self.period.start_date - timedelta(days=10),
             end_date=self.period.start_date - timedelta(days=1),
@@ -4898,13 +4898,14 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["scope"].scope, "period")
-        self.assertEqual(response.context["scope"].period.id, self.period.id)
-        self.assertEqual(response.context["selected_period_id"], self.period.id)
+        self.assertEqual(response.context["scope"].period.id, finished_period.id)
+        self.assertEqual(response.context["selected_period_id"], finished_period.id)
+        self.assertContains(response, "選択した終了済み路程")
 
-    def test_metrics_report_period_scope_ignores_finished_period_id_when_active_exists(self):
+    def test_metrics_report_period_scope_uses_selected_non_planned_period_id(self):
         finished_period = Period.objects.create(
             month=self.period.month,
-            name="レポートURLに残った終了済み路程",
+            name="レポートで選択した終了済み路程",
             status=TARGET_STATUS_FINISHED,
             start_date=self.period.start_date - timedelta(days=10),
             end_date=self.period.start_date - timedelta(days=1),
@@ -4922,8 +4923,9 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["scope"].scope, "period")
-        self.assertEqual(response.context["scope"].period.id, self.period.id)
-        self.assertEqual(response.context["selected_period_id"], self.period.id)
+        self.assertEqual(response.context["scope"].period.id, finished_period.id)
+        self.assertEqual(response.context["selected_period_id"], finished_period.id)
+        self.assertContains(response, "レポートで選択した終了済み路程")
 
     def test_metrics_v2_period_scope_without_active_period_uses_recent_not_finished(self):
         self.period.status = TARGET_STATUS_FINISHED

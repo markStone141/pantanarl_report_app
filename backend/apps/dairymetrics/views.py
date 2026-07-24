@@ -16,6 +16,7 @@ from apps.accounts.models import Department, Member
 from apps.common.target_periods import current_active_period, period_options_active_first
 from apps.mail.models import MailSendHistory
 from apps.mail.services import MailSendError, record_transaction_mail_failure, send_transaction_mail
+from apps.targets.models import Period, TARGET_STATUS_PLANNED
 from apps.testimony.services.notifications import unread_recent_article_notification
 from apps.talks.services.notifications import unread_recent_post_notification
 
@@ -94,6 +95,15 @@ ENTRY_V2_WV_REFUGEE_AMOUNT_OPTIONS = list(range(500, 4001, 500))
 def _current_period_scope_period(*, today):
     """Current-period screens must never default to finished periods."""
     return current_active_period(target_date=today)
+
+
+def _requested_or_current_period(request: HttpRequest, *, today):
+    raw_period_id = (request.GET.get("period_id") or "").strip()
+    if raw_period_id.isdigit():
+        requested_period = Period.objects.exclude(status=TARGET_STATUS_PLANNED).filter(pk=int(raw_period_id)).first()
+        if requested_period:
+            return requested_period
+    return _current_period_scope_period(today=today)
 
 
 def _login_redirect_url(user, *, fallback=""):
@@ -844,7 +854,7 @@ def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
     available_periods = period_options_active_first(target_date=today, limit=18)
     requested_period = None
     if requested_scope == "period":
-        requested_period = _current_period_scope_period(today=today)
+        requested_period = _requested_or_current_period(request, today=today)
     requested_start_date = parse_date((request.GET.get("start_date") or "").strip())
     requested_end_date = parse_date((request.GET.get("end_date") or "").strip())
 
@@ -906,7 +916,7 @@ def _metrics_report_data(request):
     period_options = period_options_active_first(target_date=today)
     requested_period = None
     if requested_scope == "period":
-        requested_period = _current_period_scope_period(today=today)
+        requested_period = _requested_or_current_period(request, today=today)
 
     scope = resolve_metrics_v2_scope(
         today=today,
