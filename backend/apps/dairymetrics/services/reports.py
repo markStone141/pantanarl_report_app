@@ -67,6 +67,19 @@ def _report_count_breakdown_text(
     return f"現場 {base_count:,}件 / 増額 {increase_count:,}件 / 戻り {return_count:,}件"
 
 
+def _report_totals_with_returns(*, department_code: str, totals: dict) -> dict:
+    report_totals = {**zero_final_actual_totals(), **totals}
+    return_amount = _return_amount_value(totals)
+    return_count = _return_count_value(totals)
+    report_totals["support_amount"] = int(report_totals.get("support_amount") or 0) + return_amount
+    if department_code == "WV":
+        # WVの戻りはCS/難民のどちらを戻したか特定できない既存データがあるため、
+        # 件数内訳へは混ぜず、戻り専用フィールドとして保持する。
+        return report_totals
+    report_totals["result_count"] = int(report_totals.get("result_count") or 0) + return_count
+    return report_totals
+
+
 def _daily_report_rows(*, department, scope):
     daily_totals = {}
     transactions_by_date = {}
@@ -191,14 +204,15 @@ def _member_report_rows(*, department, scope):
     rows = []
     for member in members:
         totals = totals_by_member_id.get(member.id, zero_final_actual_totals())
+        report_totals = _report_totals_with_returns(department_code=department.code, totals=totals)
         base_totals = base_totals_by_member_id.get(member.id, zero_final_actual_totals())
         excluded_average_adjustment_totals = excluded_average_adjustment_totals_by_member_id.get(
             member.id,
             zero_final_actual_totals(),
         )
-        decision_count = _count_value(department.code, totals)
+        decision_count = _count_value(department.code, report_totals)
         base_decision_count = _count_value(department.code, base_totals)
-        amount = int(totals.get("support_amount") or 0)
+        amount = int(report_totals.get("support_amount") or 0)
         approach_count = int(totals.get("approach_count") or 0)
         communication_count = int(totals.get("communication_count") or 0)
         base_approach_count = int(base_totals.get("approach_count") or 0)
@@ -208,7 +222,7 @@ def _member_report_rows(*, department, scope):
         conversion_rate = _percentage(base_decision_count, base_communication_count)
         average_amount_per_decision = _average_amount_per_decision_value(
             department_code=department.code,
-            totals=totals,
+            totals=report_totals,
             excluded_adjustment_totals=excluded_average_adjustment_totals,
         )
         average_amount_per_active_day = _safe_average(amount, active_days)
@@ -218,11 +232,11 @@ def _member_report_rows(*, department, scope):
                 "member_name": member.name,
                 "member_sort_value": member.name,
                 "count_value": decision_count,
-                "count_text": _report_count_text(department_code=department.code, totals=totals),
-                "cs_count_value": int(totals.get("cs_count") or 0),
-                "cs_count_text": _format_number(int(totals.get("cs_count") or 0)),
-                "refugee_count_value": int(totals.get("refugee_count") or 0),
-                "refugee_count_text": _format_number(int(totals.get("refugee_count") or 0)),
+                "count_text": _report_count_text(department_code=department.code, totals=report_totals),
+                "cs_count_value": int(report_totals.get("cs_count") or 0),
+                "cs_count_text": _format_number(int(report_totals.get("cs_count") or 0)),
+                "refugee_count_value": int(report_totals.get("refugee_count") or 0),
+                "refugee_count_text": _format_number(int(report_totals.get("refugee_count") or 0)),
                 "amount_value": amount,
                 "amount_text": _format_number(amount),
                 "approach_value": approach_count,
@@ -243,7 +257,7 @@ def _member_report_rows(*, department, scope):
                 "count_stability_score_text": _format_count_stability_score(stability_scores.get("count_stability_score", 0)),
                 "active_days_value": active_days,
                 "active_days_text": _format_number(active_days),
-                "breakdown_text": _wv_count_breakdown_text(totals) if department.code == "WV" else "",
+                "breakdown_text": _wv_count_breakdown_text(report_totals) if department.code == "WV" else "",
             }
         )
     return sorted(rows, key=lambda row: row["member_name"])

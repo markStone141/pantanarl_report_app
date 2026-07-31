@@ -4684,6 +4684,10 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(member_rows[self.member.name]["amount_stability_score_text"], "1,950")
         self.assertEqual(member_rows[self.member.name]["count_stability_score_text"], "1.000")
         self.assertEqual(member_rows[self.member.name]["active_days_text"], "1")
+        self.assertEqual(member_rows[self.teammate.name]["amount_text"], "4,500")
+        self.assertEqual(member_rows[self.teammate.name]["count_text"], "3")
+        self.assertEqual(member_rows[self.teammate.name]["average_amount_per_decision_text"], "1,500")
+        self.assertEqual(member_rows[self.teammate.name]["average_amount_per_active_day_text"], "4,500")
 
     def test_metrics_report_renders_period_scope(self):
         self.client.force_login(self.admin)
