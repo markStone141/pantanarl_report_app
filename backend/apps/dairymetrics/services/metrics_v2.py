@@ -391,6 +391,18 @@ def _active_day_count(*, member=None, department, start_date: date, end_date: da
     return queryset.values("entry_date").distinct().count()
 
 
+def _active_member_count(*, department, start_date: date, end_date: date) -> int:
+    return (
+        MemberDailyMetricEntry.objects.filter(
+            department=department,
+            entry_date__range=(start_date, end_date),
+        )
+        .values("member_id")
+        .distinct()
+        .count()
+    )
+
+
 def _increase_totals(*, member=None, department, start_date: date, end_date: date) -> dict:
     totals = collect_increase_adjustment_totals(
         member=member,
@@ -411,6 +423,7 @@ def _build_summary_cards(
     totals: dict,
     target_amount: int,
     active_days: int,
+    average_member_count: int | None = None,
     excluded_average_adjustment_totals: dict | None = None,
 ) -> dict:
     decision_count = _count_value(department_code, totals)
@@ -423,6 +436,10 @@ def _build_summary_cards(
     conversion_helper = f"件数 {decision_count:,} / CM {communication_count:,}"
     if count_breakdown_text:
         conversion_helper = f"{conversion_helper}（{count_breakdown_text}）"
+    approach_average_divisor = average_member_count or active_days
+    communication_average_divisor = average_member_count or active_days
+    approach_average_label = "1人あたりの平均AP" if average_member_count is not None else "1稼働あたりの平均AP"
+    communication_average_label = "1人あたりの平均CM" if average_member_count is not None else "1稼働あたりの平均CM"
     return {
         "title_prefix": title_prefix,
         "rates": [
@@ -442,8 +459,8 @@ def _build_summary_cards(
             },
         ],
         "averages": [
-            {"label": "1稼働あたりの平均AP", "value": _format_number(_safe_average(approach_count, active_days))},
-            {"label": "1稼働あたりの平均CM", "value": _format_number(_safe_average(communication_count, active_days))},
+            {"label": approach_average_label, "value": _format_number(_safe_average(approach_count, approach_average_divisor))},
+            {"label": communication_average_label, "value": _format_number(_safe_average(communication_count, communication_average_divisor))},
             {
                 "label": "1稼働あたりの平均件数",
                 "value": _format_number(_safe_average(decision_count, active_days)),
@@ -470,6 +487,7 @@ def _build_summary_cards(
             "refugee_count": _refugee_count_value(totals),
             "approach_count": approach_count,
             "communication_count": communication_count,
+            "average_member_count": average_member_count or 0,
             "return_count": _return_count_value(totals),
             "return_amount": _return_amount_value(totals),
         },
@@ -853,6 +871,7 @@ def build_metrics_v2_dashboard_payload(
     )
     overall_target_amount = _department_target_amount_for_scope(department=department, scope=scope)
     overall_active_days = _active_day_count(department=department, start_date=scope.start_date, end_date=scope.end_date)
+    overall_active_member_count = _active_member_count(department=department, start_date=scope.start_date, end_date=scope.end_date)
 
     personal_totals = None
     personal_excluded_average_adjustment_totals = None
@@ -882,6 +901,7 @@ def build_metrics_v2_dashboard_payload(
             totals=overall_totals,
             target_amount=overall_target_amount,
             active_days=overall_active_days,
+            average_member_count=overall_active_member_count,
             excluded_average_adjustment_totals=overall_excluded_average_adjustment_totals,
         ),
         "personal_summary": (

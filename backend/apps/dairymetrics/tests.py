@@ -4545,7 +4545,12 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
             item["label"]: item["value"] for item in response.context["metrics_v2_payload"]["overall_summary"]["averages"]
         }
         self.assertEqual(personal_average_values["1決済あたりの平均金額"], "3,000円")
+        self.assertEqual(personal_average_values["1稼働あたりの平均AP"], "12")
+        self.assertEqual(personal_average_values["1稼働あたりの平均CM"], "6")
+        self.assertEqual(overall_average_values["1人あたりの平均AP"], "10")
+        self.assertEqual(overall_average_values["1人あたりの平均CM"], "5")
         self.assertEqual(overall_average_values["1決済あたりの平均金額"], "2,667円")
+        self.assertEqual(response.context["metrics_v2_payload"]["overall_summary"]["totals"]["average_member_count"], 2)
 
     def test_metrics_v2_period_history_excludes_planned_periods(self):
         today = timezone.localdate()
