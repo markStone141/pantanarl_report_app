@@ -4582,6 +4582,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
 
     def test_entry_transaction_list_renders_reaction_buttons(self):
         transaction_obj = MemberMetricTransaction.objects.filter(entry__member=self.member).first()
+        latest_transaction = MemberMetricTransaction.objects.filter(entry=transaction_obj.entry).order_by("created_at", "id").last()
         MemberMetricTransactionReaction.objects.create(
             transaction=transaction_obj,
             member=self.member,
@@ -4597,6 +4598,9 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-transaction-reactions', html=False)
         self.assertContains(response, 'data-reaction-type="thanks"', html=False)
+        self.assertContains(response, "過去の決済一覧を見る")
+        self.assertEqual(response.context["latest_transaction"]["id"], latest_transaction.id)
+        self.assertIn(transaction_obj.id, [transaction["id"] for transaction in response.context["older_transactions"]])
         transactions = {transaction["id"]: transaction for transaction in response.context["transactions"]}
         reaction_options = {option["type"]: option for option in transactions[transaction_obj.id]["reaction_options"]}
         self.assertTrue(reaction_options[MemberMetricTransactionReaction.REACTION_THANKS]["is_selected"])

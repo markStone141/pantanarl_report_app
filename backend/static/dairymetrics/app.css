@@ -1978,6 +1978,34 @@
   gap: 20px;
 }
 
+.dairymetrics-v2-transaction-shell > .dairymetrics-v2-intro {
+  order: 0;
+}
+
+.dairymetrics-v2-transaction-shell > .dairymetrics-v2-setup-card {
+  order: 1;
+}
+
+.dairymetrics-v2-transaction-shell > .dairymetrics-v2-progress-board {
+  order: 2;
+}
+
+.dairymetrics-v2-transaction-shell > .dairymetrics-v2-quick-entry {
+  order: 3;
+}
+
+.dairymetrics-v2-transaction-shell > .dairymetrics-v2-transaction-stack {
+  order: 4;
+}
+
+.dairymetrics-v2-transaction-shell > .dairymetrics-v2-activity-layout {
+  order: 5;
+}
+
+.dairymetrics-v2-transaction-shell > .dairymetrics-v2-closeout-card {
+  order: 6;
+}
+
 .dairymetrics-v2-setup-card {
   display: grid;
   gap: 16px;

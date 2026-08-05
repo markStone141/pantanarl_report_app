@@ -468,6 +468,8 @@ def build_entry_v2_transaction_demo_context(
                     ),
                 }
             )
+    latest_transaction = transactions[-1] if transactions else None
+    older_transactions = list(reversed(transactions[:-1]))
 
     sent_mail_histories = []
     available_mail_groups = []
@@ -605,6 +607,8 @@ def build_entry_v2_transaction_demo_context(
         **base_context,
         "progress_cards": progress_cards,
         "transactions": transactions,
+        "latest_transaction": latest_transaction,
+        "older_transactions": older_transactions,
         "transaction_reaction_choices": transaction_reaction_choices,
         "sent_mail_histories": sent_mail_histories,
         "department_activity_rows": department_activity_rows,
