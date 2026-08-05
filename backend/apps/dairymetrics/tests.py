@@ -29,6 +29,7 @@ from .models import (
     DepartmentDailyMetricSummary,
     MemberDailyMetricEntry,
     MemberMetricTransaction,
+    MemberMetricTransactionReaction,
     MemberMonthMetricTarget,
     MemberPeriodMetricTarget,
     MetricAdjustment,
@@ -4551,6 +4552,55 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(overall_average_values["1人あたりの平均CM"], "5")
         self.assertEqual(overall_average_values["1決済あたりの平均金額"], "2,667円")
         self.assertEqual(response.context["metrics_v2_payload"]["overall_summary"]["totals"]["average_member_count"], 2)
+
+    def test_transaction_reaction_update_overwrites_member_reaction(self):
+        transaction_obj = MemberMetricTransaction.objects.filter(entry__member=self.member).first()
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("dairymetrics_transaction_reaction_update"),
+            {"transaction_id": transaction_obj.id, "reaction_type": MemberMetricTransactionReaction.REACTION_GOOD},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["current_reaction_type"], MemberMetricTransactionReaction.REACTION_GOOD)
+
+        response = self.client.post(
+            reverse("dairymetrics_transaction_reaction_update"),
+            {"transaction_id": transaction_obj.id, "reaction_type": MemberMetricTransactionReaction.REACTION_NICE},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["current_reaction_type"], MemberMetricTransactionReaction.REACTION_NICE)
+        self.assertEqual(MemberMetricTransactionReaction.objects.filter(transaction=transaction_obj, member=self.member).count(), 1)
+        reaction = MemberMetricTransactionReaction.objects.get(transaction=transaction_obj, member=self.member)
+        self.assertEqual(reaction.reaction_type, MemberMetricTransactionReaction.REACTION_NICE)
+        reaction_counts = {item["type"]: item["count"] for item in response.json()["reactions"]}
+        self.assertEqual(reaction_counts[MemberMetricTransactionReaction.REACTION_GOOD], 0)
+        self.assertEqual(reaction_counts[MemberMetricTransactionReaction.REACTION_NICE], 1)
+
+    def test_entry_transaction_list_renders_reaction_buttons(self):
+        transaction_obj = MemberMetricTransaction.objects.filter(entry__member=self.member).first()
+        MemberMetricTransactionReaction.objects.create(
+            transaction=transaction_obj,
+            member=self.member,
+            reaction_type=MemberMetricTransactionReaction.REACTION_THANKS,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"date": transaction_obj.entry.entry_date.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-transaction-reactions', html=False)
+        self.assertContains(response, 'data-reaction-type="thanks"', html=False)
+        transactions = {transaction["id"]: transaction for transaction in response.context["transactions"]}
+        reaction_options = {option["type"]: option for option in transactions[transaction_obj.id]["reaction_options"]}
+        self.assertTrue(reaction_options[MemberMetricTransactionReaction.REACTION_THANKS]["is_selected"])
+        self.assertEqual(reaction_options[MemberMetricTransactionReaction.REACTION_THANKS]["count"], 1)
 
     def test_metrics_v2_period_history_excludes_planned_periods(self):
         today = timezone.localdate()

@@ -456,6 +456,45 @@ class MemberMetricTransaction(models.Model):
             )
 
 
+class MemberMetricTransactionReaction(models.Model):
+    REACTION_GOOD = "good"
+    REACTION_NICE = "nice"
+    REACTION_THANKS = "thanks"
+    REACTION_LEARN = "learn"
+    REACTION_CHOICES = [
+        (REACTION_GOOD, "グッド"),
+        (REACTION_NICE, "ナイス"),
+        (REACTION_THANKS, "感謝"),
+        (REACTION_LEARN, "学び"),
+    ]
+
+    transaction = models.ForeignKey(
+        MemberMetricTransaction,
+        on_delete=models.CASCADE,
+        related_name="reactions",
+    )
+    member = models.ForeignKey(
+        Member,
+        on_delete=models.CASCADE,
+        related_name="metric_transaction_reactions",
+    )
+    reaction_type = models.CharField(max_length=16, choices=REACTION_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["transaction_id", "member__name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["transaction", "member"],
+                name="unique_metric_transaction_member_reaction",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.transaction_id} {self.member.name} {self.get_reaction_type_display()}"
+
+
 class MetricAdjustment(models.Model):
     SOURCE_POSTAL = "postal"
     SOURCE_QR = "qr"

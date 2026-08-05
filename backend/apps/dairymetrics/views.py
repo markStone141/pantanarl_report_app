@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -38,7 +38,7 @@ from .services.entry_context import (
     parse_month_input,
     resolve_metrics_v2_department,
 )
-from .models import MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjustment
+from .models import MemberDailyMetricEntry, MemberMetricTransaction, MemberMetricTransactionReaction, MetricAdjustment
 from .services.entry_v2 import (
     build_transaction_mail_preview,
     build_v2_redirect_url,
@@ -1471,6 +1471,63 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
     context["testimony_notification"] = unread_recent_article_notification(user=request.user)
     context["talks_notification"] = unread_recent_post_notification(user=request.user)
     return render(request, "dairymetrics/entry_form_v2_transaction.html", context)
+
+
+@require_dairymetrics_member
+def transaction_reaction_update(request: HttpRequest) -> JsonResponse:
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "POSTで送信してください。"}, status=405)
+
+    member = get_member_profile(request.user)
+    if member is None:
+        return JsonResponse({"ok": False, "error": "メンバー情報が見つかりません。"}, status=403)
+
+    reaction_type = (request.POST.get("reaction_type") or "").strip()
+    reaction_labels = dict(MemberMetricTransactionReaction.REACTION_CHOICES)
+    if reaction_type not in reaction_labels:
+        return JsonResponse({"ok": False, "error": "リアクション種別を確認してください。"}, status=400)
+
+    transaction_id = (request.POST.get("transaction_id") or "").strip()
+    if not transaction_id.isdigit():
+        return JsonResponse({"ok": False, "error": "対象の決済を確認してください。"}, status=400)
+
+    transaction_obj = get_object_or_404(
+        MemberMetricTransaction.objects.select_related("entry", "entry__department"),
+        id=int(transaction_id),
+    )
+    allowed_department_ids = {department.id for department in member_departments(member)}
+    if transaction_obj.entry.department_id not in allowed_department_ids:
+        return JsonResponse({"ok": False, "error": "対象部署の決済ではありません。"}, status=403)
+
+    MemberMetricTransactionReaction.objects.update_or_create(
+        transaction=transaction_obj,
+        member=member,
+        defaults={"reaction_type": reaction_type},
+    )
+    reaction_rows = (
+        MemberMetricTransactionReaction.objects.filter(transaction=transaction_obj)
+        .values("reaction_type")
+        .annotate(count=Count("id"))
+    )
+    counts = {reaction_key: 0 for reaction_key in reaction_labels}
+    for row in reaction_rows:
+        counts[row["reaction_type"]] = int(row["count"] or 0)
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "current_reaction_type": reaction_type,
+            "reactions": [
+                {
+                    "type": reaction_key,
+                    "label": label,
+                    "count": counts.get(reaction_key, 0),
+                    "is_selected": reaction_key == reaction_type,
+                }
+                for reaction_key, label in MemberMetricTransactionReaction.REACTION_CHOICES
+            ],
+        }
+    )
 
 
 @require_dairymetrics_admin

@@ -366,6 +366,25 @@
                 <span>{{ transaction.location|default:"-" }}</span>
               </div>
               <div class="dairymetrics-subtext">{{ transaction.comment|default:"コメントなし" }}</div>
+              <div
+                class="dairymetrics-v2-reaction-row"
+                data-transaction-reactions
+                data-transaction-id="{{ transaction.id }}"
+                data-reaction-url="{% url 'dairymetrics_transaction_reaction_update' %}"
+              >
+                {% for reaction in transaction.reaction_options %}
+                <button
+                  type="button"
+                  class="dairymetrics-v2-reaction-btn{% if reaction.is_selected %} is-selected{% endif %}"
+                  data-transaction-reaction-button
+                  data-reaction-type="{{ reaction.type }}"
+                  aria-pressed="{% if reaction.is_selected %}true{% else %}false{% endif %}"
+                >
+                  <span>{{ reaction.label }}</span>
+                  <strong data-reaction-count>{{ reaction.count }}</strong>
+                </button>
+                {% endfor %}
+              </div>
               {% if transaction.mail_error_message %}
               <div class="dairymetrics-subtext dairymetrics-error-text">送信エラー: {{ transaction.mail_error_message }}</div>
               {% endif %}
@@ -723,6 +742,56 @@
       if (departmentTargetInlineRoot && payload.department_target_inline_html) {
         departmentTargetInlineRoot.innerHTML = payload.department_target_inline_html;
         bindTargetSelects(departmentTargetInlineRoot);
+      }
+    }
+
+    function getCookie(name) {
+      return document.cookie
+        .split(";")
+        .map((value) => value.trim())
+        .find((value) => value.startsWith(`${name}=`))
+        ?.slice(name.length + 1) || "";
+    }
+
+    function renderReactionState(group, reactions) {
+      reactions.forEach(function (reaction) {
+        const button = group.querySelector(`[data-transaction-reaction-button][data-reaction-type="${reaction.type}"]`);
+        if (!button) return;
+        button.classList.toggle("is-selected", reaction.is_selected);
+        button.setAttribute("aria-pressed", reaction.is_selected ? "true" : "false");
+        const count = button.querySelector("[data-reaction-count]");
+        if (count) {
+          count.textContent = reaction.count;
+        }
+      });
+    }
+
+    async function submitTransactionReaction(button) {
+      const group = button.closest("[data-transaction-reactions]");
+      if (!group || button.disabled) return;
+      const transactionId = group.dataset.transactionId || "";
+      const reactionType = button.dataset.reactionType || "";
+      const reactionUrl = group.dataset.reactionUrl || "";
+      if (!transactionId || !reactionType || !reactionUrl) return;
+
+      button.disabled = true;
+      const body = new URLSearchParams();
+      body.set("transaction_id", transactionId);
+      body.set("reaction_type", reactionType);
+      const response = await fetch(reactionUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": decodeURIComponent(getCookie("csrftoken")),
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body,
+      });
+      button.disabled = false;
+      if (!response.ok) return;
+      const payload = await response.json();
+      if (payload.ok && Array.isArray(payload.reactions)) {
+        renderReactionState(group, payload.reactions);
       }
     }
 
@@ -1118,6 +1187,11 @@
     document.querySelectorAll("[data-edit-transaction]").forEach((button) => {
       button.addEventListener("click", function () {
         openTransactionEdit(button);
+      });
+    });
+    document.querySelectorAll("[data-transaction-reaction-button]").forEach((button) => {
+      button.addEventListener("click", function () {
+        submitTransactionReaction(button);
       });
     });
     document.querySelectorAll("[data-close-mail-modal]").forEach((button) => {

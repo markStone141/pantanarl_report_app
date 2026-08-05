@@ -14,7 +14,12 @@ from apps.dairymetrics.forms import (
     DairymetricsV2TransactionForm,
     MemberDailyMetricEntryForm,
 )
-from apps.dairymetrics.models import DepartmentDailyMetricSummary, MemberDailyMetricEntry, MemberMetricTransaction
+from apps.dairymetrics.models import (
+    DepartmentDailyMetricSummary,
+    MemberDailyMetricEntry,
+    MemberMetricTransaction,
+    MemberMetricTransactionReaction,
+)
 from apps.dairymetrics.services.entry_v2 import (
     build_transaction_mail_preview,
     build_v2_department_activity_rows,
@@ -259,7 +264,7 @@ def build_entry_v2_transaction_demo_context(
                 entry_date=entry_date,
             )
             .select_related("department")
-            .prefetch_related("transactions__mail_send_histories")
+            .prefetch_related("transactions__mail_send_histories", "transactions__reactions")
             .first()
         )
         department_summary = DepartmentDailyMetricSummary.objects.filter(
@@ -371,6 +376,7 @@ def build_entry_v2_transaction_demo_context(
     ]
 
     transactions = []
+    transaction_reaction_choices = list(MemberMetricTransactionReaction.REACTION_CHOICES)
     default_mail_group = None
     if existing_entry:
         default_mail_group = get_default_mail_group(department=selected_department_obj)
@@ -391,6 +397,12 @@ def build_entry_v2_transaction_demo_context(
             latest_histories_by_transaction_id[tx.id] = non_test_histories[0] if non_test_histories else None
         for tx in existing_entry.transactions.all():
             latest_history = latest_histories_by_transaction_id.get(tx.id)
+            reaction_counts = {reaction_type: 0 for reaction_type, _label in transaction_reaction_choices}
+            current_reaction_type = ""
+            for reaction in tx.reactions.all():
+                reaction_counts[reaction.reaction_type] = reaction_counts.get(reaction.reaction_type, 0) + 1
+                if reaction.member_id == member.id:
+                    current_reaction_type = reaction.reaction_type
             if latest_history and latest_history.status == MailSendHistory.STATUS_FAILED:
                 mail_status = "送信失敗"
             elif latest_history and latest_history.status == MailSendHistory.STATUS_SENT:
@@ -428,6 +440,16 @@ def build_entry_v2_transaction_demo_context(
                     "location": tx.location,
                     "comment": tx.comment,
                     "mail_status": mail_status,
+                    "current_reaction_type": current_reaction_type,
+                    "reaction_options": [
+                        {
+                            "type": reaction_type,
+                            "label": label,
+                            "count": reaction_counts.get(reaction_type, 0),
+                            "is_selected": current_reaction_type == reaction_type,
+                        }
+                        for reaction_type, label in transaction_reaction_choices
+                    ],
                     "has_mail_history": bool(latest_history),
                     "preview_subject": preview_payload["subject"],
                     "resend_preview_subject": (
@@ -583,6 +605,7 @@ def build_entry_v2_transaction_demo_context(
         **base_context,
         "progress_cards": progress_cards,
         "transactions": transactions,
+        "transaction_reaction_choices": transaction_reaction_choices,
         "sent_mail_histories": sent_mail_histories,
         "department_activity_rows": department_activity_rows,
         "selected_department_name": getattr(selected_department_obj, "name", selected_department_code),
