@@ -334,7 +334,7 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertNotContains(response, "新しい決済が1件あります。")
         self.assertEqual(response.context["transaction_notification"]["count"], 0)
         self.assertEqual(response.context["transaction_history"]["count"], 1)
-        self.assertContains(response, "今日の他メンバー決済を確認できます。")
+        self.assertNotContains(response, "今日の他メンバー決済を確認できます。")
 
         response = self.client.get(
             reverse("dairymetrics_entry_v2_transaction_demo"),
