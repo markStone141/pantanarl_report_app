@@ -7,22 +7,193 @@
   <div class="mosaic-section-head">
     <div>
       <h2>接客ログ入力</h2>
-      <p class="muted">接客1件ごとに保存します。決済になった場合だけ金額を入力してください。</p>
+      <p class="muted">接客者とやりとりを記録します。戻り対応のときだけ実績扱いを別に選べます。</p>
     </div>
     <a class="btn-inline" href="{% url 'mosaic_dashboard' %}">ダッシュボード</a>
   </div>
-  <form method="post" class="mosaic-form-grid">
+  <form method="post" class="mosaic-entry-form" data-mosaic-interaction-form>
     {% csrf_token %}
-    {% for field in form %}
-    <div class="mosaic-field{% if field.name in 'needs talk_summary memo' %} mosaic-field-wide{% endif %}">
-      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-      {{ field }}
-      {% if field.errors %}<div class="error-text">{{ field.errors|striptags }}</div>{% endif %}
-    </div>
-    {% endfor %}
-    <div class="mosaic-field-wide mosaic-form-actions">
+    <section class="mosaic-input-section">
+      <div class="mosaic-input-section-head">
+        <span>01</span>
+        <strong>接客の基本</strong>
+      </div>
+      <div class="mosaic-form-grid">
+        <div class="mosaic-field">
+          <label for="{{ form.interaction_date.id_for_label }}">{{ form.interaction_date.label }}</label>
+          {{ form.interaction_date }}
+          {% if form.interaction_date.errors %}<div class="error-text">{{ form.interaction_date.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="mosaic-field">
+          <label for="{{ form.service_member.id_for_label }}">接客者</label>
+          {{ form.service_member }}
+          {% if form.service_member.errors %}<div class="error-text">{{ form.service_member.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="mosaic-field">
+          <label>新規 / 戻り</label>
+          <div class="mosaic-toggle-group">
+            <label class="mosaic-toggle-card">
+              <input type="radio" name="is_return_support" value="" checked data-mosaic-new-return>
+              <span>新規</span>
+            </label>
+            <label class="mosaic-toggle-card">
+              <input type="radio" name="is_return_support" value="on" data-mosaic-new-return>
+              <span>戻り</span>
+            </label>
+          </div>
+        </div>
+        <div class="mosaic-field" data-mosaic-credit-field hidden>
+          <label for="{{ form.credited_member.id_for_label }}">{{ form.credited_member.label }}</label>
+          {{ form.credited_member }}
+          {% if form.credited_member.errors %}<div class="error-text">{{ form.credited_member.errors|striptags }}</div>{% endif %}
+        </div>
+      </div>
+    </section>
+
+    <section class="mosaic-input-section">
+      <div class="mosaic-input-section-head">
+        <span>02</span>
+        <strong>お客様情報</strong>
+      </div>
+      <div class="mosaic-form-grid">
+        <div class="mosaic-field">
+          <label for="{{ form.age_band.id_for_label }}">{{ form.age_band.label }}</label>
+          {{ form.age_band }}
+          {% if form.age_band.errors %}<div class="error-text">{{ form.age_band.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="mosaic-field">
+          <label>人数区分</label>
+          <div class="mosaic-toggle-group">
+            {% for value, label in form.fields.party_type.choices %}
+            {% if value %}
+            <label class="mosaic-toggle-card">
+              <input type="radio" name="{{ form.party_type.name }}" value="{{ value }}"{% if form.party_type.value == value %} checked{% endif %}>
+              <span>{{ label }}</span>
+            </label>
+            {% endif %}
+            {% endfor %}
+          </div>
+          {% if form.party_type.errors %}<div class="error-text">{{ form.party_type.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="mosaic-field">
+          <label for="{{ form.visit_purpose.id_for_label }}">{{ form.visit_purpose.label }}</label>
+          {{ form.visit_purpose }}
+          {% if form.visit_purpose.errors %}<div class="error-text">{{ form.visit_purpose.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="mosaic-field">
+          <label for="{{ form.stay_duration_minutes.id_for_label }}">{{ form.stay_duration_minutes.label }}</label>
+          {{ form.stay_duration_minutes }}
+          {% if form.stay_duration_minutes.errors %}<div class="error-text">{{ form.stay_duration_minutes.errors|striptags }}</div>{% endif %}
+        </div>
+      </div>
+    </section>
+
+    <section class="mosaic-input-section">
+      <div class="mosaic-input-section-head">
+        <span>03</span>
+        <strong>お試しの流れ</strong>
+      </div>
+      <p class="muted">試した順にタップしてください。選択順がそのまま流れとして保存されます。</p>
+      <div class="mosaic-trial-flow" data-mosaic-trial-flow>
+        {% for model in trial_models %}
+        <button type="button" class="mosaic-trial-chip" data-trial-model-id="{{ model.id }}" data-trial-model-name="{{ model.name }}">
+          <span class="mosaic-trial-order" data-trial-order></span>
+          <span>{{ model.name }}</span>
+        </button>
+        {% empty %}
+        <p class="muted">お試しモデルが未登録です。マスタ管理から追加してください。</p>
+        {% endfor %}
+      </div>
+      <div data-mosaic-trial-inputs></div>
+    </section>
+
+    <section class="mosaic-input-section">
+      <div class="mosaic-input-section-head">
+        <span>04</span>
+        <strong>内容と結果</strong>
+      </div>
+      <div class="mosaic-form-grid">
+        <div class="mosaic-field mosaic-field-wide">
+          <label for="{{ form.needs.id_for_label }}">{{ form.needs.label }}</label>
+          {{ form.needs }}
+          {% if form.needs.errors %}<div class="error-text">{{ form.needs.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="mosaic-field mosaic-field-wide">
+          <label for="{{ form.talk_summary.id_for_label }}">{{ form.talk_summary.label }}</label>
+          {{ form.talk_summary }}
+          {% if form.talk_summary.errors %}<div class="error-text">{{ form.talk_summary.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="mosaic-field">
+          <label for="{{ form.result.id_for_label }}">{{ form.result.label }}</label>
+          {{ form.result }}
+          {% if form.result.errors %}<div class="error-text">{{ form.result.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="mosaic-field">
+          <label for="{{ form.payment_amount.id_for_label }}">{{ form.payment_amount.label }}</label>
+          {{ form.payment_amount }}
+          {% if form.payment_amount.errors %}<div class="error-text">{{ form.payment_amount.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="mosaic-field mosaic-field-wide">
+          <label for="{{ form.memo.id_for_label }}">{{ form.memo.label }}</label>
+          {{ form.memo }}
+          {% if form.memo.errors %}<div class="error-text">{{ form.memo.errors|striptags }}</div>{% endif %}
+        </div>
+      </div>
+    </section>
+
+    <div class="mosaic-form-actions">
       <button type="submit">保存して続けて入力</button>
     </div>
   </form>
 </section>
+
+<script>
+  (function () {
+    const form = document.querySelector("[data-mosaic-interaction-form]");
+    if (!form) return;
+    const creditField = form.querySelector("[data-mosaic-credit-field]");
+    const returnRadios = form.querySelectorAll("[data-mosaic-new-return]");
+    const trialButtons = form.querySelectorAll("[data-trial-model-id]");
+    const trialInputs = form.querySelector("[data-mosaic-trial-inputs]");
+    let selectedTrialIds = [];
+
+    function updateCreditField() {
+      const isReturn = Array.from(returnRadios).some((radio) => radio.checked && radio.value === "on");
+      if (creditField) creditField.hidden = !isReturn;
+    }
+
+    function renderTrialState() {
+      trialInputs.innerHTML = "";
+      selectedTrialIds.forEach((id) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "trial_models";
+        input.value = id;
+        trialInputs.appendChild(input);
+      });
+      trialButtons.forEach((button) => {
+        const id = button.dataset.trialModelId;
+        const order = selectedTrialIds.indexOf(id) + 1;
+        button.classList.toggle("is-selected", order > 0);
+        const orderNode = button.querySelector("[data-trial-order]");
+        orderNode.textContent = order > 0 ? order : "";
+      });
+    }
+
+    returnRadios.forEach((radio) => radio.addEventListener("change", updateCreditField));
+    trialButtons.forEach((button) => {
+      button.addEventListener("click", function () {
+        const id = button.dataset.trialModelId;
+        if (selectedTrialIds.includes(id)) {
+          selectedTrialIds = selectedTrialIds.filter((selectedId) => selectedId !== id);
+        } else {
+          selectedTrialIds.push(id);
+        }
+        renderTrialState();
+      });
+    });
+    updateCreditField();
+    renderTrialState();
+  })();
+</script>
 {% endblock %}

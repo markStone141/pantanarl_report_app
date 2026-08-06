@@ -37,14 +37,12 @@ class MosaicInteractionForm(forms.ModelForm):
         model = MosaicInteraction
         fields = [
             "interaction_date",
-            "input_member",
             "service_member",
             "credited_member",
             "age_band",
             "party_type",
             "visit_purpose",
             "stay_duration_minutes",
-            "trial_model",
             "needs",
             "talk_summary",
             "result",
@@ -63,13 +61,10 @@ class MosaicInteractionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         active_members = Member.objects.active().order_by("name")
-        self.fields["input_member"].queryset = active_members
         self.fields["service_member"].queryset = active_members
         self.fields["credited_member"].queryset = active_members
         self.fields["visit_purpose"].queryset = MosaicVisitPurpose.objects.active()
-        self.fields["trial_model"].queryset = MosaicTrialModel.objects.active()
         self.fields["result"].queryset = MosaicResultType.objects.active()
-        self.fields["input_member"].required = True
         self.fields["service_member"].required = True
         self.fields["credited_member"].required = False
         self.fields["payment_amount"].min_value = 0

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import MosaicInteraction, MosaicResultType, MosaicTrialModel, MosaicVisitPurpose
+from .models import MosaicInteraction, MosaicInteractionTrialModel, MosaicResultType, MosaicTrialModel, MosaicVisitPurpose
 
 
 @admin.register(MosaicVisitPurpose)
@@ -44,3 +44,10 @@ class MosaicInteractionAdmin(admin.ModelAdmin):
         "memo",
     )
     raw_id_fields = ("input_member", "service_member", "credited_member", "created_by")
+
+
+@admin.register(MosaicInteractionTrialModel)
+class MosaicInteractionTrialModelAdmin(admin.ModelAdmin):
+    list_display = ("interaction", "step_order", "trial_model")
+    list_filter = ("trial_model",)
+    raw_id_fields = ("interaction",)

@@ -75,7 +75,14 @@
         <strong>{{ item.service_member.name|default:"接客者未設定" }}</strong>
         <span>{{ item.payment_amount|intcomma }}円</span>
       </div>
-      <div class="muted">{{ item.result.name|default:"結果未設定" }} / {{ item.trial_model.name|default:"モデル未設定" }}</div>
+      <div class="muted">{{ item.result.name|default:"結果未設定" }}</div>
+      <div class="mosaic-trial-summary">
+        {% for step in item.trial_model_steps.all %}
+        <span>{{ step.step_order }}. {{ step.trial_model.name }}</span>
+        {% empty %}
+        <span class="muted">お試しモデル未設定</span>
+        {% endfor %}
+      </div>
       <p>{{ item.talk_summary|default:item.memo|default:"メモなし" }}</p>
     </article>
     {% empty %}

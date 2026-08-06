@@ -8,7 +8,7 @@ def mosaic_dashboard_payload(*, target_date):
         "service_member",
         "credited_member",
         "result",
-    )
+    ).prefetch_related("trial_model_steps__trial_model")
     total_count = queryset.count()
     payment_count = queryset.filter(payment_amount__gt=0).count()
     total_amount = queryset.aggregate(total=Sum("payment_amount"))["total"] or 0

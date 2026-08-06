@@ -38,7 +38,6 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
-  margin-top: 16px;
 }
 
 .mosaic-field {
@@ -53,6 +52,120 @@
 .mosaic-form-actions {
   display: flex;
   justify-content: flex-end;
+}
+
+.mosaic-entry-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.mosaic-input-section {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #d8e7dd;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(241, 249, 244, 0.82));
+}
+
+.mosaic-input-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--mosaic-ink);
+}
+
+.mosaic-input-section-head span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #dff2e6;
+  color: var(--mosaic-accent);
+  font-weight: 900;
+}
+
+.mosaic-toggle-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mosaic-toggle-card {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid #cfe2d5;
+  border-radius: 999px;
+  background: #fff;
+  color: #2b463d;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mosaic-toggle-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mosaic-toggle-card:has(input:checked) {
+  border-color: var(--mosaic-accent);
+  background: linear-gradient(135deg, #e2f5e9, #bde4cb);
+  color: #164533;
+  box-shadow: 0 8px 18px rgba(47, 125, 92, 0.14);
+}
+
+.mosaic-trial-flow,
+.mosaic-trial-summary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mosaic-trial-chip {
+  width: auto;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid #cfe2d5;
+  border-radius: 999px;
+  background: #fff;
+  color: #2b463d;
+  box-shadow: none;
+}
+
+.mosaic-trial-chip.is-selected {
+  border-color: var(--mosaic-accent);
+  background: linear-gradient(135deg, #e2f5e9, #c4e6d0);
+}
+
+.mosaic-trial-order,
+.mosaic-trial-summary span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #e4f1e8;
+  color: var(--mosaic-accent);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.mosaic-trial-order:empty {
+  display: none;
 }
 
 .mosaic-card-list,

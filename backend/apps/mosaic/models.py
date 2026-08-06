@@ -48,10 +48,12 @@ class MosaicResultType(MosaicMasterBase):
 
 class MosaicInteraction(models.Model):
     PARTY_SINGLE = "single"
+    PARTY_PAIR = "pair"
     PARTY_GROUP = "group"
     PARTY_CHOICES = [
         (PARTY_SINGLE, "1人"),
-        (PARTY_GROUP, "複数"),
+        (PARTY_PAIR, "2人"),
+        (PARTY_GROUP, "それ以上"),
     ]
 
     interaction_date = models.DateField("日付")
@@ -133,3 +135,25 @@ class MosaicInteraction(models.Model):
     def __str__(self) -> str:
         member_name = self.service_member.name if self.service_member else "未選択"
         return f"{self.interaction_date} {member_name}"
+
+
+class MosaicInteractionTrialModel(models.Model):
+    interaction = models.ForeignKey(
+        MosaicInteraction,
+        on_delete=models.CASCADE,
+        related_name="trial_model_steps",
+    )
+    trial_model = models.ForeignKey(
+        MosaicTrialModel,
+        on_delete=models.CASCADE,
+        related_name="interaction_steps",
+    )
+    step_order = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["step_order", "id"]
+        unique_together = ("interaction", "trial_model")
+
+    def __str__(self) -> str:
+        return f"{self.interaction_id} #{self.step_order} {self.trial_model.name}"

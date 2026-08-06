@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
 
-from .models import MosaicInteraction, MosaicResultType, MosaicTrialModel, MosaicVisitPurpose
+from .models import MosaicInteraction, MosaicInteractionTrialModel, MosaicResultType, MosaicTrialModel, MosaicVisitPurpose
 
 
 class MosaicAppTests(TestCase):
@@ -65,14 +65,12 @@ class MosaicAppTests(TestCase):
             reverse("mosaic_interaction_create"),
             {
                 "interaction_date": today.strftime("%Y-%m-%d"),
-                "input_member": self.member.id,
                 "service_member": self.other_member.id,
-                "credited_member": "",
                 "age_band": "40代",
                 "party_type": MosaicInteraction.PARTY_SINGLE,
                 "visit_purpose": self.purpose.id,
                 "stay_duration_minutes": 25,
-                "trial_model": self.trial_model.id,
+                "trial_models": [str(self.trial_model.id)],
                 "needs": "腰が気になる",
                 "talk_summary": "寝心地を確認",
                 "result": self.result.id,
@@ -85,8 +83,37 @@ class MosaicAppTests(TestCase):
         self.assertRedirects(response, reverse("mosaic_interaction_create"))
         interaction = MosaicInteraction.objects.get()
         self.assertEqual(interaction.created_by, self.user)
+        self.assertEqual(interaction.input_member, self.other_member)
         self.assertEqual(interaction.credited_member, self.other_member)
         self.assertEqual(interaction.payment_amount, 120000)
+        self.assertEqual(interaction.trial_model, self.trial_model)
+        self.assertEqual(MosaicInteractionTrialModel.objects.get(interaction=interaction).trial_model, self.trial_model)
+
+    def test_return_support_can_credit_different_member(self):
+        today = timezone.localdate()
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("mosaic_interaction_create"),
+            {
+                "interaction_date": today.strftime("%Y-%m-%d"),
+                "service_member": self.member.id,
+                "credited_member": self.other_member.id,
+                "age_band": "50代",
+                "party_type": MosaicInteraction.PARTY_PAIR,
+                "visit_purpose": self.purpose.id,
+                "result": self.result.id,
+                "payment_amount": 80000,
+                "is_return_support": "on",
+            },
+        )
+
+        self.assertRedirects(response, reverse("mosaic_interaction_create"))
+        interaction = MosaicInteraction.objects.get()
+        self.assertTrue(interaction.is_return_support)
+        self.assertEqual(interaction.service_member, self.member)
+        self.assertEqual(interaction.input_member, self.member)
+        self.assertEqual(interaction.credited_member, self.other_member)
 
     def test_dashboard_aggregates_today_interactions(self):
         today = timezone.localdate()

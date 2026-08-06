@@ -23,14 +23,19 @@
         <span>{{ item.payment_amount|intcomma }}円</span>
       </div>
       <div class="mosaic-log-meta">
-        <span>入力: {{ item.input_member.name|default:"-" }}</span>
         <span>実績: {{ item.credited_member.name|default:"-" }}</span>
         <span>{{ item.age_band|default:"年代未設定" }}</span>
         <span>{{ item.get_party_type_display|default:"人数未設定" }}</span>
         <span>{{ item.visit_purpose.name|default:"目的未設定" }}</span>
-        <span>{{ item.trial_model.name|default:"モデル未設定" }}</span>
         <span>{{ item.result.name|default:"結果未設定" }}</span>
         {% if item.is_return_support %}<span class="badge">戻り対応</span>{% endif %}
+      </div>
+      <div class="mosaic-trial-summary">
+        {% for step in item.trial_model_steps.all %}
+        <span>{{ step.step_order }}. {{ step.trial_model.name }}</span>
+        {% empty %}
+        <span class="muted">お試しモデル未設定</span>
+        {% endfor %}
       </div>
       {% if item.needs %}<p><strong>ニーズ:</strong> {{ item.needs }}</p>{% endif %}
       {% if item.talk_summary %}<p><strong>トーク:</strong> {{ item.talk_summary }}</p>{% endif %}
