@@ -4,12 +4,16 @@ from .views import (
     mosaic_dashboard,
     mosaic_interaction_create,
     mosaic_interaction_list,
+    mosaic_login,
+    mosaic_logout,
     mosaic_master_create,
     mosaic_master_edit,
     mosaic_master_index,
 )
 
 urlpatterns = [
+    path("login/", mosaic_login, name="mosaic_login"),
+    path("logout/", mosaic_logout, name="mosaic_logout"),
     path("", mosaic_dashboard, name="mosaic_dashboard"),
     path("interactions/new/", mosaic_interaction_create, name="mosaic_interaction_create"),
     path("interactions/", mosaic_interaction_list, name="mosaic_interaction_list"),

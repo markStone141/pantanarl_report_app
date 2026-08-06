@@ -89,6 +89,35 @@
   border-bottom: 1px solid #e3ece6;
 }
 
+.mosaic-login-card {
+  width: min(520px, calc(100vw - 28px));
+  margin: 44px auto;
+  padding: 0;
+  overflow: hidden;
+}
+
+.mosaic-login-header {
+  display: grid;
+  gap: 4px;
+  padding: 18px;
+  color: #fff;
+  text-align: center;
+  background: linear-gradient(135deg, #24533e, #2f7d5c 62%, #9ccf74);
+}
+
+.mosaic-login-header strong {
+  font-size: 1.25rem;
+}
+
+.mosaic-login-header span {
+  opacity: 0.86;
+  font-size: 0.92rem;
+}
+
+.mosaic-login-form {
+  padding: 18px 20px 20px;
+}
+
 @media (max-width: 900px) {
   .mosaic-kpi-grid,
   .mosaic-form-grid {

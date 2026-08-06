@@ -1,5 +1,5 @@
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model, login as auth_login, logout as auth_logout
 from django.contrib import messages
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -7,9 +7,19 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
-from .forms import MosaicInteractionForm, MosaicResultTypeForm, MosaicTrialModelForm, MosaicVisitPurposeForm
+from .auth import require_mosaic_login
+from .forms import (
+    MosaicInteractionForm,
+    MosaicLoginForm,
+    MosaicResultTypeForm,
+    MosaicTrialModelForm,
+    MosaicVisitPurposeForm,
+)
 from .models import MosaicInteraction, MosaicResultType, MosaicTrialModel, MosaicVisitPurpose
 from .selectors import mosaic_dashboard_payload
+
+
+User = get_user_model()
 
 
 def _nav_items(user):
@@ -27,7 +37,28 @@ def _selected_date(request):
     return parse_date(request.GET.get("date") or "") or timezone.localdate()
 
 
-@login_required
+def mosaic_login(request):
+    next_url = request.POST.get("next") or request.GET.get("next") or reverse("mosaic_dashboard")
+    if request.user.is_authenticated:
+        return redirect(next_url if next_url.startswith("/mosaic/") else reverse("mosaic_dashboard"))
+    form = MosaicLoginForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        login_id = form.cleaned_data["login_id"].strip()
+        user = User.objects.filter(username=login_id, is_active=True, member_profile__isnull=False).first()
+        if not user:
+            form.add_error("login_id", "このログインIDのメンバーが見つかりません。")
+        else:
+            auth_login(request, user)
+            return redirect(next_url if next_url.startswith("/mosaic/") else reverse("mosaic_dashboard"))
+    return render(request, "mosaic/login.html", {"form": form, "next": next_url})
+
+
+def mosaic_logout(request):
+    auth_logout(request)
+    return redirect("mosaic_login")
+
+
+@require_mosaic_login
 def mosaic_dashboard(request):
     target_date = _selected_date(request)
     context = {
@@ -37,7 +68,7 @@ def mosaic_dashboard(request):
     return render(request, "mosaic/dashboard.html", context)
 
 
-@login_required
+@require_mosaic_login
 def mosaic_interaction_create(request):
     initial = {"interaction_date": timezone.localdate()}
     form = MosaicInteractionForm(request.POST or None, initial=initial)
@@ -56,7 +87,7 @@ def mosaic_interaction_create(request):
     return render(request, "mosaic/interaction_form.html", context)
 
 
-@login_required
+@require_mosaic_login
 def mosaic_interaction_list(request):
     target_date = _selected_date(request)
     interactions = (

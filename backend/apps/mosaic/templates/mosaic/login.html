@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}モザイクモール港北 ログイン{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'mosaic/app.css' %}?v=1" />
+{% endblock %}
+
+{% block content %}
+<main class="login-wrap mosaic-login-wrap">
+  <section class="card login-card mosaic-login-card">
+    <div class="mosaic-login-header">
+      <strong>モザイクモール港北</strong>
+      <span>接客ログ入力</span>
+    </div>
+    <form method="post" class="grid mosaic-login-form">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <div>
+        <label for="{{ form.login_id.id_for_label }}">ログインID</label>
+        {{ form.login_id }}
+        {% if form.login_id.errors %}<div class="error-text">{{ form.login_id.errors|join:", " }}</div>{% endif %}
+      </div>
+      <div>
+        <label for="{{ form.password.id_for_label }}">パスワード</label>
+        {{ form.password }}
+        {% if form.password.errors %}<div class="error-text">{{ form.password.errors|join:", " }}</div>{% endif %}
+      </div>
+      {% if form.non_field_errors %}
+      <div class="error-text">{{ form.non_field_errors|join:", " }}</div>
+      {% endif %}
+      <button type="submit">ログイン</button>
+    </form>
+  </section>
+</main>
+{% endblock %}

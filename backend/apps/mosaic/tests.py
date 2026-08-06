@@ -25,8 +25,37 @@ class MosaicAppTests(TestCase):
     def test_dashboard_requires_login(self):
         response = self.client.get(reverse("mosaic_dashboard"))
 
-        self.assertEqual(response.status_code, 302)
-        self.assertIn(reverse("home"), response["Location"])
+        self.assertRedirects(response, f"{reverse('mosaic_login')}?next={reverse('mosaic_dashboard')}")
+
+    def test_member_can_login_with_fixed_password(self):
+        response = self.client.post(
+            reverse("mosaic_login"),
+            {"login_id": self.user.username, "password": "1007"},
+        )
+
+        self.assertRedirects(response, reverse("mosaic_dashboard"))
+        self.assertEqual(int(self.client.session["_auth_user_id"]), self.user.id)
+
+    def test_login_rejects_wrong_password(self):
+        response = self.client.post(
+            reverse("mosaic_login"),
+            {"login_id": self.user.username, "password": "wrong"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "パスワードが正しくありません。")
+
+    def test_login_rejects_user_without_member_profile(self):
+        user_model = get_user_model()
+        user_model.objects.create_user(username="no-member", password="x")
+
+        response = self.client.post(
+            reverse("mosaic_login"),
+            {"login_id": "no-member", "password": "1007"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "このログインIDのメンバーが見つかりません。")
 
     def test_interaction_create_saves_log_and_defaults_credit_member(self):
         today = timezone.localdate()

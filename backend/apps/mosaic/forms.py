@@ -5,6 +5,20 @@ from apps.accounts.models import Member
 from .models import MosaicInteraction, MosaicResultType, MosaicTrialModel, MosaicVisitPurpose
 
 
+MOSAIC_FIXED_PASSWORD = "1007"
+
+
+class MosaicLoginForm(forms.Form):
+    login_id = forms.CharField(label="ログインID", max_length=150)
+    password = forms.CharField(label="パスワード", widget=forms.PasswordInput)
+
+    def clean_password(self):
+        password = self.cleaned_data["password"]
+        if password != MOSAIC_FIXED_PASSWORD:
+            raise forms.ValidationError("パスワードが正しくありません。")
+        return password
+
+
 AGE_BAND_CHOICES = [
     ("", "選択なし"),
     ("10代", "10代"),

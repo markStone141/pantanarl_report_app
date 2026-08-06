@@ -22,6 +22,7 @@
       <a href="{% url url_name %}">{{ label }}</a>
       {% endfor %}
       <a href="{% url 'home' %}">総合管理ページ</a>
+      <a href="{% url 'mosaic_logout' %}" class="logout-link">ログアウト</a>
     </nav>
     <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
   </header>
