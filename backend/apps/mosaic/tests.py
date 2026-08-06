@@ -68,7 +68,7 @@ class MosaicAppTests(TestCase):
                 "service_member": self.other_member.id,
                 "age_band": "40代",
                 "party_type": MosaicInteraction.PARTY_SINGLE,
-                "visit_purpose": self.purpose.id,
+                "awareness_status": MosaicInteraction.AWARENESS_KNOWN,
                 "stay_duration_minutes": 25,
                 "trial_models": [str(self.trial_model.id)],
                 "needs": "腰が気になる",
@@ -86,6 +86,7 @@ class MosaicAppTests(TestCase):
         self.assertEqual(interaction.input_member, self.other_member)
         self.assertEqual(interaction.credited_member, self.other_member)
         self.assertEqual(interaction.payment_amount, 120000)
+        self.assertEqual(interaction.awareness_status, MosaicInteraction.AWARENESS_KNOWN)
         self.assertEqual(interaction.trial_model, self.trial_model)
         self.assertEqual(MosaicInteractionTrialModel.objects.get(interaction=interaction).trial_model, self.trial_model)
 
@@ -100,6 +101,17 @@ class MosaicAppTests(TestCase):
         self.assertNotIn(failed_result.id, response.context["success_result_ids"])
         self.assertContains(response, "data-mosaic-amount-field")
 
+    def test_interaction_form_hides_credit_member_for_new_interaction(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("mosaic_interaction_create"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-mosaic-credit-field hidden', html=False)
+        self.assertContains(response, "認知あり")
+        self.assertContains(response, "認知なし")
+        self.assertContains(response, "不明")
+
     def test_return_support_can_credit_different_member(self):
         today = timezone.localdate()
         self.client.force_login(self.user)
@@ -112,7 +124,7 @@ class MosaicAppTests(TestCase):
                 "credited_member": self.other_member.id,
                 "age_band": "50代",
                 "party_type": MosaicInteraction.PARTY_PAIR,
-                "visit_purpose": self.purpose.id,
+                "awareness_status": MosaicInteraction.AWARENESS_UNCONFIRMED,
                 "result": self.result.id,
                 "payment_amount": 80000,
                 "is_return_support": "on",
@@ -125,6 +137,7 @@ class MosaicAppTests(TestCase):
         self.assertEqual(interaction.service_member, self.member)
         self.assertEqual(interaction.input_member, self.member)
         self.assertEqual(interaction.credited_member, self.other_member)
+        self.assertEqual(interaction.awareness_status, MosaicInteraction.AWARENESS_UNCONFIRMED)
 
     def test_dashboard_aggregates_today_interactions(self):
         today = timezone.localdate()
@@ -164,7 +177,8 @@ class MosaicAppTests(TestCase):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("mosaic_master_index"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "来店目的")
+        self.assertContains(response, "お試しモデル")
+        self.assertNotContains(response, "来店目的")
 
     def test_staff_can_create_master(self):
         self.client.force_login(self.admin)

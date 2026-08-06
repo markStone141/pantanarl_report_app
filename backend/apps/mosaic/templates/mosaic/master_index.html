@@ -8,21 +8,7 @@
   <p class="muted">接客ログ入力で使う選択肢を管理します。</p>
 </section>
 
-<section class="grid grid-3 mt-16">
-  <article class="card">
-    <div class="mosaic-section-head">
-      <h3>来店目的</h3>
-      <a class="btn-inline" href="{% url 'mosaic_master_create' 'visit-purpose' %}">追加</a>
-    </div>
-    <div class="mosaic-simple-list">
-      {% for item in visit_purposes %}
-      <div class="mosaic-list-row">
-        <strong>{{ item.name }}</strong>
-        <a href="{% url 'mosaic_master_edit' 'visit-purpose' item.id %}">編集</a>
-      </div>
-      {% empty %}<p class="muted">未登録です。</p>{% endfor %}
-    </div>
-  </article>
+<section class="grid grid-2 mt-16">
   <article class="card">
     <div class="mosaic-section-head">
       <h3>お試しモデル</h3>

@@ -41,7 +41,7 @@ class MosaicInteractionForm(forms.ModelForm):
             "credited_member",
             "age_band",
             "party_type",
-            "visit_purpose",
+            "awareness_status",
             "stay_duration_minutes",
             "needs",
             "talk_summary",
@@ -63,7 +63,6 @@ class MosaicInteractionForm(forms.ModelForm):
         active_members = Member.objects.active().order_by("name")
         self.fields["service_member"].queryset = active_members
         self.fields["credited_member"].queryset = active_members
-        self.fields["visit_purpose"].queryset = MosaicVisitPurpose.objects.active()
         self.fields["result"].queryset = MosaicResultType.objects.active()
         self.fields["service_member"].required = True
         self.fields["credited_member"].required = False

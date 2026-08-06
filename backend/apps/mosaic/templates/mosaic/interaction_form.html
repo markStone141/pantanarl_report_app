@@ -33,11 +33,11 @@
           <label>新規 / 戻り</label>
           <div class="mosaic-toggle-group">
             <label class="mosaic-toggle-card">
-              <input type="radio" name="is_return_support" value="" checked data-mosaic-new-return>
+              <input type="radio" name="is_return_support" value=""{% if not form.is_return_support.value %} checked{% endif %} data-mosaic-new-return>
               <span>新規</span>
             </label>
             <label class="mosaic-toggle-card">
-              <input type="radio" name="is_return_support" value="on" data-mosaic-new-return>
+              <input type="radio" name="is_return_support" value="on"{% if form.is_return_support.value %} checked{% endif %} data-mosaic-new-return>
               <span>戻り</span>
             </label>
           </div>
@@ -86,9 +86,18 @@
           {% if form.party_type.errors %}<div class="error-text">{{ form.party_type.errors|striptags }}</div>{% endif %}
         </div>
         <div class="mosaic-field">
-          <label for="{{ form.visit_purpose.id_for_label }}">{{ form.visit_purpose.label }}</label>
-          {{ form.visit_purpose }}
-          {% if form.visit_purpose.errors %}<div class="error-text">{{ form.visit_purpose.errors|striptags }}</div>{% endif %}
+          <label>認知状況</label>
+          <div class="mosaic-toggle-group">
+            {% for value, label in form.fields.awareness_status.choices %}
+            {% if value %}
+            <label class="mosaic-toggle-card">
+              <input type="radio" name="{{ form.awareness_status.name }}" value="{{ value }}"{% if form.awareness_status.value == value %} checked{% endif %}>
+              <span>{{ label }}</span>
+            </label>
+            {% endif %}
+            {% endfor %}
+          </div>
+          {% if form.awareness_status.errors %}<div class="error-text">{{ form.awareness_status.errors|striptags }}</div>{% endif %}
         </div>
         <div class="mosaic-field">
           <label for="{{ form.stay_duration_minutes.id_for_label }}">{{ form.stay_duration_minutes.label }}</label>

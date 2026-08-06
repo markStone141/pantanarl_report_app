@@ -26,7 +26,7 @@
         <span>実績: {{ item.credited_member.name|default:"-" }}</span>
         <span>{{ item.age_band|default:"年代未設定" }}</span>
         <span>{{ item.get_party_type_display|default:"人数未設定" }}</span>
-        <span>{{ item.visit_purpose.name|default:"目的未設定" }}</span>
+        <span>{{ item.get_awareness_status_display|default:"認知未設定" }}</span>
         <span>{{ item.result.name|default:"結果未設定" }}</span>
         {% if item.is_return_support %}<span class="badge">戻り対応</span>{% endif %}
       </div>

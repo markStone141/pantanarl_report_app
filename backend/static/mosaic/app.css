@@ -51,6 +51,10 @@
   min-width: 0;
 }
 
+.mosaic-field[hidden] {
+  display: none !important;
+}
+
 .mosaic-field label {
   color: #536861;
   font-size: 0.86rem;

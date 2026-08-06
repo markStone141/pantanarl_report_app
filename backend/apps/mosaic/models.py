@@ -55,6 +55,14 @@ class MosaicInteraction(models.Model):
         (PARTY_PAIR, "2人"),
         (PARTY_GROUP, "それ以上"),
     ]
+    AWARENESS_KNOWN = "known"
+    AWARENESS_UNKNOWN = "unknown"
+    AWARENESS_UNCONFIRMED = "unconfirmed"
+    AWARENESS_CHOICES = [
+        (AWARENESS_KNOWN, "認知あり"),
+        (AWARENESS_UNKNOWN, "認知なし"),
+        (AWARENESS_UNCONFIRMED, "不明"),
+    ]
 
     interaction_date = models.DateField("日付")
     input_member = models.ForeignKey(
@@ -91,6 +99,7 @@ class MosaicInteraction(models.Model):
         related_name="interactions",
         verbose_name="来店目的",
     )
+    awareness_status = models.CharField("認知状況", max_length=16, choices=AWARENESS_CHOICES, blank=True)
     stay_duration_minutes = models.PositiveIntegerField("滞在時間（分）", null=True, blank=True)
     trial_model = models.ForeignKey(
         MosaicTrialModel,

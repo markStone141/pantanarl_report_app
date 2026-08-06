@@ -116,7 +116,6 @@ def mosaic_interaction_list(request):
 def mosaic_master_index(request):
     context = {
         "nav_items": _nav_items(request.user),
-        "visit_purposes": MosaicVisitPurpose.objects.all(),
         "trial_models": MosaicTrialModel.objects.all(),
         "result_types": MosaicResultType.objects.all(),
     }
@@ -159,7 +158,6 @@ def mosaic_master_edit(request, master_type, pk):
 
 def _master_config(master_type):
     configs = {
-        "visit-purpose": (MosaicVisitPurposeForm, "来店目的"),
         "trial-model": (MosaicTrialModelForm, "お試しモデル"),
         "result-type": (MosaicResultTypeForm, "結果"),
     }
