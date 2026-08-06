@@ -16,9 +16,9 @@
     <section class="mosaic-input-section">
       <div class="mosaic-input-section-head">
         <span>01</span>
-        <strong>接客の基本</strong>
+        <strong>基本情報</strong>
       </div>
-      <div class="mosaic-form-grid">
+      <div class="mosaic-form-grid mosaic-form-grid-primary">
         <div class="mosaic-field">
           <label for="{{ form.interaction_date.id_for_label }}">{{ form.interaction_date.label }}</label>
           {{ form.interaction_date }}
@@ -46,6 +46,16 @@
           <label for="{{ form.credited_member.id_for_label }}">{{ form.credited_member.label }}</label>
           {{ form.credited_member }}
           {% if form.credited_member.errors %}<div class="error-text">{{ form.credited_member.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="mosaic-field">
+          <label for="{{ form.result.id_for_label }}">{{ form.result.label }}</label>
+          {{ form.result }}
+          {% if form.result.errors %}<div class="error-text">{{ form.result.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="mosaic-field">
+          <label for="{{ form.payment_amount.id_for_label }}">金額</label>
+          {{ form.payment_amount }}
+          {% if form.payment_amount.errors %}<div class="error-text">{{ form.payment_amount.errors|striptags }}</div>{% endif %}
         </div>
       </div>
     </section>
@@ -122,16 +132,6 @@
           <label for="{{ form.talk_summary.id_for_label }}">{{ form.talk_summary.label }}</label>
           {{ form.talk_summary }}
           {% if form.talk_summary.errors %}<div class="error-text">{{ form.talk_summary.errors|striptags }}</div>{% endif %}
-        </div>
-        <div class="mosaic-field">
-          <label for="{{ form.result.id_for_label }}">{{ form.result.label }}</label>
-          {{ form.result }}
-          {% if form.result.errors %}<div class="error-text">{{ form.result.errors|striptags }}</div>{% endif %}
-        </div>
-        <div class="mosaic-field">
-          <label for="{{ form.payment_amount.id_for_label }}">{{ form.payment_amount.label }}</label>
-          {{ form.payment_amount }}
-          {% if form.payment_amount.errors %}<div class="error-text">{{ form.payment_amount.errors|striptags }}</div>{% endif %}
         </div>
         <div class="mosaic-field mosaic-field-wide">
           <label for="{{ form.memo.id_for_label }}">{{ form.memo.label }}</label>

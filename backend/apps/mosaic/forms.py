@@ -67,6 +67,7 @@ class MosaicInteractionForm(forms.ModelForm):
         self.fields["result"].queryset = MosaicResultType.objects.active()
         self.fields["service_member"].required = True
         self.fields["credited_member"].required = False
+        self.fields["payment_amount"].label = "金額"
         self.fields["payment_amount"].min_value = 0
 
 

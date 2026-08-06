@@ -37,12 +37,31 @@
 .mosaic-form-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
+}
+
+.mosaic-form-grid-primary {
+  grid-template-columns: 1.05fr 1.1fr 1.25fr 1fr 1fr;
+  align-items: end;
 }
 
 .mosaic-field {
   display: grid;
-  gap: 6px;
+  gap: 7px;
+  min-width: 0;
+}
+
+.mosaic-field label {
+  color: #536861;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.mosaic-field input,
+.mosaic-field select,
+.mosaic-field textarea {
+  border-color: #d5e3da;
+  background: rgba(255, 255, 255, 0.94);
 }
 
 .mosaic-field-wide {
@@ -62,11 +81,14 @@
 
 .mosaic-input-section {
   display: grid;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid #d8e7dd;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(241, 249, 244, 0.82));
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #dce9e1;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(180, 221, 193, 0.32), transparent 36%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(246, 251, 248, 0.92));
+  box-shadow: 0 16px 34px rgba(35, 79, 58, 0.07);
 }
 
 .mosaic-input-section-head {
@@ -88,6 +110,10 @@
   font-weight: 900;
 }
 
+.mosaic-input-section-head strong {
+  font-size: 1.04rem;
+}
+
 .mosaic-toggle-group {
   display: flex;
   flex-wrap: wrap;
@@ -99,9 +125,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 84px;
-  min-height: 42px;
-  padding: 9px 14px;
+  min-width: 78px;
+  min-height: 44px;
+  padding: 9px 16px;
   border: 1px solid #cfe2d5;
   border-radius: 999px;
   background: #fff;
@@ -120,7 +146,7 @@
   border-color: var(--mosaic-accent);
   background: linear-gradient(135deg, #e2f5e9, #bde4cb);
   color: #164533;
-  box-shadow: 0 8px 18px rgba(47, 125, 92, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(47, 125, 92, 0.18), 0 8px 18px rgba(47, 125, 92, 0.14);
 }
 
 .mosaic-trial-flow,
@@ -234,6 +260,10 @@
 @media (max-width: 900px) {
   .mosaic-kpi-grid,
   .mosaic-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mosaic-form-grid-primary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
