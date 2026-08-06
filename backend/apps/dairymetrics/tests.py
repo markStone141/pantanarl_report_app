@@ -313,7 +313,7 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "今日の新しい決済")
+        self.assertContains(response, "今日の他メンバー決済")
         self.assertContains(response, "Member Three")
         self.assertContains(response, "今日の他メンバー決済")
         self.assertContains(response, f'data-transaction-id="{today_transaction.id}"', html=False)
@@ -333,6 +333,22 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "新しい決済が1件あります。")
         self.assertEqual(response.context["transaction_notification"]["count"], 0)
+        self.assertEqual(response.context["transaction_history"]["count"], 1)
+        self.assertContains(response, "今日の他メンバー決済を確認できます。")
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "department": self.department.code,
+                "date": today.strftime("%Y-%m-%d"),
+                "transaction_notifications": "1",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "今日の他メンバー決済")
+        self.assertContains(response, "今日の他メンバー決済")
+        self.assertContains(response, f'data-transaction-id="{today_transaction.id}"', html=False)
 
     def test_entry_v2_transaction_demo_can_save_un_transaction(self):
         entry_date = timezone.localdate()

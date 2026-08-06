@@ -56,6 +56,7 @@ from .services.reaction_notifications import (
 )
 from .services.transaction_notifications import (
     mark_today_transaction_notifications_seen,
+    today_transaction_history,
     unread_today_transaction_notification,
 )
 from .selectors import (
@@ -1507,6 +1508,10 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
     transaction_notification = unread_today_transaction_notification(
         member=member,
         url=transaction_notification_url,
+        today=today,
+    )
+    context["transaction_history"] = today_transaction_history(
+        member=member,
         today=today,
     )
     transaction_notification_open = request.GET.get("transaction_notifications") == "1"
