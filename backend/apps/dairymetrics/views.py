@@ -54,6 +54,10 @@ from .services.reaction_notifications import (
     mark_transaction_reaction_notifications_seen,
     unread_transaction_reaction_notification,
 )
+from .services.transaction_notifications import (
+    mark_today_transaction_notifications_seen,
+    unread_today_transaction_notification,
+)
 from .selectors import (
     build_admin_daily_overview,
     build_admin_ranking_overview,
@@ -1490,6 +1494,26 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
         mark_transaction_reaction_notifications_seen(member=member)
     context["reaction_notification"] = reaction_notification
     context["reaction_notification_open"] = reaction_notification_open
+    today = timezone.localdate()
+    transaction_notification_query = request.GET.copy()
+    if selected_department:
+        transaction_notification_query["department"] = selected_department
+    transaction_notification_query["date"] = today.strftime("%Y-%m-%d")
+    transaction_notification_query["transaction_notifications"] = "1"
+    transaction_notification_url = (
+        f"{reverse('dairymetrics_entry_v2_transaction_demo')}?"
+        f"{transaction_notification_query.urlencode()}#dairymetrics-new-transaction-notice-detail"
+    )
+    transaction_notification = unread_today_transaction_notification(
+        member=member,
+        url=transaction_notification_url,
+        today=today,
+    )
+    transaction_notification_open = request.GET.get("transaction_notifications") == "1"
+    if transaction_notification_open:
+        mark_today_transaction_notifications_seen(member=member)
+    context["transaction_notification"] = transaction_notification
+    context["transaction_notification_open"] = transaction_notification_open
     context["testimony_notification"] = unread_recent_article_notification(user=request.user)
     context["talks_notification"] = unread_recent_post_notification(user=request.user)
     return render(request, "dairymetrics/entry_form_v2_transaction.html", context)

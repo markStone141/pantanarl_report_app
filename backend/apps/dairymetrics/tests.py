@@ -29,6 +29,7 @@ from .models import (
     DepartmentDailyMetricSummary,
     MemberDailyMetricEntry,
     MemberMetricTransaction,
+    MemberMetricTransactionNotificationState,
     MemberMetricTransactionReaction,
     MemberMetricTransactionReactionNotificationState,
     MemberMonthMetricTarget,
@@ -241,6 +242,97 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "新しいスタンプが1件あります。")
         self.assertEqual(response.context["reaction_notification"]["count"], 0)
+
+    def test_entry_v2_transaction_demo_shows_only_today_other_member_transaction_count(self):
+        today = timezone.localdate()
+        yesterday = today - timedelta(days=1)
+        _, other_member = self.create_member_user(
+            username="member3",
+            password="pass123",
+            name="Member Three",
+            department=self.department,
+        )
+        other_entry = MemberDailyMetricEntry.objects.create(
+            member=other_member,
+            department=self.department,
+            entry_date=today,
+        )
+        own_entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=today,
+        )
+        old_entry = MemberDailyMetricEntry.objects.create(
+            member=other_member,
+            department=self.department,
+            entry_date=yesterday,
+        )
+        today_transaction = MemberMetricTransaction.objects.create(
+            entry=other_entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_THIRTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="関内",
+            comment="今日の他メンバー決済",
+        )
+        MemberMetricTransaction.objects.create(
+            entry=own_entry,
+            support_amount=2000,
+            age_band=MemberMetricTransaction.AGE_BAND_FORTIES,
+            gender=MemberMetricTransaction.GENDER_MALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="渋谷",
+        )
+        MemberMetricTransaction.objects.create(
+            entry=old_entry,
+            support_amount=4000,
+            age_band=MemberMetricTransaction.AGE_BAND_FIFTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="昨日",
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": today.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "新しい決済が1件あります。")
+        self.assertEqual(response.context["transaction_notification"]["count"], 1)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "department": self.department.code,
+                "date": today.strftime("%Y-%m-%d"),
+                "transaction_notifications": "1",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "今日の新しい決済")
+        self.assertContains(response, "Member Three")
+        self.assertContains(response, "今日の他メンバー決済")
+        self.assertContains(response, f'data-transaction-id="{today_transaction.id}"', html=False)
+        self.assertNotContains(response, "昨日")
+        self.assertTrue(
+            MemberMetricTransactionNotificationState.objects.filter(
+                member=self.member,
+                last_seen_at__isnull=False,
+            ).exists()
+        )
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": today.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "新しい決済が1件あります。")
+        self.assertEqual(response.context["transaction_notification"]["count"], 0)
 
     def test_entry_v2_transaction_demo_can_save_un_transaction(self):
         entry_date = timezone.localdate()

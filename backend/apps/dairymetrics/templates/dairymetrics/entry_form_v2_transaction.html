@@ -54,6 +54,56 @@
         <strong>確認する</strong>
       </a>
       {% endif %}
+      {% if transaction_notification.count and not transaction_notification_open %}
+      <a class="dairymetrics-testimony-notice dairymetrics-transaction-notice" href="{{ transaction_notification.url }}">
+        <span class="dairymetrics-testimony-notice-icon"><i class="fa-solid fa-hand-sparkles" aria-hidden="true"></i></span>
+        <span>新しい決済が{{ transaction_notification.count }}件あります。</span>
+        <strong>スタンプする</strong>
+      </a>
+      {% endif %}
+      {% if transaction_notification_open and transaction_notification.items %}
+      <div class="dairymetrics-transaction-notice-detail" id="dairymetrics-new-transaction-notice-detail">
+        <div class="dairymetrics-transaction-notice-head">
+          <strong>今日の新しい決済</strong>
+          <span>他メンバーの決済にスタンプできます。</span>
+        </div>
+        {% for transaction in transaction_notification.items %}
+        <div class="dairymetrics-transaction-notice-card">
+          <div class="dairymetrics-v2-transaction-top">
+            <strong>{{ transaction.member_name }} / {{ transaction.department_code }} / {{ transaction.time_label }}</strong>
+            <span>{{ transaction.amount|intcomma }}円</span>
+          </div>
+          <div class="dairymetrics-v2-transaction-main">
+            {% if transaction.is_wv %}
+            <span>{{ transaction.result_type_label }}</span>
+            {% endif %}
+            <span>{{ transaction.age_band }} / {{ transaction.gender }} / {{ transaction.nationality }}</span>
+            <span>{{ transaction.location|default:"-" }}</span>
+          </div>
+          <div class="dairymetrics-subtext">{{ transaction.comment|default:"コメントなし" }}</div>
+          <div
+            class="dairymetrics-v2-reaction-row"
+            data-transaction-reactions
+            data-transaction-id="{{ transaction.id }}"
+            data-reaction-url="{% url 'dairymetrics_transaction_reaction_update' %}"
+          >
+            {% for reaction in transaction.reaction_options %}
+            <button
+              type="button"
+              class="dairymetrics-v2-reaction-btn{% if reaction.is_selected %} is-selected{% endif %}"
+              data-transaction-reaction-button
+              data-reaction-type="{{ reaction.type }}"
+              aria-pressed="{% if reaction.is_selected %}true{% else %}false{% endif %}"
+            >
+              <span>{{ reaction.label }}</span>
+              <strong data-reaction-count>{{ reaction.count }}</strong>
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
       {% if reaction_notification.count and not reaction_notification_open %}
       <a class="dairymetrics-testimony-notice dairymetrics-reaction-notice" href="{{ reaction_notification.url }}">
         <span class="dairymetrics-testimony-notice-icon"><i class="fa-solid fa-stamp" aria-hidden="true"></i></span>

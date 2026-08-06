@@ -2922,6 +2922,53 @@
   color: #60736e;
 }
 
+.dairymetrics-transaction-notice {
+  color: #243e62;
+  border-color: #9fbce7;
+  background: linear-gradient(135deg, #f2f7ff, #dceaff);
+  box-shadow: 0 10px 28px rgba(52, 96, 160, 0.13);
+}
+
+.dairymetrics-transaction-notice:hover {
+  color: #193154;
+}
+
+.dairymetrics-transaction-notice .dairymetrics-testimony-notice-icon {
+  color: #2f6fb6;
+  background: #fff;
+}
+
+.dairymetrics-transaction-notice-detail {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #b7cae8;
+  border-radius: 18px;
+  background: rgba(245, 249, 255, 0.92);
+}
+
+.dairymetrics-transaction-notice-head {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  color: #243e62;
+}
+
+.dairymetrics-transaction-notice-head span {
+  color: #65758b;
+  font-size: 0.9rem;
+}
+
+.dairymetrics-transaction-notice-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #d5e2f4;
+  border-radius: 16px;
+  background: #fff;
+}
+
 @media print {
   .no-print,
   .dashboard-drawer-toggle,
