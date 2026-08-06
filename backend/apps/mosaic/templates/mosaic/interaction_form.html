@@ -47,12 +47,12 @@
           {{ form.credited_member }}
           {% if form.credited_member.errors %}<div class="error-text">{{ form.credited_member.errors|striptags }}</div>{% endif %}
         </div>
-        <div class="mosaic-field">
+        <div class="mosaic-field" data-mosaic-result-field>
           <label for="{{ form.result.id_for_label }}">{{ form.result.label }}</label>
           {{ form.result }}
           {% if form.result.errors %}<div class="error-text">{{ form.result.errors|striptags }}</div>{% endif %}
         </div>
-        <div class="mosaic-field">
+        <div class="mosaic-field" data-mosaic-amount-field hidden>
           <label for="{{ form.payment_amount.id_for_label }}">金額</label>
           {{ form.payment_amount }}
           {% if form.payment_amount.errors %}<div class="error-text">{{ form.payment_amount.errors|striptags }}</div>{% endif %}
@@ -152,14 +152,27 @@
     const form = document.querySelector("[data-mosaic-interaction-form]");
     if (!form) return;
     const creditField = form.querySelector("[data-mosaic-credit-field]");
+    const resultSelect = form.querySelector("[name='result']");
+    const amountField = form.querySelector("[data-mosaic-amount-field]");
+    const amountInput = form.querySelector("[name='payment_amount']");
     const returnRadios = form.querySelectorAll("[data-mosaic-new-return]");
     const trialButtons = form.querySelectorAll("[data-trial-model-id]");
     const trialInputs = form.querySelector("[data-mosaic-trial-inputs]");
+    const successResultIds = new Set({{ success_result_ids|safe }}.map(String));
     let selectedTrialIds = [];
 
     function updateCreditField() {
       const isReturn = Array.from(returnRadios).some((radio) => radio.checked && radio.value === "on");
       if (creditField) creditField.hidden = !isReturn;
+    }
+
+    function updateAmountField() {
+      if (!resultSelect || !amountField) return;
+      const isSuccess = successResultIds.has(resultSelect.value);
+      amountField.hidden = !isSuccess;
+      if (!isSuccess && amountInput) {
+        amountInput.value = "0";
+      }
     }
 
     function renderTrialState() {
@@ -181,6 +194,21 @@
     }
 
     returnRadios.forEach((radio) => radio.addEventListener("change", updateCreditField));
+    if (resultSelect) {
+      resultSelect.addEventListener("change", updateAmountField);
+    }
+    if (amountInput) {
+      amountInput.addEventListener("focus", function () {
+        if (amountInput.value === "0") {
+          amountInput.value = "";
+        }
+      });
+      amountInput.addEventListener("blur", function () {
+        if (amountInput.value.trim() === "") {
+          amountInput.value = "0";
+        }
+      });
+    }
     trialButtons.forEach((button) => {
       button.addEventListener("click", function () {
         const id = button.dataset.trialModelId;
@@ -193,6 +221,7 @@
       });
     });
     updateCreditField();
+    updateAmountField();
     renderTrialState();
   })();
 </script>

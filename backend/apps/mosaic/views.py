@@ -90,6 +90,7 @@ def mosaic_interaction_create(request):
         "nav_items": _nav_items(request.user),
         "form": form,
         "trial_models": MosaicTrialModel.objects.active(),
+        "success_result_ids": list(MosaicResultType.objects.active().filter(is_success=True).values_list("id", flat=True)),
     }
     return render(request, "mosaic/interaction_form.html", context)
 

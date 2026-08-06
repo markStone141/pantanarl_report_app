@@ -89,6 +89,17 @@ class MosaicAppTests(TestCase):
         self.assertEqual(interaction.trial_model, self.trial_model)
         self.assertEqual(MosaicInteractionTrialModel.objects.get(interaction=interaction).trial_model, self.trial_model)
 
+    def test_interaction_create_marks_success_result_ids_for_amount_toggle(self):
+        self.client.force_login(self.user)
+        failed_result = MosaicResultType.objects.create(name="検討", is_success=False)
+
+        response = self.client.get(reverse("mosaic_interaction_create"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(self.result.id, response.context["success_result_ids"])
+        self.assertNotIn(failed_result.id, response.context["success_result_ids"])
+        self.assertContains(response, "data-mosaic-amount-field")
+
     def test_return_support_can_credit_different_member(self):
         today = timezone.localdate()
         self.client.force_login(self.user)
