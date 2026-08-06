@@ -94,9 +94,23 @@
               data-transaction-reaction-button
               data-reaction-type="{{ reaction.type }}"
               aria-pressed="{% if reaction.is_selected %}true{% else %}false{% endif %}"
+              aria-label="{{ reaction.label }}"
+              title="{{ reaction.label }}"
             >
-              <span>{{ reaction.label }}</span>
-              <strong data-reaction-count>{{ reaction.count }}</strong>
+              <span class="dairymetrics-v2-reaction-icon" aria-hidden="true">
+                {% if reaction.type == "good" %}
+                <i class="fa-solid fa-thumbs-up"></i>
+                {% elif reaction.type == "nice" %}
+                <i class="fa-solid fa-star"></i>
+                {% elif reaction.type == "thanks" %}
+                <i class="fa-solid fa-heart"></i>
+                {% elif reaction.type == "learn" %}
+                <i class="fa-solid fa-lightbulb"></i>
+                {% else %}
+                <i class="fa-solid fa-stamp"></i>
+                {% endif %}
+              </span>
+              <strong class="dairymetrics-v2-reaction-count" data-reaction-count>{{ reaction.count }}</strong>
             </button>
             {% endfor %}
           </div>

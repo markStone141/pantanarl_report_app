@@ -2278,36 +2278,46 @@
 
 .dairymetrics-v2-reaction-row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
   align-items: center;
 }
 
 .dairymetrics-v2-reaction-btn {
+  position: relative;
   display: inline-flex;
-  gap: 6px;
   align-items: center;
   justify-content: center;
-  min-height: 34px;
-  padding: 6px 12px;
-  border: 1px solid rgba(41, 112, 181, 0.2);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.88);
-  color: #24435e;
+  width: 50px;
+  min-width: 50px;
+  height: 50px;
+  min-height: 50px;
+  padding: 0;
+  border: 1px solid rgba(41, 112, 181, 0.24);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(145deg, #ffffff 0%, #edf6ff 100%);
+  color: #31516f;
   font-weight: 700;
+  box-shadow: 0 8px 18px rgba(20, 70, 118, 0.12);
   cursor: pointer;
-  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
 }
 
 .dairymetrics-v2-reaction-btn:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   border-color: rgba(41, 112, 181, 0.42);
+  box-shadow: 0 12px 22px rgba(20, 70, 118, 0.18);
 }
 
 .dairymetrics-v2-reaction-btn.is-selected {
-  border-color: rgba(20, 116, 205, 0.72);
-  background: linear-gradient(135deg, #e6f3ff 0%, #cbe7ff 100%);
+  border-color: rgba(20, 116, 205, 0.78);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 38%),
+    linear-gradient(145deg, #dff0ff 0%, #a9d8ff 100%);
   color: #0d4f88;
+  box-shadow: 0 12px 24px rgba(13, 116, 205, 0.24);
 }
 
 .dairymetrics-v2-reaction-btn:disabled {
@@ -2315,8 +2325,37 @@
   opacity: 0.72;
 }
 
-.dairymetrics-v2-reaction-btn strong {
-  font-size: 0.86rem;
+.dairymetrics-v2-reaction-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.dairymetrics-v2-reaction-count {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid rgba(41, 112, 181, 0.18);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #24435e;
+  font-size: 0.75rem;
+  line-height: 1;
+  box-shadow: 0 5px 12px rgba(20, 70, 118, 0.14);
+}
+
+.dairymetrics-v2-reaction-btn.is-selected .dairymetrics-v2-reaction-count {
+  border-color: rgba(13, 116, 205, 0.12);
+  background: #0d74cd;
+  color: #ffffff;
 }
 
 .dairymetrics-v2-mail-badge {
