@@ -4695,6 +4695,14 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         )
 
     def test_metrics_v2_demo_renders_member_sections(self):
+        MemberDailyMetricEntry.objects.create(
+            member=self.teammate,
+            department=self.department,
+            entry_date=timezone.localdate() - timedelta(days=3),
+            approach_count=10,
+            communication_count=5,
+            daily_target_amount=4000,
+        )
         self.client.force_login(self.user)
         response = self.client.get(reverse("dairymetrics_metrics_v2_demo"))
         self.assertEqual(response.status_code, 200)
@@ -4727,8 +4735,8 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(personal_average_values["1決済あたりの平均金額"], "3,000円")
         self.assertEqual(personal_average_values["1稼働あたりの平均AP"], "12")
         self.assertEqual(personal_average_values["1稼働あたりの平均CM"], "6")
-        self.assertEqual(overall_average_values["1人あたりの平均AP"], "10")
-        self.assertEqual(overall_average_values["1人あたりの平均CM"], "5")
+        self.assertEqual(overall_average_values["1稼働あたりの平均AP"], "10")
+        self.assertEqual(overall_average_values["1稼働あたりの平均CM"], "5")
         self.assertEqual(overall_average_values["1決済あたりの平均金額"], "2,667円")
         self.assertEqual(response.context["metrics_v2_payload"]["overall_summary"]["totals"]["average_member_count"], 2)
 
