@@ -1,0 +1,28 @@
+{% extends "mosaic/base.html" %}
+
+{% block mosaic_title %}接客ログ入力{% endblock %}
+
+{% block mosaic_content %}
+<section class="card mosaic-form-card">
+  <div class="mosaic-section-head">
+    <div>
+      <h2>接客ログ入力</h2>
+      <p class="muted">接客1件ごとに保存します。決済になった場合だけ金額を入力してください。</p>
+    </div>
+    <a class="btn-inline" href="{% url 'mosaic_dashboard' %}">ダッシュボード</a>
+  </div>
+  <form method="post" class="mosaic-form-grid">
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="mosaic-field{% if field.name in 'needs talk_summary memo' %} mosaic-field-wide{% endif %}">
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<div class="error-text">{{ field.errors|striptags }}</div>{% endif %}
+    </div>
+    {% endfor %}
+    <div class="mosaic-field-wide mosaic-form-actions">
+      <button type="submit">保存して続けて入力</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "mosaic/base.html" %}
+{% load humanize %}
+
+{% block mosaic_title %}モザイクモール港北 ダッシュボード{% endblock %}
+
+{% block mosaic_content %}
+<section class="card mosaic-hero">
+  <div>
+    <h2>本日の接客状況</h2>
+    <p class="muted">{{ payload.target_date|date:"Y/m/d" }} の接客ログから自動集計しています。</p>
+  </div>
+  <form method="get" class="mosaic-date-form">
+    <input type="date" name="date" value="{{ payload.target_date|date:'Y-m-d' }}">
+    <button type="submit" class="btn-inline">表示</button>
+  </form>
+</section>
+
+<section class="mosaic-kpi-grid">
+  <article class="metric-card">
+    <span class="muted">接客数</span>
+    <strong>{{ payload.total_count }}件</strong>
+  </article>
+  <article class="metric-card">
+    <span class="muted">決済件数</span>
+    <strong>{{ payload.payment_count }}件</strong>
+  </article>
+  <article class="metric-card">
+    <span class="muted">売上</span>
+    <strong>{{ payload.total_amount|intcomma }}円</strong>
+  </article>
+  <article class="metric-card">
+    <span class="muted">決済率</span>
+    <strong>{% if payload.close_rate is not None %}{{ payload.close_rate }}%{% else %}-{% endif %}</strong>
+  </article>
+</section>
+
+<section class="grid grid-2 mt-16">
+  <article class="card">
+    <h3>実績扱い別</h3>
+    <div class="mosaic-simple-list">
+      {% for row in payload.member_rows %}
+      <div class="mosaic-list-row">
+        <strong>{{ row.name }}</strong>
+        <span>{{ row.interaction_count }}件 / 決済 {{ row.payment_count }}件 / {{ row.total_amount|intcomma }}円</span>
+      </div>
+      {% empty %}
+      <p class="muted">まだデータがありません。</p>
+      {% endfor %}
+    </div>
+  </article>
+  <article class="card">
+    <h3>結果別</h3>
+    <div class="mosaic-simple-list">
+      {% for row in payload.result_rows %}
+      <div class="mosaic-list-row">
+        <strong>{{ row.name }}</strong>
+        <span>{{ row.count }}件</span>
+      </div>
+      {% empty %}
+      <p class="muted">まだデータがありません。</p>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+<section class="card mt-16">
+  <div class="mosaic-section-head">
+    <h3>直近の接客ログ</h3>
+    <a class="btn-inline" href="{% url 'mosaic_interaction_create' %}">接客ログを入力</a>
+  </div>
+  <div class="mosaic-card-list">
+    {% for item in payload.latest_interactions %}
+    <article class="mosaic-log-card">
+      <div class="mosaic-log-top">
+        <strong>{{ item.service_member.name|default:"接客者未設定" }}</strong>
+        <span>{{ item.payment_amount|intcomma }}円</span>
+      </div>
+      <div class="muted">{{ item.result.name|default:"結果未設定" }} / {{ item.trial_model.name|default:"モデル未設定" }}</div>
+      <p>{{ item.talk_summary|default:item.memo|default:"メモなし" }}</p>
+    </article>
+    {% empty %}
+    <p class="muted">まだ接客ログがありません。</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,111 @@
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from django.urls import reverse
+from django.utils import timezone
+
+from apps.accounts.models import Department, Member, MemberDepartment
+
+from .models import MosaicInteraction, MosaicResultType, MosaicTrialModel, MosaicVisitPurpose
+
+
+class MosaicAppTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(username="store", password="pass123")
+        self.admin = user_model.objects.create_user(username="admin", password="pass123", is_staff=True)
+        self.department = Department.objects.create(code="MOSAIC", name="モザイクモール港北")
+        self.member = Member.objects.create(name="接客者A", user=self.user, default_department=self.department)
+        self.other_member = Member.objects.create(name="接客者B", default_department=self.department)
+        MemberDepartment.objects.create(member=self.member, department=self.department)
+        MemberDepartment.objects.create(member=self.other_member, department=self.department)
+        self.purpose = MosaicVisitPurpose.objects.create(name="寝具相談")
+        self.trial_model = MosaicTrialModel.objects.create(name="モデルA")
+        self.result = MosaicResultType.objects.create(name="決済", is_success=True)
+
+    def test_dashboard_requires_login(self):
+        response = self.client.get(reverse("mosaic_dashboard"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("home"), response["Location"])
+
+    def test_interaction_create_saves_log_and_defaults_credit_member(self):
+        today = timezone.localdate()
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("mosaic_interaction_create"),
+            {
+                "interaction_date": today.strftime("%Y-%m-%d"),
+                "input_member": self.member.id,
+                "service_member": self.other_member.id,
+                "credited_member": "",
+                "age_band": "40代",
+                "party_type": MosaicInteraction.PARTY_SINGLE,
+                "visit_purpose": self.purpose.id,
+                "stay_duration_minutes": 25,
+                "trial_model": self.trial_model.id,
+                "needs": "腰が気になる",
+                "talk_summary": "寝心地を確認",
+                "result": self.result.id,
+                "payment_amount": 120000,
+                "is_return_support": "",
+                "memo": "次回も提案できる",
+            },
+        )
+
+        self.assertRedirects(response, reverse("mosaic_interaction_create"))
+        interaction = MosaicInteraction.objects.get()
+        self.assertEqual(interaction.created_by, self.user)
+        self.assertEqual(interaction.credited_member, self.other_member)
+        self.assertEqual(interaction.payment_amount, 120000)
+
+    def test_dashboard_aggregates_today_interactions(self):
+        today = timezone.localdate()
+        self.client.force_login(self.user)
+        MosaicInteraction.objects.create(
+            interaction_date=today,
+            input_member=self.member,
+            service_member=self.member,
+            credited_member=self.member,
+            result=self.result,
+            payment_amount=120000,
+            created_by=self.user,
+        )
+        MosaicInteraction.objects.create(
+            interaction_date=today,
+            input_member=self.member,
+            service_member=self.other_member,
+            credited_member=self.other_member,
+            payment_amount=0,
+            created_by=self.user,
+        )
+
+        response = self.client.get(reverse("mosaic_dashboard"), {"date": today.strftime("%Y-%m-%d")})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["payload"]["total_count"], 2)
+        self.assertEqual(response.context["payload"]["payment_count"], 1)
+        self.assertEqual(response.context["payload"]["total_amount"], 120000)
+        self.assertEqual(response.context["payload"]["close_rate"], 50.0)
+        self.assertContains(response, "120,000円")
+
+    def test_master_management_requires_staff(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("mosaic_master_index"))
+        self.assertEqual(response.status_code, 302)
+
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("mosaic_master_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "来店目的")
+
+    def test_staff_can_create_master(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("mosaic_master_create", args=["result-type"]),
+            {"name": "検討", "is_success": "", "sort_order": 10, "is_active": "on"},
+        )
+
+        self.assertRedirects(response, reverse("mosaic_master_index"))
+        self.assertTrue(MosaicResultType.objects.filter(name="検討").exists())

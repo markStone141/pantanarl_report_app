@@ -13,4 +13,5 @@ urlpatterns = [
     path("monthly_guide/", include("apps.monthly_guide.urls")),
     path("mail/", include("apps.mail.urls")),
     path("performance/", include("apps.performance.urls")),
+    path("mosaic/", include("apps.mosaic.urls")),
 ]

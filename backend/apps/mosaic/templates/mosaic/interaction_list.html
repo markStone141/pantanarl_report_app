@@ -1,0 +1,44 @@
+{% extends "mosaic/base.html" %}
+{% load humanize %}
+
+{% block mosaic_title %}接客ログ一覧{% endblock %}
+
+{% block mosaic_content %}
+<section class="card">
+  <div class="mosaic-section-head">
+    <div>
+      <h2>接客ログ一覧</h2>
+      <p class="muted">{{ target_date|date:"Y/m/d" }} のログを表示しています。</p>
+    </div>
+    <form method="get" class="mosaic-date-form">
+      <input type="date" name="date" value="{{ target_date|date:'Y-m-d' }}">
+      <button type="submit" class="btn-inline">表示</button>
+    </form>
+  </div>
+  <div class="mosaic-card-list">
+    {% for item in interactions %}
+    <article class="mosaic-log-card">
+      <div class="mosaic-log-top">
+        <strong>{{ item.service_member.name|default:"接客者未設定" }}</strong>
+        <span>{{ item.payment_amount|intcomma }}円</span>
+      </div>
+      <div class="mosaic-log-meta">
+        <span>入力: {{ item.input_member.name|default:"-" }}</span>
+        <span>実績: {{ item.credited_member.name|default:"-" }}</span>
+        <span>{{ item.age_band|default:"年代未設定" }}</span>
+        <span>{{ item.get_party_type_display|default:"人数未設定" }}</span>
+        <span>{{ item.visit_purpose.name|default:"目的未設定" }}</span>
+        <span>{{ item.trial_model.name|default:"モデル未設定" }}</span>
+        <span>{{ item.result.name|default:"結果未設定" }}</span>
+        {% if item.is_return_support %}<span class="badge">戻り対応</span>{% endif %}
+      </div>
+      {% if item.needs %}<p><strong>ニーズ:</strong> {{ item.needs }}</p>{% endif %}
+      {% if item.talk_summary %}<p><strong>トーク:</strong> {{ item.talk_summary }}</p>{% endif %}
+      {% if item.memo %}<p><strong>メモ:</strong> {{ item.memo }}</p>{% endif %}
+    </article>
+    {% empty %}
+    <p class="muted">該当する接客ログはありません。</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

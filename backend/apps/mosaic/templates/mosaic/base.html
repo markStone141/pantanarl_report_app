@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% block mosaic_title %}モザイクモール港北{% endblock %}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'mosaic/app.css' %}?v=1" />
+{% endblock %}
+
+{% block content %}
+<div class="container mosaic-page">
+  <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
+    <div>
+      <strong>モザイクモール港北</strong>
+      <div class="topbar-muted">接客ログと決済実績を記録します。</div>
+    </div>
+    <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="Open menu">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
+      {% for url_name, label in nav_items %}
+      <a href="{% url url_name %}">{{ label }}</a>
+      {% endfor %}
+      <a href="{% url 'home' %}">総合管理ページ</a>
+    </nav>
+    <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+  </header>
+
+  {% if messages %}
+  <div class="mosaic-messages">
+    {% for message in messages %}
+    <div class="note">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% block mosaic_content %}{% endblock %}
+</div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+{% endblock %}

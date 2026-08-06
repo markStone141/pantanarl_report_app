@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "apps.monthly_guide",
     "apps.mail",
     "apps.performance",
+    "apps.mosaic",
 ]
 
 MIDDLEWARE = [

@@ -738,6 +738,7 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertContains(response, reverse("performance_closeout_notes"))
         self.assertContains(response, reverse("dairymetrics_metrics_v2_demo"))
         self.assertContains(response, reverse("talks_index"))
+        self.assertContains(response, reverse("mosaic_dashboard"))
         self.assertNotContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
         self.assertNotContains(response, f'href="{reverse("dairymetrics_dashboard")}"', html=False)
 
