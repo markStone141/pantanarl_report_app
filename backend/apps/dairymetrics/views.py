@@ -50,6 +50,10 @@ from .services.entry_v2 import (
 from .services.metrics_v2 import build_metrics_v2_dashboard_payload, resolve_metrics_v2_scope
 from .services.reports import build_metrics_scope_report
 from .services.report_exports import build_report_ai_text, build_report_export_payload
+from .services.reaction_notifications import (
+    mark_transaction_reaction_notifications_seen,
+    unread_transaction_reaction_notification,
+)
 from .selectors import (
     build_admin_daily_overview,
     build_admin_ranking_overview,
@@ -1468,6 +1472,24 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
             "time_label": timezone.localtime(duplicate_transaction.created_at).strftime("%H:%M"),
             "mail_status": transaction_mail_status(duplicate_transaction),
         }
+    reaction_notification_query = request.GET.copy()
+    if selected_department:
+        reaction_notification_query["department"] = selected_department
+    reaction_notification_query["date"] = entry_date.strftime("%Y-%m-%d")
+    reaction_notification_query["reaction_notifications"] = "1"
+    reaction_notification_url = (
+        f"{reverse('dairymetrics_entry_v2_transaction_demo')}?"
+        f"{reaction_notification_query.urlencode()}#dairymetrics-v2-transaction-list"
+    )
+    reaction_notification = unread_transaction_reaction_notification(
+        member=member,
+        url=reaction_notification_url,
+    )
+    reaction_notification_open = request.GET.get("reaction_notifications") == "1"
+    if reaction_notification_open:
+        mark_transaction_reaction_notifications_seen(member=member)
+    context["reaction_notification"] = reaction_notification
+    context["reaction_notification_open"] = reaction_notification_open
     context["testimony_notification"] = unread_recent_article_notification(user=request.user)
     context["talks_notification"] = unread_recent_post_notification(user=request.user)
     return render(request, "dairymetrics/entry_form_v2_transaction.html", context)

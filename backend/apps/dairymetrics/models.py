@@ -495,6 +495,23 @@ class MemberMetricTransactionReaction(models.Model):
         return f"{self.transaction_id} {self.member.name} {self.get_reaction_type_display()}"
 
 
+class MemberMetricTransactionReactionNotificationState(models.Model):
+    member = models.OneToOneField(
+        Member,
+        on_delete=models.CASCADE,
+        related_name="metric_transaction_reaction_notification_state",
+    )
+    last_seen_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "決済スタンプ通知確認状態"
+        verbose_name_plural = "決済スタンプ通知確認状態"
+
+    def __str__(self) -> str:
+        return f"{self.member.name} {self.last_seen_at or '未確認'}"
+
+
 class MetricAdjustment(models.Model):
     SOURCE_POSTAL = "postal"
     SOURCE_QR = "qr"

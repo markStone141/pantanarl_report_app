@@ -30,6 +30,7 @@ from .models import (
     MemberDailyMetricEntry,
     MemberMetricTransaction,
     MemberMetricTransactionReaction,
+    MemberMetricTransactionReactionNotificationState,
     MemberMonthMetricTarget,
     MemberPeriodMetricTarget,
     MetricAdjustment,
@@ -169,6 +170,77 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertContains(response, "dairymetrics-talks-notice")
         self.assertEqual(response.context["talks_notification"]["count"], 1)
         self.assertNotContains(response, unread_post.title)
+
+    def test_entry_v2_transaction_demo_shows_unread_transaction_reaction_count(self):
+        entry_date = timezone.localdate()
+        _, other_member = self.create_member_user(
+            username="member2",
+            password="pass123",
+            name="Member Two",
+            department=self.department,
+        )
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=entry_date,
+        )
+        transaction_obj = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=3000,
+            age_band=MemberMetricTransaction.AGE_BAND_THIRTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="関内",
+        )
+        MemberMetricTransactionReaction.objects.create(
+            transaction=transaction_obj,
+            member=other_member,
+            reaction_type=MemberMetricTransactionReaction.REACTION_NICE,
+        )
+        MemberMetricTransactionReaction.objects.create(
+            transaction=transaction_obj,
+            member=self.member,
+            reaction_type=MemberMetricTransactionReaction.REACTION_GOOD,
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "新しいスタンプが1件あります。")
+        self.assertContains(response, "dairymetrics-reaction-notice")
+        self.assertEqual(response.context["reaction_notification"]["count"], 1)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "department": self.department.code,
+                "date": entry_date.strftime("%Y-%m-%d"),
+                "reaction_notifications": "1",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Member Two")
+        self.assertContains(response, "さんが「ナイス」を押しました。")
+        self.assertTrue(
+            MemberMetricTransactionReactionNotificationState.objects.filter(
+                member=self.member,
+                last_seen_at__isnull=False,
+            ).exists()
+        )
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry_date.strftime("%Y-%m-%d")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "新しいスタンプが1件あります。")
+        self.assertEqual(response.context["reaction_notification"]["count"], 0)
 
     def test_entry_v2_transaction_demo_can_save_un_transaction(self):
         entry_date = timezone.localdate()
