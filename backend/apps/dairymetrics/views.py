@@ -56,7 +56,6 @@ from .services.reaction_notifications import (
 )
 from .services.transaction_notifications import (
     mark_today_transaction_notifications_seen,
-    today_transaction_history,
     unread_today_transaction_notification,
 )
 from .selectors import (
@@ -1503,15 +1502,11 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
     transaction_notification_query["transaction_notifications"] = "1"
     transaction_notification_url = (
         f"{reverse('dairymetrics_entry_v2_transaction_demo')}?"
-        f"{transaction_notification_query.urlencode()}#dairymetrics-new-transaction-notice-detail"
+        f"{transaction_notification_query.urlencode()}#dairymetrics-v2-transaction-list"
     )
     transaction_notification = unread_today_transaction_notification(
         member=member,
         url=transaction_notification_url,
-        today=today,
-    )
-    context["transaction_history"] = today_transaction_history(
-        member=member,
         today=today,
     )
     transaction_notification_open = request.GET.get("transaction_notifications") == "1"

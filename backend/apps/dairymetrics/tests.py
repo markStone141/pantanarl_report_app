@@ -313,7 +313,7 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "今日の他メンバー決済")
+        self.assertContains(response, "本日の全体決済一覧")
         self.assertContains(response, "Member Three")
         self.assertContains(response, "今日の他メンバー決済")
         self.assertContains(response, f'data-transaction-id="{today_transaction.id}"', html=False)
@@ -333,7 +333,6 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "新しい決済が1件あります。")
         self.assertEqual(response.context["transaction_notification"]["count"], 0)
-        self.assertEqual(response.context["transaction_history"]["count"], 1)
         self.assertNotContains(response, "今日の他メンバー決済を確認できます。")
 
         response = self.client.get(
@@ -346,7 +345,7 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "今日の他メンバー決済")
+        self.assertContains(response, "本日の全体決済一覧")
         self.assertContains(response, "今日の他メンバー決済")
         self.assertContains(response, f'data-transaction-id="{today_transaction.id}"', html=False)
 
