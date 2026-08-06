@@ -77,6 +77,24 @@
   justify-content: flex-end;
 }
 
+.mosaic-save-button {
+  width: auto;
+  min-width: 220px;
+  min-height: 48px;
+  padding: 12px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #24533e, #2f7d5c 68%, #78b85d);
+  color: #fff;
+  font-weight: 900;
+  box-shadow: 0 14px 28px rgba(47, 125, 92, 0.24);
+}
+
+.mosaic-save-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 34px rgba(47, 125, 92, 0.28);
+}
+
 .mosaic-entry-form {
   display: grid;
   gap: 16px;

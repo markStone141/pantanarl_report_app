@@ -80,7 +80,7 @@ class MosaicAppTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse("mosaic_interaction_create"))
+        self.assertRedirects(response, reverse("mosaic_dashboard"))
         interaction = MosaicInteraction.objects.get()
         self.assertEqual(interaction.created_by, self.user)
         self.assertEqual(interaction.input_member, self.other_member)
@@ -131,7 +131,7 @@ class MosaicAppTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse("mosaic_interaction_create"))
+        self.assertRedirects(response, reverse("mosaic_dashboard"))
         interaction = MosaicInteraction.objects.get()
         self.assertTrue(interaction.is_return_support)
         self.assertEqual(interaction.service_member, self.member)

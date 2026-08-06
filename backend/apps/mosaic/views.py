@@ -85,7 +85,7 @@ def mosaic_interaction_create(request):
         interaction.save()
         _save_trial_model_steps(interaction=interaction, trial_model_ids=selected_trial_model_ids)
         messages.success(request, "接客ログを保存しました。")
-        return redirect(reverse("mosaic_interaction_create"))
+        return redirect(reverse("mosaic_dashboard"))
     context = {
         "nav_items": _nav_items(request.user),
         "form": form,
