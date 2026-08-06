@@ -5,20 +5,56 @@
 {% block mosaic_content %}
 <section class="card mosaic-form-card">
   <div class="mosaic-section-head">
-    <h2>{{ master_label }}</h2>
-    <a class="btn-inline" href="{% url 'mosaic_master_index' %}">一覧へ戻る</a>
-  </div>
-  <form method="post" class="mosaic-form-grid mosaic-master-form">
-    {% csrf_token %}
-    {% for field in form %}
-    <div class="mosaic-field">
-      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-      {{ field }}
-      {% if field.errors %}<div class="error-text">{{ field.errors|striptags }}</div>{% endif %}
+    <div>
+      <h2>{{ master_label }}</h2>
+      <p class="muted">入力画面で使う選択肢を整えます。</p>
     </div>
-    {% endfor %}
-    <div class="mosaic-field-wide mosaic-form-actions">
-      <button type="submit">保存</button>
+    <a class="mosaic-master-back" href="{% url 'mosaic_master_index' %}">一覧へ戻る</a>
+  </div>
+  <form method="post" class="mosaic-entry-form mosaic-master-form">
+    {% csrf_token %}
+    <section class="mosaic-input-section">
+      <div class="mosaic-input-section-head">
+        <span>01</span>
+        <strong>表示内容</strong>
+      </div>
+      <div class="mosaic-form-grid mosaic-master-form-grid">
+        <div class="mosaic-field mosaic-field-wide">
+          <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+          {{ form.name }}
+          {% if form.name.errors %}<div class="error-text">{{ form.name.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="mosaic-field">
+          <label for="{{ form.sort_order.id_for_label }}">{{ form.sort_order.label }}</label>
+          {{ form.sort_order }}
+          {% if form.sort_order.errors %}<div class="error-text">{{ form.sort_order.errors|striptags }}</div>{% endif %}
+        </div>
+        {% if form.is_success %}
+        <div class="mosaic-field">
+          <label>{{ form.is_success.label }}</label>
+          <div class="mosaic-toggle-group">
+            <label class="mosaic-toggle-card">
+              {{ form.is_success }}
+              <span>成約として扱う</span>
+            </label>
+          </div>
+          {% if form.is_success.errors %}<div class="error-text">{{ form.is_success.errors|striptags }}</div>{% endif %}
+        </div>
+        {% endif %}
+        <div class="mosaic-field">
+          <label>{{ form.is_active.label }}</label>
+          <div class="mosaic-toggle-group">
+            <label class="mosaic-toggle-card">
+              {{ form.is_active }}
+              <span>表示する</span>
+            </label>
+          </div>
+          {% if form.is_active.errors %}<div class="error-text">{{ form.is_active.errors|striptags }}</div>{% endif %}
+        </div>
+      </div>
+    </section>
+    <div class="mosaic-form-actions">
+      <button type="submit" class="mosaic-save-button">保存</button>
     </div>
   </form>
 </section>

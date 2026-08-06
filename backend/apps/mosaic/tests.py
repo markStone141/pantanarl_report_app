@@ -179,6 +179,7 @@ class MosaicAppTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "お試しモデル")
         self.assertNotContains(response, "来店目的")
+        self.assertContains(response, "成約扱いにした結果を選ぶと")
 
     def test_staff_can_create_master(self):
         self.client.force_login(self.admin)
@@ -190,3 +191,12 @@ class MosaicAppTests(TestCase):
 
         self.assertRedirects(response, reverse("mosaic_master_index"))
         self.assertTrue(MosaicResultType.objects.filter(name="検討").exists())
+
+    def test_result_master_form_renders_success_toggle(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("mosaic_master_create", args=["result-type"]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "成約として扱う")
+        self.assertContains(response, "mosaic-save-button")

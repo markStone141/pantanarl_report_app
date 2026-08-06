@@ -80,9 +80,20 @@ class MosaicTrialModelForm(forms.ModelForm):
     class Meta:
         model = MosaicTrialModel
         fields = ["name", "sort_order", "is_active"]
+        labels = {
+            "name": "モデル名",
+            "sort_order": "表示順",
+            "is_active": "入力画面に表示",
+        }
 
 
 class MosaicResultTypeForm(forms.ModelForm):
     class Meta:
         model = MosaicResultType
         fields = ["name", "is_success", "sort_order", "is_active"]
+        labels = {
+            "name": "結果名",
+            "is_success": "成約扱い",
+            "sort_order": "表示順",
+            "is_active": "入力画面に表示",
+        }

@@ -3,38 +3,61 @@
 {% block mosaic_title %}マスタ管理{% endblock %}
 
 {% block mosaic_content %}
-<section class="card">
-  <h2>マスタ管理</h2>
-  <p class="muted">接客ログ入力で使う選択肢を管理します。</p>
+<section class="card mosaic-master-hero">
+  <div>
+    <h2>マスタ管理</h2>
+    <p class="muted">接客ログで使う選択肢だけを管理します。認知状況は固定の3択です。</p>
+  </div>
 </section>
 
-<section class="grid grid-2 mt-16">
-  <article class="card">
+<section class="mosaic-master-grid mt-16">
+  <article class="card mosaic-master-card">
     <div class="mosaic-section-head">
-      <h3>お試しモデル</h3>
-      <a class="btn-inline" href="{% url 'mosaic_master_create' 'trial-model' %}">追加</a>
-    </div>
-    <div class="mosaic-simple-list">
-      {% for item in trial_models %}
-      <div class="mosaic-list-row">
-        <strong>{{ item.name }}</strong>
-        <a href="{% url 'mosaic_master_edit' 'trial-model' item.id %}">編集</a>
+      <div>
+        <h3>お試しモデル</h3>
+        <p class="muted">接客中に試した流れとして順番つきで保存されます。</p>
       </div>
-      {% empty %}<p class="muted">未登録です。</p>{% endfor %}
+      <a class="mosaic-master-add" href="{% url 'mosaic_master_create' 'trial-model' %}">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        <span>追加</span>
+      </a>
+    </div>
+    <div class="mosaic-master-list">
+      {% for item in trial_models %}
+      <a class="mosaic-master-row{% if not item.is_active %} is-inactive{% endif %}" href="{% url 'mosaic_master_edit' 'trial-model' item.id %}">
+        <span class="mosaic-master-order">{{ item.sort_order }}</span>
+        <strong>{{ item.name }}</strong>
+        <small>{% if item.is_active %}表示中{% else %}非表示{% endif %}</small>
+        <i class="fa-solid fa-pen" aria-hidden="true"></i>
+      </a>
+      {% empty %}
+      <p class="muted">未登録です。</p>
+      {% endfor %}
     </div>
   </article>
-  <article class="card">
+
+  <article class="card mosaic-master-card">
     <div class="mosaic-section-head">
-      <h3>結果</h3>
-      <a class="btn-inline" href="{% url 'mosaic_master_create' 'result-type' %}">追加</a>
-    </div>
-    <div class="mosaic-simple-list">
-      {% for item in result_types %}
-      <div class="mosaic-list-row">
-        <strong>{{ item.name }}</strong>
-        <a href="{% url 'mosaic_master_edit' 'result-type' item.id %}">編集</a>
+      <div>
+        <h3>結果</h3>
+        <p class="muted">成約扱いにした結果を選ぶと、入力時に金額欄が表示されます。</p>
       </div>
-      {% empty %}<p class="muted">未登録です。</p>{% endfor %}
+      <a class="mosaic-master-add" href="{% url 'mosaic_master_create' 'result-type' %}">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        <span>追加</span>
+      </a>
+    </div>
+    <div class="mosaic-master-list">
+      {% for item in result_types %}
+      <a class="mosaic-master-row{% if not item.is_active %} is-inactive{% endif %}" href="{% url 'mosaic_master_edit' 'result-type' item.id %}">
+        <span class="mosaic-master-order">{{ item.sort_order }}</span>
+        <strong>{{ item.name }}</strong>
+        <small>{% if item.is_success %}成約扱い{% elif item.is_active %}通常{% else %}非表示{% endif %}</small>
+        <i class="fa-solid fa-pen" aria-hidden="true"></i>
+      </a>
+      {% empty %}
+      <p class="muted">未登録です。</p>
+      {% endfor %}
     </div>
   </article>
 </section>
