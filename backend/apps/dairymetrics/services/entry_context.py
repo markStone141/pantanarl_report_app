@@ -378,10 +378,21 @@ def build_entry_v2_transaction_demo_context(
     transactions = []
     transaction_reaction_choices = list(MemberMetricTransactionReaction.REACTION_CHOICES)
     default_mail_group = None
-    if existing_entry:
+    if selected_department_obj:
         default_mail_group = get_default_mail_group(department=selected_department_obj)
+    if selected_department_obj:
+        transaction_queryset = (
+            MemberMetricTransaction.objects.filter(
+                entry__department=selected_department_obj,
+                entry__entry_date=entry_date,
+            )
+            .select_related("entry", "entry__member", "entry__department")
+            .prefetch_related("mail_send_histories", "reactions")
+            .order_by("created_at", "id")
+        )
         latest_histories_by_transaction_id = {}
-        for tx in existing_entry.transactions.all():
+        transaction_objects = list(transaction_queryset)
+        for tx in transaction_objects:
             non_test_histories = [history for history in tx.mail_send_histories.all() if not history.is_test]
             non_test_histories.sort(
                 key=lambda history: (
@@ -395,7 +406,7 @@ def build_entry_v2_transaction_demo_context(
                 reverse=True,
             )
             latest_histories_by_transaction_id[tx.id] = non_test_histories[0] if non_test_histories else None
-        for tx in existing_entry.transactions.all():
+        for tx in transaction_objects:
             latest_history = latest_histories_by_transaction_id.get(tx.id)
             reaction_counts = {reaction_type: 0 for reaction_type, _label in transaction_reaction_choices}
             current_reaction_type = ""
@@ -414,15 +425,20 @@ def build_entry_v2_transaction_demo_context(
                     mail_status = "送信済み"
             else:
                 mail_status = "未送信"
-            preview_payload = build_transaction_mail_preview(
-                member=member,
-                department_code=selected_department_code,
-                transaction_obj=tx,
-                progress_cards=progress_cards,
-            )
+            can_manage = tx.entry.member_id == member.id
+            preview_payload = {"subject": "", "body": ""}
+            if can_manage:
+                preview_payload = build_transaction_mail_preview(
+                    member=member,
+                    department_code=selected_department_code,
+                    transaction_obj=tx,
+                    progress_cards=progress_cards,
+                )
             transactions.append(
                 {
                     "id": tx.id,
+                    "member_name": tx.entry.member.name,
+                    "can_manage": can_manage,
                     "time_label": timezone.localtime(tx.created_at).strftime("%H:%M"),
                     "amount": tx.support_amount,
                     "amount_value": tx.support_amount,
@@ -454,7 +470,7 @@ def build_entry_v2_transaction_demo_context(
                     "preview_subject": preview_payload["subject"],
                     "resend_preview_subject": (
                         f"{preview_payload['subject']}（再送）"
-                        if latest_history and not preview_payload["subject"].endswith("（再送）")
+                        if latest_history and preview_payload["subject"] and not preview_payload["subject"].endswith("（再送）")
                         else preview_payload["subject"]
                     ),
                     "preview_body": preview_payload["body"],

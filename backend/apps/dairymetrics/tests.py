@@ -4762,7 +4762,33 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
 
     def test_entry_transaction_list_renders_reaction_buttons(self):
         transaction_obj = MemberMetricTransaction.objects.filter(entry__member=self.member).first()
-        latest_transaction = MemberMetricTransaction.objects.filter(entry=transaction_obj.entry).order_by("created_at", "id").last()
+        _, other_member = self.create_member_user(
+            username="member-reaction-other",
+            password="pass123",
+            name="Other Reaction Member",
+            department=self.department,
+        )
+        other_entry = MemberDailyMetricEntry.objects.create(
+            member=other_member,
+            department=self.department,
+            entry_date=transaction_obj.entry.entry_date,
+        )
+        other_transaction = MemberMetricTransaction.objects.create(
+            entry=other_entry,
+            support_amount=4500,
+            age_band=MemberMetricTransaction.AGE_BAND_FORTIES,
+            gender=MemberMetricTransaction.GENDER_MALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="他メンバー現場",
+        )
+        latest_transaction = (
+            MemberMetricTransaction.objects.filter(
+                entry__department=self.department,
+                entry__entry_date=transaction_obj.entry.entry_date,
+            )
+            .order_by("created_at", "id")
+            .last()
+        )
         MemberMetricTransactionReaction.objects.create(
             transaction=transaction_obj,
             member=self.member,
@@ -4778,10 +4804,14 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-transaction-reactions', html=False)
         self.assertContains(response, 'data-reaction-type="thanks"', html=False)
-        self.assertContains(response, "過去の決済一覧を見る")
+        self.assertContains(response, "全体決済一覧をもっと見る")
+        self.assertContains(response, "Other Reaction Member")
         self.assertEqual(response.context["latest_transaction"]["id"], latest_transaction.id)
         self.assertIn(transaction_obj.id, [transaction["id"] for transaction in response.context["older_transactions"]])
+        self.assertIn(other_transaction.id, [transaction["id"] for transaction in response.context["transactions"]])
         transactions = {transaction["id"]: transaction for transaction in response.context["transactions"]}
+        self.assertTrue(transactions[transaction_obj.id]["can_manage"])
+        self.assertFalse(transactions[other_transaction.id]["can_manage"])
         reaction_options = {option["type"]: option for option in transactions[transaction_obj.id]["reaction_options"]}
         self.assertTrue(reaction_options[MemberMetricTransactionReaction.REACTION_THANKS]["is_selected"])
         self.assertEqual(reaction_options[MemberMetricTransactionReaction.REACTION_THANKS]["count"], 1)

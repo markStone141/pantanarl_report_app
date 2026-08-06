@@ -432,8 +432,8 @@
     <section class="dairymetrics-v2-transaction-stack">
       <article class="dairymetrics-v2-demo-card">
         <div class="dairymetrics-v2-demo-head">
-          <h3>本日の決済明細</h3>
-          <p class="muted">最新の決済はすぐ確認できます。スタンプもここから押せます。</p>
+          <h3>本日の全体決済一覧</h3>
+          <p class="muted">同じ部署の当日決済を確認できます。自分の決済のみ修正・削除・メール送信ができます。</p>
         </div>
         {% if latest_transaction %}
           {% include "dairymetrics/partials/transaction_detail_card.html" with transaction=latest_transaction %}
@@ -442,7 +442,7 @@
         {% endif %}
         {% if older_transactions %}
         <div class="dairymetrics-v2-transaction-actions">
-          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-transaction-list>過去の決済一覧を見る</button>
+          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-transaction-list>全体決済一覧をもっと見る</button>
         </div>
         <div class="dairymetrics-v2-transaction-list" id="dairymetrics-v2-transaction-list"{% if not reaction_notification_open %} hidden{% endif %}>
           {% for transaction in older_transactions %}

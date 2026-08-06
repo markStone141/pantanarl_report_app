@@ -2,7 +2,7 @@
 
 <div class="dairymetrics-v2-transaction-item">
   <div class="dairymetrics-v2-transaction-top">
-    <strong>{{ transaction.time_label }}</strong>
+    <strong>{% if transaction.member_name %}{{ transaction.member_name }} / {% endif %}{{ transaction.time_label }}</strong>
     <span class="dairymetrics-v2-mail-badge {% if transaction.mail_status == '修正再送済み' %}is-resent{% elif transaction.mail_status == '修正済み未送信' %}is-modified{% elif transaction.mail_status == '送信済み' %}is-sent{% elif transaction.mail_status == '送信失敗' %}is-failed{% else %}is-unsent{% endif %}">{{ transaction.mail_status }}</span>
   </div>
   <div class="dairymetrics-v2-transaction-main">
@@ -50,6 +50,7 @@
   {% if transaction.mail_error_message %}
   <div class="dairymetrics-subtext dairymetrics-error-text">送信エラー: {{ transaction.mail_error_message }}</div>
   {% endif %}
+  {% if transaction.can_manage %}
   <div class="dairymetrics-v2-inline-actions">
     <button
       type="button"
@@ -99,4 +100,5 @@
     </button>
     <textarea id="dairymetrics-v2-mail-body-field-{{ transaction.id }}" hidden readonly>{{ transaction.preview_body }}</textarea>
   </div>
+  {% endif %}
 </div>
