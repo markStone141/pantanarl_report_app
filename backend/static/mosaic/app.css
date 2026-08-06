@@ -32,6 +32,32 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: nowrap;
+  width: min(360px, 100%);
+}
+
+.mosaic-date-form input {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.mosaic-date-submit {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 72px;
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #24533e, #2f7d5c 72%, #78b85d);
+  color: #fff;
+  font-weight: 900;
+  box-shadow: 0 10px 20px rgba(47, 125, 92, 0.18);
+}
+
+.mosaic-date-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 24px rgba(47, 125, 92, 0.22);
 }
 
 .mosaic-form-grid {
@@ -298,10 +324,5 @@
 
   .mosaic-date-form {
     width: 100%;
-  }
-
-  .mosaic-date-form input {
-    min-width: 0;
-    flex: 1;
   }
 }
