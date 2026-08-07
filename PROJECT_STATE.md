@@ -41,10 +41,11 @@
 - `dairymetrics` の決済登録テンプレートから決済入力フォーム section を partial 化した。
 - `dairymetrics` の `metrics_v2` service からランキング payload 生成を `metrics_v2_ranking.py` へ分離した。
 - `performance` の現状を監査し、巨大化したView/Form/Testの責務分離計画を `backend/docs/PERFORMANCE_REFACTOR_PLAN.md` に整理した。
+- `performance` の表示フォーマット処理と期間/路程scope解決を `services/formatters.py` / `services/scopes.py` へ分離し、対象テストで互換性を確認した。
 
 ## 進行中の作業
 
-- アプリ単位の構成、責務、依存、テスト見直し。次は `performance` の `formatters.py` / `scopes.py` 分割から着手し、Active路程解決と表示フォーマットをViewから切り離す。
+- アプリ単位の構成、責務、依存、テスト見直し。次は `performance` の管理者ダッシュボード/過去実績snapshot生成をserviceへ分離する。
 
 ## 確定事項
 

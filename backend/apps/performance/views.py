@@ -1,5 +1,4 @@
 from functools import wraps
-from dataclasses import dataclass
 from datetime import date, timedelta
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
@@ -15,7 +14,7 @@ from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, resolve_request_role
 from apps.accounts.models import Department, Member, MemberDepartment
-from apps.common.target_periods import current_active_period, period_options_active_first
+from apps.common.target_periods import period_options_active_first
 from apps.dairymetrics.forms import DairyMetricsLoginForm, DairymetricsV2TransactionForm, MemberScopeTargetForm
 from apps.dairymetrics.models import (
     DepartmentDailyMetricSummary,
@@ -45,6 +44,17 @@ from apps.performance.services.progress import (
     resolve_period_target_amounts_by_code,
     sum_adjustment_amount,
 )
+from apps.performance.services.formatters import (
+    amount_text as _amount_text,
+    count_text as _count_text,
+    field_amount_text as _field_amount_text,
+    field_count_text as _field_count_text,
+    final_amount_text as _final_amount_text,
+    final_count_subtext as _final_count_subtext,
+    final_count_text as _final_count_text,
+    final_count_value as _final_count_value,
+    wv_count_detail_text as _wv_count_detail_text,
+)
 from apps.performance.services.member_details import (
     attach_transaction_edit_urls,
     build_entry_adjustment_detail_payload,
@@ -60,6 +70,13 @@ from apps.performance.services.navigation import (
     performance_next_url,
     performance_redirect_for_user,
 )
+from apps.performance.services.scopes import (
+    period_display_label as _period_display_label,
+    period_range_label as _period_range_label,
+    resolve_current_period as _resolve_current_period,
+    resolve_history_period_from_request as _resolve_history_period_from_request,
+    resolve_performance_history_scope as _resolve_performance_history_scope,
+)
 from apps.performance.services.admin_entries import build_admin_entry_management_page
 from apps.performance.services.closeout_notes import resolve_closeout_notes_scope
 from apps.performance.services.past_entries import (
@@ -73,13 +90,8 @@ from apps.performance.services.trends import (
     build_adjustment_totals_map,
     build_member_activity_trend,
     build_overall_activity_trend,
-    entry_final_amount_value,
     entry_final_count_value,
 )
-from apps.targets.models import (
-    Period,
-)
-
 from .forms import (
     PerformanceAdminEntryFilterForm,
     PerformanceAdjustmentListFilterForm,
@@ -92,16 +104,6 @@ from .forms import (
 
 
 User = get_user_model()
-
-
-@dataclass(frozen=True)
-class PerformanceHistoryScope:
-    scope: str
-    label: str
-    start_date: date
-    end_date: date
-    month_start: date | None = None
-    period: Period | None = None
 
 
 def require_performance_roles(*allowed_roles: str, auto_close: bool = True):
@@ -302,59 +304,6 @@ def _combined_adjustment_list_rows(cleaned_data):
     return sorted(rows, key=lambda row: (row["target_date"], row["created_at"]), reverse=True)
 
 
-def _count_text(entry, adjustment_totals):
-    if entry.department.code == "WV":
-        total_cs = int(entry.cs_count or 0) + int(adjustment_totals["cs_count"])
-        total_refugee = int(entry.refugee_count or 0) + int(adjustment_totals["refugee_count"])
-        return f"{total_cs + total_refugee}件"
-    total_count = entry_final_count_value(entry=entry, adjustment_totals=adjustment_totals)
-    return f"{total_count}件"
-
-
-def _wv_count_detail_text(*, cs_count: int, refugee_count: int) -> str:
-    return f"(CS {int(cs_count or 0)}件 / 難民 {int(refugee_count or 0)}件)"
-
-
-def _amount_text(entry, adjustment_totals):
-    total_amount = entry_final_amount_value(entry=entry, adjustment_totals=adjustment_totals)
-    return f"{total_amount:,}円"
-
-
-def _field_count_text(entry):
-    if entry.department.code == "WV":
-        return f"CS {int(entry.cs_count or 0)} / 難民 {int(entry.refugee_count or 0)}"
-    return f"{int(entry.result_count or 0)}件"
-
-
-def _field_amount_text(entry):
-    return f"{int(entry.support_amount or 0):,}円"
-
-
-def _resolve_current_period(today):
-    return current_active_period(target_date=today)
-
-
-def _resolve_history_period_from_request(request, *, today, scope_value):
-    if scope_value != "period":
-        return _resolve_current_period(today)
-    period_id = request.GET.get("dashboard_period")
-    if period_id:
-        return Period.objects.filter(pk=period_id).first()
-    return _resolve_current_period(today)
-
-
-def _period_range_label(period):
-    if period is None:
-        return ""
-    return f"{period.start_date:%Y/%m/%d} - {period.end_date:%Y/%m/%d}"
-
-
-def _period_display_label(period):
-    if period is None:
-        return "路程未設定"
-    return f"{period.name}（{_period_range_label(period)}）"
-
-
 def _build_activity_member_rows(entries):
     rows = []
     for entry in entries:
@@ -548,47 +497,6 @@ def _build_scoped_member_cards(*, members, selected_department, scope):
     return cards
 
 
-def _final_count_text(*, department_code, totals):
-    if department_code == "WV":
-        total_cs = int(totals.get("cs_count") or 0)
-        total_refugee = int(totals.get("refugee_count") or 0)
-        return f"{total_cs + total_refugee}件"
-    total_count = (
-        int(totals.get("result_count") or 0)
-        + int(totals.get("return_postal_count") or 0)
-        + int(totals.get("return_qr_count") or 0)
-    )
-    return f"{total_count}件"
-
-
-def _final_count_subtext(*, department_code, totals):
-    if department_code != "WV":
-        return ""
-    return _wv_count_detail_text(
-        cs_count=int(totals.get("cs_count") or 0),
-        refugee_count=int(totals.get("refugee_count") or 0),
-    )
-
-
-def _final_count_value(*, department_code, totals):
-    if department_code == "WV":
-        return int(totals.get("cs_count") or 0) + int(totals.get("refugee_count") or 0)
-    return (
-        int(totals.get("result_count") or 0)
-        + int(totals.get("return_postal_count") or 0)
-        + int(totals.get("return_qr_count") or 0)
-    )
-
-
-def _final_amount_text(*, totals):
-    total_amount = (
-        int(totals.get("support_amount") or 0)
-        + int(totals.get("return_postal_amount") or 0)
-        + int(totals.get("return_qr_amount") or 0)
-    )
-    return f"{total_amount:,}円"
-
-
 def _totals_count_text_for_dashboard(*, department, totals):
     if department is not None:
         return _final_count_text(department_code=department.code, totals=totals)
@@ -703,36 +611,6 @@ def _parse_selected_date(value):
         return date.fromisoformat(value)
     except ValueError:
         return None
-
-
-def _resolve_performance_history_scope(*, today, scope_value, requested_month=None, requested_period=None, requested_start=None, requested_end=None):
-    if scope_value == "period" and requested_period is not None:
-        return PerformanceHistoryScope(
-            scope="period",
-            label=_period_display_label(requested_period),
-            start_date=requested_period.start_date,
-            end_date=min(requested_period.end_date, today),
-            period=requested_period,
-        )
-    if scope_value == "range":
-        start_date = requested_start or (today - timedelta(days=29))
-        end_date = requested_end or today
-        if start_date > end_date:
-            start_date, end_date = end_date, start_date
-        return PerformanceHistoryScope(
-            scope="range",
-            label=f"{start_date:%Y/%m/%d} - {end_date:%Y/%m/%d}",
-            start_date=start_date,
-            end_date=end_date,
-        )
-    month_start = requested_month or today.replace(day=1)
-    return PerformanceHistoryScope(
-        scope="month",
-        label=month_start.strftime("%Y/%m"),
-        start_date=month_start,
-        end_date=min(month_end(month_start), today),
-        month_start=month_start,
-    )
 
 
 def _build_active_member_cards(*, members, today, target_month, target_period, selected_department=None):

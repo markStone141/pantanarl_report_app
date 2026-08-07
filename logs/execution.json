@@ -1415,5 +1415,35 @@
     "action": "Django checkと差分チェックを実行",
     "reason": "監査文書追加後に設定破損と空白エラーがないことを確認するため",
     "next_action": "関連ファイルだけコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T15:31:35+09:00",
+    "expires_at": "2026-09-06T15:31:35+09:00",
+    "retention_days": 30,
+    "run_id": "perf-split-0807",
+    "loop": 1,
+    "role": "implementer",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "実績管理アプリの表示処理と期間処理を分離",
+    "reason": "画面処理の肥大化を小さく解消するため",
+    "next_action": "管理者ダッシュボードの集計生成を分離する"
+  },
+  {
+    "timestamp": "2026-08-07T15:31:41+09:00",
+    "expires_at": "2026-09-06T15:31:41+09:00",
+    "retention_days": 30,
+    "run_id": "perf-split-0807",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "実績管理アプリの対象テストを実行",
+    "reason": "分離後も既存画面とActive路程処理が壊れていないことを確認するため",
+    "next_action": "差分を確認してコミットする"
   }
 ]
