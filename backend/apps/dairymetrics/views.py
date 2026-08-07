@@ -26,7 +26,7 @@ from .forms import (
     DairymetricsV2TransactionForm,
 )
 from .services.entry_context import (
-    build_entry_v2_transaction_demo_context,
+    build_transaction_entry_context,
     member_departments,
     parse_month_input,
     resolve_metrics_v2_department,
@@ -173,7 +173,7 @@ def logout_view(request: HttpRequest) -> HttpResponse:
 
 
 @require_dairymetrics_member
-def metrics_v2_demo(request: HttpRequest) -> HttpResponse:
+def metrics_v2(request: HttpRequest) -> HttpResponse:
     viewer_member = get_member_profile(request.user)
     departments, selected_department = resolve_metrics_v2_department(request=request, member=viewer_member)
     if not selected_department:
@@ -368,7 +368,7 @@ def entry_v2_personal_setup_fields(request: HttpRequest) -> HttpResponse:
             "daily_target_amount": (request.GET.get("department_daily_target_amount") or "").strip() or 0,
         }
     )
-    context = build_entry_v2_transaction_demo_context(
+    context = build_transaction_entry_context(
         member=member,
         selected_department=selected_department_code,
         entry_date=entry_date,
@@ -395,7 +395,7 @@ def entry_v2_personal_setup_fields(request: HttpRequest) -> HttpResponse:
 
 
 @require_dairymetrics_member
-def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
+def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
     member = get_member_profile(request.user)
     if not member:
         return redirect(_login_redirect_url(request.user))
@@ -648,7 +648,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
                             .first()
                         )
                     recipient_group = get_default_mail_group(department=selected_department_obj)
-                    preview_context = build_entry_v2_transaction_demo_context(
+                    preview_context = build_transaction_entry_context(
                         member=member,
                         selected_department=selected_department,
                         entry_date=entry_date,
@@ -778,7 +778,7 @@ def entry_form_v2_transaction_demo(request: HttpRequest) -> HttpResponse:
             "closeout": "活動終了時の最終実績を保存しました。",
         }.get(saved, "")
 
-    context = build_entry_v2_transaction_demo_context(
+    context = build_transaction_entry_context(
         member=member,
         selected_department=selected_department,
         entry_date=entry_date,

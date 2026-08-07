@@ -143,7 +143,7 @@ def default_entry_department_code(*, member, departments, selected_department, e
     return department_codes[0] if department_codes else ""
 
 
-def build_entry_v2_demo_context(*, member, selected_department, entry_date, age_bands, gender_bands, nationality_bands):
+def build_entry_v2_base_context(*, member, selected_department, entry_date, age_bands, gender_bands, nationality_bands):
     departments = list(member_departments(member))
     selected_department_code = default_entry_department_code(
         member=member,
@@ -183,11 +183,10 @@ def build_entry_v2_demo_context(*, member, selected_department, entry_date, age_
         "gender_bands": gender_bands,
         "nationality_bands": nationality_bands,
         "is_admin": False,
-        "demo_mode": True,
     }
 
 
-def build_demo_progress_card(*, label, current_amount, target_amount, helper_text="", target_source=""):
+def build_progress_card(*, label, current_amount, target_amount, helper_text="", target_source=""):
     current_amount = int(current_amount or 0)
     target_amount = int(target_amount or 0)
     signed_gap_amount = target_amount - current_amount if target_amount else 0
@@ -217,7 +216,7 @@ def first_non_empty_line(text):
     return ""
 
 
-def build_entry_v2_transaction_demo_context(
+def build_transaction_entry_context(
     *,
     member,
     selected_department,
@@ -241,7 +240,7 @@ def build_entry_v2_transaction_demo_context(
     transaction_amount_options,
     wv_refugee_amount_options,
 ):
-    base_context = build_entry_v2_demo_context(
+    base_context = build_entry_v2_base_context(
         member=member,
         selected_department=selected_department,
         entry_date=entry_date,
@@ -345,28 +344,28 @@ def build_entry_v2_transaction_demo_context(
             month_target_source = f"{selected_department_obj.code} の保存済み月目標"
 
     progress_cards = [
-        build_demo_progress_card(
+        build_progress_card(
             label="個人の日目標",
             current_amount=personal_total_amount,
             target_amount=personal_target_amount,
             helper_text=f"{member.name}さんの当日累計",
             target_source="本人の日目標" if personal_target_amount or personal_target_count else "",
         ),
-        build_demo_progress_card(
+        build_progress_card(
             label="全体の日目標",
             current_amount=department_day_total,
             target_amount=department_day_target,
             helper_text=f"{selected_department_code or '-'} の当日累計",
             target_source="部署全体の日目標" if department_day_target else "",
         ),
-        build_demo_progress_card(
+        build_progress_card(
             label="路程目標",
             current_amount=period_total_amount,
             target_amount=period_target_amount,
             helper_text=period_label,
             target_source=period_target_source,
         ),
-        build_demo_progress_card(
+        build_progress_card(
             label="月目標",
             current_amount=month_total_amount,
             target_amount=month_target_amount,
