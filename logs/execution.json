@@ -1355,5 +1355,20 @@
     "action": "決済登録viewから選択肢定数とpartial render helperを分離し、対象テスト41件と標準チェックを実行",
     "reason": "決済登録view本体の責務を減らし、フォーム表示補助と固定選択肢を別モジュールで管理するため",
     "next_action": "差分をコミット後、テンプレートフォーム部分の追加partial化へ進む"
+  },
+  {
+    "timestamp": "2026-08-07T14:26:12+09:00",
+    "expires_at": "2026-09-06T14:26:12+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-dairymetrics-transaction-form-partial",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "決済登録テンプレートの決済入力フォームsectionをpartial化し、対象テスト41件と標準チェックを実行",
+    "reason": "巨大テンプレートをフォーム責務単位で分割し、id/name/data属性を変更せずに表示互換を確認",
+    "next_action": "差分をコミット後、metrics_v2ランキング構築の追加分離へ進む"
   }
 ]

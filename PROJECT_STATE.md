@@ -38,6 +38,7 @@
 - `dairymetrics` の決済登録テンプレートから上部メニューと通知ブロックを partial 化した。
 - `dairymetrics` の `metrics_v2` service からランキング定義を `metrics_v2_ranking.py` へ分離した。
 - `dairymetrics` の決済登録 view から固定選択肢と partial render helper を分離した。
+- `dairymetrics` の決済登録テンプレートから決済入力フォーム section を partial 化した。
 
 ## 進行中の作業
 
