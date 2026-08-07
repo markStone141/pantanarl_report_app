@@ -710,5 +710,50 @@
     "action": "accountsの小規模リファクタを構成監査",
     "reason": "新規serviceファイル追加に対して、外部仕様変更なし、同一変更理由の処理切り出し、過剰抽象化でないことを確認するため",
     "next_action": "ログJSONと差分を確認してコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T12:07:02+09:00",
+    "expires_at": "2026-09-06T12:07:02+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-mail",
+    "loop": 1,
+    "role": "planner",
+    "event": "context_collected",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "mailアプリの構成確認を開始",
+    "reason": "accountsに続き、小規模アプリ単位で責務、依存、テストのリスクを確認するため",
+    "next_action": "mailのモデル、ビュー、URL、参照箇所を確認する"
+  },
+  {
+    "timestamp": "2026-08-07T12:08:30+09:00",
+    "expires_at": "2026-09-06T12:08:30+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-mail",
+    "loop": 2,
+    "role": "implementer",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "mailのGmail送信低レベル処理を専用モジュールへ分離",
+    "reason": "services.pyに集約されていたGmail認証、raw message生成、API送信、エラー抽出を責務単位で切り出すため",
+    "next_action": "mailテストと標準チェックを実行し、既存の送信サービス互換性を確認する"
+  },
+  {
+    "timestamp": "2026-08-07T12:09:15+09:00",
+    "expires_at": "2026-09-06T12:09:15+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-mail",
+    "loop": 3,
+    "role": "refactor_auditor",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "mailのGmail送信モジュール分離を構成監査",
+    "reason": "新規モジュール追加に対して、外部仕様変更なし、既存patch互換あり、Gmail API責務のみの切り出しであることを確認するため",
+    "next_action": "標準チェックと差分確認後にコミットする"
   }
 ]
