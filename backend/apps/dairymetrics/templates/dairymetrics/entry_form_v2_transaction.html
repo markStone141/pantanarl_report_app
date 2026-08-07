@@ -366,7 +366,7 @@
     </section>
 
     <section class="dairymetrics-v2-transaction-stack">
-      <article class="dairymetrics-v2-demo-card">
+      <article class="dairymetrics-v2-demo-card" id="dairymetrics-v2-transaction-list">
         <div class="dairymetrics-v2-demo-head">
           <h3>本日の全体決済一覧</h3>
           <p class="muted">同じ部署の当日決済を確認できます。自分の決済のみ修正・削除・メール送信ができます。</p>
@@ -378,9 +378,9 @@
         {% endif %}
         {% if older_transactions %}
         <div class="dairymetrics-v2-transaction-actions">
-          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-transaction-list>全体決済一覧をもっと見る</button>
+          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-transaction-list{% if reaction_notification_open or transaction_notification_open %} hidden{% endif %}>全体決済一覧をもっと見る</button>
         </div>
-        <div class="dairymetrics-v2-transaction-list" id="dairymetrics-v2-transaction-list"{% if not reaction_notification_open and not transaction_notification_open %} hidden{% endif %}>
+        <div class="dairymetrics-v2-transaction-list" id="dairymetrics-v2-older-transaction-list"{% if not reaction_notification_open and not transaction_notification_open %} hidden{% endif %}>
           {% for transaction in older_transactions %}
             {% include "dairymetrics/partials/transaction_detail_card.html" with transaction=transaction %}
           {% endfor %}
@@ -547,11 +547,14 @@
     const entryPanel = document.getElementById("dairymetrics-v2-entry-panel");
     const personalTargetPanel = document.getElementById("dairymetrics-v2-personal-target-panel");
     const departmentTargetPanel = document.getElementById("dairymetrics-v2-department-target-panel");
-    const transactionListPanel = document.getElementById("dairymetrics-v2-transaction-list");
+    const transactionListAnchor = document.getElementById("dairymetrics-v2-transaction-list");
+    const transactionListPanel = document.getElementById("dairymetrics-v2-older-transaction-list");
     const sentMailListPanel = document.getElementById("dairymetrics-v2-sent-mail-list");
     const closeoutPanel = document.getElementById("dairymetrics-v2-closeout-panel");
     const mailPreviewModal = document.getElementById("dairymetrics-v2-mail-preview");
     const mailPreviewBackdrop = document.getElementById("dairymetrics-v2-mail-backdrop");
+    const transactionListOpenButtons = document.querySelectorAll("[data-open-transaction-list]");
+    const shouldOpenTransactionListFromNotification = {{ transaction_notification_open|yesno:"true,false" }} || {{ reaction_notification_open|yesno:"true,false" }};
     const transactionIdInput = document.getElementById("v2-transaction-id");
     const transactionAmountSelect = document.getElementById("v2-transaction-amount-select");
     const transactionAmountHidden = document.getElementById("v2-transaction-amount-hidden");
@@ -811,6 +814,26 @@
       if (section === transactionListPanel || section === sentMailListPanel) {
         section.style.display = "none";
       }
+    }
+
+    function syncTransactionListButtons(isOpen) {
+      transactionListOpenButtons.forEach((button) => {
+        button.hidden = isOpen;
+      });
+    }
+
+    function openTransactionList(options) {
+      revealSection(transactionListPanel);
+      syncTransactionListButtons(true);
+      const scrollTarget = transactionListAnchor || transactionListPanel;
+      if (options && options.scroll && scrollTarget) {
+        scrollTarget.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    function closeTransactionList() {
+      closeSection(transactionListPanel);
+      syncTransactionListButtons(false);
     }
 
     function resetTransactionForm() {
@@ -1077,12 +1100,12 @@
     });
     document.querySelectorAll("[data-open-transaction-list]").forEach((button) => {
       button.addEventListener("click", function () {
-        openSection(transactionListPanel);
+        openTransactionList({ scroll: true });
       });
     });
     document.querySelectorAll("[data-close-transaction-list]").forEach((button) => {
       button.addEventListener("click", function () {
-        closeSection(transactionListPanel);
+        closeTransactionList();
       });
     });
     document.querySelectorAll("[data-open-sent-mail-list]").forEach((button) => {
@@ -1176,11 +1199,16 @@
     transactionResultTypeSelect?.addEventListener("change", syncWvTransactionFields);
     syncStudentField();
     syncWvTransactionFields();
-    closeSection(transactionListPanel);
+    closeTransactionList();
     closeSection(sentMailListPanel);
+    if (shouldOpenTransactionListFromNotification || window.location.hash === "#dairymetrics-v2-transaction-list") {
+      window.requestAnimationFrame(() => {
+        openTransactionList({ scroll: true });
+      });
+    }
     const autoOpenMailButton = document.querySelector("[data-auto-open-mail-modal]");
     if (autoOpenMailButton) {
-      revealSection(transactionListPanel);
+      openTransactionList();
       openMailModal(autoOpenMailButton);
     }
     if ("{{ open_entry_panel|yesno:'true,false' }}" !== "true") {

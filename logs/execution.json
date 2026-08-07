@@ -1085,5 +1085,35 @@
     "action": "mosaic接客ログ保存service分離を構成監査",
     "reason": "UN/WV系へ影響せず、mosaic内の接客ログ保存補助処理だけを同一責務として切り出せているか確認するため",
     "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T13:03:47+09:00",
+    "expires_at": "2026-09-06T13:03:47+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-dairymetrics-notification-list",
+    "loop": 1,
+    "role": "requirements_agent",
+    "event": "goal_defined",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "決済登録アプリの通知タップ時導線と決済一覧展開UIを修正開始",
+    "reason": "新規決済通知・スタンプ通知から決済一覧へジャンプし、一覧展開中は不要なもっと見るボタンを隠す要件を実装するため",
+    "next_action": "対象テンプレートとJSの現状実装を確認する"
+  },
+  {
+    "timestamp": "2026-08-07T13:09:14+09:00",
+    "expires_at": "2026-09-06T13:09:14+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-dairymetrics-notification-list",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "決済通知から決済一覧へ自動展開・スクロールする導線を実装し、対象テストと標準チェックを実行",
+    "reason": "新規決済通知とスタンプ通知のタップ後に一覧位置へ移動し、展開中のもっと見るボタンを隠す挙動を確認したため",
+    "next_action": "差分を確認して関連ファイルをコミット"
   }
 ]

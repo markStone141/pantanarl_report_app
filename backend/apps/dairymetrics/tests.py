@@ -227,6 +227,10 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Member Two")
         self.assertContains(response, "さんが「ナイス」を押しました。")
+        self.assertTrue(response.context["reaction_notification_open"])
+        self.assertContains(response, "const shouldOpenTransactionListFromNotification =")
+        self.assertContains(response, "openTransactionList({ scroll: true });")
+        self.assertContains(response, 'id="dairymetrics-v2-transaction-list"', html=False)
         self.assertTrue(
             MemberMetricTransactionReactionNotificationState.objects.filter(
                 member=self.member,
@@ -317,6 +321,13 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertContains(response, "Member Three")
         self.assertContains(response, "今日の他メンバー決済")
         self.assertContains(response, f'data-transaction-id="{today_transaction.id}"', html=False)
+        self.assertTrue(response.context["transaction_notification_open"])
+        self.assertContains(response, "const shouldOpenTransactionListFromNotification =")
+        self.assertContains(response, "openTransactionList({ scroll: true });")
+        self.assertContains(response, 'id="dairymetrics-v2-transaction-list"', html=False)
+        self.assertContains(response, 'id="dairymetrics-v2-older-transaction-list"', html=False)
+        self.assertNotContains(response, 'id="dairymetrics-v2-older-transaction-list" hidden', html=False)
+        self.assertContains(response, "data-open-transaction-list hidden", html=False)
         self.assertNotContains(response, "昨日")
         self.assertTrue(
             MemberMetricTransactionNotificationState.objects.filter(
