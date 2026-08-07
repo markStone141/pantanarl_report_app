@@ -515,5 +515,50 @@
     "action": "requirements_agentの責務と出力項目をレビュー",
     "reason": "不足情報を黙って補完せず、目的、受け入れ条件、権限、未決事項、対象外をplannerへ渡す責務になっているか確認するため",
     "next_action": "ログJSONと差分を最終確認してコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T11:27:43+09:00",
+    "expires_at": "2026-09-06T11:27:43+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-project-manager-role",
+    "loop": 1,
+    "role": "planner",
+    "event": "goal_defined",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "プロジェクト統括エージェントを開発工程に追加する",
+    "reason": "目標、現在地、確定事項、未決事項、依存関係、進捗を会話履歴だけでなく状態ファイルで管理するため",
+    "next_action": "既存ドキュメントとPROJECT_STATEの有無を確認する"
+  },
+  {
+    "timestamp": "2026-08-07T11:29:11+09:00",
+    "expires_at": "2026-09-06T11:29:11+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-project-manager-role",
+    "loop": 2,
+    "role": "project_manager",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "プロジェクト統括エージェントとPROJECT_STATE管理を追加",
+    "reason": "現在地、確定事項、未決事項、依存関係を管理し、専門ロールへ作業を割り振れるようにするため",
+    "next_action": "標準チェックと内容レビューを実行する"
+  },
+  {
+    "timestamp": "2026-08-07T11:29:29+09:00",
+    "expires_at": "2026-09-06T11:29:29+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-project-manager-role",
+    "loop": 3,
+    "role": "reviewer",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "project_managerの責務とPROJECT_STATE運用をレビュー",
+    "reason": "専門ロールの成果物を無条件承認せず、未決事項、依存関係、完了条件を状態ファイルで管理する責務になっているか確認するため",
+    "next_action": "ログJSONと差分を最終確認してコミットする"
   }
 ]

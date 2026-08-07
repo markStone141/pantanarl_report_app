@@ -194,6 +194,7 @@ AI作業はログ記録だけでなく、開発プロセス自体を以下の工
 
 各作業では、実際に複数人で分担していなくても、以下の担当観点を順番に通す。
 
+- `project_manager`: プロジェクト全体の状態、依存関係、割り振り、完了条件を管理する
 - `planner`: 実装前に目的、影響範囲、制約、検証方針を決める
 - `requirements_agent`: 利用者の自然な要望を明確な要件へ変換する
 - `implementer`: 計画に沿って変更する
@@ -225,6 +226,7 @@ UIを変更する作業では、`implementer` の後に必ず `ui_designer` の�
 
 ログの `role` は、上記の開発担当観点に合わせて以下に揃える。
 
+- `project_manager`: Project Coordination を担当する
 - `planner`: Goal / Context / Constraints / Plan を担当する
 - `requirements_agent`: Requirements Analysis を担当する
 - `implementer`: Action を担当する
@@ -241,6 +243,7 @@ UIを変更する作業では、`implementer` の後に必ず `ui_designer` の�
 
 評価担当ロール（`validator`、`test_agent`、`test_auditor`、`ui_designer`、`reviewer`）が問題を検出した場合は、可能な限り構造化JSONで評価結果を残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「構造化評価JSON」を標準とする。
 ロール間の受け渡しは、必要に応じて構造化JSONで残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「ロール間Handoff JSON」を標準とする。
+プロジェクト全体の現在地は `PROJECT_STATE.md` に残す。大きな作業、複数ロールにまたがる作業、未決事項や依存関係が増えた作業では、作業後に `PROJECT_STATE.md` を更新する。
 
 ## 13. プロダクト方針メモ（実績入力・報告導線）
 

@@ -1,0 +1,57 @@
+# Project State
+
+最終更新日: 2026-08-07
+
+## 現在のフェーズ
+
+- 開発運用整備
+
+## プロジェクト全体の目標
+
+- Report App、実績管理、決済入力、分析、通知、関連アプリを安全に保守・拡張できる状態にする。
+- 仕様、設計、実装、テスト、監査、UI、運用判断をロールごとに分離し、作業の見落としを減らす。
+
+## 完了した作業
+
+- AI作業ログの標準ファイルを追加。
+- 機密情報をログに残さない運用ルールを追加。
+- ループエンジニアリング工程を文書化。
+- ロール間Handoff JSONを文書化。
+- `requirements_agent`、`test_designer`、`test_agent`、`test_auditor`、`ui_designer` を追加。
+
+## 進行中の作業
+
+- `project_manager` によるプロジェクト状態管理ルールの追加。
+
+## 確定事項
+
+- 通常ログは `logs/execution.json`、エラーログは `logs/errors.json`、直近要約は `logs/latest-summary.md` に記録する。
+- 機密情報を含む可能性があるログは通常ログに入れない。
+- 要件が曖昧な場合は `requirements_agent` で整理してから計画へ進む。
+- UI変更時は `ui_designer` の観点を通す。
+- テスト設計、テスト実行・分類、テスト監査は別ロールとして扱う。
+
+## 未決事項
+
+- 承認済み要件、設計書、タスク一覧、意思決定ログ、テスト結果をどのファイルへ集約するか。
+- `PROJECT_STATE.md` の更新頻度を作業単位、PR単位、リリース単位のどれにするか。
+
+## ブロッカー
+
+- なし。
+
+## 依存関係
+
+- 開発工程ルールは `AGENTS.md` と `backend/docs/LOOP_ENGINEERING_GUIDE.md` を参照する。
+- 作業ログは `backend/scripts/log_ai_work.py` を使う。
+
+## 次に行う作業
+
+- 実際の機能開発時に `PROJECT_STATE.md` を更新し、運用しながら不足項目を調整する。
+
+## 参照
+
+- `AGENTS.md`
+- `backend/docs/LOOP_ENGINEERING_GUIDE.md`
+- `logs/latest-summary.md`
+
