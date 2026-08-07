@@ -167,7 +167,7 @@ cd backend
 python3 scripts/log_ai_work.py \
   --run-id run-YYYYMMDD-HHMMSS \
   --loop 1 \
-  --event test_completed \
+  --event validation_completed \
   --status success \
   --action "対象テストを実行" \
   --reason "変更箇所の回帰確認" \
@@ -176,7 +176,35 @@ python3 scripts/log_ai_work.py \
 
 失敗時は `--status fail` または `--status error` を使い、原因と次の対応を具体的に残す。
 
-## 12. プロダクト方針メモ（実績入力・報告導線）
+## 12. ループエンジニアリング工程
+
+AI作業は以下の工程で進める。詳細は `backend/docs/LOOP_ENGINEERING_GUIDE.md` を参照する。
+
+1. Goal: 目標を明確にする
+2. Context: 必要な情報を集める
+3. Constraints: 禁止事項・制約を確認する
+4. Plan: 作業計画を立てる
+5. Action: 実行する
+6. Observe: 結果を取得する
+7. Validate: 機械的検査を行う
+8. Review: 意味・品質を評価する
+9. Repair: 必要なら修正して再検証する
+10. Stop: 完了報告または人間へ引き渡す
+
+ログイベント名は原則として以下に揃える。
+
+- `goal_defined`
+- `context_collected`
+- `constraints_identified`
+- `plan_created`
+- `action_completed`
+- `result_observed`
+- `validation_completed`
+- `review_completed`
+- `repair_completed`
+- `stopped`
+
+## 13. プロダクト方針メモ（実績入力・報告導線）
 
 - Excel入力は将来的に廃止し、Webアプリ内で完結する入力導線を優先する
 - 各メンバーにID/パスワードを配布し、`ログイン -> 当日の実績入力` までを最短導線で完了できるようにする

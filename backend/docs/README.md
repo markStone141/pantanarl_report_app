@@ -8,6 +8,7 @@
 - `TARGET_GUIDE.md`: 目標管理向け（月目標・路程目標）
 - `ADMIN_GUIDE.md`: 管理者向け（日次運用・メール本文作成）
 - `AI_SECURITY_POLICY.md`: AI利用時のプロンプトインジェクション対策
+- `LOOP_ENGINEERING_GUIDE.md`: AI作業のGoal/Context/Validate/Repair運用
 - `QUOTE_LIBRARY_PLAN.md`: 格言ライブラリ新規アプリ案
 
 ## 推奨の読み順
