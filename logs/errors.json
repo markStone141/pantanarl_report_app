@@ -1,10 +1,14 @@
 [
   {
     "timestamp": "2026-08-07T10:49:09+09:00",
+    "expires_at": "2026-11-05T10:49:09+09:00",
+    "retention_days": 90,
     "run_id": "run-20260807-104807",
     "loop": 2,
     "event": "logger_script_python_alias_missing",
     "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
     "action": "python backend/scripts/log_ai_work.py を実行",
     "reason": "この環境では python コマンドが存在せず command not found になったため",
     "next_action": "python3 で同じスクリプトを実行する"

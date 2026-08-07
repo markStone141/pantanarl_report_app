@@ -1,22 +1,58 @@
 [
   {
     "timestamp": "2026-08-07T10:48:07+09:00",
+    "expires_at": "2026-09-06T10:48:07+09:00",
+    "retention_days": 30,
     "run_id": "run-20260807-104807",
     "loop": 1,
     "event": "logging_initialized",
     "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
     "action": "AI作業ログの初期ファイルを作成",
     "reason": "AI作業の内容と判断過程を後から確認できるようにするため",
     "next_action": "作業ごとに execution.json / errors.json / latest-summary.md を更新する"
   },
   {
     "timestamp": "2026-08-07T10:49:14+09:00",
+    "expires_at": "2026-09-06T10:49:14+09:00",
+    "retention_days": 30,
     "run_id": "run-20260807-104807",
     "loop": 3,
     "event": "logger_script_verified",
     "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
     "action": "python3 でAI作業ログ追記スクリプトを実行",
     "reason": "execution.json、errors.json、latest-summary.md を更新できることを確認するため",
     "next_action": "差分チェックとコミットを行う"
+  },
+  {
+    "timestamp": "2026-08-07T10:52:29+09:00",
+    "expires_at": "2026-09-06T10:52:29+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-sensitive-policy",
+    "loop": 2,
+    "event": "sensitive_logging_policy_updated",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "作業ログの機密情報検知と保持期限設定を追加",
+    "reason": "ログへ危険な値を残すリスクを下げ、保持期間を明確化するため",
+    "next_action": "チェックを実行してコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T10:53:05+09:00",
+    "expires_at": "2026-09-06T10:53:05+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-sensitive-policy",
+    "loop": 3,
+    "event": "checks_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "ログ機密対策の構文、JSON、Djangoチェックを実行",
+    "reason": "保存拒否、保持期限、既存アプリへの影響がないことを確認するため",
+    "next_action": "対象ファイルだけをステージしてコミットする"
   }
 ]
