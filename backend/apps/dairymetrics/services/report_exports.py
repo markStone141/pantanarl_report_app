@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from config.ai_safety import AI_SAFETY_SYSTEM_RULES, ai_safety_prompt_block
+
 from apps.dairymetrics.models import MemberDailyMetricEntry
 from apps.mail.models import MailSendHistory
 
@@ -79,6 +81,7 @@ def build_report_export_payload(*, department, scope, report) -> dict:
             "start_date": scope.start_date.isoformat(),
             "end_date": scope.end_date.isoformat(),
         },
+        "ai_safety_rules": AI_SAFETY_SYSTEM_RULES,
         "summary": report["summary_cards"],
         "targets": report["target_cards"],
         "adjustment_summary": report["adjustment_cards"],
@@ -105,6 +108,8 @@ def build_report_export_payload(*, department, scope, report) -> dict:
 def build_report_ai_text(payload: dict) -> str:
     metadata = payload["report"]
     lines = [
+        ai_safety_prompt_block(),
+        "",
         "以下は活動実績の振り返りデータです。",
         "数値の傾向、良かった点、課題、メンバーごとの差、日別の変化、メール内容から読み取れる事項を分析してください。",
         "事実と推測を分け、根拠となる数値やメールを示してください。",
