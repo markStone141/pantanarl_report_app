@@ -920,5 +920,50 @@
     "action": "commonの補正集計共通化を構成監査",
     "reason": "外部仕様を変えず、同じ補正実績加算ルールの重複のみをヘルパー化できているか確認するため",
     "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T12:19:40+09:00",
+    "expires_at": "2026-09-06T12:19:40+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-dashboard",
+    "loop": 1,
+    "role": "planner",
+    "event": "context_collected",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "dashboardアプリの構成確認を開始",
+    "reason": "共通集計に続き、管理者ダッシュボードのビュー責務、DBアクセス、既存サービス分割状況を確認するため",
+    "next_action": "dashboardのファイル規模とビュー内ロジックを確認する"
+  },
+  {
+    "timestamp": "2026-08-07T12:20:45+09:00",
+    "expires_at": "2026-09-06T12:20:45+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-dashboard",
+    "loop": 2,
+    "role": "implementer",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "dashboardのメール残目標計算を表示serviceへ切り出し",
+    "reason": "管理者ダッシュボードView内にネストしていたメールテンプレート用の残件数・残金額計算を表示責務として分離するため",
+    "next_action": "dashboardテストと標準チェックを実行し、メール文面の互換性を確認する"
+  },
+  {
+    "timestamp": "2026-08-07T12:21:03+09:00",
+    "expires_at": "2026-09-06T12:21:03+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-dashboard",
+    "loop": 3,
+    "role": "refactor_auditor",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "dashboardのメール残目標計算分離を構成監査",
+    "reason": "外部仕様を変えず、メールテンプレート表示用の残目標計算だけをtarget_displayへ移せていることを確認するため",
+    "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
   }
 ]

@@ -31,6 +31,7 @@ from .services.mail_actuals import (
 )
 from .services.target_display import (
     build_mail_metric_lines,
+    build_remaining_values,
     build_target_metric_text,
     build_target_actual_text,
     mail_period_heading,
@@ -185,91 +186,6 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
         base_metric_detail_by_code = base_scope["metric_detail_by_code"]
         base_period_name = mail_period_heading(base_scope["period_label"])
         base_period_range = base_scope["period_range"]
-
-        def build_remaining_values(detail_rows):
-            remaining_count = 0
-            remaining_cs_count = 0
-            remaining_refugee_count = 0
-            remaining_amount = 0
-
-            def _is_amount(code: str, unit: str) -> bool:
-                code_text = (code or "").lower()
-                unit_text = unit or ""
-                return (
-                    code_text == "amount"
-                    or "amount" in code_text
-                    or "yen" in code_text
-                    or "money" in code_text
-                    or "support" in code_text
-                    or "followup" in code_text
-                    or "kingaku" in code_text
-                    or "円" in unit_text
-                )
-
-            def _is_cs_count(code: str, unit: str) -> bool:
-                code_text = (code or "").lower()
-                unit_text = unit or ""
-                return "cs" in code_text or "cs" in unit_text
-
-            def _is_refugee_count(code: str, unit: str) -> bool:
-                code_text = (code or "").lower()
-                unit_text = unit or ""
-                return "refugee" in code_text or "nanmin" in code_text or "難民" in unit_text
-
-            def _is_count(code: str, unit: str) -> bool:
-                code_text = (code or "").lower()
-                unit_text = unit or ""
-                return (
-                    code_text == "count"
-                    or "count" in code_text
-                    or "kensu" in code_text
-                    or "case" in code_text
-                    or "num" in code_text
-                    or "cs" in code_text
-                    or "refugee" in code_text
-                    or "nanmin" in code_text
-                    or "件" in unit_text
-                )
-
-            for row in detail_rows:
-                target = row.get("target") or 0
-                actual = row.get("actual") or 0
-                delta = target - actual
-                code = row.get("code") or ""
-                unit = row.get("unit") or ""
-                if _is_amount(code, unit):
-                    remaining_amount += delta
-                elif _is_cs_count(code, unit):
-                    remaining_cs_count += delta
-                    remaining_count += delta
-                elif _is_refugee_count(code, unit):
-                    remaining_refugee_count += delta
-                    remaining_count += delta
-                elif _is_count(code, unit):
-                    remaining_count += delta
-
-            def _signed_count_text(value: int) -> str:
-                if value < 0:
-                    return f"+{abs(value)}件"
-                return f"{value}件"
-
-            def _signed_yen_text(value: int) -> str:
-                if value < 0:
-                    return f"+{abs(value):,}円"
-                return f"{value:,}円"
-
-            return {
-                "count": remaining_count,
-                "cs_count": remaining_cs_count,
-                "refugee_count": remaining_refugee_count,
-                "amount": remaining_amount,
-                "text": f"{_signed_count_text(remaining_count)}/{_signed_yen_text(remaining_amount)}",
-                "split_text": (
-                    f"CS{_signed_count_text(remaining_cs_count)} "
-                    f"難民{_signed_count_text(remaining_refugee_count)}/"
-                    f"{_signed_yen_text(remaining_amount)}"
-                ),
-            }
 
         section_order = [
             ("UN", "UN①"),
