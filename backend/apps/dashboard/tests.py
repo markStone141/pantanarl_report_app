@@ -740,7 +740,7 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertContains(response, reverse("talks_index"))
         self.assertContains(response, reverse("mosaic_dashboard"))
         self.assertNotContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
-        self.assertNotContains(response, f'href="{reverse("dairymetrics_dashboard")}"', html=False)
+        self.assertNotContains(response, 'href="/metrics/"', html=False)
 
     def test_dashboard_target_progress_reflects_saved_targets_and_actuals(self):
         today = timezone.localdate()

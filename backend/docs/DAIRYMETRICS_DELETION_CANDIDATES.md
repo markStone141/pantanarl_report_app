@@ -1,10 +1,31 @@
-# dairymetrics 削除候補監査
+# dairymetrics 旧機能削除記録
 
 作成日: 2026-08-07
+更新日: 2026-08-07
+
+## 削除結果
+
+以下の旧機能は削除済み。
+
+- 旧 DairyMetrics ダッシュボード系 URL / view / template
+- 旧入力フォーム `entry/`、旧 preview `entry-v2/`
+- 旧 dairymetrics admin / 月次編集 / 旧補正登録画面
+- 旧目標設定 `targets/scope/`
+- demo seed command `seed_dairymetrics_demo`
+
+削除後に以下を確認済み。
+
+- `python manage.py test apps.dairymetrics.tests apps.dairymetrics.test_final_actuals apps.dairymetrics.test_transaction_models apps.performance.tests apps.dashboard.tests apps.reports.tests`: 235 tests OK
+- `python manage.py check`: OK
+- `python manage.py makemigrations --check --dry-run`: No changes detected
+- `python scripts/check_no_bom.py`: OK
+- `git diff --check`: OK
+
+バックアップは `/tmp/pantanarl_dairymetrics_backup_20260807-133956` に作成し、テスト通過後に削除済み。
 
 ## 目的
 
-`apps.dairymetrics` には、現行の決済登録、分析、振り返りレポートと、旧 DairyMetrics 画面が同居している。現行機能を壊さず、削除または無効化できる候補を URL、テンプレート、参照状況から整理する。
+`apps.dairymetrics` には、現行の決済登録、分析、振り返りレポートと、旧 DairyMetrics 画面が同居していた。現行機能を壊さず削除した対象と、残した対象を URL、テンプレート、参照状況から記録する。
 
 ## 調査方法
 

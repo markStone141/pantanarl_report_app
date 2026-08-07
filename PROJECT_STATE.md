@@ -33,10 +33,11 @@
 - `testimony` の記事一覧クエリ、検索・並び替え条件、フィルターcontext構築を selector 層へ分離し、記事一覧とお気に入り一覧のViewを薄くした。
 - `performance` のメニュー生成、メンバー詳細ページのナビゲーション、戻り先URL補助、編集可否判定を navigation service へ分離した。
 - `dairymetrics` の現行機能と旧画面をURL参照単位で監査し、削除候補を `backend/docs/DAIRYMETRICS_DELETION_CANDIDATES.md` に整理した。
+- `dairymetrics` の旧 dashboard、旧 entry、旧 admin、旧目標設定、demo seed command を削除し、現行の決済登録・分析・振り返りレポートに絞った。
 
 ## 進行中の作業
 
-- アプリ単位の構成、責務、依存、テスト見直し。次は `dairymetrics` の旧画面削除判断、または `performance` のダッシュボード/履歴snapshot構築の分割を確認する。
+- アプリ単位の構成、責務、依存、テスト見直し。次は `dairymetrics` の現行 view/template/service の責務分離、または `performance` のダッシュボード/履歴snapshot構築の分割を確認する。
 
 ## 確定事項
 

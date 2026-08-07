@@ -1250,5 +1250,35 @@
     "action": "BOMチェック、git diff --check、Django system checkを実行",
     "reason": "dairymetrics削除候補監査ドキュメントとプロジェクト状態更新の機械的確認",
     "next_action": "関連ファイルのみをコミット"
+  },
+  {
+    "timestamp": "2026-08-07T14:01:19+09:00",
+    "expires_at": "2026-09-06T14:01:19+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-dairymetrics-remove-legacy",
+    "loop": 1,
+    "role": "implementer",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "dairymetrics の旧 dashboard、旧入力、旧 admin、旧目標設定、demo seed command を削除",
+    "reason": "現行運用は決済登録、分析、振り返りレポートに移行済みで旧導線の外部参照がなかったため",
+    "next_action": "対象テストと標準チェック結果を記録してコミット"
+  },
+  {
+    "timestamp": "2026-08-07T14:01:52+09:00",
+    "expires_at": "2026-09-06T14:01:52+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-dairymetrics-remove-legacy",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "dairymetrics/performance/dashboard/reportsの対象テスト235件、Django check、migration check、BOM、diff checkを実行",
+    "reason": "旧dairymetrics画面削除後も現行の決済登録・分析・振り返りレポート導線が壊れていないことを確認",
+    "next_action": "差分をステージしてコミット"
   }
 ]

@@ -64,16 +64,16 @@ class ReportMemberFilteringTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, reverse("performance_login"))
-        self.assertNotContains(response, reverse("dairymetrics_dashboard"))
-        self.assertNotContains(response, reverse("dairymetrics_admin_overview"))
+        self.assertNotContains(response, 'href="/metrics/"', html=False)
+        self.assertNotContains(response, 'href="/metrics/admin/"', html=False)
 
     def test_report_history_hides_legacy_metrics_links(self):
         response = self.client.get(reverse("report_history"))
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, reverse("performance_login"))
-        self.assertNotContains(response, reverse("dairymetrics_dashboard"))
-        self.assertNotContains(response, reverse("dairymetrics_admin_overview"))
+        self.assertNotContains(response, 'href="/metrics/"', html=False)
+        self.assertNotContains(response, 'href="/metrics/admin/"', html=False)
 
     def test_report_index_shows_member_performance_link_for_authenticated_member(self):
         member_user = get_user_model().objects.create_user(username="report_member_nav", password="x", is_staff=False)
