@@ -1220,5 +1220,35 @@
     "action": "performanceのナビゲーション補助をserviceへ分離し、対象テストと標準チェックを実行",
     "reason": "メニュー生成、戻り先URL補助、編集可否判定をViewから移しても既存の実績管理テストが通過したため",
     "next_action": "差分確認後にコミット"
+  },
+  {
+    "timestamp": "2026-08-07T13:37:31+09:00",
+    "expires_at": "2026-09-06T13:37:31+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-dairymetrics-audit",
+    "loop": 1,
+    "role": "refactor_auditor",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "dairymetrics の削除候補をURL参照とテンプレート単位で監査",
+    "reason": "現行決済登録・分析・振り返りレポートと旧画面が同居しているため、削除前に候補と残す対象を分離",
+    "next_action": "削除実施前に旧 dashboard/admin/input 導線の扱いを確定"
+  },
+  {
+    "timestamp": "2026-08-07T13:37:59+09:00",
+    "expires_at": "2026-09-06T13:37:59+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-dairymetrics-audit",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "BOMチェック、git diff --check、Django system checkを実行",
+    "reason": "dairymetrics削除候補監査ドキュメントとプロジェクト状態更新の機械的確認",
+    "next_action": "関連ファイルのみをコミット"
   }
 ]
