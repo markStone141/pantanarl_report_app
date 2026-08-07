@@ -1340,5 +1340,20 @@
     "action": "metrics_v2のランキング定義をmetrics_v2_rankingへ分離し、対象テスト24件と標準チェックを実行",
     "reason": "ランキング定義の責務を切り出し、集計本体の挙動を変えずにservice分割の足場を作ったため",
     "next_action": "差分をコミットし、残りの大きな分割は次候補として扱う"
+  },
+  {
+    "timestamp": "2026-08-07T14:22:21+09:00",
+    "expires_at": "2026-09-06T14:22:21+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-dairymetrics-entry-view-options",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "決済登録viewから選択肢定数とpartial render helperを分離し、対象テスト41件と標準チェックを実行",
+    "reason": "決済登録view本体の責務を減らし、フォーム表示補助と固定選択肢を別モジュールで管理するため",
+    "next_action": "差分をコミット後、テンプレートフォーム部分の追加partial化へ進む"
   }
 ]

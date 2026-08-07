@@ -37,6 +37,7 @@
 - `dairymetrics` の分析・振り返りレポート view を `views_metrics.py` へ分割し、`views.py` を薄くし始めた。
 - `dairymetrics` の決済登録テンプレートから上部メニューと通知ブロックを partial 化した。
 - `dairymetrics` の `metrics_v2` service からランキング定義を `metrics_v2_ranking.py` へ分離した。
+- `dairymetrics` の決済登録 view から固定選択肢と partial render helper を分離した。
 
 ## 進行中の作業
 
