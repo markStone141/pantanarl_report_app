@@ -1130,5 +1130,35 @@
     "action": "frontend_interactionロールを開発工程へ追加",
     "reason": "UI操作、AJAX、画面状態、二重送信防止、エラー処理をui_designerとは別の実装観点として扱うため",
     "next_action": "ドキュメント差分を確認してコミット"
+  },
+  {
+    "timestamp": "2026-08-07T13:12:48+09:00",
+    "expires_at": "2026-09-06T13:12:48+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-talks-index-selector",
+    "loop": 1,
+    "role": "planner",
+    "event": "plan_created",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "talks_indexの一覧取得処理をselectorへ分離する計画を作成",
+    "reason": "talks/views.pyが肥大化しており、検索条件・未読・お気に入り・ページング処理がViewに集中しているため",
+    "next_action": "selectorを追加してViewから呼び出す"
+  },
+  {
+    "timestamp": "2026-08-07T13:18:26+09:00",
+    "expires_at": "2026-09-06T13:18:26+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-talks-index-selector",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "talksの一覧context構築をselectorへ分離し、対象テストと標準チェックを実行",
+    "reason": "Viewの責務を認証・POST処理・renderに寄せ、既存の検索、未読、お気に入り、ページング挙動が保たれることを確認したため",
+    "next_action": "差分確認後にコミット"
   }
 ]

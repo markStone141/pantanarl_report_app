@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import Counter
-from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth import authenticate
@@ -24,7 +23,8 @@ from .models import KnowledgeComment, KnowledgePost, KnowledgePostTag, Knowledge
 from .models import KnowledgePostFavorite
 from .models import KnowledgePostRead
 from .models import KnowledgeReactionType
-from .models import KnowledgeUserPreference
+from .selectors.posts import build_talks_index_context
+from .services.display import talks_author_name
 from .services.session import (
     TALKS_ADMIN_LOGIN_ID,
     TALKS_SESSION_IS_ADMIN_KEY,
@@ -39,18 +39,6 @@ from .services.session import (
 
 
 REACTION_CODES = ("good", "keep", "retry", "question")
-SORT_NEWEST = "newest"
-SORT_COMMENTS = "comments"
-SORT_VIEWS = "views"
-SORT_DATE_ASC = "date_asc"
-SORT_DATE_DESC = "date_desc"
-SORT_OPTIONS = (
-    (SORT_NEWEST, "新しい順"),
-    (SORT_COMMENTS, "コメントが多い順"),
-    (SORT_VIEWS, "閲覧数が多い順"),
-    (SORT_DATE_ASC, "日付が古い順"),
-    (SORT_DATE_DESC, "日付が新しい順"),
-)
 
 
 def _parse_bulk_tag_names(raw_text: str) -> list[str]:
@@ -64,48 +52,10 @@ def _parse_bulk_tag_names(raw_text: str) -> list[str]:
     return names
 
 
-def _author_name(member_obj, snapshot: str) -> str:
-    if member_obj and member_obj.name:
-        return member_obj.name
-    return snapshot or "不明"
-
-
-def _format_created_display(dt) -> str:
-    local_dt = timezone.localtime(dt)
-    if local_dt.date() == timezone.localdate():
-        return local_dt.strftime("%H:%M")
-    return local_dt.strftime("%Y-%m-%d")
-
-
-def _post_to_list_item(post: KnowledgePost) -> dict:
-    reactions = Counter()
-    for comment in post.comments.all():
-        code = comment.reaction_type.code if comment.reaction_type else ""
-        if code in REACTION_CODES:
-            reactions[code] += 1
-
-    return {
-        "id": post.id,
-        "title": post.title,
-        "author": _author_name(post.author_member, post.author_name_snapshot),
-        "summary": post.body,
-        "tags": [tag.name for tag in post.tags.all()],
-        "comment_count": post.comments.count(),
-        "good_count": reactions["good"],
-        "keep_count": reactions["keep"],
-        "retry_count": reactions["retry"],
-        "question_count": reactions["question"],
-        "created_display": _format_created_display(post.created_at),
-        "view_count": post.view_count,
-        "updated_at": post.updated_at,
-        "author_member_id": post.author_member_id,
-    }
-
-
 def _serialize_comment(comment: KnowledgeComment) -> dict:
     return {
         "id": comment.id,
-        "author": _author_name(comment.author_member, comment.author_name_snapshot),
+        "author": talks_author_name(comment.author_member, comment.author_name_snapshot),
         "author_member_id": comment.author_member_id,
         "created_at": timezone.localtime(comment.created_at).strftime("%Y-%m-%d %H:%M"),
         "body": comment.body,
@@ -309,176 +259,19 @@ def talks_index(request: HttpRequest) -> HttpResponse:
             messages.error(request, error)
         return redirect("talks_index")
 
-    selected_tags = []
-    has_explicit_tag_query = "tag" in request.GET or (request.GET.get("tag_filter_applied") or "").strip() == "1"
-    for tag in request.GET.getlist("tag"):
-        clean_tag = (tag or "").strip()
-        if clean_tag and clean_tag not in selected_tags:
-            selected_tags.append(clean_tag)
-    selected_author = (request.GET.get("author") or "").strip()
-    selected_unread_only = (request.GET.get("unread") or "").strip() == "1"
-    selected_favorite_only = (request.GET.get("favorite") or "").strip() == "1"
-    selected_sort = (request.GET.get("sort") or SORT_NEWEST).strip()
-    if selected_sort not in {key for key, _ in SORT_OPTIONS}:
-        selected_sort = SORT_NEWEST
-    date_from_raw = (request.GET.get("date_from") or "").strip()
-
-    if request.user.is_authenticated:
-        preference, _ = KnowledgeUserPreference.objects.get_or_create(user=request.user)
-        if has_explicit_tag_query:
-            if selected_tags:
-                preferred_tags = KnowledgeTag.objects.filter(
-                    is_active=True,
-                    name__in=selected_tags,
-                )
-                preference.preferred_tags.set(preferred_tags)
-            else:
-                preference.preferred_tags.clear()
-        elif not selected_tags:
-            selected_tags = list(
-                preference.preferred_tags.filter(is_active=True).values_list("name", flat=True)
-            )
-
-    date_from_dt = None
-    if date_from_raw:
-        try:
-            parsed_date = datetime.strptime(date_from_raw, "%Y-%m-%d").date()
-            date_from_dt = timezone.make_aware(
-                datetime.combine(parsed_date, datetime.min.time()),
-                timezone.get_current_timezone(),
-            )
-        except ValueError:
-            date_from_raw = ""
-
-    posts = (
-        KnowledgePost.objects.filter(
-            status=KnowledgePost.Status.PUBLISHED,
-            is_deleted=False,
-        )
-        .annotate(
-            top_comment_count=Count(
-                "comments",
-                filter=Q(comments__is_deleted=False, comments__parent__isnull=True),
-            )
-        )
-        .select_related("author_member")
-        .prefetch_related("tags", "comments__reaction_type", "reads")
+    index_context = build_talks_index_context(
+        request,
+        talks_member=talks_member,
+        talks_is_admin=talks_is_admin,
     )
-    if selected_tags:
-        for tag_name in selected_tags:
-            posts = posts.filter(tags__name=tag_name)
-        posts = posts.distinct()
-    if date_from_dt:
-        posts = posts.filter(created_at__gte=date_from_dt)
-
-    if selected_sort == SORT_COMMENTS:
-        posts = posts.order_by("-top_comment_count", "-updated_at")
-    elif selected_sort == SORT_VIEWS:
-        posts = posts.order_by("-view_count", "-updated_at")
-    elif selected_sort == SORT_DATE_ASC:
-        posts = posts.order_by("created_at")
-    elif selected_sort == SORT_DATE_DESC:
-        posts = posts.order_by("-created_at")
-    else:
-        posts = posts.order_by("-updated_at")
-
-    thread_items = [_post_to_list_item(post) for post in posts]
-    for item in thread_items:
-        item["is_unread"] = False
-        item["is_favorite"] = False
-
-    author_pool = sorted({item["author"] for item in thread_items})
-    if selected_author:
-        thread_items = [item for item in thread_items if item["author"] == selected_author]
-
-    if request.user.is_authenticated and thread_items:
-        favorite_post_ids = set(
-            KnowledgePostFavorite.objects.filter(
-                user=request.user,
-                post_id__in=[item["id"] for item in thread_items],
-            ).values_list("post_id", flat=True)
-        )
-        for item in thread_items:
-            item["is_favorite"] = item["id"] in favorite_post_ids
-
-        read_map = {
-            read.post_id: read.read_at
-            for read in KnowledgePostRead.objects.filter(
-                user=request.user,
-                post_id__in=[item["id"] for item in thread_items],
-            ).only("post_id", "read_at")
-        }
-        for item in thread_items:
-            read_at = read_map.get(item["id"])
-            item["is_unread"] = read_at is None or read_at < item["updated_at"]
-
-    if selected_unread_only:
-        thread_items = [item for item in thread_items if item["is_unread"]]
-    if selected_favorite_only:
-        thread_items = [item for item in thread_items if item["is_favorite"]]
-
-    paginator = Paginator(thread_items, 20)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-    page_threads = list(page_obj.object_list)
-    for item in page_threads:
-        item["can_manage"] = talks_is_admin or (
-            talks_member is not None and item.get("author_member_id") == talks_member.id
-        )
-
-    query_params = request.GET.copy()
-    if not has_explicit_tag_query and selected_tags:
-        for tag in selected_tags:
-            query_params.appendlist("tag", tag)
-    query_params.pop("page", None)
-    pagination_query = query_params.urlencode()
-    unread_toggle_params = request.GET.copy()
-    if not has_explicit_tag_query and selected_tags:
-        for tag in selected_tags:
-            unread_toggle_params.appendlist("tag", tag)
-    unread_toggle_params.pop("page", None)
-    if selected_unread_only:
-        unread_toggle_params.pop("unread", None)
-    else:
-        unread_toggle_params["unread"] = "1"
-    unread_toggle_query = unread_toggle_params.urlencode()
-    favorite_toggle_params = request.GET.copy()
-    if not has_explicit_tag_query and selected_tags:
-        for tag in selected_tags:
-            favorite_toggle_params.appendlist("tag", tag)
-    favorite_toggle_params.pop("page", None)
-    if selected_favorite_only:
-        favorite_toggle_params.pop("favorite", None)
-    else:
-        favorite_toggle_params["favorite"] = "1"
-    favorite_toggle_query = favorite_toggle_params.urlencode()
-
-    available_tags = list(
-        KnowledgeTag.objects.filter(is_active=True).annotate(post_count=Count("posts", filter=Q(posts__is_deleted=False))).order_by("-post_count", "name").values_list("name", flat=True)
-    )
-    available_authors = author_pool
 
     return render(
         request,
         "talks/thread_index.html",
         {
-            "threads": page_threads,
-            "page_obj": page_obj,
-            "paginator": paginator,
-            "pagination_query": pagination_query,
-            "selected_tags": selected_tags,
-            "selected_author": selected_author,
-            "selected_unread_only": selected_unread_only,
-            "selected_favorite_only": selected_favorite_only,
-            "selected_sort": selected_sort,
-            "sort_options": SORT_OPTIONS,
-            "date_from": date_from_raw,
-            "available_tags": available_tags,
-            "available_authors": available_authors,
+            **index_context,
             "talks_member_name": get_talks_display_name(request, talks_member),
             "talks_is_admin": talks_is_admin,
-            "unread_toggle_query": unread_toggle_query,
-            "favorite_toggle_query": favorite_toggle_query,
             "current_full_path": request.get_full_path(),
         },
     )
@@ -534,7 +327,7 @@ def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
         replies = [
             {
                 "id": reply.id,
-                "author": _author_name(reply.author_member, reply.author_name_snapshot),
+                "author": talks_author_name(reply.author_member, reply.author_name_snapshot),
                 "author_member_id": reply.author_member_id,
                 "created_at": timezone.localtime(reply.created_at).strftime("%Y-%m-%d %H:%M"),
                 "body": reply.body,
@@ -563,7 +356,7 @@ def talks_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
         {
             "thread": post,
             "can_manage_thread": _can_manage_post(member=talks_member, is_admin=talks_is_admin, post=post),
-            "thread_author": _author_name(post.author_member, post.author_name_snapshot),
+            "thread_author": talks_author_name(post.author_member, post.author_name_snapshot),
             "thread_created_at": timezone.localtime(post.created_at).strftime("%Y-%m-%d %H:%M"),
             "comments": comments,
             "good_count": reaction_counts["good"],
