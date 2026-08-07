@@ -231,6 +231,8 @@ UIを変更する作業では、`implementer` の後に必ず `ui_designer` の�
 - `reporter`: Stop と最終報告を担当する
 - `agent`: 小さな作業や役割分離しない作業のデフォルト
 
+評価担当ロール（`validator`、`ui_designer`、`reviewer`）が問題を検出した場合は、可能な限り構造化JSONで評価結果を残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「構造化評価JSON」を標準とする。
+
 ## 13. プロダクト方針メモ（実績入力・報告導線）
 
 - Excel入力は将来的に廃止し、Webアプリ内で完結する入力導線を優先する

@@ -149,6 +149,54 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - DBアクセス回数やN+1の懸念がないか。
 - UI変更の場合、PC/モバイルの見え方に無理がないか。
 
+## 構造化評価JSON
+
+`validator`、`ui_designer`、`reviewer` が問題を検出した場合は、後続の `repairer` が迷わず修正できるように、可能な限り以下のJSON形式で評価結果を残す。
+
+```json
+{
+  "result": "fail",
+  "score": 72,
+  "issues": [
+    {
+      "category": "technical_accuracy",
+      "severity": "major",
+      "location": "対象ファイルまたは画面上の位置",
+      "problem": "何が問題かを事実ベースで書く",
+      "required_fix": "どう直せば合格かを書く"
+    }
+  ],
+  "retry_required": true
+}
+```
+
+### フィールド
+
+- `result`: `pass`、`fail`、`warning` のいずれか。
+- `score`: 0から100の整数。厳密な採点が難しい場合も、後続判断の目安として付ける。
+- `issues`: 問題の配列。問題がない場合は空配列。
+- `retry_required`: 修正して再検証が必要なら `true`。
+
+### issue.category
+
+- `technical_accuracy`: 技術的説明、計算式、データ処理の誤り。
+- `functional_correctness`: 仕様通りに動かない。
+- `data_integrity`: DB整合性、マイグレーション、既存データ影響。
+- `security_privacy`: 権限、機密情報、ログ、認証の問題。
+- `performance`: N+1、DBアクセス過多、重い処理。
+- `ui_ux`: 情報設計、操作性、モバイル表示、見た目の単調さ。
+- `maintainability`: 責務分離、重複、肥大化、命名。
+- `test_coverage`: テスト不足、検証不足。
+
+### issue.severity
+
+- `critical`: 本番障害、データ破損、機密漏えい、主要機能停止につながる。
+- `major`: ユーザー影響が大きく、修正なしでは完了にできない。
+- `minor`: 影響は限定的だが直すべき。
+- `nit`: 品質改善レベル。
+
+評価JSONは、人間向け説明の代替ではなく、修正工程への入力として扱う。最終報告では、重要な指摘だけを短く要約する。
+
 ### Repairer
 
 - 失敗原因に対して最小修正で対応したか。

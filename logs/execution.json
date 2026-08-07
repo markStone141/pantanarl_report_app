@@ -245,5 +245,50 @@
     "action": "ui_designerロール追加後のBOM、Django、マイグレーション、JSON、差分チェックを実行",
     "reason": "新しいロール追加がログCLIと既存Djangoアプリに影響しないことを確認するため",
     "next_action": "差分を確認して対象ファイルだけをコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T11:07:08+09:00",
+    "expires_at": "2026-09-06T11:07:08+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-structured-review-json",
+    "loop": 1,
+    "role": "planner",
+    "event": "goal_defined",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "評価担当のJSON出力フォーマットを開発工程に追加する",
+    "reason": "レビュー結果を後続工程で機械的に扱いやすくし、修正対象と重大度を明確にするため",
+    "next_action": "既存ガイドを確認して構造化評価フォーマットを追加する"
+  },
+  {
+    "timestamp": "2026-08-07T11:07:38+09:00",
+    "expires_at": "2026-09-06T11:07:38+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-structured-review-json",
+    "loop": 2,
+    "role": "implementer",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "評価担当ロール向けの構造化JSONフォーマットを追加",
+    "reason": "問題カテゴリ、重大度、修正条件を明確にしてRepair工程へ渡しやすくするため",
+    "next_action": "JSON例とドキュメント差分を検証する"
+  },
+  {
+    "timestamp": "2026-08-07T11:07:54+09:00",
+    "expires_at": "2026-09-06T11:07:54+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-structured-review-json",
+    "loop": 3,
+    "role": "reviewer",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "構造化評価JSONの項目とカテゴリをレビュー",
+    "reason": "後続の修正工程が問題箇所、重大度、必要修正を迷わず解釈できる形式になっているか確認するため",
+    "next_action": "検証結果を記録して対象ファイルをコミットする"
   }
 ]
