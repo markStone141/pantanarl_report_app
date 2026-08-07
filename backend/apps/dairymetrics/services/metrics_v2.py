@@ -7,7 +7,6 @@ from datetime import date, timedelta
 from math import sqrt
 
 from django.db.models import Count, Sum
-from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Member
@@ -33,7 +32,7 @@ from apps.dairymetrics.services.final_actuals import (
     collect_increase_adjustment_totals,
     collect_member_final_actual_totals,
 )
-from apps.dairymetrics.services.metrics_v2_ranking import ranking_metric_options_for_department
+from apps.dairymetrics.services.metrics_v2_ranking import build_ranking_metric_map, ranking_metric_options_for_department
 from apps.common.target_periods import current_active_period
 
 
@@ -798,34 +797,13 @@ def _build_ranking_payload(*, department, scope: MetricsV2Scope):
         for member in members
     ]
     ranking_options = ranking_metric_options_for_department(department.code)
-    metric_map = {}
-    for option in ranking_options:
-        ranked_rows = sorted(rows, key=lambda item: item["metrics"][option["key"]], reverse=True)
-        metric_map[option["key"]] = {
-            "label": option["label"],
-            "unit": option["unit"],
-            "labels": [row["member"].name for row in ranked_rows],
-            "values": [row["metrics"][option["key"]] for row in ranked_rows],
-            "detail_texts": [
-                _wv_count_breakdown_text(row["metrics"], include_total=True)
-                if department.code == "WV" and option["key"] in {"decision_count", "cs_count", "refugee_count"}
-                else ""
-                for row in ranked_rows
-            ],
-            "detail_urls": [
-                reverse("performance_member_insight", args=[row["member"].id, department.id])
-                for row in ranked_rows
-            ],
-            "rows": [
-                {
-                    "member_name": row["member"].name,
-                    "member_id": row["member"].id,
-                    "value_text": _format_ranking_value(option["key"], row["metrics"][option["key"]], option["unit"]),
-                    "detail_url": reverse("performance_member_insight", args=[row["member"].id, department.id]),
-                }
-                for row in ranked_rows
-            ],
-        }
+    metric_map = build_ranking_metric_map(
+        department=department,
+        rows=rows,
+        ranking_options=ranking_options,
+        format_value=_format_ranking_value,
+        wv_count_breakdown_text=_wv_count_breakdown_text,
+    )
     return {
         "default_metric": "support_amount",
         "options": ranking_options,

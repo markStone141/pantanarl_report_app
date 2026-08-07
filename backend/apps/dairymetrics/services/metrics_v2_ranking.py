@@ -1,3 +1,6 @@
+from django.urls import reverse
+
+
 RANKING_METRIC_OPTIONS = [
     {"key": "conversion_rate", "label": "決済率", "unit": "%"},
     {"key": "communication_rate", "label": "コミュニケーション率", "unit": "%"},
@@ -30,3 +33,42 @@ def ranking_metric_options_for_department(department_code: str) -> list[dict]:
             and (department_code == "UN" or option["key"] not in UN_ONLY_RANKING_METRIC_KEYS)
         )
     ]
+
+
+def build_ranking_metric_map(
+    *,
+    department,
+    rows: list[dict],
+    ranking_options: list[dict],
+    format_value,
+    wv_count_breakdown_text,
+) -> dict:
+    metric_map = {}
+    for option in ranking_options:
+        ranked_rows = sorted(rows, key=lambda item: item["metrics"][option["key"]], reverse=True)
+        metric_map[option["key"]] = {
+            "label": option["label"],
+            "unit": option["unit"],
+            "labels": [row["member"].name for row in ranked_rows],
+            "values": [row["metrics"][option["key"]] for row in ranked_rows],
+            "detail_texts": [
+                wv_count_breakdown_text(row["metrics"], include_total=True)
+                if department.code == "WV" and option["key"] in {"decision_count", "cs_count", "refugee_count"}
+                else ""
+                for row in ranked_rows
+            ],
+            "detail_urls": [
+                reverse("performance_member_insight", args=[row["member"].id, department.id])
+                for row in ranked_rows
+            ],
+            "rows": [
+                {
+                    "member_name": row["member"].name,
+                    "member_id": row["member"].id,
+                    "value_text": format_value(option["key"], row["metrics"][option["key"]], option["unit"]),
+                    "detail_url": reverse("performance_member_insight", args=[row["member"].id, department.id]),
+                }
+                for row in ranked_rows
+            ],
+        }
+    return metric_map

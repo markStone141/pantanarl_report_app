@@ -1370,5 +1370,20 @@
     "action": "決済登録テンプレートの決済入力フォームsectionをpartial化し、対象テスト41件と標準チェックを実行",
     "reason": "巨大テンプレートをフォーム責務単位で分割し、id/name/data属性を変更せずに表示互換を確認",
     "next_action": "差分をコミット後、metrics_v2ランキング構築の追加分離へ進む"
+  },
+  {
+    "timestamp": "2026-08-07T14:28:19+09:00",
+    "expires_at": "2026-09-06T14:28:19+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-dairymetrics-ranking-map",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "metrics_v2のランキングpayload生成をmetrics_v2_rankingへ分離し、対象テスト24件と標準チェックを実行",
+    "reason": "ランキング定義に続いて表示payload構築もservice外へ切り出し、DB集計部分と表示整形部分を分けるため",
+    "next_action": "差分をコミットし、残りは次候補として整理"
   }
 ]
