@@ -800,5 +800,50 @@
     "action": "reportsの報告行処理分離を構成監査",
     "reason": "外部仕様を変えず、入力行データ処理という同一変更理由の処理だけをservice層へ分離できているか確認するため",
     "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T12:14:19+09:00",
+    "expires_at": "2026-09-06T12:14:19+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-targets",
+    "loop": 1,
+    "role": "planner",
+    "event": "context_collected",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "targetsアプリの構成確認を開始",
+    "reason": "アプリ単位見直しの続きとして、目標設定まわりの責務とテスト状況を確認するため",
+    "next_action": "targetsのビュー、フォーム、モデル、テストを確認して安全な改善範囲を決める"
+  },
+  {
+    "timestamp": "2026-08-07T12:15:40+09:00",
+    "expires_at": "2026-09-06T12:15:40+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-targets",
+    "loop": 2,
+    "role": "implementer",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "targetsの定数と状態判定をservice層へ切り出し",
+    "reason": "views.pyに集中していた部署設定、指標定義、状態ラベル、月・路程状態判定を再利用しやすくするため",
+    "next_action": "targetsテストと標準チェックを確認し、構成監査後にコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T12:15:51+09:00",
+    "expires_at": "2026-09-06T12:15:51+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-targets",
+    "loop": 3,
+    "role": "refactor_auditor",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "targetsの設定・状態判定分離を構成監査",
+    "reason": "外部仕様を変えず、目標設定の定数と状態判定という同じ変更理由の処理だけをservice層へ分離したことを確認するため",
+    "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
   }
 ]

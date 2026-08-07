@@ -1,4 +1,3 @@
-import re
 from datetime import date, timedelta
 
 from django.core.paginator import Paginator
@@ -17,43 +16,31 @@ from .models import (
     PeriodTargetMetricValue,
     TargetMetric,
     TARGET_STATUS_ACTIVE,
-    TARGET_STATUS_CHOICES,
     TARGET_STATUS_FINISHED,
     TARGET_STATUS_PLANNED,
 )
+from .services.target_config import (
+    DEFAULT_METRICS_BY_DEPT,
+    HISTORY_SORT_OPTIONS,
+    PERIOD_SEQUENCE_OPTIONS,
+    STATUS_FILTER_OPTIONS,
+    STATUS_LABELS,
+    STATUS_OPTIONS,
+    TARGET_DEPARTMENTS,
+    month_status,
+    period_label,
+    period_name,
+    period_status,
+    sequence_from_period_name,
+    stored_period_status,
+)
 
-TARGET_DEPARTMENTS = [
-    ("UN", "UN"),
-    ("WV", "WV"),
-    ("STYLE1", "Style1"),
-    ("STYLE2", "Style2"),
-]
-
-DEFAULT_METRICS_BY_DEPT = {
-    "UN": [("count", "件数", "件"), ("amount", "金額", "円")],
-    "WV": [("cs_count", "CS件数", "件"), ("refugee_count", "難民支援件数", "件")],
-    "STYLE1": [("amount", "金額", "円")],
-    "STYLE2": [("amount", "金額", "円")],
-}
-
-PERIOD_SEQUENCE_OPTIONS = list(range(1, 6))
-STATUS_OPTIONS = [{"value": value, "label": value} for value, _ in TARGET_STATUS_CHOICES]
-STATUS_LABELS = {
-    TARGET_STATUS_ACTIVE: "進行中",
-    TARGET_STATUS_PLANNED: "予定",
-    TARGET_STATUS_FINISHED: "終了",
-}
-HISTORY_SORT_OPTIONS = [
-    {"value": "newest", "label": "新しい順"},
-    {"value": "oldest", "label": "古い順"},
-    {"value": "status", "label": "状態順"},
-]
-STATUS_FILTER_OPTIONS = [
-    {"value": "", "label": "すべて"},
-    {"value": TARGET_STATUS_ACTIVE, "label": STATUS_LABELS[TARGET_STATUS_ACTIVE]},
-    {"value": TARGET_STATUS_PLANNED, "label": STATUS_LABELS[TARGET_STATUS_PLANNED]},
-    {"value": TARGET_STATUS_FINISHED, "label": STATUS_LABELS[TARGET_STATUS_FINISHED]},
-]
+_month_status = month_status
+_period_status = period_status
+_stored_period_status = stored_period_status
+_period_name = period_name
+_period_label = period_label
+_sequence_from_period_name = sequence_from_period_name
 
 
 def _month_value_from_date(value: date) -> str:
@@ -123,31 +110,6 @@ def _department_configs():
     return configs
 
 
-def _month_status(target_month: date, today: date | None = None) -> str:
-    base = today or timezone.localdate()
-    current_month = base.replace(day=1)
-    if target_month == current_month:
-        return TARGET_STATUS_ACTIVE
-    if target_month > current_month:
-        return TARGET_STATUS_PLANNED
-    return TARGET_STATUS_FINISHED
-
-
-def _period_status(start_date: date, end_date: date, today: date | None = None) -> str:
-    base = today or timezone.localdate()
-    if start_date <= base <= end_date:
-        return TARGET_STATUS_ACTIVE
-    if base < start_date:
-        return TARGET_STATUS_PLANNED
-    return TARGET_STATUS_FINISHED
-
-
-def _stored_period_status(period: Period | None) -> str:
-    if not period:
-        return TARGET_STATUS_PLANNED
-    return period.status
-
-
 def _build_target_rows(*, configs, values):
     rows = []
     for config in configs:
@@ -189,23 +151,6 @@ def _build_period_rows(*, period: Period | None, configs):
             ).select_related("metric")
         }
     return _build_target_rows(configs=configs, values=values)
-
-
-def _period_name(*, month: date, sequence: int) -> str:
-    return f"{month.year}年度{month.month}月 第{sequence}次路程"
-
-
-def _period_label(period: Period | None) -> str:
-    if not period:
-        return "未設定"
-    return f"{period.name} ({period.start_date:%m/%d} - {period.end_date:%m/%d})"
-
-
-def _sequence_from_period_name(name: str) -> int:
-    match = re.search(r"第(\d+)次路程", name)
-    if not match:
-        return 1
-    return int(match.group(1))
 
 
 def _month_history_rows(selected_month: date | None = None, include_selected: bool = False):
