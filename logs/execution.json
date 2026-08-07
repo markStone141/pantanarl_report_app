@@ -845,5 +845,35 @@
     "action": "targetsの設定・状態判定分離を構成監査",
     "reason": "外部仕様を変えず、目標設定の定数と状態判定という同じ変更理由の処理だけをservice層へ分離したことを確認するため",
     "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T12:17:01+09:00",
+    "expires_at": "2026-09-06T12:17:01+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-monthly-guide",
+    "loop": 1,
+    "role": "implementer",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "monthly_guideの初期セクション生成をservice層へ切り出し",
+    "reason": "Viewをレンダリング責務に寄せ、サンプルトピックの表示用整形を純粋処理として分離するため",
+    "next_action": "対象テストと標準チェックを確認し、構成監査後にコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T12:17:11+09:00",
+    "expires_at": "2026-09-06T12:17:11+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-monthly-guide",
+    "loop": 2,
+    "role": "refactor_auditor",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "monthly_guideの小規模service分離を構成監査",
+    "reason": "外部仕様を変えず、表示用セクション生成だけを切り出して過剰抽象化になっていないか確認するため",
+    "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
   }
 ]
