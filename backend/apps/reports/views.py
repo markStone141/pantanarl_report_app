@@ -17,6 +17,13 @@ from apps.targets.models import Period
 from .forms import ReportSubmissionForm
 from .models import DailyDepartmentReport, DailyDepartmentReportLine
 from .services.dashboard_cards import build_report_dashboard_cards_context, format_amount_text
+from .services.report_rows import (
+    build_initial_row_from_metric_entry,
+    build_initial_rows_from_report,
+    build_row_values,
+    empty_report_rows,
+    parse_rows,
+)
 
 
 REPORT_ROUTE_BY_DEPARTMENT_CODE = {
@@ -207,112 +214,6 @@ def _resolve_department(*, code: str, label: str) -> Department:
     return Department.objects.create(code=code, name=label)
 
 
-def _build_row_values(*, request: HttpRequest):
-    member_ids = request.POST.getlist("member_ids")
-    amounts = request.POST.getlist("amounts")
-    counts = request.POST.getlist("counts")
-    cs_counts = request.POST.getlist("cs_counts")
-    refugee_counts = request.POST.getlist("refugee_counts")
-    locations = request.POST.getlist("locations")
-    size = max(len(member_ids), len(amounts), len(counts), len(cs_counts), len(refugee_counts), len(locations), 1)
-    rows = []
-    for i in range(size):
-        rows.append(
-            {
-                "member_id": member_ids[i] if i < len(member_ids) else "",
-                "amount": amounts[i] if i < len(amounts) else "0",
-                "count": counts[i] if i < len(counts) else "0",
-                "cs_count": cs_counts[i] if i < len(cs_counts) else "0",
-                "refugee_count": refugee_counts[i] if i < len(refugee_counts) else "0",
-                "location": locations[i] if i < len(locations) else "",
-            }
-        )
-    return rows
-
-
-def _parse_rows(*, rows, allowed_member_ids, split_counts=False):
-    parsed_rows = []
-    row_errors = []
-    for idx, row in enumerate(rows, start=1):
-        member_id_str = row["member_id"].strip()
-        amount_str = row["amount"].strip() or "0"
-        count_str = row["count"].strip() or "0"
-        cs_count_str = row["cs_count"].strip() or "0"
-        refugee_count_str = row["refugee_count"].strip() or "0"
-        location = row["location"].strip()
-        if not member_id_str:
-            continue
-
-        if not member_id_str.isdigit() or int(member_id_str) not in allowed_member_ids:
-            row_errors.append(f"{idx}行目: メンバーが不正です。")
-            continue
-
-        try:
-            amount = int(amount_str)
-            if split_counts:
-                cs_count = int(cs_count_str)
-                refugee_count = int(refugee_count_str)
-                count = cs_count + refugee_count
-            else:
-                count = int(count_str)
-                cs_count = 0
-                refugee_count = 0
-        except ValueError:
-            row_errors.append(f"{idx}行目: 金額と件数は数値で入力してください。")
-            continue
-
-        if amount < 0 or count < 0 or cs_count < 0 or refugee_count < 0:
-            row_errors.append(f"{idx}行目: 金額と件数は0以上で入力してください。")
-            continue
-
-        parsed_rows.append(
-            {
-                "member_id": int(member_id_str),
-                "amount": amount,
-                "count": count,
-                "cs_count": cs_count,
-                "refugee_count": refugee_count,
-                "location": location,
-            }
-        )
-
-    if not parsed_rows:
-        row_errors.append("メンバー行を1行以上入力してください。")
-
-    return parsed_rows, row_errors
-
-
-def _build_initial_rows_from_report(report: DailyDepartmentReport):
-    rows = []
-    for line in report.lines.select_related("member").all():
-        rows.append(
-            {
-                "member_id": str(line.member_id) if line.member_id else "",
-                "amount": str(line.amount),
-                "count": str(line.count),
-                "cs_count": str(line.cs_count),
-                "refugee_count": str(line.refugee_count),
-                "location": line.location,
-            }
-        )
-    if not rows:
-        rows = [
-            {"member_id": "", "amount": "0", "count": "0", "cs_count": "0", "refugee_count": "0", "location": ""},
-        ]
-    return rows
-
-
-def _build_initial_row_from_metric_entry(*, entry: MemberDailyMetricEntry, split_counts: bool, show_location: bool):
-    return {
-        "member_id": str(entry.member_id) if entry.member_id else "",
-        "amount": str(entry.support_amount),
-        "count": str(entry.result_count),
-        "cs_count": str(entry.cs_count),
-        "refugee_count": str(entry.refugee_count),
-        "location": entry.location_name if show_location else "",
-    }
-
-
 def _build_dairymetrics_sync_context(
     *,
     department: Department | None,
@@ -339,7 +240,7 @@ def _build_dairymetrics_sync_context(
         "closed_entries": closed_entries,
         "active_entries": active_entries,
         "initial_rows": [
-            _build_initial_row_from_metric_entry(
+            build_initial_row_from_metric_entry(
                 entry=entry,
                 split_counts=split_counts,
                 show_location=show_location,
@@ -380,11 +281,11 @@ def _render_report_form(
 
     if request.method == "POST":
         form = ReportSubmissionForm(request.POST, members=members)
-        row_values = _build_row_values(request=request)
+        row_values = build_row_values(request=request)
         if not show_location:
             for row in row_values:
                 row["location"] = ""
-        parsed_rows, row_errors = _parse_rows(
+        parsed_rows, row_errors = parse_rows(
             rows=row_values,
             allowed_member_ids=allowed_member_ids,
             split_counts=split_counts,
@@ -482,7 +383,7 @@ def _render_report_form(
                 },
                 members=members,
             )
-            row_values = _build_initial_rows_from_report(editing_report)
+            row_values = build_initial_rows_from_report(editing_report)
             if not show_location:
                 for row in row_values:
                     row["location"] = ""
@@ -498,9 +399,7 @@ def _render_report_form(
                 split_counts=split_counts,
                 show_location=show_location,
             )
-            row_values = dairymetrics_sync_context["initial_rows"] or [
-                {"member_id": "", "amount": "0", "count": "0", "cs_count": "0", "refugee_count": "0", "location": ""},
-            ]
+            row_values = dairymetrics_sync_context["initial_rows"] or empty_report_rows()
 
     report_date_for_context = selected_date
     if form.is_bound:

@@ -27,5 +27,20 @@
     "action": "Django全体テストを実行",
     "reason": "492件中26件が失敗。失敗はapps.dairymetrics.testsの既存期待値ずれが中心で、今回の文書・ログCLI変更とは直接関係しない",
     "next_action": "失敗を既存テスト不整合として残し、今回変更範囲のチェック結果を最終レビューする"
+  },
+  {
+    "timestamp": "2026-08-07T12:11:17+09:00",
+    "expires_at": "2026-11-05T12:11:17+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260807-app-audit-reports",
+    "loop": 2,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "reportsテストを実行",
+    "reason": "報告行処理のservice層切り出し後に参照名の置換漏れで2件失敗",
+    "next_action": "_build_initial_row_from_metric_entry の参照を build_initial_row_from_metric_entry に修正して再実行"
   }
 ]

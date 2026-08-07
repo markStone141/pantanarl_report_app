@@ -20,10 +20,11 @@
 - `requirements_agent`、`test_designer`、`test_agent`、`test_auditor`、`ui_designer`、`project_manager`、`refactor_auditor` を追加。
 - アプリ単位見直しの初回として `accounts` のログイン認証処理を service 層へ切り出し、対象テストを確認。
 - `mail` のGmail API低レベル処理を専用モジュールへ分離し、既存送信サービスの互換性を対象テストで確認。
+- `reports` の報告フォーム行データ処理を service 層へ分離し、対象テストで投稿・編集・履歴表示の互換性を確認。
 
 ## 進行中の作業
 
-- アプリ単位の構成、責務、依存、テスト見直し。次は `reports` / `targets` など小規模アプリから順に確認する。
+- アプリ単位の構成、責務、依存、テスト見直し。次は `targets` など小規模アプリから順に確認する。
 
 ## 確定事項
 

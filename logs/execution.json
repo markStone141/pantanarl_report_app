@@ -755,5 +755,50 @@
     "action": "mailのGmail送信モジュール分離を構成監査",
     "reason": "新規モジュール追加に対して、外部仕様変更なし、既存patch互換あり、Gmail API責務のみの切り出しであることを確認するため",
     "next_action": "標準チェックと差分確認後にコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T12:11:03+09:00",
+    "expires_at": "2026-09-06T12:11:03+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-reports",
+    "loop": 1,
+    "role": "implementer",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "reportsの報告行処理をservice層へ切り出し",
+    "reason": "views.pyに混在していたPOST行データ組み立て、検証、初期値生成を責務単位で分離するため",
+    "next_action": "reportsテストと標準チェックで外部仕様が変わっていないことを確認する"
+  },
+  {
+    "timestamp": "2026-08-07T12:11:45+09:00",
+    "expires_at": "2026-09-06T12:11:45+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-reports",
+    "loop": 3,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "reportsテストを再実行",
+    "reason": "報告行処理のservice層切り出し後、参照名修正により既存の投稿、編集、履歴表示テストが通ることを確認するため",
+    "next_action": "構成監査と差分確認後にコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T12:11:45+09:00",
+    "expires_at": "2026-09-06T12:11:45+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-reports",
+    "loop": 4,
+    "role": "refactor_auditor",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "reportsの報告行処理分離を構成監査",
+    "reason": "外部仕様を変えず、入力行データ処理という同一変更理由の処理だけをservice層へ分離できているか確認するため",
+    "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
   }
 ]
