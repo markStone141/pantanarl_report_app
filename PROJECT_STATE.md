@@ -40,10 +40,11 @@
 - `dairymetrics` の決済登録 view から固定選択肢と partial render helper を分離した。
 - `dairymetrics` の決済登録テンプレートから決済入力フォーム section を partial 化した。
 - `dairymetrics` の `metrics_v2` service からランキング payload 生成を `metrics_v2_ranking.py` へ分離した。
+- `performance` の現状を監査し、巨大化したView/Form/Testの責務分離計画を `backend/docs/PERFORMANCE_REFACTOR_PLAN.md` に整理した。
 
 ## 進行中の作業
 
-- アプリ単位の構成、責務、依存、テスト見直し。次は `dairymetrics` の決済登録 view 分割、決済登録テンプレートのフォーム/一覧/メール partial 化、`metrics_v2` のランキング構築本体分割を継続する。
+- アプリ単位の構成、責務、依存、テスト見直し。次は `performance` の `formatters.py` / `scopes.py` 分割から着手し、Active路程解決と表示フォーマットをViewから切り離す。
 
 ## 確定事項
 
@@ -63,6 +64,7 @@
 - 承認済み要件、設計書、タスク一覧、意思決定ログ、テスト結果をどのファイルへ集約するか。
 - `PROJECT_STATE.md` の更新頻度を作業単位、PR単位、リリース単位のどれにするか。
 - `dashboard/views.py` は818行まで縮小したが、部署管理の保存処理本体・メールテンプレート生成を別作業として追加分割する余地がある。
+- `performance/views.py` は2,893行あり、管理者ダッシュボード、過去実績、メンバー個別画面、補正実績、過去入力、AJAXが混在している。
 
 ## ブロッカー
 
@@ -75,7 +77,7 @@
 
 ## 次に行う作業
 
-- 実際の機能開発時に `PROJECT_STATE.md` を更新し、運用しながら不足項目を調整する。
+- `performance` は `backend/docs/PERFORMANCE_REFACTOR_PLAN.md` の順に、小さく分割して対象テストを回す。
 
 ## 参照
 

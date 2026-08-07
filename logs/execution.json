@@ -1385,5 +1385,35 @@
     "action": "metrics_v2のランキングpayload生成をmetrics_v2_rankingへ分離し、対象テスト24件と標準チェックを実行",
     "reason": "ランキング定義に続いて表示payload構築もservice外へ切り出し、DB集計部分と表示整形部分を分けるため",
     "next_action": "差分をコミットし、残りは次候補として整理"
+  },
+  {
+    "timestamp": "2026-08-07T15:24:08+09:00",
+    "expires_at": "2026-09-06T15:24:08+09:00",
+    "retention_days": 30,
+    "run_id": "perf-audit-0807",
+    "loop": 1,
+    "role": "refactor_auditor",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "実績管理アプリの構成監査文書を作成",
+    "reason": "巨大化した画面処理の分割順序を明確化するため",
+    "next_action": "期間処理と表示処理から小さく分割する"
+  },
+  {
+    "timestamp": "2026-08-07T15:24:30+09:00",
+    "expires_at": "2026-09-06T15:24:30+09:00",
+    "retention_days": 30,
+    "run_id": "perf-audit-0807",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "Django checkと差分チェックを実行",
+    "reason": "監査文書追加後に設定破損と空白エラーがないことを確認するため",
+    "next_action": "関連ファイルだけコミットする"
   }
 ]
