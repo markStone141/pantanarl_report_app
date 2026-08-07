@@ -177,9 +177,9 @@ python3 scripts/log_ai_work.py \
 
 失敗時は `--status fail` または `--status error` を使い、原因と次の対応を具体的に残す。
 
-## 12. ループエンジニアリング工程
+## 12. ループエンジニアリング開発工程
 
-AI作業は以下の工程で進める。詳細は `backend/docs/LOOP_ENGINEERING_GUIDE.md` を参照する。
+AI作業はログ記録だけでなく、開発プロセス自体を以下の工程で進める。詳細は `backend/docs/LOOP_ENGINEERING_GUIDE.md` を参照する。
 
 1. Goal: 目標を明確にする
 2. Context: 必要な情報を集める
@@ -191,6 +191,18 @@ AI作業は以下の工程で進める。詳細は `backend/docs/LOOP_ENGINEERIN
 8. Review: 意味・品質を評価する
 9. Repair: 必要なら修正して再検証する
 10. Stop: 完了報告または人間へ引き渡す
+
+各作業では、実際に複数人で分担していなくても、以下の担当観点を順番に通す。
+
+- `planner`: 実装前に目的、影響範囲、制約、検証方針を決める
+- `implementer`: 計画に沿って変更する
+- `observer`: 実行結果、差分、エラーを事実として確認する
+- `validator`: 機械的チェックを実行する
+- `reviewer`: 仕様適合、権限、DBアクセス、UI品質、保守性を評価する
+- `repairer`: 問題があれば修正し、再度検証する
+- `reporter`: 結果、残リスク、コミットIDをまとめる
+
+小さな作業でも、最低限 `planner -> implementer -> validator -> reviewer -> reporter` の観点を通す。
 
 ログイベント名は原則として以下に揃える。
 
@@ -205,7 +217,7 @@ AI作業は以下の工程で進める。詳細は `backend/docs/LOOP_ENGINEERIN
 - `repair_completed`
 - `stopped`
 
-ログの `role` は原則として以下に揃える。
+ログの `role` は、上記の開発担当観点に合わせて以下に揃える。
 
 - `planner`: Goal / Context / Constraints / Plan を担当する
 - `implementer`: Action を担当する
