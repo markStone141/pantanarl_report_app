@@ -211,6 +211,7 @@ AI作業はログ記録だけでなく、開発プロセス自体を以下の工
 
 小さな作業でも、最低限 `planner -> implementer -> validator -> reviewer -> reporter` の観点を通す。
 UIを変更する作業では、`implementer` の後に必ず `ui_designer` の観点を通す。
+`project_manager` は、新機能完了、3ファイル以上の変更、類似処理追加、巨大ファイル化、新規フォルダや層の追加、既存コード依存の増加がある場合、`refactor_auditor` の観点を呼び出す。
 
 ログイベント名は原則として以下に揃える。
 

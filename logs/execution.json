@@ -605,5 +605,35 @@
     "action": "refactor_auditorの責務と制約をレビュー",
     "reason": "外部仕様を変えず、仕様変更と混ぜず、大規模変更は提案止まりにする責務になっているか確認するため",
     "next_action": "ログJSONと差分を最終確認してコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T11:48:03+09:00",
+    "expires_at": "2026-09-06T11:48:03+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-refactor-auditor-trigger",
+    "loop": 1,
+    "role": "project_manager",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "refactor_auditorを呼ぶ条件をproject_managerの責務へ追加",
+    "reason": "新機能完了や変更範囲拡大時に構成監査が抜けないようにするため",
+    "next_action": "標準チェックと差分確認を実行する"
+  },
+  {
+    "timestamp": "2026-08-07T11:48:24+09:00",
+    "expires_at": "2026-09-06T11:48:24+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-refactor-auditor-trigger",
+    "loop": 2,
+    "role": "reviewer",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "project_managerのrefactor_auditor呼び出し条件をレビュー",
+    "reason": "新機能完了や変更規模拡大時に構成監査が完了条件から漏れない記述になっているか確認するため",
+    "next_action": "差分を確認してコミットする"
   }
 ]
