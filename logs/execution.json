@@ -875,5 +875,50 @@
     "action": "monthly_guideの小規模service分離を構成監査",
     "reason": "外部仕様を変えず、表示用セクション生成だけを切り出して過剰抽象化になっていないか確認するため",
     "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T12:18:22+09:00",
+    "expires_at": "2026-09-06T12:18:22+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-common",
+    "loop": 1,
+    "role": "implementer",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "commonの補正実績集計ロジックを共通化",
+    "reason": "増額、戻り、QR、郵送の加算ルールが複数関数に重複しており、今後のズレを防ぐため",
+    "next_action": "影響するtargets/reportsテストと標準チェックを実行する"
+  },
+  {
+    "timestamp": "2026-08-07T12:18:53+09:00",
+    "expires_at": "2026-09-06T12:18:53+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-common",
+    "loop": 2,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "common集計変更の影響テストを実行",
+    "reason": "collect_actual_totalsとcollect_adjustment_totalsの補正集計共通化がtargets、reports、dashboardに影響しないことを確認するため",
+    "next_action": "構成監査とPROJECT_STATE更新後にコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T12:18:53+09:00",
+    "expires_at": "2026-09-06T12:18:53+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-common",
+    "loop": 3,
+    "role": "refactor_auditor",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "commonの補正集計共通化を構成監査",
+    "reason": "外部仕様を変えず、同じ補正実績加算ルールの重複のみをヘルパー化できているか確認するため",
+    "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
   }
 ]

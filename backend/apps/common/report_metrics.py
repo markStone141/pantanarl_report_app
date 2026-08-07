@@ -75,43 +75,16 @@ def collect_actual_totals(*, start_date, end_date, target_codes, include_adjustm
         totals[code]["refugee_count"] += line["refugee_count"]
 
     if include_adjustments:
-        adjustments = (
-            MetricAdjustment.objects.filter(
-                target_date__gte=start_date,
-                target_date__lte=end_date,
-                department__code__in=target_codes,
-            )
-            .select_related("department")
-            .values(
-                "department__code",
-                "result_count",
-                "support_amount",
-                "return_postal_count",
-                "return_postal_amount",
-                "return_qr_count",
-                "return_qr_amount",
-                "cs_count",
-                "refugee_count",
-            )
+        _add_adjustment_totals(
+            totals=totals,
+            start_date=start_date,
+            end_date=end_date,
+            target_codes=target_codes,
         )
-        for adjustment in adjustments:
-            code = adjustment["department__code"]
-            totals[code]["count"] += (
-                int(adjustment["result_count"] or 0)
-                + int(adjustment["return_postal_count"] or 0)
-                + int(adjustment["return_qr_count"] or 0)
-            )
-            totals[code]["amount"] += (
-                int(adjustment["support_amount"] or 0)
-                + int(adjustment["return_postal_amount"] or 0)
-                + int(adjustment["return_qr_amount"] or 0)
-            )
-            totals[code]["cs_count"] += int(adjustment["cs_count"] or 0)
-            totals[code]["refugee_count"] += int(adjustment["refugee_count"] or 0)
     return totals
 
 
-def collect_adjustment_totals(*, start_date, end_date, target_codes):
+def _add_adjustment_totals(*, totals, start_date, end_date, target_codes) -> None:
     adjustments = (
         MetricAdjustment.objects.filter(
             target_date__gte=start_date,
@@ -131,10 +104,6 @@ def collect_adjustment_totals(*, start_date, end_date, target_codes):
             "refugee_count",
         )
     )
-    totals = {
-        code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
-        for code in target_codes
-    }
     for adjustment in adjustments:
         code = adjustment["department__code"]
         totals[code]["count"] += (
@@ -149,6 +118,19 @@ def collect_adjustment_totals(*, start_date, end_date, target_codes):
         )
         totals[code]["cs_count"] += int(adjustment["cs_count"] or 0)
         totals[code]["refugee_count"] += int(adjustment["refugee_count"] or 0)
+
+
+def collect_adjustment_totals(*, start_date, end_date, target_codes):
+    totals = {
+        code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
+        for code in target_codes
+    }
+    _add_adjustment_totals(
+        totals=totals,
+        start_date=start_date,
+        end_date=end_date,
+        target_codes=target_codes,
+    )
     return totals
 
 
