@@ -232,6 +232,7 @@ UIを変更する作業では、`implementer` の後に必ず `ui_designer` の�
 - `agent`: 小さな作業や役割分離しない作業のデフォルト
 
 評価担当ロール（`validator`、`ui_designer`、`reviewer`）が問題を検出した場合は、可能な限り構造化JSONで評価結果を残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「構造化評価JSON」を標準とする。
+ロール間の受け渡しは、必要に応じて構造化JSONで残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「ロール間Handoff JSON」を標準とする。
 
 ## 13. プロダクト方針メモ（実績入力・報告導線）
 

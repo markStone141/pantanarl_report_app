@@ -197,6 +197,55 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 
 評価JSONは、人間向け説明の代替ではなく、修正工程への入力として扱う。最終報告では、重要な指摘だけを短く要約する。
 
+## ロール間Handoff JSON
+
+ロール間の受け渡しは、必要に応じて以下のJSON形式で残す。目的は、前工程の判断、制約、成果、未解決事項を後続ロールが誤解しないようにすること。
+
+```json
+{
+  "handoff_id": "handoff-run-YYYYMMDD-HHMMSS-001",
+  "run_id": "run-YYYYMMDD-HHMMSS",
+  "from_role": "planner",
+  "to_role": "implementer",
+  "status": "ready",
+  "summary": "対象画面のUI崩れを修正する",
+  "inputs": {
+    "user_goal": "ユーザーが求めている到達状態",
+    "context": ["確認済みファイルや既存仕様"],
+    "constraints": ["触ってはいけない挙動や注意点"]
+  },
+  "outputs": {
+    "decisions": ["前工程で決めたこと"],
+    "changed_files": [],
+    "commands_run": [],
+    "validation": null
+  },
+  "open_questions": [],
+  "risks": [],
+  "next_actions": ["次のロールが最初にやること"]
+}
+```
+
+### handoff.status
+
+- `ready`: 次のロールへ進める。
+- `blocked`: 人間の判断や外部状態が必要。
+- `needs_repair`: 修正工程へ戻す必要がある。
+- `complete`: 最終報告へ進める。
+
+### 運用ルール
+
+- `planner -> implementer`: 目的、影響範囲、制約、検証方針を渡す。
+- `implementer -> observer`: 変更内容、変更ファイル、実行した操作を渡す。
+- `observer -> validator`: 実行結果、エラー、再現条件を渡す。
+- `validator -> reviewer`: テスト結果、未実行チェック、機械的な懸念を渡す。
+- `ui_designer -> reviewer`: UI評価、PC/モバイルの懸念、改善案を渡す。
+- `reviewer -> repairer`: 構造化評価JSONと修正優先度を渡す。
+- `repairer -> validator`: 修正内容と再検証すべき項目を渡す。
+- `reporter -> human`: 変更内容、検証結果、残リスク、コミットIDをMarkdownで要約する。
+
+Handoff JSONには、パスワード、APIキー、アクセストークン、Cookie、個人情報、環境変数全体を含めない。含む可能性がある場合は、通常ログではなくユーザー確認後に `logs/sensitive.json` へ分離する。
+
 ### Repairer
 
 - 失敗原因に対して最小修正で対応したか。
