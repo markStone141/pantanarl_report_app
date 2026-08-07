@@ -25,6 +25,16 @@ RETENTION_DAYS = {
     "summary": 365,
     "sensitive": 7,
 }
+AGENT_ROLES = [
+    "agent",
+    "planner",
+    "implementer",
+    "observer",
+    "validator",
+    "reviewer",
+    "repairer",
+    "reporter",
+]
 SENSITIVE_PATTERNS = [
     re.compile(pattern, re.IGNORECASE)
     for pattern in [
@@ -117,6 +127,7 @@ def _write_summary(event: dict) -> None:
         f"- Timestamp: `{event['timestamp']}`",
         f"- Run ID: `{event['run_id']}`",
         f"- Loop: `{event['loop']}`",
+        f"- Role: `{event.get('role', 'agent')}`",
         f"- Event: `{event['event']}`",
         f"- Status: `{event['status']}`",
         f"- Event Retention: `{event['retention_days']} days`",
@@ -149,10 +160,11 @@ def append_event(
     action: str,
     reason: str,
     next_action: str,
+    role: str = "agent",
     sensitivity: str = "normal",
     allow_sensitive: bool = False,
 ) -> dict:
-    sensitive_matches = _sensitive_matches([run_id, event, status, action, reason, next_action])
+    sensitive_matches = _sensitive_matches([run_id, role, event, status, action, reason, next_action])
     if sensitive_matches and not allow_sensitive:
         raise ValueError(
             "ログ内容に機密情報を含む可能性があります。内容を要約/マスクするか、"
@@ -170,6 +182,7 @@ def append_event(
         "retention_days": RETENTION_DAYS[retention_key],
         "run_id": run_id,
         "loop": loop,
+        "role": role,
         "event": event,
         "status": status,
         "sensitivity": sensitivity,
@@ -192,6 +205,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Append an AI work log event.")
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--loop", type=int, default=1)
+    parser.add_argument("--role", choices=AGENT_ROLES, default="agent")
     parser.add_argument("--event", required=True)
     parser.add_argument("--status", required=True, choices=["success", "fail", "error", "blocked", "info"])
     parser.add_argument("--action", required=True)
@@ -214,6 +228,7 @@ def main() -> None:
             action=args.action,
             reason=args.reason,
             next_action=args.next_action,
+            role=args.role,
             sensitivity=args.sensitivity,
             allow_sensitive=args.allow_sensitive,
         )

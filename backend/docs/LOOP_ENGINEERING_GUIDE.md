@@ -81,6 +81,34 @@ AI作業は、以下のループで進める。目的は、作業内容を観測
 
 推奨ログイベント: `stopped`
 
+## Agent Roles
+
+作業工程は、ログ上で以下のロールに分けて記録できる。実際に複数プロセスで動かさない場合でも、どの観点で作業したかを後から追えるようにする。
+
+- `planner`: Goal / Context / Constraints / Plan を担当する。目的、影響範囲、制約、検証方針を決める。
+- `implementer`: Action を担当する。計画に沿ってコード、テンプレート、CSS、ドキュメントを変更する。
+- `observer`: Observe を担当する。コマンド結果、エラー、差分、画面上の変化を事実として整理する。
+- `validator`: Validate を担当する。テスト、Django check、migration check、BOM、diff check を実行する。
+- `reviewer`: Review を担当する。仕様適合、権限、DBアクセス、N+1、部署分岐、UI品質を評価する。
+- `repairer`: Repair を担当する。失敗やレビュー指摘を修正し、再検証へ戻す。
+- `reporter`: Stop を担当する。最終要約、残リスク、コミットID、未解決事項をまとめる。
+- `agent`: 役割を明示しない小さな作業のデフォルト。
+
+ログ例:
+
+```bash
+cd backend
+python3 scripts/log_ai_work.py \
+  --run-id run-YYYYMMDD-HHMMSS \
+  --loop 1 \
+  --role planner \
+  --event plan_created \
+  --status success \
+  --action "対象画面の修正計画を作成" \
+  --reason "影響範囲と検証方法を明確化するため" \
+  --next-action "implementer が実装に進む"
+```
+
 ## ログ運用
 
 - 通常イベントは `logs/execution.json` に記録する。

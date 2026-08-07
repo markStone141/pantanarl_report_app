@@ -167,6 +167,7 @@ cd backend
 python3 scripts/log_ai_work.py \
   --run-id run-YYYYMMDD-HHMMSS \
   --loop 1 \
+  --role validator \
   --event validation_completed \
   --status success \
   --action "対象テストを実行" \
@@ -203,6 +204,17 @@ AI作業は以下の工程で進める。詳細は `backend/docs/LOOP_ENGINEERIN
 - `review_completed`
 - `repair_completed`
 - `stopped`
+
+ログの `role` は原則として以下に揃える。
+
+- `planner`: Goal / Context / Constraints / Plan を担当する
+- `implementer`: Action を担当する
+- `observer`: Observe を担当する
+- `validator`: Validate を担当する
+- `reviewer`: Review を担当する
+- `repairer`: Repair を担当する
+- `reporter`: Stop と最終報告を担当する
+- `agent`: 小さな作業や役割分離しない作業のデフォルト
 
 ## 13. プロダクト方針メモ（実績入力・報告導線）
 
