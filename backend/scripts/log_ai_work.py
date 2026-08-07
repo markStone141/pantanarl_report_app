@@ -33,6 +33,7 @@ AGENT_ROLES = [
     "validator",
     "test_designer",
     "test_agent",
+    "test_auditor",
     "ui_designer",
     "reviewer",
     "repairer",

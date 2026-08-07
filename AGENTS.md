@@ -200,6 +200,7 @@ AI作業はログ記録だけでなく、開発プロセス自体を以下の工
 - `validator`: 機械的チェックを実行する
 - `test_designer`: 仕様と受け入れ条件を実行可能なテストへ変換する
 - `test_agent`: 仕様と受け入れ条件に対するテスト検証を担当する
+- `test_auditor`: テストが仕様に対して弱められていないか監査する
 - `ui_designer`: UI変更時に情報設計、操作性、見た目の単調さを評価する
 - `reviewer`: 仕様適合、権限、DBアクセス、UI品質、保守性を評価する
 - `repairer`: 問題があれば修正し、再度検証する
@@ -229,13 +230,14 @@ UIを変更する作業では、`implementer` の後に必ず `ui_designer` の�
 - `validator`: Validate を担当する
 - `test_designer`: Test Design / Test Implementation を担当する
 - `test_agent`: Test Review を担当する
+- `test_auditor`: Test Audit を担当する
 - `ui_designer`: UI/UX Review を担当する
 - `reviewer`: Review を担当する
 - `repairer`: Repair を担当する
 - `reporter`: Stop と最終報告を担当する
 - `agent`: 小さな作業や役割分離しない作業のデフォルト
 
-評価担当ロール（`validator`、`test_agent`、`ui_designer`、`reviewer`）が問題を検出した場合は、可能な限り構造化JSONで評価結果を残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「構造化評価JSON」を標準とする。
+評価担当ロール（`validator`、`test_agent`、`test_auditor`、`ui_designer`、`reviewer`）が問題を検出した場合は、可能な限り構造化JSONで評価結果を残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「構造化評価JSON」を標準とする。
 ロール間の受け渡しは、必要に応じて構造化JSONで残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「ロール間Handoff JSON」を標準とする。
 
 ## 13. プロダクト方針メモ（実績入力・報告導線）

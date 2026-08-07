@@ -1,24 +1,24 @@
 # Latest AI Work Summary
 
-- Timestamp: `2026-08-07T11:17:24+09:00`
-- Run ID: `run-20260807-test-designer-role`
+- Timestamp: `2026-08-07T11:22:29+09:00`
+- Run ID: `run-20260807-test-auditor-role`
 - Loop: `3`
 - Role: `reviewer`
 - Event: `review_completed`
 - Status: `success`
 - Event Retention: `30 days`
-- Event Expires At: `2026-09-06T11:17:24+09:00`
+- Event Expires At: `2026-09-06T11:22:29+09:00`
 - Summary Retention: `365 days`
-- Summary Expires At: `2027-08-07T11:17:24+09:00`
+- Summary Expires At: `2027-08-07T11:22:29+09:00`
 - Sensitivity: `normal`
 
 ## Action
 
-test_designerの責務と制約をレビュー
+test_auditorの責務と禁止事項をレビュー
 
 ## Reason
 
-仕様外の期待値追加や実装挙動への追従を禁止し、テスト設計担当としての境界が明確か確認するため
+テストコードを直接修正せず、弱い検証や不正な回避を発見してtest_designerへ返す責務になっているか確認するため
 
 ## Next Action
 

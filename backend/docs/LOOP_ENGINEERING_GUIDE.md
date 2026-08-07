@@ -99,6 +99,7 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - `validator`: Validate を担当する。テスト、Django check、migration check、BOM、diff check を実行する。失敗を握りつぶさない。
 - `test_designer`: Test Design / Test Implementation を担当する。仕様と受け入れ条件を実行可能なテストへ変換する。本番コードは変更しない。
 - `test_agent`: Test Review を担当する。仕様と受け入れ条件に対する検証、失敗分類、再現可能な証拠の記録を行う。本番コードは変更しない。
+- `test_auditor`: Test Audit を担当する。作成されたテストが実装に都合よく弱められていないか監査する。本番コードとテストコードは直接変更しない。
 - `ui_designer`: UI/UX Review を担当する。情報設計、視線誘導、モバイル操作、余白、密度、既存CSS再利用、単調なカード量産の回避を評価する。
 - `reviewer`: Review を担当する。仕様適合、権限、DBアクセス、N+1、部署分岐、UI品質、保守性を評価する。
 - `repairer`: Repair を担当する。失敗やレビュー指摘を修正し、Observe / Validate / Review へ戻す。
@@ -205,6 +206,41 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 
 各報告には、実行コマンド、期待結果、実際の結果、再現手順、根拠、変更したテストファイル、本番コードを変更していないことを含める。
 
+### Test Auditor
+
+目的は、作成されたテストが実装に都合のよい内容へ弱められていないか監査すること。成功条件はテストを通すことではなく、不足、誤り、弱い検証、不正な回避を発見すること。
+
+参照優先順位:
+
+1. 受け入れ条件
+2. 仕様書
+3. API契約
+4. テスト設計書
+5. テストコード
+6. 実装コード
+
+確認項目:
+
+1. 各要件に対応するテストがあるか
+2. 正常系、異常系、境界値があるか
+3. 期待値が仕様に基づいているか
+4. assertが具体的か
+5. 重要な副作用を確認しているか
+6. モックで対象処理を回避していないか
+7. テストが単独で実行可能か
+8. 時刻、乱数、実行順序に依存していないか
+9. `skip`、削除、期待値変更による回避がないか
+10. 実装を意図的に壊した場合に失敗するか
+
+禁止:
+
+- 本番コードを変更しない
+- テストコードを直接修正しない
+- 仕様を推測で補完しない
+- テスト成功を理由に合格としない
+
+出力には、合格または不合格、重大度、対象テスト、問題点、見逃す可能性のある不具合、仕様上の根拠、必要な修正を含める。
+
 ### UI Designer
 
 - ユーザーが最初に見るべき情報が上に来ているか。
@@ -224,7 +260,7 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 
 ## 構造化評価JSON
 
-`validator`、`test_agent`、`ui_designer`、`reviewer` が問題を検出した場合は、後続の `repairer` が迷わず修正できるように、可能な限り以下のJSON形式で評価結果を残す。
+`validator`、`test_agent`、`test_auditor`、`ui_designer`、`reviewer` が問題を検出した場合は、後続の `repairer` が迷わず修正できるように、可能な限り以下のJSON形式で評価結果を残す。
 
 ```json
 {
@@ -300,6 +336,30 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 }
 ```
 
+### test_auditor.audit_result
+
+`test_auditor` が監査する場合は、以下のJSON形式で監査結果を残す。
+
+```json
+{
+  "result": "fail",
+  "severity": "major",
+  "target_tests": ["apps.example.tests.ExampleFlowTests.test_duplicate_submit"],
+  "issues": [
+    {
+      "category": "test_coverage",
+      "severity": "major",
+      "location": "apps/example/tests.py",
+      "problem": "重複送信時のDB副作用をassertしておらず、レスポンス成功だけを確認している",
+      "missed_bug_risk": "同一内容のレコードが重複作成されてもテストが通る",
+      "spec_basis": "同一決済内容は重複登録しないという受け入れ条件",
+      "required_fix": "登録件数と既存エントリー再利用を具体的にassertする"
+    }
+  ],
+  "retry_required": true
+}
+```
+
 ### issue.severity
 
 - `critical`: 本番障害、データ破損、機密漏えい、主要機能停止につながる。
@@ -353,6 +413,7 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - `validator -> reviewer`: テスト結果、未実行チェック、機械的な懸念を渡す。
 - `test_designer -> test_agent`: 追加したテスト、参照した仕様、期待値の根拠、試験実行結果を渡す。
 - `test_agent -> reviewer`: テスト観点、失敗分類、再現手順、変更したテストファイルを渡す。
+- `test_auditor -> test_designer`: 弱い検証、不足ケース、不正な回避、必要なテスト修正を渡す。
 - `ui_designer -> reviewer`: UI評価、PC/モバイルの懸念、改善案を渡す。
 - `reviewer -> repairer`: 構造化評価JSONと修正優先度を渡す。
 - `repairer -> validator`: 修正内容と再検証すべき項目を渡す。
