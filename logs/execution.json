@@ -965,5 +965,50 @@
     "action": "dashboardのメール残目標計算分離を構成監査",
     "reason": "外部仕様を変えず、メールテンプレート表示用の残目標計算だけをtarget_displayへ移せていることを確認するため",
     "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T12:23:03+09:00",
+    "expires_at": "2026-09-06T12:23:03+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-dashboard-members",
+    "loop": 1,
+    "role": "planner",
+    "event": "context_collected",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "dashboardメンバー管理周辺の見直しを開始",
+    "reason": "dashboard/views.pyが1000行超で、メンバー登録・編集・一括管理の責務がViewに集中しているため",
+    "next_action": "メンバー管理処理の安全な切り出し範囲を確認する"
+  },
+  {
+    "timestamp": "2026-08-07T12:25:12+09:00",
+    "expires_at": "2026-09-06T12:25:12+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-dashboard-members",
+    "loop": 2,
+    "role": "implementer",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "dashboardのメンバー管理ヘルパーをservice層へ切り出し",
+    "reason": "メンバー登録、編集、一覧検索、一括管理の補助処理がViewに集中していたため、ViewをHTTP制御へ寄せる",
+    "next_action": "dashboardテストと標準チェックで互換性を確認する"
+  },
+  {
+    "timestamp": "2026-08-07T12:25:31+09:00",
+    "expires_at": "2026-09-06T12:25:31+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-dashboard-members",
+    "loop": 3,
+    "role": "refactor_auditor",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "dashboardメンバー管理service分離を構成監査",
+    "reason": "外部仕様を変えず、メンバー管理のフォーム・保存・検索補助処理だけを同一責務として切り出せているか確認するため",
+    "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
   }
 ]
