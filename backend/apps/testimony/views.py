@@ -1,6 +1,5 @@
 import os
 import tempfile
-from datetime import timedelta
 from io import StringIO
 
 from django.contrib import messages
@@ -8,7 +7,7 @@ from django.core.management import call_command
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
-from django.db.models import BooleanField, Case, Count, Exists, F, OuterRef, Q, Value, When
+from django.db.models import Count, F
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -19,6 +18,7 @@ from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from .forms import ArticleForm, ProductForm, TestimonyLoginForm
 from .models import Article, ArticleFavorite, ArticleLike, ArticleViewHistory, Product
+from .selectors.articles import testimony_article_queryset, testimony_filter_context
 
 ADMIN_USERNAME = os.getenv("ADMIN_LOGIN_USERNAME", "admin")
 
@@ -28,65 +28,6 @@ def _is_testimony_admin(user) -> bool:
         user.is_authenticated
         and (user.is_staff or user.is_superuser or user.username == ADMIN_USERNAME)
     )
-
-
-TESTIMONY_SORT_OPTIONS = [
-    ("latest", "新着順"),
-    ("testimonied_at", "証日"),
-    ("favorites", "お気に入りが多い順"),
-    ("likes", "いいねが多い順"),
-    ("views", "閲覧数順"),
-]
-
-
-def _new_article_cutoff():
-    return timezone.now() - timedelta(days=7)
-
-
-def _testimony_article_queryset(request: HttpRequest):
-    sort = request.GET.get("sort", "latest")
-    keyword = (request.GET.get("q") or "").strip()
-    product_id = (request.GET.get("product") or "").strip()
-    viewed = ArticleViewHistory.objects.filter(user=request.user, article_id=OuterRef("pk"))
-    queryset = (
-        Article.objects.select_related("product", "created_by")
-        .annotate(favorite_count=Count("favorites", distinct=True), like_count=Count("likes", distinct=True))
-        .annotate(has_viewed_by_user=Exists(viewed))
-    )
-    queryset = queryset.annotate(
-        is_new_for_user=Case(
-            When(created_at__gte=_new_article_cutoff(), has_viewed_by_user=False, then=Value(True)),
-            default=Value(False),
-            output_field=BooleanField(),
-        )
-    )
-    if keyword:
-        queryset = queryset.filter(Q(title__icontains=keyword) | Q(body__icontains=keyword) | Q(author__icontains=keyword))
-    if product_id.isdigit():
-        queryset = queryset.filter(product_id=int(product_id))
-
-    if sort == "views":
-        return queryset.order_by("-view_count", "-updated_at", "-id")
-    if sort == "favorites":
-        return queryset.order_by("-favorite_count", "-updated_at", "-id")
-    if sort == "likes":
-        return queryset.order_by("-like_count", "-updated_at", "-id")
-    if sort == "testimonied_at":
-        return queryset.order_by(F("testimonied_at").desc(nulls_last=True), "-created_at", "-id")
-    return queryset.order_by("-created_at", "-id")
-
-
-def _testimony_filter_context(request: HttpRequest) -> dict:
-    selected_sort = request.GET.get("sort", "latest")
-    if selected_sort not in {value for value, _ in TESTIMONY_SORT_OPTIONS}:
-        selected_sort = "latest"
-    return {
-        "q": (request.GET.get("q") or "").strip(),
-        "selected_sort": selected_sort,
-        "selected_product": (request.GET.get("product") or "").strip(),
-        "products": Product.objects.order_by("name", "id"),
-        "sort_options": TESTIMONY_SORT_OPTIONS,
-    }
 
 
 def _is_ajax(request: HttpRequest) -> bool:
@@ -187,11 +128,11 @@ class ArticleListView(TestimonyLoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        return _testimony_article_queryset(self.request)
+        return testimony_article_queryset(self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(_testimony_filter_context(self.request))
+        context.update(testimony_filter_context(self.request))
         context["can_create_article"] = _is_testimony_admin(self.request.user)
         context["list_title"] = "記事一覧"
         context["empty_message"] = "記事はまだありません。"
@@ -410,11 +351,11 @@ class MyFavoriteListView(TestimonyLoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        return _testimony_article_queryset(self.request).filter(favorites__user=self.request.user)
+        return testimony_article_queryset(self.request).filter(favorites__user=self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(_testimony_filter_context(self.request))
+        context.update(testimony_filter_context(self.request))
         context["list_title"] = "お気に入り記事"
         context["empty_message"] = "お気に入りはありません。"
         context["ajax_results_url"] = reverse_lazy("testimony_mypage_favorites")

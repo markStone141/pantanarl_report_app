@@ -1160,5 +1160,35 @@
     "action": "talksの一覧context構築をselectorへ分離し、対象テストと標準チェックを実行",
     "reason": "Viewの責務を認証・POST処理・renderに寄せ、既存の検索、未読、お気に入り、ページング挙動が保たれることを確認したため",
     "next_action": "差分確認後にコミット"
+  },
+  {
+    "timestamp": "2026-08-07T13:22:51+09:00",
+    "expires_at": "2026-09-06T13:22:51+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-testimony-article-selector",
+    "loop": 1,
+    "role": "planner",
+    "event": "plan_created",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "testimonyの記事一覧クエリとfilter contextをselectorへ分離する計画を作成",
+    "reason": "ArticleListViewとMyFavoriteListViewが同じ一覧取得ヘルパーに依存しており、ViewからDB検索条件を切り出すのが安全な責務分離になるため",
+    "next_action": "selectors/articles.pyを追加してviews.pyから呼び出す"
+  },
+  {
+    "timestamp": "2026-08-07T13:24:38+09:00",
+    "expires_at": "2026-09-06T13:24:38+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-testimony-article-selector",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "testimonyの記事一覧selector分離を実装し、対象テストと標準チェックを実行",
+    "reason": "記事一覧とお気に入り一覧の検索・並び替え・新着判定が既存仕様通り動くことを確認したため",
+    "next_action": "差分確認後にコミット"
   }
 ]
