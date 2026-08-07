@@ -198,11 +198,13 @@ AI作業はログ記録だけでなく、開発プロセス自体を以下の工
 - `implementer`: 計画に沿って変更する
 - `observer`: 実行結果、差分、エラーを事実として確認する
 - `validator`: 機械的チェックを実行する
+- `ui_designer`: UI変更時に情報設計、操作性、見た目の単調さを評価する
 - `reviewer`: 仕様適合、権限、DBアクセス、UI品質、保守性を評価する
 - `repairer`: 問題があれば修正し、再度検証する
 - `reporter`: 結果、残リスク、コミットIDをまとめる
 
 小さな作業でも、最低限 `planner -> implementer -> validator -> reviewer -> reporter` の観点を通す。
+UIを変更する作業では、`implementer` の後に必ず `ui_designer` の観点を通す。
 
 ログイベント名は原則として以下に揃える。
 
@@ -223,6 +225,7 @@ AI作業はログ記録だけでなく、開発プロセス自体を以下の工
 - `implementer`: Action を担当する
 - `observer`: Observe を担当する
 - `validator`: Validate を担当する
+- `ui_designer`: UI/UX Review を担当する
 - `reviewer`: Review を担当する
 - `repairer`: Repair を担当する
 - `reporter`: Stop と最終報告を担当する

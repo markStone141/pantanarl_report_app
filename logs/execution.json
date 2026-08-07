@@ -200,5 +200,50 @@
     "action": "ロール工程が開発全体の標準として記述されていることを確認",
     "reason": "ログ分類だけに見えないように、計画、実装、観測、検証、レビュー、修正、報告の責務を文書化できているか確認するため",
     "next_action": "ログJSONを再確認して対象ファイルだけをコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T11:04:09+09:00",
+    "expires_at": "2026-09-06T11:04:09+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-ui-designer-role",
+    "loop": 1,
+    "role": "planner",
+    "event": "goal_defined",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "UIデザイン専門ロールを開発工程に追加する",
+    "reason": "画面実装がワンパターンにならないように、情報設計と操作体験を専任観点で確認するため",
+    "next_action": "既存のロール定義を確認してui_designerを追加する"
+  },
+  {
+    "timestamp": "2026-08-07T11:04:59+09:00",
+    "expires_at": "2026-09-06T11:04:59+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-ui-designer-role",
+    "loop": 2,
+    "role": "ui_designer",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "UIデザイン専門ロールの判断基準を追加",
+    "reason": "UI変更時に情報設計、操作性、単調さの回避を独立して確認できるようにするため",
+    "next_action": "標準チェックを実行してコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T11:05:17+09:00",
+    "expires_at": "2026-09-06T11:05:17+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-ui-designer-role",
+    "loop": 3,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "ui_designerロール追加後のBOM、Django、マイグレーション、JSON、差分チェックを実行",
+    "reason": "新しいロール追加がログCLIと既存Djangoアプリに影響しないことを確認するため",
+    "next_action": "差分を確認して対象ファイルだけをコミットする"
   }
 ]

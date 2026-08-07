@@ -31,6 +31,7 @@ AGENT_ROLES = [
     "implementer",
     "observer",
     "validator",
+    "ui_designer",
     "reviewer",
     "repairer",
     "reporter",
