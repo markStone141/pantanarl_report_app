@@ -18,10 +18,11 @@
 - ループエンジニアリング工程を文書化。
 - ロール間Handoff JSONを文書化。
 - `requirements_agent`、`test_designer`、`test_agent`、`test_auditor`、`ui_designer`、`project_manager`、`refactor_auditor` を追加。
+- アプリ単位見直しの初回として `accounts` のログイン認証処理を service 層へ切り出し、対象テストを確認。
 
 ## 進行中の作業
 
-- `refactor_auditor` による構成監査ルールの追加。
+- アプリ単位の構成、責務、依存、テスト見直し。次は小規模アプリから順に確認する。
 
 ## 確定事項
 
