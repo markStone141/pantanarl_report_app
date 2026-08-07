@@ -195,6 +195,7 @@ AI作業はログ記録だけでなく、開発プロセス自体を以下の工
 各作業では、実際に複数人で分担していなくても、以下の担当観点を順番に通す。
 
 - `planner`: 実装前に目的、影響範囲、制約、検証方針を決める
+- `requirements_agent`: 利用者の自然な要望を明確な要件へ変換する
 - `implementer`: 計画に沿って変更する
 - `observer`: 実行結果、差分、エラーを事実として確認する
 - `validator`: 機械的チェックを実行する
@@ -225,6 +226,7 @@ UIを変更する作業では、`implementer` の後に必ず `ui_designer` の�
 ログの `role` は、上記の開発担当観点に合わせて以下に揃える。
 
 - `planner`: Goal / Context / Constraints / Plan を担当する
+- `requirements_agent`: Requirements Analysis を担当する
 - `implementer`: Action を担当する
 - `observer`: Observe を担当する
 - `validator`: Validate を担当する

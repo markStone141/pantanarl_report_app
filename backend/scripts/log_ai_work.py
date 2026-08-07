@@ -27,6 +27,7 @@ RETENTION_DAYS = {
 }
 AGENT_ROLES = [
     "agent",
+    "requirements_agent",
     "planner",
     "implementer",
     "observer",
