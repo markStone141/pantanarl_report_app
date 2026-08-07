@@ -9,90 +9,10 @@
 
 {% block content %}
 <div class="container" data-personal-setup-fields-url="{% url 'dairymetrics_entry_v2_personal_setup_fields' %}">
-  <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
-    <div>
-      <strong>決済登録</strong>
-      <div class="topbar-muted">{{ member.name }}さんでログイン中</div>
-    </div>
-    <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="Open menu">
-      <i class="fa-solid fa-bars" aria-hidden="true"></i>
-    </button>
-    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
-      <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
-      <a href="{% url 'performance_closeout_notes' %}">今日のあと一歩ノート</a>
-      {% if is_admin %}
-      <a href="{% url 'performance_index' %}">全体実績</a>
-      <a href="{% url 'dashboard_index' %}">総合管理者画面</a>
-      {% else %}
-      <a href="{% url 'performance_member_dashboard' %}">実績管理ダッシュボード</a>
-      {% endif %}
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
-      <a href="{% url 'testimony_article_list' %}">証を見る</a>
-      <a href="{% url 'talks_index' %}">お知らせ</a>
-      <a href="{% url 'home' %}">ReportApp</a>
-      <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
-    </nav>
-    <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
-  </header>
+  {% include "dairymetrics/partials/transaction_topbar.html" %}
 
   <section class="card dairymetrics-form-card dairymetrics-v2-transaction-shell">
-    <div class="dairymetrics-v2-intro">
-      {% if status_message %}
-      <div class="note">{{ status_message }}</div>
-      {% endif %}
-      {% if testimony_notification.count %}
-      <a class="dairymetrics-testimony-notice" href="{{ testimony_notification.url }}">
-        <span class="dairymetrics-testimony-notice-icon"><i class="fa-solid fa-bell" aria-hidden="true"></i></span>
-        <span>新しく投稿された証が{{ testimony_notification.count }}件あります。</span>
-        <strong>確認する</strong>
-      </a>
-      {% endif %}
-      {% if talks_notification.count %}
-      <a class="dairymetrics-testimony-notice dairymetrics-talks-notice" href="{{ talks_notification.url }}">
-        <span class="dairymetrics-testimony-notice-icon"><i class="fa-solid fa-bell" aria-hidden="true"></i></span>
-        <span>新しいお知らせが{{ talks_notification.count }}件あります。</span>
-        <strong>確認する</strong>
-      </a>
-      {% endif %}
-      {% if transaction_notification.count and not transaction_notification_open %}
-      <a class="dairymetrics-testimony-notice dairymetrics-transaction-notice" href="{{ transaction_notification.url }}">
-        <span class="dairymetrics-testimony-notice-icon"><i class="fa-solid fa-hand-sparkles" aria-hidden="true"></i></span>
-        <span>新しい決済が{{ transaction_notification.count }}件あります。</span>
-        <strong>スタンプする</strong>
-      </a>
-      {% endif %}
-      {% if reaction_notification.count and not reaction_notification_open %}
-      <a class="dairymetrics-testimony-notice dairymetrics-reaction-notice" href="{{ reaction_notification.url }}">
-        <span class="dairymetrics-testimony-notice-icon"><i class="fa-solid fa-stamp" aria-hidden="true"></i></span>
-        <span>新しいスタンプが{{ reaction_notification.count }}件あります。</span>
-        <strong>確認する</strong>
-      </a>
-      {% endif %}
-      {% if reaction_notification_open and reaction_notification.items %}
-      <div class="dairymetrics-reaction-notice-detail">
-        {% for item in reaction_notification.items %}
-        <div class="dairymetrics-reaction-notice-row">
-          <strong>{{ item.member_name }}</strong>
-          <span>さんが「{{ item.reaction_label }}」を押しました。</span>
-          <small>{{ item.entry_date|date:"m/d" }} {{ item.department_code }} {{ item.amount|intcomma }}円{% if item.location %} / {{ item.location }}{% endif %}</small>
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %}
-      {% if duplicate_transaction %}
-      <div class="note">
-        同一内容の既存決済: {{ duplicate_transaction.time_label }} / {{ duplicate_transaction.amount|intcomma }}円 / {{ duplicate_transaction.mail_status }}
-        <form method="post" class="dairymetrics-inline-form mt-8">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="send_duplicate_transaction_mail">
-          <input type="hidden" name="department_code" value="{{ selected_department_code }}">
-          <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
-          <input type="hidden" name="duplicate_transaction_id" value="{{ duplicate_transaction.id }}">
-          <button type="submit" class="btn-inline dairymetrics-save-btn">登録せずにメールだけ送信</button>
-        </form>
-      </div>
-      {% endif %}
-    </div>
+    {% include "dairymetrics/partials/transaction_notices.html" %}
 
     {% if not has_personal_target or not has_department_target %}
     <section class="dairymetrics-v2-setup-card">

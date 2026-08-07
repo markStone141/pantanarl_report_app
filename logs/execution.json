@@ -1310,5 +1310,20 @@
     "action": "dairymetricsの分析・振り返りレポートviewをviews_metricsへ分割し、対象テスト51件と標準チェックを実行",
     "reason": "views.pyの責務を減らしつつURL name互換を維持できたため",
     "next_action": "entry_form_v2_transactionテンプレートをpartial分割"
+  },
+  {
+    "timestamp": "2026-08-07T14:15:29+09:00",
+    "expires_at": "2026-09-06T14:15:29+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-dairymetrics-split-template",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "決済登録テンプレートの上部メニューと通知ブロックをpartial化し、対象テスト41件と標準チェックを実行",
+    "reason": "巨大テンプレートを安全な表示ブロック単位で分割し、フォーム/JS挙動を変更していないことを確認",
+    "next_action": "metrics_v2 serviceの小分割へ進む"
   }
 ]
