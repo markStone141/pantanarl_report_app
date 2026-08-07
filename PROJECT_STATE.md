@@ -17,11 +17,11 @@
 - 機密情報をログに残さない運用ルールを追加。
 - ループエンジニアリング工程を文書化。
 - ロール間Handoff JSONを文書化。
-- `requirements_agent`、`test_designer`、`test_agent`、`test_auditor`、`ui_designer` を追加。
+- `requirements_agent`、`test_designer`、`test_agent`、`test_auditor`、`ui_designer`、`project_manager`、`refactor_auditor` を追加。
 
 ## 進行中の作業
 
-- `project_manager` によるプロジェクト状態管理ルールの追加。
+- `refactor_auditor` による構成監査ルールの追加。
 
 ## 確定事項
 
@@ -30,6 +30,8 @@
 - 要件が曖昧な場合は `requirements_agent` で整理してから計画へ進む。
 - UI変更時は `ui_designer` の観点を通す。
 - テスト設計、テスト実行・分類、テスト監査は別ロールとして扱う。
+- リファクタリング監査は `refactor_auditor` として扱い、外部仕様変更と混在させない。
+- 大規模な責務分離や構成変更は、承認なしに実装せず提案に留める。
 
 ## 未決事項
 
@@ -54,4 +56,3 @@
 - `AGENTS.md`
 - `backend/docs/LOOP_ENGINEERING_GUIDE.md`
 - `logs/latest-summary.md`
-

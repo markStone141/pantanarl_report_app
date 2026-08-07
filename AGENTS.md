@@ -205,6 +205,7 @@ AI作業はログ記録だけでなく、開発プロセス自体を以下の工
 - `test_auditor`: テストが仕様に対して弱められていないか監査する
 - `ui_designer`: UI変更時に情報設計、操作性、見た目の単調さを評価する
 - `reviewer`: 仕様適合、権限、DBアクセス、UI品質、保守性を評価する
+- `refactor_auditor`: 外部仕様を変えずに、重複、責務混在、依存関係、構成問題を監査する
 - `repairer`: 問題があれば修正し、再度検証する
 - `reporter`: 結果、残リスク、コミットIDをまとめる
 
@@ -237,11 +238,12 @@ UIを変更する作業では、`implementer` の後に必ず `ui_designer` の�
 - `test_auditor`: Test Audit を担当する
 - `ui_designer`: UI/UX Review を担当する
 - `reviewer`: Review を担当する
+- `refactor_auditor`: Refactoring / Architecture Audit を担当する
 - `repairer`: Repair を担当する
 - `reporter`: Stop と最終報告を担当する
 - `agent`: 小さな作業や役割分離しない作業のデフォルト
 
-評価担当ロール（`validator`、`test_agent`、`test_auditor`、`ui_designer`、`reviewer`）が問題を検出した場合は、可能な限り構造化JSONで評価結果を残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「構造化評価JSON」を標準とする。
+評価担当ロール（`validator`、`test_agent`、`test_auditor`、`ui_designer`、`reviewer`、`refactor_auditor`）が問題を検出した場合は、可能な限り構造化JSONで評価結果を残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「構造化評価JSON」を標準とする。
 ロール間の受け渡しは、必要に応じて構造化JSONで残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「ロール間Handoff JSON」を標準とする。
 プロジェクト全体の現在地は `PROJECT_STATE.md` に残す。大きな作業、複数ロールにまたがる作業、未決事項や依存関係が増えた作業では、作業後に `PROJECT_STATE.md` を更新する。
 

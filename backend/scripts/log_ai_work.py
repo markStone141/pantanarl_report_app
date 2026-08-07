@@ -38,6 +38,7 @@ AGENT_ROLES = [
     "test_auditor",
     "ui_designer",
     "reviewer",
+    "refactor_auditor",
     "repairer",
     "reporter",
 ]

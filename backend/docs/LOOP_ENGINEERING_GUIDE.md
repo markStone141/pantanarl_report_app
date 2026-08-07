@@ -106,6 +106,7 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - `test_auditor`: Test Audit を担当する。作成されたテストが実装に都合よく弱められていないか監査する。本番コードとテストコードは直接変更しない。
 - `ui_designer`: UI/UX Review を担当する。情報設計、視線誘導、モバイル操作、余白、密度、既存CSS再利用、単調なカード量産の回避を評価する。
 - `reviewer`: Review を担当する。仕様適合、権限、DBアクセス、N+1、部署分岐、UI品質、保守性を評価する。
+- `refactor_auditor`: Refactoring / Architecture Audit を担当する。外部仕様を変えず、重複、責務混在、依存関係、構成問題を監査する。大規模変更は承認なしに実施せず、提案に留める。
 - `repairer`: Repair を担当する。失敗やレビュー指摘を修正し、Observe / Validate / Review へ戻す。
 - `reporter`: Stop を担当する。最終要約、残リスク、コミットID、未解決事項をまとめる。
 - `agent`: 役割を明示しない小さな作業のデフォルト。
@@ -346,9 +347,48 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - DBアクセス回数やN+1の懸念がないか。
 - UI変更の場合、PC/モバイルの見え方に無理がないか。
 
+### Refactor Auditor
+
+目的は、外部から見える機能を変更せず、コードの重複、責務の混在、依存関係の乱れ、不適切なファイル・フォルダ構成を発見し、保守しやすい構造へ改善すること。
+
+確認項目:
+
+1. 重複している処理
+2. 同じ業務ルールの分散
+3. 大きすぎる関数、クラス、ファイル
+4. 責務が混在しているモジュール
+5. 不明確な命名
+6. 循環依存
+7. 不自然な依存方向
+8. 巨大な `utils`、`helpers`、`common` ファイル
+9. 使用されていないコード
+10. テストしにくい密結合
+11. フォルダ構成と機能構成の不一致
+12. 過剰な抽象化
+
+原則:
+
+- 現在の機能と公開仕様を変更しない。
+- 仕様変更とリファクタリングを混在させない。
+- 単なるコードの類似だけで共通化しない。
+- 同じ変更理由を持つ処理だけをまとめる。
+- 変更前後で既存テストを実行する。
+- 大規模変更は提案のみとし、承認なしに実施しない。
+
+出力には以下を含める:
+
+- 問題箇所
+- 問題となる理由
+- 放置した場合の影響
+- 改善案
+- 影響するファイル
+- 危険度
+- 自動修正可能か
+- 修正後に必要なテスト
+
 ## 構造化評価JSON
 
-`validator`、`test_agent`、`test_auditor`、`ui_designer`、`reviewer` が問題を検出した場合は、後続の `repairer` が迷わず修正できるように、可能な限り以下のJSON形式で評価結果を残す。
+`validator`、`test_agent`、`test_auditor`、`ui_designer`、`reviewer`、`refactor_auditor` が問題を検出した場合は、後続の `repairer` が迷わず修正できるように、可能な限り以下のJSON形式で評価結果を残す。
 
 ```json
 {
@@ -448,6 +488,32 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 }
 ```
 
+### refactor_auditor.audit_result
+
+`refactor_auditor` が構成監査する場合は、以下のJSON形式で監査結果を残す。
+
+```json
+{
+  "result": "warning",
+  "score": 78,
+  "issues": [
+    {
+      "category": "maintainability",
+      "severity": "major",
+      "location": "apps/example/views.py",
+      "problem": "同じ業務ルールが複数のビューに分散している",
+      "impact_if_left": "仕様変更時に一部だけ修正漏れが起きる",
+      "improvement_plan": "業務ルールを service 層へ切り出し、ビューは入出力制御に限定する",
+      "affected_files": ["apps/example/views.py", "apps/example/services.py"],
+      "risk_level": "medium",
+      "auto_fixable": false,
+      "tests_required_after_fix": ["apps.example.tests.ExampleFlowTests"]
+    }
+  ],
+  "retry_required": false
+}
+```
+
 ### issue.severity
 
 - `critical`: 本番障害、データ破損、機密漏えい、主要機能停止につながる。
@@ -507,6 +573,8 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - `test_auditor -> test_designer`: 弱い検証、不足ケース、不正な回避、必要なテスト修正を渡す。
 - `ui_designer -> reviewer`: UI評価、PC/モバイルの懸念、改善案を渡す。
 - `reviewer -> repairer`: 構造化評価JSONと修正優先度を渡す。
+- `refactor_auditor -> project_manager`: 構成監査結果、大規模変更提案、危険度、必要テストを渡す。
+- `refactor_auditor -> implementer`: 承認済みの小規模リファクタ範囲、変更禁止事項、必要テストを渡す。
 - `repairer -> validator`: 修正内容と再検証すべき項目を渡す。
 - `reporter -> human`: 変更内容、検証結果、残リスク、コミットIDをMarkdownで要約する。
 

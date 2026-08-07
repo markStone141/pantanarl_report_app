@@ -560,5 +560,50 @@
     "action": "project_managerの責務とPROJECT_STATE運用をレビュー",
     "reason": "専門ロールの成果物を無条件承認せず、未決事項、依存関係、完了条件を状態ファイルで管理する責務になっているか確認するため",
     "next_action": "ログJSONと差分を最終確認してコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T11:30:31+09:00",
+    "expires_at": "2026-09-06T11:30:31+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-refactor-auditor-role",
+    "loop": 1,
+    "role": "project_manager",
+    "event": "goal_defined",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "リファクタリング・構成監査エージェントを開発工程に追加する",
+    "reason": "外部仕様を変えずに重複、責務混在、依存関係、構成問題を監査する責務を明確にするため",
+    "next_action": "既存ロール定義を確認してrefactor_auditorを追加する"
+  },
+  {
+    "timestamp": "2026-08-07T11:32:41+09:00",
+    "expires_at": "2026-09-06T11:32:41+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-refactor-auditor-role",
+    "loop": 2,
+    "role": "refactor_auditor",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "リファクタリング・構成監査エージェントの責務と出力形式を追加",
+    "reason": "外部仕様を変えずに構造問題を検出し、改善案と必要テストを提示できるようにするため",
+    "next_action": "標準チェックと内容レビューを実行する"
+  },
+  {
+    "timestamp": "2026-08-07T11:40:00+09:00",
+    "expires_at": "2026-09-06T11:40:00+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-refactor-auditor-role",
+    "loop": 4,
+    "role": "reviewer",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "refactor_auditorの責務と制約をレビュー",
+    "reason": "外部仕様を変えず、仕様変更と混ぜず、大規模変更は提案止まりにする責務になっているか確認するため",
+    "next_action": "ログJSONと差分を最終確認してコミットする"
   }
 ]
