@@ -1115,5 +1115,20 @@
     "action": "決済通知から決済一覧へ自動展開・スクロールする導線を実装し、対象テストと標準チェックを実行",
     "reason": "新規決済通知とスタンプ通知のタップ後に一覧位置へ移動し、展開中のもっと見るボタンを隠す挙動を確認したため",
     "next_action": "差分を確認して関連ファイルをコミット"
+  },
+  {
+    "timestamp": "2026-08-07T13:11:25+09:00",
+    "expires_at": "2026-09-06T13:11:25+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-frontend-interaction-role",
+    "loop": 1,
+    "role": "project_manager",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "frontend_interactionロールを開発工程へ追加",
+    "reason": "UI操作、AJAX、画面状態、二重送信防止、エラー処理をui_designerとは別の実装観点として扱うため",
+    "next_action": "ドキュメント差分を確認してコミット"
   }
 ]

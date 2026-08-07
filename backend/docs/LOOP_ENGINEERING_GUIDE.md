@@ -9,7 +9,8 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - プロジェクト全体の現在地は `PROJECT_STATE.md` を正とし、会話履歴だけで判断しない。
 - 小さな作業でも、最低限 `planner -> implementer -> validator -> reviewer -> reporter` の観点を通す。
 - 要望が曖昧、業務ルールが絡む、権限やデータ扱いが重要な作業では、`planner` の前に `requirements_agent` の観点を通す。
-- UIを変更する作業では、`implementer` の後に必ず `ui_designer` の観点を通す。
+- UI操作、AJAX、画面状態、アニメーションを変更する作業では、`implementer` の後に `frontend_interaction` の観点を通す。
+- UIの見た目や情報設計を変更する作業では、`frontend_interaction` または `implementer` の後に必ず `ui_designer` の観点を通す。
 - 大きな作業、DB変更、権限変更、UN/WV分岐、メール送信、デプロイ影響がある作業では、全ロールを明示的に通す。
 
 ## 1. Goal: 目標
@@ -141,6 +142,7 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - `planner`: Goal / Context / Constraints / Plan を担当する。目的、影響範囲、制約、検証方針を決めてから実装へ渡す。
 - `requirements_agent`: Requirements Analysis を担当する。利用者の自然な要望を、設計、実装、テスト可能な明確な要件へ変換する。実装コードは書かず、技術を先に決めつけない。
 - `implementer`: Action を担当する。計画に沿ってコード、テンプレート、CSS、ドキュメントを変更する。勝手に制約を広げない。
+- `frontend_interaction`: Frontend Interaction を担当する。クリック、入力、キーボード操作、非同期処理、画面状態、エラー表示、二重送信防止、必要最小限のアニメーションを実装する。
 - `observer`: Observe を担当する。コマンド結果、エラー、差分、画面上の変化を事実として整理する。解釈と事実を混ぜない。
 - `validator`: Validate を担当する。テスト、Django check、migration check、BOM、diff check を実行する。失敗を握りつぶさない。
 - `test_designer`: Test Design / Test Implementation を担当する。仕様と受け入れ条件を実行可能なテストへ変換する。本番コードは変更しない。
@@ -263,6 +265,34 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - 既存責務に沿って実装したか。
 - 肥大化する場合にサービス、セレクタ、テンプレート分割を検討したか。
 - 機密情報をログやコードに残していないか。
+
+### Frontend Interaction
+
+目的は、UI設計と受け入れ条件に基づき、ユーザー操作に対する画面の反応、状態変化、非同期処理、アニメーションを実装すること。
+
+主な責任:
+
+1. クリック、入力、キーボード操作の実装
+2. 読み込み、成功、失敗状態の管理
+3. 二重送信と連打の防止
+4. API通信とエラー処理
+5. 画面遷移と表示更新
+6. 必要最小限のアニメーション
+7. アクセシビリティ対応
+8. スマートフォンでの操作確認
+9. 不要な再描画や処理負荷の防止
+10. 動作テストの追加
+
+原則:
+
+- 見た目の派手さより、操作の分かりやすさを優先する。
+- 意味のないアニメーションを追加しない。
+- 仕様にないギミックを勝手に追加しない。
+- JavaScriptが無効または処理失敗時にも、可能な限り内容を失わない設計にする。
+- 既存のUI設計を無断で変更しない。
+- 実装後にキーボード操作とエラー状態を確認する。
+
+出力には、実装した挙動、変更ファイル、管理する画面状態、エラー時の動作、追加したテスト、性能上の注意点を含める。
 
 ### Observer
 
@@ -441,7 +471,7 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 
 ## 構造化評価JSON
 
-`validator`、`test_agent`、`test_auditor`、`ui_designer`、`reviewer`、`refactor_auditor` が問題を検出した場合は、後続の `repairer` が迷わず修正できるように、可能な限り以下のJSON形式で評価結果を残す。
+`validator`、`test_agent`、`test_auditor`、`frontend_interaction`、`ui_designer`、`reviewer`、`refactor_auditor` が問題を検出した場合は、後続の `repairer` が迷わず修正できるように、可能な限り以下のJSON形式で評価結果を残す。
 
 ```json
 {
@@ -619,6 +649,8 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - `project_manager -> planner`: 確定済み要件、依存関係、対象範囲、完了条件を渡す。
 - `requirements_agent -> planner`: 目的、利用者、受け入れ条件、業務ルール、権限、未決事項、対象外を渡す。
 - `planner -> implementer`: 目的、影響範囲、制約、検証方針を渡す。
+- `implementer -> frontend_interaction`: 変更したUI要素、管理する画面状態、必要な操作、JS無効時のフォールバック、エラー時の期待動作を渡す。
+- `frontend_interaction -> ui_designer`: 実装した操作、状態変化、モバイル/キーボード操作、エラー状態、性能上の注意点を渡す。
 - `implementer -> observer`: 変更内容、変更ファイル、実行した操作を渡す。
 - `observer -> validator`: 実行結果、エラー、再現条件を渡す。
 - `validator -> reviewer`: テスト結果、未実行チェック、機械的な懸念を渡す。

@@ -198,6 +198,7 @@ AI作業はログ記録だけでなく、開発プロセス自体を以下の工
 - `planner`: 実装前に目的、影響範囲、制約、検証方針を決める
 - `requirements_agent`: 利用者の自然な要望を明確な要件へ変換する
 - `implementer`: 計画に沿って変更する
+- `frontend_interaction`: UI操作、状態変化、非同期処理、二重送信防止、エラー表示を実装する
 - `observer`: 実行結果、差分、エラーを事実として確認する
 - `validator`: 機械的チェックを実行する
 - `test_designer`: 仕様と受け入れ条件を実行可能なテストへ変換する
@@ -210,7 +211,8 @@ AI作業はログ記録だけでなく、開発プロセス自体を以下の工
 - `reporter`: 結果、残リスク、コミットIDをまとめる
 
 小さな作業でも、最低限 `planner -> implementer -> validator -> reviewer -> reporter` の観点を通す。
-UIを変更する作業では、`implementer` の後に必ず `ui_designer` の観点を通す。
+UI操作、AJAX、画面状態、アニメーションを変更する作業では、`implementer` の後に `frontend_interaction` の観点を通す。
+UIの見た目や情報設計を変更する作業では、`frontend_interaction` または `implementer` の後に必ず `ui_designer` の観点を通す。
 `project_manager` は、新機能完了、3ファイル以上の変更、類似処理追加、巨大ファイル化、新規フォルダや層の追加、既存コード依存の増加がある場合、`refactor_auditor` の観点を呼び出す。
 作業が長期化し、同じ問題への試行が3回を超える、変更ファイルが10件を超える、変更行数が500行を超える、仕様判断が必要になる、当初範囲を超える、テスト失敗原因が特定できない、新しい設計変更が必要になる場合は、無理に継続しない。`HANDOFF.md` を作成し、`PROJECT_STATE.md` の状態を `paused` に更新して、統括へ返す。
 
@@ -233,6 +235,7 @@ UIを変更する作業では、`implementer` の後に必ず `ui_designer` の�
 - `planner`: Goal / Context / Constraints / Plan を担当する
 - `requirements_agent`: Requirements Analysis を担当する
 - `implementer`: Action を担当する
+- `frontend_interaction`: Frontend Interaction を担当する
 - `observer`: Observe を担当する
 - `validator`: Validate を担当する
 - `test_designer`: Test Design / Test Implementation を担当する
@@ -245,7 +248,7 @@ UIを変更する作業では、`implementer` の後に必ず `ui_designer` の�
 - `reporter`: Stop と最終報告を担当する
 - `agent`: 小さな作業や役割分離しない作業のデフォルト
 
-評価担当ロール（`validator`、`test_agent`、`test_auditor`、`ui_designer`、`reviewer`、`refactor_auditor`）が問題を検出した場合は、可能な限り構造化JSONで評価結果を残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「構造化評価JSON」を標準とする。
+評価担当ロール（`validator`、`test_agent`、`test_auditor`、`frontend_interaction`、`ui_designer`、`reviewer`、`refactor_auditor`）が問題を検出した場合は、可能な限り構造化JSONで評価結果を残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「構造化評価JSON」を標準とする。
 ロール間の受け渡しは、必要に応じて構造化JSONで残す。形式は `backend/docs/LOOP_ENGINEERING_GUIDE.md` の「ロール間Handoff JSON」を標準とする。
 プロジェクト全体の現在地は `PROJECT_STATE.md` に残す。大きな作業、複数ロールにまたがる作業、未決事項や依存関係が増えた作業では、作業後に `PROJECT_STATE.md` を更新する。
 

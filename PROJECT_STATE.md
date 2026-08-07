@@ -17,7 +17,7 @@
 - 機密情報をログに残さない運用ルールを追加。
 - ループエンジニアリング工程を文書化。
 - ロール間Handoff JSONを文書化。
-- `requirements_agent`、`test_designer`、`test_agent`、`test_auditor`、`ui_designer`、`project_manager`、`refactor_auditor` を追加。
+- `requirements_agent`、`test_designer`、`test_agent`、`test_auditor`、`frontend_interaction`、`ui_designer`、`project_manager`、`refactor_auditor` を追加。
 - アプリ単位見直しの初回として `accounts` のログイン認証処理を service 層へ切り出し、対象テストを確認。
 - `mail` のGmail API低レベル処理を専用モジュールへ分離し、既存送信サービスの互換性を対象テストで確認。
 - `reports` の報告フォーム行データ処理を service 層へ分離し、対象テストで投稿・編集・履歴表示の互換性を確認。
@@ -40,6 +40,7 @@
 - 機密情報を含む可能性があるログは通常ログに入れない。
 - 要件が曖昧な場合は `requirements_agent` で整理してから計画へ進む。
 - UI変更時は `ui_designer` の観点を通す。
+- UI操作、AJAX、画面状態、アニメーションの実装時は `frontend_interaction` の観点を通す。
 - テスト設計、テスト実行・分類、テスト監査は別ロールとして扱う。
 - リファクタリング監査は `refactor_auditor` として扱い、外部仕様変更と混在させない。
 - 大規模な責務分離や構成変更は、承認なしに実装せず提案に留める。
