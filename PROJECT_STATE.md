@@ -34,10 +34,11 @@
 - `performance` のメニュー生成、メンバー詳細ページのナビゲーション、戻り先URL補助、編集可否判定を navigation service へ分離した。
 - `dairymetrics` の現行機能と旧画面をURL参照単位で監査し、削除候補を `backend/docs/DAIRYMETRICS_DELETION_CANDIDATES.md` に整理した。
 - `dairymetrics` の旧 dashboard、旧 entry、旧 admin、旧目標設定、demo seed command を削除し、現行の決済登録・分析・振り返りレポートに絞った。
+- `dairymetrics` の分析・振り返りレポート view を `views_metrics.py` へ分割し、`views.py` を薄くし始めた。
 
 ## 進行中の作業
 
-- アプリ単位の構成、責務、依存、テスト見直し。次は `dairymetrics` の現行 view/template/service の責務分離、または `performance` のダッシュボード/履歴snapshot構築の分割を確認する。
+- アプリ単位の構成、責務、依存、テスト見直し。次は `dairymetrics` の決済登録 view、巨大テンプレート、`metrics_v2` service の責務分離を継続する。
 
 ## 確定事項
 
