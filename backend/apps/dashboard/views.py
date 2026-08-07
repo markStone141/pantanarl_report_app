@@ -23,7 +23,13 @@ from apps.common.report_metrics import (
 from apps.mail.models import MailRecipientGroupMember
 from apps.targets.models import TargetMetric
 
-from .forms import DepartmentForm, TargetMetricForm
+from .services.departments import (
+    department_form,
+    department_form_initial,
+    metric_form_for_edit,
+    selected_metric_department as resolve_selected_metric_department,
+    target_metric_form,
+)
 from .services.mail_actuals import (
     merge_adjustment_totals_into_department_totals,
     merge_adjustment_totals_into_member_totals,
@@ -348,24 +354,6 @@ def _member_settings_redirect(status_message: str) -> HttpResponse:
     return redirect(f"{reverse('member_settings')}?{urlencode({'status': status_message})}")
 
 
-def _department_form(*, data=None, initial=None, edit_department=None) -> DepartmentForm:
-    form = DepartmentForm(data=data, initial=initial)
-    if edit_department:
-        reporter_ids = Member.objects.active().filter(
-            department_links__department=edit_department,
-        ).values_list("id", flat=True)
-        form.fields["default_reporter"].queryset = Member.objects.active().filter(
-            id__in=reporter_ids,
-        ).order_by("name")
-    else:
-        form.fields["default_reporter"].queryset = Member.objects.none()
-    return form
-
-
-def _target_metric_form(*, data=None, initial=None) -> TargetMetricForm:
-    return TargetMetricForm(data=data, initial=initial)
-
-
 @require_roles(ROLE_ADMIN)
 def member_delete(request: HttpRequest, member_id: int) -> HttpResponse:
     if request.method != "POST":
@@ -411,41 +399,22 @@ def department_settings(request: HttpRequest) -> HttpResponse:
         edit_department = Department.objects.filter(id=int(edit_id)).first()
 
     metric_department_id = request.GET.get("metric_department")
-    if metric_department_id and metric_department_id.isdigit():
-        selected_metric_department = Department.objects.filter(id=int(metric_department_id)).first()
-    if not selected_metric_department:
-        selected_metric_department = edit_department or Department.objects.order_by("code").first()
-
-    form = _department_form(
-        initial={
-            "name": edit_department.name,
-            "code": edit_department.code,
-            "default_reporter": edit_department.default_reporter_id,
-            "show_in_dashboard_submission": edit_department.show_in_dashboard_submission,
-            "show_in_dashboard_progress": edit_department.show_in_dashboard_progress,
-        }
-        if edit_department
-        else None,
+    selected_metric_department = resolve_selected_metric_department(
+        raw_department_id=metric_department_id,
         edit_department=edit_department,
     )
-    metric_form = _target_metric_form(initial={"display_order": 1, "is_active": True})
+
+    form = department_form(
+        initial=department_form_initial(edit_department),
+        edit_department=edit_department,
+    )
+    metric_form = target_metric_form(initial={"display_order": 1, "is_active": True})
 
     edit_metric_id = request.GET.get("edit_metric")
-    if edit_metric_id and edit_metric_id.isdigit() and selected_metric_department:
-        edit_metric = TargetMetric.objects.filter(
-            id=int(edit_metric_id),
-            department=selected_metric_department,
-        ).first()
-        if edit_metric:
-            metric_form = _target_metric_form(
-                initial={
-                    "label": edit_metric.label,
-                    "code": edit_metric.code,
-                    "unit": edit_metric.unit,
-                    "display_order": edit_metric.display_order,
-                    "is_active": edit_metric.is_active,
-                }
-            )
+    edit_metric, metric_form = metric_form_for_edit(
+        raw_metric_id=edit_metric_id,
+        selected_department=selected_metric_department,
+    )
 
     if request.method == "POST":
         action = request.POST.get("action") or "save_department"
@@ -453,7 +422,7 @@ def department_settings(request: HttpRequest) -> HttpResponse:
             edit_department_id = request.POST.get("edit_department_id")
             if edit_department_id and edit_department_id.isdigit():
                 edit_department = Department.objects.filter(id=int(edit_department_id)).first()
-            form = _department_form(data=request.POST, edit_department=edit_department)
+            form = department_form(data=request.POST, edit_department=edit_department)
             if form.is_valid():
                 code = form.cleaned_data["code"].strip().upper()
                 default_reporter = form.cleaned_data["default_reporter"]
@@ -491,7 +460,7 @@ def department_settings(request: HttpRequest) -> HttpResponse:
                             )
                             status_message = f"{department.name}（{department.code}）を更新しました。"
                             edit_department = None
-                            form = _department_form()
+                            form = department_form()
                     else:
                         department = Department.objects.create(
                             name=form.cleaned_data["name"].strip(),
@@ -503,7 +472,7 @@ def department_settings(request: HttpRequest) -> HttpResponse:
                         )
                         status_message = f"{department.name}（{department.code}）を追加しました。"
                         edit_department = None
-                        form = _department_form()
+                        form = department_form()
 
         if action == "save_metric":
             metric_department_id = request.POST.get("metric_department_id")
@@ -518,7 +487,7 @@ def department_settings(request: HttpRequest) -> HttpResponse:
                 if edit_metric_id and edit_metric_id.isdigit()
                 else None
             )
-            metric_form = _target_metric_form(data=request.POST)
+            metric_form = target_metric_form(data=request.POST)
             if not selected_metric_department:
                 metric_form.add_error(None, "部署を選択してください。")
             elif metric_form.is_valid():
@@ -562,7 +531,7 @@ def department_settings(request: HttpRequest) -> HttpResponse:
                             is_active=metric_form.cleaned_data["is_active"],
                         )
                         status_message = "目標指標を追加しました。"
-                    metric_form = _target_metric_form(initial={"display_order": 1, "is_active": True})
+                    metric_form = target_metric_form(initial={"display_order": 1, "is_active": True})
                     edit_metric = None
 
         if action == "toggle_metric":

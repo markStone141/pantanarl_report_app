@@ -1010,5 +1010,35 @@
     "action": "dashboardメンバー管理service分離を構成監査",
     "reason": "外部仕様を変えず、メンバー管理のフォーム・保存・検索補助処理だけを同一責務として切り出せているか確認するため",
     "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T12:27:17+09:00",
+    "expires_at": "2026-09-06T12:27:17+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-dashboard-departments",
+    "loop": 1,
+    "role": "implementer",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "dashboardの部署管理フォーム補助処理をservice層へ切り出し",
+    "reason": "部署管理・目標指標管理のフォーム初期化と選択状態解決がViewに混在していたため",
+    "next_action": "dashboardテストと標準チェックで互換性を確認する"
+  },
+  {
+    "timestamp": "2026-08-07T12:27:36+09:00",
+    "expires_at": "2026-09-06T12:27:36+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-dashboard-departments",
+    "loop": 2,
+    "role": "refactor_auditor",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "dashboard部署管理フォーム補助処理の分離を構成監査",
+    "reason": "外部仕様を変えず、フォーム初期化と選択状態解決だけを同一責務としてservice層へ移せているか確認するため",
+    "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
   }
 ]
