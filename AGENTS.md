@@ -132,7 +132,31 @@ git diff
 3. `backend/` でコマンドを打っているか
 4. DBマイグレーションが必要な変更か
 
-## 11. プロダクト方針メモ（実績入力・報告導線）
+## 11. AI作業ログ
+
+AI作業の透明性確保のため、作業ごとに `logs/` を更新する。
+
+- `logs/execution.json`: 調査、実装、テスト、チェック、コミットなどの通常イベントを記録する
+- `logs/errors.json`: テスト失敗、例外、未解決の問題、ブロック状態を記録する
+- `logs/latest-summary.md`: 直近作業の人間向け要約を記録する
+
+ログ追記は以下のスクリプトを優先する。
+
+```bash
+cd backend
+python3 scripts/log_ai_work.py \
+  --run-id run-YYYYMMDD-HHMMSS \
+  --loop 1 \
+  --event test_completed \
+  --status success \
+  --action "対象テストを実行" \
+  --reason "変更箇所の回帰確認" \
+  --next-action "差分チェック後にコミット"
+```
+
+失敗時は `--status fail` または `--status error` を使い、原因と次の対応を具体的に残す。
+
+## 12. プロダクト方針メモ（実績入力・報告導線）
 
 - Excel入力は将来的に廃止し、Webアプリ内で完結する入力導線を優先する
 - 各メンバーにID/パスワードを配布し、`ログイン -> 当日の実績入力` までを最短導線で完了できるようにする
