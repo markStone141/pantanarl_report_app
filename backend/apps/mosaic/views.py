@@ -15,8 +15,9 @@ from .forms import (
     MosaicTrialModelForm,
     MosaicVisitPurposeForm,
 )
-from .models import MosaicInteraction, MosaicInteractionTrialModel, MosaicResultType, MosaicTrialModel, MosaicVisitPurpose
+from .models import MosaicInteraction, MosaicResultType, MosaicTrialModel, MosaicVisitPurpose
 from .selectors import mosaic_dashboard_payload
+from .services import prepare_interaction_for_save, save_trial_model_steps, selected_trial_model_ids
 
 
 User = get_user_model()
@@ -74,16 +75,14 @@ def mosaic_interaction_create(request):
     form = MosaicInteractionForm(request.POST or None, initial=initial)
     if request.method == "POST" and form.is_valid():
         interaction = form.save(commit=False)
-        interaction.created_by = request.user
-        interaction.input_member = interaction.service_member
-        if not interaction.is_return_support or interaction.credited_member_id is None:
-            interaction.credited_member = interaction.service_member
-        selected_trial_model_ids = _selected_trial_model_ids(request)
-        if selected_trial_model_ids:
-            first_trial_model = MosaicTrialModel.objects.filter(pk=selected_trial_model_ids[0]).first()
-            interaction.trial_model = first_trial_model
+        selected_model_ids = selected_trial_model_ids(request)
+        prepare_interaction_for_save(
+            interaction=interaction,
+            user=request.user,
+            trial_model_ids=selected_model_ids,
+        )
         interaction.save()
-        _save_trial_model_steps(interaction=interaction, trial_model_ids=selected_trial_model_ids)
+        save_trial_model_steps(interaction=interaction, trial_model_ids=selected_model_ids)
         messages.success(request, "接客ログを保存しました。")
         return redirect(reverse("mosaic_dashboard"))
     context = {
@@ -164,39 +163,3 @@ def _master_config(master_type):
     if master_type not in configs:
         raise Http404("Unknown mosaic master type")
     return configs[master_type]
-
-
-def _selected_trial_model_ids(request):
-    ids = []
-    seen = set()
-    for raw_value in request.POST.getlist("trial_models"):
-        if not raw_value.isdigit():
-            continue
-        value = int(raw_value)
-        if value in seen:
-            continue
-        seen.add(value)
-        ids.append(value)
-    if not ids:
-        raw_single = (request.POST.get("trial_model") or "").strip()
-        if raw_single.isdigit():
-            ids.append(int(raw_single))
-    return ids
-
-
-def _save_trial_model_steps(*, interaction, trial_model_ids):
-    if not trial_model_ids:
-        return
-    valid_ids = list(MosaicTrialModel.objects.active().filter(id__in=trial_model_ids).values_list("id", flat=True))
-    valid_id_set = set(valid_ids)
-    steps = [
-        MosaicInteractionTrialModel(
-            interaction=interaction,
-            trial_model_id=trial_model_id,
-            step_order=index,
-        )
-        for index, trial_model_id in enumerate(trial_model_ids, start=1)
-        if trial_model_id in valid_id_set
-    ]
-    if steps:
-        MosaicInteractionTrialModel.objects.bulk_create(steps)

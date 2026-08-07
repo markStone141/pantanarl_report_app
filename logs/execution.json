@@ -1040,5 +1040,50 @@
     "action": "dashboard部署管理フォーム補助処理の分離を構成監査",
     "reason": "外部仕様を変えず、フォーム初期化と選択状態解決だけを同一責務としてservice層へ移せているか確認するため",
     "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T12:58:39+09:00",
+    "expires_at": "2026-09-06T12:58:39+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-mosaic",
+    "loop": 1,
+    "role": "planner",
+    "event": "context_collected",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "mosaicアプリの構成確認を開始",
+    "reason": "独立アプリとしてUN/WV系に影響しない状態で、ビュー責務、マスタ管理、テスト範囲を確認するため",
+    "next_action": "mosaicのモデル、ビュー、フォーム、テストを確認して安全な改善範囲を決める"
+  },
+  {
+    "timestamp": "2026-08-07T12:59:47+09:00",
+    "expires_at": "2026-09-06T12:59:47+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-mosaic",
+    "loop": 2,
+    "role": "implementer",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "mosaicの接客ログ保存補助処理をservice層へ切り出し",
+    "reason": "戻り対応時の実績扱い補完、入力者設定、試着モデル順序保存がViewに混在していたため",
+    "next_action": "mosaicテストと標準チェックで互換性を確認する"
+  },
+  {
+    "timestamp": "2026-08-07T13:00:15+09:00",
+    "expires_at": "2026-09-06T13:00:15+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-app-audit-mosaic",
+    "loop": 3,
+    "role": "refactor_auditor",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "mosaic接客ログ保存service分離を構成監査",
+    "reason": "UN/WV系へ影響せず、mosaic内の接客ログ保存補助処理だけを同一責務として切り出せているか確認するため",
+    "next_action": "PROJECT_STATEを更新して標準チェック後にコミットする"
   }
 ]
