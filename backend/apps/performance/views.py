@@ -52,6 +52,14 @@ from apps.performance.services.member_details import (
     build_member_dashboard_entry_rows,
     build_trend_date_links,
 )
+from apps.performance.services.navigation import (
+    can_edit_member_performance,
+    performance_member_nav_items,
+    performance_member_page_nav_links,
+    performance_nav_items,
+    performance_next_url,
+    performance_redirect_for_user,
+)
 from apps.performance.services.admin_entries import build_admin_entry_management_page
 from apps.performance.services.closeout_notes import resolve_closeout_notes_scope
 from apps.performance.services.past_entries import (
@@ -96,24 +104,6 @@ class PerformanceHistoryScope:
     period: Period | None = None
 
 
-def _performance_redirect_for_user(user, *, fallback=""):
-    if fallback and isinstance(fallback, str) and fallback.startswith("/performance/"):
-        return redirect(fallback)
-    if user.is_staff or user.is_superuser:
-        return redirect("performance_index")
-    return redirect("performance_member_dashboard")
-
-
-def _performance_next_url(next_url: str, *, fallback: str) -> str:
-    if next_url and isinstance(next_url, str) and next_url.startswith("/performance/"):
-        return next_url
-    return fallback
-
-
-def _can_edit_member_performance(*, is_admin: bool, readonly_member_view: bool) -> bool:
-    return bool(is_admin or not readonly_member_view)
-
-
 def require_performance_roles(*allowed_roles: str, auto_close: bool = True):
     def decorator(view_func):
         @wraps(view_func)
@@ -133,131 +123,6 @@ def require_performance_roles(*allowed_roles: str, auto_close: bool = True):
     return decorator
 
 
-def _performance_nav_items():
-    return [
-        ("performance_index", "実績管理ダッシュボード"),
-        ("dairymetrics_entry_v2_transaction_demo", "決済入力"),
-        ("performance_history", "過去の実績を見る"),
-        ("performance_admin_entries", "全体エントリー管理"),
-        ("performance_closeout_notes", "今日のあと一歩ノート"),
-        ("performance_past_entry_create", "過去実績入力"),
-        ("performance_adjustments", "戻り・増額登録"),
-        ("testimony_article_list", "証を見る"),
-        ("talks_index", "お知らせ"),
-        ("dashboard_index", "総合管理者ページ"),
-    ]
-
-
-def _performance_member_nav_items(*, is_admin=False):
-    if is_admin:
-        return [
-            ("performance_index", "実績管理ダッシュボード"),
-            ("dairymetrics_entry_v2_transaction_demo", "決済入力"),
-            ("performance_closeout_notes", "今日のあと一歩ノート"),
-            ("performance_history", "過去の実績を見る"),
-            ("testimony_article_list", "証を見る"),
-            ("talks_index", "お知らせ"),
-        ]
-    return [
-        ("performance_member_dashboard", "実績管理ダッシュボード"),
-        ("dairymetrics_entry_v2_transaction_demo", "決済入力"),
-        ("performance_closeout_notes", "今日のあと一歩ノート"),
-        ("performance_index", "全体実績"),
-        ("performance_member_history", "過去の実績を見る"),
-        ("testimony_article_list", "証を見る"),
-        ("talks_index", "お知らせ"),
-    ]
-
-
-def _performance_member_page_nav_links(*, member, department, is_admin=False, readonly_member_view=False):
-    links = []
-    if is_admin:
-        links.append(
-            {
-                "href": reverse("performance_index"),
-                "label": "管理者用ダッシュボード",
-            }
-        )
-    if readonly_member_view:
-        links.extend(
-            [
-                {
-                    "href": reverse("performance_member_insight", args=[member.id, department.id]),
-                    "label": "実績管理ダッシュボード",
-                },
-                {
-                    "href": reverse("performance_member_history_insight", args=[member.id, department.id]),
-                    "label": "過去の実績を見る",
-                },
-                {
-                    "href": reverse("performance_closeout_notes"),
-                    "label": "今日のあと一歩ノート",
-                },
-                {
-                    "href": reverse("testimony_article_list"),
-                    "label": "証を見る",
-                },
-                {
-                    "href": reverse("talks_index"),
-                    "label": "お知らせ",
-                },
-            ]
-        )
-        return links
-    if is_admin:
-        links.extend(
-            [
-                {
-                    "href": reverse("performance_member_detail", args=[member.id, department.id]),
-                    "label": "実績管理ダッシュボード",
-                },
-                {
-                    "href": reverse("performance_member_history_detail", args=[member.id, department.id]),
-                    "label": "過去の実績を見る",
-                },
-                {
-                    "href": reverse("performance_closeout_notes"),
-                    "label": "今日のあと一歩ノート",
-                },
-                {
-                    "href": reverse("testimony_article_list"),
-                    "label": "証を見る",
-                },
-                {
-                    "href": reverse("talks_index"),
-                    "label": "お知らせ",
-                },
-            ]
-        )
-        return links
-    return [
-        {
-            "href": reverse("performance_member_dashboard"),
-            "label": "実績管理ダッシュボード",
-        },
-        {
-            "href": reverse("performance_index"),
-            "label": "全体実績",
-        },
-        {
-            "href": reverse("performance_member_history"),
-            "label": "過去の実績を見る",
-        },
-        {
-            "href": reverse("performance_closeout_notes"),
-            "label": "今日のあと一歩ノート",
-        },
-        {
-            "href": reverse("testimony_article_list"),
-            "label": "証を見る",
-        },
-        {
-            "href": reverse("talks_index"),
-            "label": "お知らせ",
-        },
-    ]
-
-
 def _resolve_performance_member_department_or_404(*, member, department_id):
     department = get_object_or_404(Department, pk=department_id, is_active=True)
     if not MemberDepartment.objects.filter(member=member, department=department).exists() and member.default_department_id != department.id:
@@ -268,12 +133,12 @@ def _resolve_performance_member_department_or_404(*, member, department_id):
 def performance_login(request: HttpRequest) -> HttpResponse:
     role = resolve_request_role(request)
     if role in {ROLE_ADMIN, ROLE_REPORT} and request.user.is_authenticated:
-        return _performance_redirect_for_user(request.user, fallback=request.GET.get("next", ""))
+        return performance_redirect_for_user(request.user, fallback=request.GET.get("next", ""))
 
     form = DairyMetricsLoginForm(request=request, data=request.POST or None)
     if request.method == "POST" and form.is_valid():
         auth_login(request, form.user)
-        return _performance_redirect_for_user(form.user, fallback=request.POST.get("next", ""))
+        return performance_redirect_for_user(form.user, fallback=request.POST.get("next", ""))
 
     return render(
         request,
@@ -1495,7 +1360,7 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
     )
 
     return {
-        "nav_items": _performance_member_page_nav_links(
+        "nav_items": performance_member_page_nav_links(
             member=member,
             department=department,
             is_admin=is_admin,
@@ -1638,7 +1503,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
     )
     entry_rows = detail_payload["entry_rows"]
     entry_edit_next_url = request.get_full_path()
-    can_edit = _can_edit_member_performance(is_admin=is_admin, readonly_member_view=False)
+    can_edit = can_edit_member_performance(is_admin=is_admin, readonly_member_view=False)
     if can_edit:
         attach_transaction_edit_urls(entry_rows=entry_rows, next_url=entry_edit_next_url)
         for row in entry_rows:
@@ -1770,7 +1635,7 @@ def _build_member_history_context(*, request, member, department, is_admin=False
         )
 
     return {
-        "nav_items": _performance_member_page_nav_links(
+        "nav_items": performance_member_page_nav_links(
             member=member,
             department=department,
             is_admin=is_admin,
@@ -1830,9 +1695,9 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         target_month=dashboard_month,
         period=dashboard_period,
     )
-    nav_items = _performance_nav_items()
+    nav_items = performance_nav_items()
     if resolve_request_role(request) == ROLE_REPORT:
-        nav_items = _performance_member_nav_items(is_admin=False)
+        nav_items = performance_member_nav_items(is_admin=False)
     context = {
         "nav_items": nav_items,
         "dashboard_snapshot": dashboard_snapshot,
@@ -1876,7 +1741,7 @@ def performance_admin_entries(request: HttpRequest) -> HttpResponse:
         page_obj = payload["page_obj"]
         summary_rows = payload["summary_rows"]
     context = {
-        "nav_items": _performance_nav_items(),
+        "nav_items": performance_nav_items(),
         "filter_form": filter_form,
         "page_obj": page_obj,
         "paginator": paginator,
@@ -1916,9 +1781,9 @@ def performance_closeout_notes(request: HttpRequest) -> HttpResponse:
 
     paginator = Paginator(entries, 30)
     page_obj = paginator.get_page(request.GET.get("page") or 1)
-    nav_items = _performance_nav_items()
+    nav_items = performance_nav_items()
     if resolve_request_role(request) == ROLE_REPORT:
-        nav_items = _performance_member_nav_items(is_admin=False)
+        nav_items = performance_member_nav_items(is_admin=False)
     pagination_query = request.GET.copy()
     pagination_query.pop("page", None)
     context = {
@@ -1987,9 +1852,9 @@ def performance_history(request: HttpRequest) -> HttpResponse:
         department=dashboard_department,
         scope=scope,
     )
-    nav_items = _performance_nav_items()
+    nav_items = performance_nav_items()
     if resolve_request_role(request) == ROLE_REPORT:
-        nav_items = _performance_member_nav_items(is_admin=False)
+        nav_items = performance_member_nav_items(is_admin=False)
     context = {
         "nav_items": nav_items,
         "dashboard_departments": Department.objects.filter(is_active=True).order_by("code", "id"),
@@ -2040,7 +1905,7 @@ def performance_send_activity_reminder(request: HttpRequest, entry_id: int) -> H
     )
     next_url = request.POST.get("next") or reverse("performance_index")
     separator = "&" if "?" in next_url else "?"
-    return redirect(f"{_performance_next_url(next_url, fallback=reverse('performance_index'))}{separator}{urlencode({'status': status})}")
+    return redirect(f"{performance_next_url(next_url, fallback=reverse('performance_index'))}{separator}{urlencode({'status': status})}")
 
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
@@ -2081,7 +1946,7 @@ def performance_entry_edit(request: HttpRequest, entry_id: int) -> HttpResponse:
         form = PerformanceMemberDailyMetricEntryForm(instance=entry)
 
     context = {
-        "nav_items": _performance_nav_items() if is_admin else _performance_member_nav_items(is_admin=False),
+        "nav_items": performance_nav_items() if is_admin else performance_member_nav_items(is_admin=False),
         "form": form,
         "entry": entry,
         "status_message": status_message,
@@ -2105,7 +1970,7 @@ def performance_entry_delete(request: HttpRequest, entry_id: int) -> HttpRespons
         if is_admin
         else reverse("performance_member_history")
     )
-    back_url = _performance_next_url(next_url, fallback=fallback_url)
+    back_url = performance_next_url(next_url, fallback=fallback_url)
     if request.method == "POST":
         previous_department_id = entry.department_id
         previous_entry_date = entry.entry_date
@@ -2138,7 +2003,7 @@ def performance_transaction_edit(request: HttpRequest, transaction_id: int) -> H
         if is_admin
         else reverse("performance_member_history")
     )
-    back_url = _performance_next_url(next_url, fallback=fallback_url)
+    back_url = performance_next_url(next_url, fallback=fallback_url)
     status_message = ""
     if request.method == "POST":
         form = DairymetricsV2TransactionForm(
@@ -2166,7 +2031,7 @@ def performance_transaction_edit(request: HttpRequest, transaction_id: int) -> H
         "delete_url": reverse("performance_transaction_delete", args=[transaction.id]),
         "is_admin": is_admin,
         "is_wv": transaction.entry.department.code == "WV",
-        "nav_items": _performance_nav_items() if is_admin else _performance_member_nav_items(is_admin=False),
+        "nav_items": performance_nav_items() if is_admin else performance_member_nav_items(is_admin=False),
     }
     return render(request, "performance/transaction_edit.html", context)
 
@@ -2181,7 +2046,7 @@ def performance_transaction_delete(request: HttpRequest, transaction_id: int) ->
     )
     next_url = request.POST.get("next") or request.GET.get("next") or ""
     fallback_url = reverse("performance_member_history_detail", args=[transaction.entry.member_id, transaction.entry.department_id])
-    back_url = _performance_next_url(next_url, fallback=fallback_url)
+    back_url = performance_next_url(next_url, fallback=fallback_url)
     transaction.delete()
     separator = "&" if "?" in back_url else "?"
     return redirect(f"{back_url}{separator}deleted=transaction")
@@ -2239,7 +2104,7 @@ def _render_member_history_day_detail_response(
     is_admin=False,
     readonly_member_view=False,
 ):
-    can_edit = _can_edit_member_performance(is_admin=is_admin, readonly_member_view=readonly_member_view)
+    can_edit = can_edit_member_performance(is_admin=is_admin, readonly_member_view=readonly_member_view)
     selected_date = _parse_selected_date(request.GET.get("date"))
     if selected_date is None:
         raise Http404
@@ -2331,7 +2196,7 @@ def _render_member_history_list_response(
     )
     entry_edit_next_url = request.get_full_path()
     entry_rows = payload["entry_rows"]
-    can_edit = _can_edit_member_performance(is_admin=is_admin, readonly_member_view=readonly_member_view)
+    can_edit = can_edit_member_performance(is_admin=is_admin, readonly_member_view=readonly_member_view)
     if can_edit:
         for row in entry_rows:
             row["edit_url"] = (
@@ -2439,7 +2304,7 @@ def _render_member_day_detail_response(
         selected_date=selected_date,
         reset_url=reset_url,
     )
-    can_edit = _can_edit_member_performance(is_admin=is_admin, readonly_member_view=readonly_member_view)
+    can_edit = can_edit_member_performance(is_admin=is_admin, readonly_member_view=readonly_member_view)
     context["can_edit"] = can_edit
     if can_edit:
         attach_transaction_edit_urls(entry_rows=context["recent_entry_rows"], next_url=reset_url)
@@ -2528,7 +2393,7 @@ def _render_member_recent_detail_response(
             if is_admin
             else reverse("performance_member_dashboard")
         ),
-        "can_edit": _can_edit_member_performance(is_admin=is_admin, readonly_member_view=readonly_member_view),
+        "can_edit": can_edit_member_performance(is_admin=is_admin, readonly_member_view=readonly_member_view),
     }
     if context["can_edit"]:
         attach_transaction_edit_urls(
@@ -2572,11 +2437,11 @@ def performance_member_insight(request: HttpRequest, member_id: int, department_
         is_admin=request.user.is_staff or request.user.is_superuser,
     )
     context["readonly_member_view"] = True
-    context["can_edit"] = _can_edit_member_performance(
+    context["can_edit"] = can_edit_member_performance(
         is_admin=request.user.is_staff or request.user.is_superuser,
         readonly_member_view=True,
     )
-    context["nav_items"] = _performance_member_page_nav_links(
+    context["nav_items"] = performance_member_page_nav_links(
         member=member,
         department=department,
         is_admin=request.user.is_staff or request.user.is_superuser,
@@ -2624,11 +2489,11 @@ def performance_member_history_insight(request: HttpRequest, member_id: int, dep
         is_admin=request.user.is_staff or request.user.is_superuser,
     )
     context["readonly_member_view"] = True
-    context["can_edit"] = _can_edit_member_performance(
+    context["can_edit"] = can_edit_member_performance(
         is_admin=request.user.is_staff or request.user.is_superuser,
         readonly_member_view=True,
     )
-    context["nav_items"] = _performance_member_page_nav_links(
+    context["nav_items"] = performance_member_page_nav_links(
         member=member,
         department=department,
         is_admin=request.user.is_staff or request.user.is_superuser,
@@ -2847,7 +2712,7 @@ def performance_past_entry_create(request: HttpRequest) -> HttpResponse:
         status_message = "過去実績を登録しました。"
 
     context = {
-        "nav_items": _performance_nav_items(),
+        "nav_items": performance_nav_items(),
         "selection_form": selection_form,
         "create_form": create_form,
         "transaction_form": transaction_form,
@@ -2907,9 +2772,9 @@ def performance_summary_delete(request: HttpRequest, summary_id: int) -> HttpRes
     if not has_entries:
         summary.delete()
         separator = "&" if "?" in next_url else "?"
-        return redirect(f"{_performance_next_url(next_url, fallback=reverse('performance_admin_entries'))}{separator}deleted=summary")
+        return redirect(f"{performance_next_url(next_url, fallback=reverse('performance_admin_entries'))}{separator}deleted=summary")
     separator = "&" if "?" in next_url else "?"
-    return redirect(f"{_performance_next_url(next_url, fallback=reverse('performance_admin_entries'))}{separator}status=summary_not_empty")
+    return redirect(f"{performance_next_url(next_url, fallback=reverse('performance_admin_entries'))}{separator}status=summary_not_empty")
 
 
 @require_performance_roles(ROLE_ADMIN)
@@ -2997,7 +2862,7 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
         )
 
     context = {
-        "nav_items": _performance_nav_items(),
+        "nav_items": performance_nav_items(),
         "filter_form": filter_form,
         "list_filter_form": list_filter_form,
         "form": form,

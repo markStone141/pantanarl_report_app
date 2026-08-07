@@ -1190,5 +1190,35 @@
     "action": "testimonyの記事一覧selector分離を実装し、対象テストと標準チェックを実行",
     "reason": "記事一覧とお気に入り一覧の検索・並び替え・新着判定が既存仕様通り動くことを確認したため",
     "next_action": "差分確認後にコミット"
+  },
+  {
+    "timestamp": "2026-08-07T13:27:27+09:00",
+    "expires_at": "2026-09-06T13:27:27+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-performance-navigation-service",
+    "loop": 1,
+    "role": "planner",
+    "event": "plan_created",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "performanceのナビゲーション生成補助をserviceへ分離する計画を作成",
+    "reason": "performance/views.pyが3028行あり、メニュー生成とURL補助がView内に残っているため",
+    "next_action": "navigation serviceを追加してView参照を差し替える"
+  },
+  {
+    "timestamp": "2026-08-07T13:30:20+09:00",
+    "expires_at": "2026-09-06T13:30:20+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-performance-navigation-service",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "performanceのナビゲーション補助をserviceへ分離し、対象テストと標準チェックを実行",
+    "reason": "メニュー生成、戻り先URL補助、編集可否判定をViewから移しても既存の実績管理テストが通過したため",
+    "next_action": "差分確認後にコミット"
   }
 ]
