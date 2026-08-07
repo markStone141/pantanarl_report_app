@@ -335,5 +335,50 @@
     "action": "ロール間Handoff JSONの運用ルールをレビュー",
     "reason": "JSON化しすぎて人間向け報告が読みにくくならないようにしつつ、工程間の判断材料が不足しない形式か確認するため",
     "next_action": "ログJSONと差分を最終確認してコミットする"
+  },
+  {
+    "timestamp": "2026-08-07T11:14:25+09:00",
+    "expires_at": "2026-09-06T11:14:25+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-test-agent-role",
+    "loop": 1,
+    "role": "planner",
+    "event": "goal_defined",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "テスト専門エージェントの基本姿勢を開発工程に追加する",
+    "reason": "テスト担当の責務、禁止事項、失敗分類を明確にし、実装担当との境界を分けるため",
+    "next_action": "既存ロール定義とログCLIを確認してtest_agentを追加する"
+  },
+  {
+    "timestamp": "2026-08-07T11:15:19+09:00",
+    "expires_at": "2026-09-06T11:15:19+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-test-agent-role",
+    "loop": 2,
+    "role": "test_agent",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "テスト専門エージェントの責務と報告形式を追加",
+    "reason": "受け入れ条件に対する検証、失敗分類、再現証拠を本番コード変更なしで報告できるようにするため",
+    "next_action": "標準チェックとドキュメントレビューを実行する"
+  },
+  {
+    "timestamp": "2026-08-07T11:15:38+09:00",
+    "expires_at": "2026-09-06T11:15:38+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260807-test-agent-role",
+    "loop": 3,
+    "role": "reviewer",
+    "event": "review_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "test_agentの責務と制約をレビュー",
+    "reason": "本番コードを変更せず、PRODUCT_BUGやSPEC_AMBIGUITYなどを分類して開発担当へ返す責務になっているか確認するため",
+    "next_action": "ログJSONと差分を最終確認して対象ファイルをコミットする"
   }
 ]

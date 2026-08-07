@@ -97,6 +97,7 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - `implementer`: Action を担当する。計画に沿ってコード、テンプレート、CSS、ドキュメントを変更する。勝手に制約を広げない。
 - `observer`: Observe を担当する。コマンド結果、エラー、差分、画面上の変化を事実として整理する。解釈と事実を混ぜない。
 - `validator`: Validate を担当する。テスト、Django check、migration check、BOM、diff check を実行する。失敗を握りつぶさない。
+- `test_agent`: Test Review を担当する。仕様と受け入れ条件に対する検証、失敗分類、再現可能な証拠の記録を行う。本番コードは変更しない。
 - `ui_designer`: UI/UX Review を担当する。情報設計、視線誘導、モバイル操作、余白、密度、既存CSS再利用、単調なカード量産の回避を評価する。
 - `reviewer`: Review を担当する。仕様適合、権限、DBアクセス、N+1、部署分岐、UI品質、保守性を評価する。
 - `repairer`: Repair を担当する。失敗やレビュー指摘を修正し、Observe / Validate / Review へ戻す。
@@ -132,6 +133,47 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - `makemigrations --check --dry-run` を実行したか。
 - BOMチェックと `git diff --check` を実行したか。
 
+### Test Agent
+
+目的は、実装が仕様と受け入れ条件を満たすかを検証し、再現可能な証拠を添えて問題を報告すること。成功条件はテストをすべて緑にすることではなく、実装上の問題、テスト上の問題、仕様の曖昧さを正確に分類すること。
+
+参照優先順位:
+
+1. 受け入れ条件
+2. 仕様書
+3. API契約
+4. 承認済みの既存テスト
+5. 実装コード
+
+許可:
+
+- ソースコードの読み取り
+- `tests` ディレクトリ内の変更
+- テストコマンドの実行
+- テスト結果の記録
+
+禁止:
+
+- 本番コードの変更
+- 仕様の変更
+- 失敗するテストの削除や無効化
+- 期待値を実装結果へ安易に合わせる
+- 本番環境や本番データへのアクセス
+
+テスト観点:
+
+- 正常系
+- 異常系
+- 境界値
+- 権限
+- 重複処理
+- 外部依存の失敗
+- 回帰
+
+失敗時は、`PRODUCT_BUG`、`TEST_BUG`、`SPEC_AMBIGUITY`、`ENVIRONMENT_ERROR`、`FLAKY_TEST`、`UNKNOWN` のいずれかに分類する。同じ問題への再試行は最大2回。実装上の不具合と判断した場合は、テストを変更せず開発担当へ返す。
+
+各報告には、実行コマンド、期待結果、実際の結果、再現手順、根拠、変更したテストファイル、本番コードを変更していないことを含める。
+
 ### UI Designer
 
 - ユーザーが最初に見るべき情報が上に来ているか。
@@ -151,7 +193,7 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 
 ## 構造化評価JSON
 
-`validator`、`ui_designer`、`reviewer` が問題を検出した場合は、後続の `repairer` が迷わず修正できるように、可能な限り以下のJSON形式で評価結果を残す。
+`validator`、`test_agent`、`ui_designer`、`reviewer` が問題を検出した場合は、後続の `repairer` が迷わず修正できるように、可能な限り以下のJSON形式で評価結果を残す。
 
 ```json
 {
@@ -187,6 +229,45 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - `ui_ux`: 情報設計、操作性、モバイル表示、見た目の単調さ。
 - `maintainability`: 責務分離、重複、肥大化、命名。
 - `test_coverage`: テスト不足、検証不足。
+
+### test_agent.failure_type
+
+`test_agent` が失敗を報告する場合は、`issues` の各要素に `failure_type` を追加する。
+
+- `PRODUCT_BUG`: 実装上の不具合。
+- `TEST_BUG`: テスト自体の誤り。
+- `SPEC_AMBIGUITY`: 仕様や受け入れ条件が曖昧。
+- `ENVIRONMENT_ERROR`: 環境、依存、設定による失敗。
+- `FLAKY_TEST`: 再現性が不安定な失敗。
+- `UNKNOWN`: 原因分類がまだできない失敗。
+
+`test_agent` の報告例:
+
+```json
+{
+  "result": "fail",
+  "score": 64,
+  "issues": [
+    {
+      "category": "functional_correctness",
+      "severity": "major",
+      "failure_type": "PRODUCT_BUG",
+      "location": "apps.example.tests.ExampleFlowTests.test_duplicate_submit",
+      "problem": "重複送信時に既存エントリーへ紐づかず、同一内容のレコードが追加される",
+      "required_fix": "同一メンバー、同一日付、同一決済内容の場合は重複登録せず既存エントリーを再利用する"
+    }
+  ],
+  "retry_required": true,
+  "evidence": {
+    "command": "./.venv/bin/python manage.py test apps.example.tests.ExampleFlowTests",
+    "expected": "重複登録されず既存エントリーが利用される",
+    "actual": "同一内容のレコードが2件作成された",
+    "reproduction_steps": ["対象テストを実行する", "DB上の作成件数を確認する"],
+    "test_files_changed": ["apps/example/tests.py"],
+    "production_code_changed": false
+  }
+}
+```
 
 ### issue.severity
 
@@ -239,6 +320,7 @@ AI作業は、以下のループで進める。目的は、ログを残すこと
 - `implementer -> observer`: 変更内容、変更ファイル、実行した操作を渡す。
 - `observer -> validator`: 実行結果、エラー、再現条件を渡す。
 - `validator -> reviewer`: テスト結果、未実行チェック、機械的な懸念を渡す。
+- `test_agent -> reviewer`: テスト観点、失敗分類、再現手順、変更したテストファイルを渡す。
 - `ui_designer -> reviewer`: UI評価、PC/モバイルの懸念、改善案を渡す。
 - `reviewer -> repairer`: 構造化評価JSONと修正優先度を渡す。
 - `repairer -> validator`: 修正内容と再検証すべき項目を渡す。
