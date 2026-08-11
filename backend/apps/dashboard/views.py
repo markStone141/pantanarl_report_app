@@ -30,10 +30,6 @@ from .services.departments import (
     selected_metric_department as resolve_selected_metric_department,
     target_metric_form,
 )
-from .services.mail_actuals import (
-    merge_adjustment_totals_into_department_totals,
-    merge_adjustment_totals_into_member_totals,
-)
 from .services.members import (
     build_member_bulk_queryset,
     build_member_row_payload,
@@ -173,16 +169,8 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
             report_date=base_date,
             target_departments=target_departments,
         )
-        base_daily_totals = merge_adjustment_totals_into_department_totals(
-            base_daily_totals=base_snapshot["daily_totals"],
-            report_date=base_date,
-            target_codes=target_codes,
-        )
-        base_member_totals = merge_adjustment_totals_into_member_totals(
-            base_member_totals=base_snapshot["member_totals"],
-            report_date=base_date,
-            target_codes=target_codes,
-        )
+        base_daily_totals = base_snapshot["daily_totals"]
+        base_member_totals = base_snapshot["member_totals"]
         base_has_report_by_code = base_snapshot["has_report_by_code"]
 
         base_scope = build_target_scope_snapshot(

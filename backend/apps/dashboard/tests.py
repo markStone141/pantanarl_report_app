@@ -867,7 +867,7 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertEqual(today_section["daily_count"], 2)
         self.assertEqual(prev_section["daily_count"], 1)
 
-    def test_dashboard_mail_today_includes_adjustments_in_daily_totals(self):
+    def test_dashboard_mail_excludes_adjustments_from_daily_totals_but_keeps_cumulative_totals(self):
         today = timezone.localdate()
         month = today.replace(day=1)
         period = Period.objects.create(
@@ -941,11 +941,11 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertIn("補正 件数2件 / 金額300円", row["period_actual"])
         payload_map = response.context["mail_template_payload_map"]
         today_section = next(s for s in payload_map["today"]["sections"] if s["code"] == "UN")
-        self.assertEqual(today_section["daily_count"], 3)
-        self.assertEqual(today_section["daily_amount_text"], "1,300円")
+        self.assertEqual(today_section["daily_count"], 1)
+        self.assertEqual(today_section["daily_amount_text"], "1,000円")
         self.assertEqual(len(today_section["member_lines"]), 1)
-        self.assertEqual(today_section["member_lines"][0]["count"], 3)
-        self.assertEqual(today_section["member_lines"][0]["amount_text"], "1,300円")
+        self.assertEqual(today_section["member_lines"][0]["count"], 1)
+        self.assertEqual(today_section["member_lines"][0]["amount_text"], "1,000円")
         self.assertEqual(today_section["month_remaining_text"], "2件/700円")
         self.assertIn("補正 件数2件 / 金額300円", today_section["month_lines"])
         self.assertIn("補正 件数2件 / 金額300円", today_section["period_lines"])
@@ -990,7 +990,7 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
             ["First Input", "Second Input", "Third Input"],
         )
 
-    def test_dashboard_mail_treats_adjustment_only_day_as_daily_actual(self):
+    def test_dashboard_mail_does_not_treat_adjustment_only_day_as_daily_activity(self):
         today = timezone.localdate()
         month = today.replace(day=1)
         period = Period.objects.create(
@@ -1036,9 +1036,10 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
         self.assertIn("補正 件数1件 / 金額1,500円込み", row["month_actual"])
         today_section = next(s for s in response.context["mail_template_payload_map"]["today"]["sections"] if s["code"] == "UN")
-        self.assertTrue(today_section["has_report"])
-        self.assertEqual(today_section["daily_count"], 1)
-        self.assertEqual(today_section["daily_amount_text"], "1,500円")
+        self.assertFalse(today_section["has_report"])
+        self.assertEqual(today_section["daily_count"], 0)
+        self.assertEqual(today_section["daily_amount_text"], "0円")
+        self.assertEqual(today_section["member_lines"], [])
         self.assertIn("補正 件数1件 / 金額1,500円", today_section["month_lines"])
 
     def test_dashboard_reflects_wv_and_style_reports_into_kpi_and_targets(self):
@@ -1174,8 +1175,9 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         wv_mail_section = next(s for s in payload_map["today"]["sections"] if s["code"] == "WV")
         self.assertEqual(wv_mail_section["month_remaining_text"], "25件/0円")
         self.assertEqual(wv_mail_section["month_remaining_split_text"], "CS8件 難民17件/0円")
-        self.assertEqual(wv_mail_section["daily_cs_count"], 2)
-        self.assertEqual(wv_mail_section["daily_refugee_count"], 3)
+        self.assertEqual(wv_mail_section["daily_cs_count"], 1)
+        self.assertEqual(wv_mail_section["daily_refugee_count"], 2)
+        self.assertEqual(wv_mail_section["daily_amount_text"], "5,000円")
         self.assertIn("CS 2件 / 難民 3件 / 金額 6,500円", wv_mail_section["month_lines"])
         self.assertIn("補正 CS1件 / 難民1件 / 金額1,500円", wv_mail_section["month_lines"])
         self.assertIn("CS 2件 / 難民 3件 / 金額 6,500円", wv_mail_section["period_lines"])

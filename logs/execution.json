@@ -2450,5 +2450,20 @@
     "action": "performance次期工程3・4を完了",
     "reason": "対象31件、performance97件、全体379件と必須チェックが成功",
     "next_action": "公開前の総合監査までPUSHせず停止"
+  },
+  {
+    "timestamp": "2026-08-11T19:13:06+09:00",
+    "expires_at": "2026-09-10T19:13:06+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260811-mail-adjustment-exclusion",
+    "loop": 2,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "メール本文の日次実績から補正を除外し全379テストと必須チェックを実行",
+    "reason": "当日欄は報告アプリの通常実績のみ、月・路程累計は補正込みに分離",
+    "next_action": "差分監査後にローカルコミット"
   }
 ]
