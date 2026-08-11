@@ -234,7 +234,7 @@ git diff --check
 
 | 工程 | 作業 | 状態 |
 |---|---|---|
-| 1 | メンバー詳細AJAXのcontext・表示row生成を `member_ajax.py` へ分離する | 進行中 |
+| 1 | メンバー詳細AJAXのcontext・表示row生成を `member_ajax.py` へ分離する | 完了 |
 | 2 | transactionsを順序付きPrefetchへ変更し、クエリ数テストでN+1防止を固定する | 未着手 |
 | 3 | 過去入力の部署別メンバー候補APIをserviceへ分離する | 未着手 |
 | 4 | 補正画面のメンバー候補生成を `adjustment_options.py` へ分離する | 未着手 |
@@ -243,4 +243,6 @@ git diff --check
 欠落により実行時エラーになる既存不具合を確認した。最初の変更では
 `services/member_ajax.py` に生成処理を復元し、管理者・本人・閲覧専用の履歴URLと
 日別AJAX応答を回帰テストで固定した。残る履歴日別、履歴一覧、直近一覧のcontext生成は、
-次の変更で同serviceへ移し、Viewには権限、対象メンバー解決、renderだけを残す。
+同serviceへ移し、Viewには権限、対象メンバー解決、必須日付の404判定、renderだけを残した。
+管理者・本人・閲覧専用のURL、編集可否、期間・日付・limit処理、query評価順は変更していない。
+次は工程2として、transactionsを順序付きPrefetchへ変更し、クエリ数テストでN+1防止を固定する。

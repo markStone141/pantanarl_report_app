@@ -222,5 +222,20 @@
     "action": "backendからリポジトリルート基準のpathspecでgit addを実行",
     "reason": "PROJECT_STATE.mdがbackend直下にないためステージ前に停止した",
     "next_action": "backend基準の正しい相対パスで関係7ファイルをコミット"
+  },
+  {
+    "timestamp": "2026-08-11T18:47:01+09:00",
+    "expires_at": "2026-11-09T18:47:01+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260811-performance-member-ajax",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "ruffまたはpyflakesによる補助静的解析を試行",
+    "reason": "移動後の不要importを機械的に確認するため",
+    "next_action": "未導入のため目視検索とDjangoチェック・全テストで確認"
   }
 ]
