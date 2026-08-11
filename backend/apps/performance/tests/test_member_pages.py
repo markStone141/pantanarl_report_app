@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 from apps.accounts.models import Member, MemberDepartment
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction, MemberMonthMetricTarget, MemberPeriodMetricTarget, MetricAdjustment
+from apps.performance.services.member_ajax import build_member_dashboard_detail_context
 from apps.targets.models import Period
 from .base import PerformanceTestBase
 
@@ -11,6 +12,51 @@ User = get_user_model()
 
 
 class MemberPagesTests(PerformanceTestBase):
+    def test_member_dashboard_day_detail_context_uses_each_history_route(self):
+        common = {
+            "member": self.member,
+            "department": self.department,
+            "entry_rows": [],
+            "adjustment_rows": [],
+            "selected_date": date(2026, 8, 10),
+        }
+
+        admin_context = build_member_dashboard_detail_context(is_admin=True, **common)
+        member_context = build_member_dashboard_detail_context(**common)
+        readonly_context = build_member_dashboard_detail_context(readonly_member_view=True, **common)
+
+        self.assertEqual(
+            admin_context["detail_history_url"],
+            reverse("performance_member_history_detail", args=[self.member.id, self.department.id]),
+        )
+        self.assertEqual(member_context["detail_history_url"], reverse("performance_member_history"))
+        self.assertEqual(
+            readonly_context["detail_history_url"],
+            reverse("performance_member_history_insight", args=[self.member.id, self.department.id]),
+        )
+
+    def test_performance_member_detail_day_detail_returns_selected_day(self):
+        selected_day = timezone.localdate() - timedelta(days=1)
+        MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=selected_day,
+            result_count=1,
+            support_amount=3000,
+            activity_closed=True,
+            location_name="日別ドリルダウン現場",
+        )
+
+        response = self.client.get(
+            reverse("performance_member_detail_day_detail", args=[self.member.id, self.department.id]),
+            {"date": selected_day.isoformat()},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"{selected_day:%Y/%m/%d} の実績")
+        self.assertContains(response, "日別ドリルダウン現場")
+
     def test_performance_member_dashboard_nav_includes_report_app(self):
         self.client.logout()
         member_user = User.objects.create_user(username="perf-member-report-nav", password="pass1234", is_staff=False)

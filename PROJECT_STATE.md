@@ -52,10 +52,11 @@
 - `performance` の補正実績・WVキャンセルの検索queryと一覧表示row生成を `services/adjustments.py` へ分離した。
 - `performance` の補正一覧・登録フォームを `forms_adjustments.py` へ分離し、既存 `forms.py` のimport互換性を維持した。
 - `performance` の単一 `tests.py` を機能別の6テストモジュールへ分割し、91件のテスト本文と検出件数を維持した。
+- `performance` の次期4工程を定め、メンバー日別ドリルダウンの欠落context生成を `services/member_ajax.py` に復元して回帰テストを追加した。
 
 ## 進行中の作業
 
-- アプリ単位の構成、責務、依存、テスト見直し。`performance` リファクタリング計画は全8工程を完了。
+- アプリ単位の構成、責務、依存、テスト見直し。`performance` の初期8工程は完了し、次期4工程の工程1を進行中。
 - 管理者ダッシュボードの主要セクションへのUI部品統一は試作済み。利用者確認後に、他画面への展開範囲を決める。
 
 ## 確定事項
@@ -90,7 +91,7 @@
 
 ## 次に行う作業
 
-- `performance` の次の改善単位を、残存するView責務とDBアクセス候補から選定する。
+- `performance` 次期工程1として、残るメンバー詳細AJAX context生成を `member_ajax.py` へ分離する。
 
 ## 参照
 

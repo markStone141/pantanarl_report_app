@@ -77,6 +77,7 @@ from apps.performance.services.dashboard_snapshots import (
     build_performance_dashboard_snapshot,
     build_performance_history_snapshot,
 )
+from apps.performance.services.member_ajax import build_member_dashboard_detail_context
 from apps.performance.services.member_cards import resolve_member_card_department
 from apps.performance.services.member_pages import (
     build_member_dashboard_context,
@@ -812,7 +813,7 @@ def _render_member_day_detail_response(
         if is_admin
         else reverse("performance_member_dashboard")
     )
-    context = _build_member_dashboard_detail_context(
+    context = build_member_dashboard_detail_context(
         member=member,
         department=department,
         entry_rows=entry_rows,
