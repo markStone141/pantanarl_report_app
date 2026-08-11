@@ -114,6 +114,8 @@
     </div>
   </section>
 
+  {% include "performance/partials/department_today_detail_cards.html" %}
+
   <section class="card mt-16">
     <h3>目標達成率</h3>
     <div class="grid grid-2 mt-12">
@@ -303,8 +305,6 @@
     <p class="muted">有効なメンバーはいません。</p>
     {% endif %}
   </section>
-
-  {% include "performance/partials/department_today_detail_cards.html" %}
 
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>

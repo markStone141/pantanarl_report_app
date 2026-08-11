@@ -42,5 +42,20 @@
     "action": "reportsテストを実行",
     "reason": "報告行処理のservice層切り出し後に参照名の置換漏れで2件失敗",
     "next_action": "_build_initial_row_from_metric_entry の参照を build_initial_row_from_metric_entry に修正して再実行"
+  },
+  {
+    "timestamp": "2026-08-11T16:58:33+09:00",
+    "expires_at": "2026-11-09T16:58:33+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260811-performance-dashboard-order",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "対象テストを初回実行",
+    "reason": "開発環境にDjangoが未導入でModuleNotFoundErrorが発生",
+    "next_action": "指定の開発依存関係を導入して再実行"
   }
 ]
