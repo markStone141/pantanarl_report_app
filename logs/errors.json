@@ -57,5 +57,35 @@
     "action": "対象テストを初回実行",
     "reason": "開発環境にDjangoが未導入でModuleNotFoundErrorが発生",
     "next_action": "指定の開発依存関係を導入して再実行"
+  },
+  {
+    "timestamp": "2026-08-11T17:34:46+09:00",
+    "expires_at": "2026-11-09T17:34:46+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260811-dashboard-ui-components",
+    "loop": 1,
+    "role": "test_agent",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "管理者ダッシュボード対象テストを実行",
+    "reason": "指定したテストクラス名が存在せずテスト読込前に失敗",
+    "next_action": "対象メソッドの所属クラスを確認して再実行"
+  },
+  {
+    "timestamp": "2026-08-11T17:36:04+09:00",
+    "expires_at": "2026-11-09T17:36:04+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260811-dashboard-ui-components",
+    "loop": 2,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "Docs JavaScript lintを実行",
+    "reason": "eslintが環境に未導入のため起動不可。Docs JavaScriptは変更対象外",
+    "next_action": "依存導入は今回の対象外とし、関連検証結果を明記"
   }
 ]

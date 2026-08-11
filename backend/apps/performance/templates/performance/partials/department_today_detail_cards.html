@@ -1,7 +1,10 @@
 {% if today_detail_tabbed %}
-<section class="card mt-16 performance-today-records" data-performance-record-tabs>
-  <div>
-    <h3>本日の記録</h3>
+<section class="card mt-16 performance-today-records performance-dashboard-section" data-performance-record-tabs>
+  <div class="performance-dashboard-section-heading">
+    <div>
+      <span class="performance-dashboard-section-kicker">RECORDS</span>
+      <h3>本日の記録</h3>
+    </div>
     <div class="muted">{{ today_detail_date|date:"Y/m/d" }} の選択部署の決済・送信メールです。</div>
   </div>
   <div class="performance-record-tabs mt-12" role="tablist" aria-label="本日の記録">

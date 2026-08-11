@@ -42,10 +42,16 @@
     </form>
   </section>
 
-  <section class="card mt-16">
-    <h3>本日の活動状況</h3>
+  <section class="card mt-16 performance-dashboard-section">
+    <div class="performance-dashboard-section-heading">
+      <div>
+        <span class="performance-dashboard-section-kicker">TODAY</span>
+        <h3>本日の活動状況</h3>
+      </div>
+      <span class="performance-dashboard-section-date">{{ today_detail_date|date:"Y/m/d" }}</span>
+    </div>
     <div class="performance-today-summary-grid mt-12">
-      <article class="metric-card performance-today-total-card">
+      <article class="metric-card performance-today-total-card performance-today-total-card-primary">
         <span class="muted">今日の合計件数</span>
         <strong class="mt-6">{{ dashboard_snapshot.today_total_count_text }}</strong>
         {% if dashboard_snapshot.today_total_count_subtext %}<div class="muted mt-4">{{ dashboard_snapshot.today_total_count_subtext }}</div>{% endif %}
@@ -64,12 +70,16 @@
       </article>
     </div>
     <div class="grid grid-2 mt-12">
-      <article class="card">
-        <h4>現在活動中メンバー</h4>
+      <article class="card performance-activity-group performance-activity-group-active">
+        <div class="performance-activity-group-heading">
+          <span class="performance-status-dot" aria-hidden="true"></span>
+          <h4>現在活動中メンバー</h4>
+          <span class="badge performance-activity-count">{{ dashboard_snapshot.activity_in_progress|length }}名</span>
+        </div>
         {% if dashboard_snapshot.activity_in_progress %}
         <div class="grid mt-10">
           {% for row in dashboard_snapshot.activity_in_progress %}
-          <div class="metric-card">
+          <div class="metric-card performance-activity-member-card">
             <div class="row">
               <strong>{{ row.member_name }}</strong>
               <span class="badge">{{ row.department_code }}</span>
@@ -91,12 +101,16 @@
         <p class="muted">現在活動中のメンバーはいません。</p>
         {% endif %}
       </article>
-      <article class="card">
-        <h4>活動終了メンバー</h4>
+      <article class="card performance-activity-group performance-activity-group-finished">
+        <div class="performance-activity-group-heading">
+          <span class="performance-status-dot" aria-hidden="true"></span>
+          <h4>活動終了メンバー</h4>
+          <span class="badge performance-activity-count">{{ dashboard_snapshot.activity_finished|length }}名</span>
+        </div>
         {% if dashboard_snapshot.activity_finished %}
         <div class="grid mt-10">
           {% for row in dashboard_snapshot.activity_finished %}
-          <div class="metric-card">
+          <div class="metric-card performance-activity-member-card">
             <div class="row">
               <strong>{{ row.member_name }}</strong>
               <span class="badge">{{ row.department_code }}</span>
@@ -116,8 +130,13 @@
 
   {% include "performance/partials/department_today_detail_cards.html" with today_detail_tabbed=True %}
 
-  <section class="card mt-16">
-    <h3>目標達成率</h3>
+  <section class="card mt-16 performance-dashboard-section">
+    <div class="performance-dashboard-section-heading">
+      <div>
+        <span class="performance-dashboard-section-kicker">PROGRESS</span>
+        <h3>目標達成率</h3>
+      </div>
+    </div>
     <div class="grid grid-2 mt-12">
       {% for card in dashboard_snapshot.month_progress_cards %}
       <article class="card performance-progress-card">
