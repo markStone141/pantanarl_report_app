@@ -177,14 +177,22 @@ URL名とテンプレート名は維持する。まず `views.py` のprivate関�
 | 1 | `services/formatters.py` と `services/scopes.py` を追加し、純粋関数だけ移動する | 完了 |
 | 2 | `performance_index` / `performance_history` のsnapshot構築を `dashboard_snapshots.py` へ移す | 完了 |
 | 3 | 今日の決済明細/送信メールdetail rowを `today_details.py` へ移す | 完了 |
-| 4 | メンバーカード生成を `member_cards.py` へ移し、部署ごとのクエリを確認する | 次工程 |
-| 5 | メンバー個別/過去実績contextを `member_pages.py` へ移す | 未着手 |
+| 4 | メンバーカード生成を `member_cards.py` へ移し、部署ごとのクエリを確認する | 完了 |
+| 5 | メンバー個別/過去実績contextを `member_pages.py` へ移す | 次工程 |
 | 6 | 補正実績のquery/row生成を `adjustments.py` へ移す | 未着手 |
 | 7 | 補正フォームを `forms_adjustments.py` へ移し、`forms.py` は互換importにする | 未着手 |
 | 8 | tests.pyを機能別に分割する | 未着手 |
 
 工程2ではメンバーカード生成も `dashboard_snapshots.py` へ一時的に移動済み。工程4では、
 `member_cards.py` へ再分離する前に、責務境界と部署ごとのクエリ数を監査する。
+
+工程4ではカード生成、メンバーの部署解決、対象期間メンバー抽出を
+`services/member_cards.py` へ分離した。同一部署のメンバーは一括集計されるため、
+メンバー人数に比例するN+1はない。管理者ダッシュボードのカード集計は、部署ごとに
+月累計3集計、路程累計3集計、最近実績1取得、最近実績の補正1集計を行う。
+部署数には比例するが、UN/WVとキャンセルを含む既存の業務集計境界を維持するため、
+この工程では複数部署をまたぐ一括集計へ変更しない。必要になった場合は
+`apps.dairymetrics.services.final_actuals` に部署別一括APIを設計する別工程として扱う。
 
 ## 検証方針
 

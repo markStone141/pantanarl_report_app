@@ -147,5 +147,20 @@
     "action": "performance全91テストを実行",
     "reason": "移動した部署解決関数のView側import不足で12件が同一NameError",
     "next_action": "service関数を公開importして再検証"
+  },
+  {
+    "timestamp": "2026-08-11T18:18:47+09:00",
+    "expires_at": "2026-11-09T18:18:47+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260811-performance-member-cards",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "performance全91テストを実行",
+    "reason": "member_cards分離後の回帰確認",
+    "next_action": "活動中・終了メンバー行生成をsnapshot責務へ戻して再検証"
   }
 ]

@@ -82,8 +82,8 @@ from apps.performance.services.closeout_notes import resolve_closeout_notes_scop
 from apps.performance.services.dashboard_snapshots import (
     build_performance_dashboard_snapshot,
     build_performance_history_snapshot,
-    resolve_member_card_department,
 )
+from apps.performance.services.member_cards import resolve_member_card_department
 from apps.performance.services.past_entries import (
     create_past_entry_with_transactions,
     normalize_transaction_payloads,
