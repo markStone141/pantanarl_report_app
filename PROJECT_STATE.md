@@ -46,10 +46,24 @@
 - `performance` の管理者ダッシュボードに共通セクション見出し、サマリーカード、活動状態カードの表示規則を導入し、青を基調に影と半透明表現を抑えた試作へ更新した。
 - `performance` の管理者ダッシュボードで、目標達成カード、全体実績推移、有効メンバー一覧にも共通セクション・内側カードの表示規則を展開した。
 - `performance` の管理者ダッシュボード／過去実績snapshot構築と関連メンバーカード集計を `services/dashboard_snapshots.py` へ分離し、Viewを表示制御中心へ縮小した。
+- `performance` の今日の決済・送信メール明細row生成を `services/today_details.py` へ分離した。
+- `performance` のメンバーカード生成と対象メンバー・部署解決を `services/member_cards.py` へ分離し、同一部署内でメンバー人数に比例するN+1がないことを確認した。
+- `performance` のメンバー個別ダッシュボード・過去実績context構築を `services/member_pages.py` へ分離し、Viewを権限・保存・応答制御中心へ縮小した。
+- `performance` の補正実績・WVキャンセルの検索queryと一覧表示row生成を `services/adjustments.py` へ分離した。
+- `performance` の補正一覧・登録フォームを `forms_adjustments.py` へ分離し、既存 `forms.py` のimport互換性を維持した。
+- `performance` の単一 `tests.py` を機能別の6テストモジュールへ分割し、91件のテスト本文と検出件数を維持した。
+- `performance` の次期4工程を定め、メンバー日別ドリルダウンの欠落context生成を `services/member_ajax.py` に復元して回帰テストを追加した。
+- `performance` の履歴日別・履歴一覧・直近一覧AJAXのquery・表示row・context生成を `services/member_ajax.py` へ分離し、次期工程1を完了した。
+- 活動中メンバーへの手動リマインド経路を削除し、自動リマインドのみを維持した。
+- 個人の分析ページで「個人」と「全体」の指標カードをタブ切り替えに統合し、個人を初期表示にした。
+- `performance` のメンバー実績transactionsを順序付きPrefetchで一括取得し、実績件数に比例するN+1がないことをクエリ数テストで固定した。
+- 管理者ダッシュボードの「本日の活動状況」を、同格の白い状態パネル、上端アクセント、整理したメンバー実績カード、コンパクトな空状態へ再設計した。
+- `performance` の過去入力メンバー候補APIを `services/adjustment_options.py` へ分離した。
+- 補正画面のメンバー候補を全件先読みから選択部署だけの遅延取得へ変更し、次期改善4工程を完了した。
 
 ## 進行中の作業
 
-- アプリ単位の構成、責務、依存、テスト見直し。次は `performance` の今日の決済・メール明細row生成をserviceへ分離する。
+- アプリ単位の構成、責務、依存、テスト見直し。`performance` の初期8工程と次期4工程はすべて完了。
 - 管理者ダッシュボードの主要セクションへのUI部品統一は試作済み。利用者確認後に、他画面への展開範囲を決める。
 
 ## 確定事項
@@ -70,7 +84,8 @@
 - 承認済み要件、設計書、タスク一覧、意思決定ログ、テスト結果をどのファイルへ集約するか。
 - `PROJECT_STATE.md` の更新頻度を作業単位、PR単位、リリース単位のどれにするか。
 - `dashboard/views.py` は818行まで縮小したが、部署管理の保存処理本体・メールテンプレート生成を別作業として追加分割する余地がある。
-- `performance/views.py` はsnapshot構築の分離後も2,153行あり、今日の明細、メンバー個別画面、補正実績、過去入力、AJAXが混在している。
+- `performance/views.py` は主要なsnapshot・明細・カード・メンバー個別context・補正query・候補queryをserviceへ分離済み。補正フォーム制御と過去入力のHTTPフローには追加分割の余地がある。
+- 管理者ダッシュボードのメンバーカード集計はメンバー単位のN+1を避けているが、部署数には比例する。複数部署一括化は `final_actuals` の部署別一括APIを設計する別工程として扱う。
 
 ## ブロッカー
 
@@ -83,7 +98,7 @@
 
 ## 次に行う作業
 
-- `performance` は `backend/docs/PERFORMANCE_REFACTOR_PLAN.md` の順に、小さく分割して対象テストを回す。
+- `performance` の初期8工程・次期4工程完了後の差分を公開前に総合監査する。
 
 ## 参照
 

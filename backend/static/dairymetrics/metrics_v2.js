@@ -2,6 +2,42 @@
   const scopeSelect = document.querySelector("[data-metrics-v2-scope]");
   const scopeFields = document.querySelectorAll("[data-metrics-v2-scope-field]");
   const dataNode = document.getElementById("metrics-v2-dashboard-data");
+  const summaryTabs = Array.from(document.querySelectorAll("[data-metrics-v2-summary-tab]"));
+  const summaryPanels = document.querySelectorAll("[data-metrics-v2-summary-panel]");
+
+  function selectSummaryTab(selectedTab, focusTab) {
+    const target = selectedTab.dataset.metricsV2SummaryTab;
+    summaryTabs.forEach(function (tab) {
+      const isSelected = tab === selectedTab;
+      tab.classList.toggle("is-active", isSelected);
+      tab.setAttribute("aria-selected", isSelected ? "true" : "false");
+      tab.tabIndex = isSelected ? 0 : -1;
+    });
+    summaryPanels.forEach(function (panel) {
+      panel.hidden = panel.dataset.metricsV2SummaryPanel !== target;
+    });
+    if (focusTab) {
+      selectedTab.focus();
+    }
+  }
+
+  summaryTabs.forEach(function (tab, index) {
+    tab.addEventListener("click", function () {
+      selectSummaryTab(tab, false);
+    });
+    tab.addEventListener("keydown", function (event) {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+        return;
+      }
+      event.preventDefault();
+      let nextIndex = index;
+      if (event.key === "ArrowLeft") nextIndex = (index - 1 + summaryTabs.length) % summaryTabs.length;
+      if (event.key === "ArrowRight") nextIndex = (index + 1) % summaryTabs.length;
+      if (event.key === "Home") nextIndex = 0;
+      if (event.key === "End") nextIndex = summaryTabs.length - 1;
+      selectSummaryTab(summaryTabs[nextIndex], true);
+    });
+  });
 
   function toggleScopeFields() {
     if (!scopeSelect) {

@@ -504,18 +504,48 @@ a {
   min-width: 0;
 }
 
+.performance-activity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+}
+
 .performance-activity-group {
-  border-color: #e1e8f0;
-  background: var(--dashboard-surface-subtle);
+  position: relative;
+  min-width: 0;
+  padding: 16px;
+  overflow: hidden;
+  border: 1px solid #dfe7ef;
+  border-radius: 14px;
+  background: #fff;
   box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+}
+
+.performance-activity-group::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: #8a9aab;
+}
+
+.performance-activity-group-active::before {
+  background: var(--ok);
+}
+
+.performance-activity-group-finished::before {
+  background: #8292a5;
 }
 
 .performance-activity-group-heading {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 28px;
+  padding-top: 2px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #edf1f5;
 }
 
 .performance-activity-count {
@@ -535,7 +565,6 @@ a {
 
 .performance-activity-group-active .performance-status-dot {
   background: var(--ok);
-  box-shadow: 0 0 0 4px rgba(48, 164, 108, 0.12);
 }
 
 .performance-activity-group-finished .performance-status-dot {
@@ -543,9 +572,58 @@ a {
 }
 
 .performance-activity-member-card {
-  border-color: #e6ecf2;
-  background: #fff;
-  box-shadow: none;
+  padding: 12px 13px;
+  border: 1px solid #e7edf3;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.performance-activity-member-list {
+  display: grid;
+  gap: 8px;
+}
+
+.performance-activity-member-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.performance-activity-department {
+  margin-left: auto;
+}
+
+.performance-activity-member-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 12px;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.performance-activity-member-result {
+  display: block;
+  margin-top: 8px;
+  color: #17324f;
+  font-size: 0.92rem;
+}
+
+.performance-activity-member-result span {
+  margin: 0 4px;
+  color: #9aa9b8;
+  font-weight: 400;
+}
+
+.performance-activity-empty {
+  margin: 10px 0 0;
+  padding: 18px 12px;
+  border: 1px dashed #dce5ee;
+  border-radius: 10px;
+  background: #fafbfd;
+  color: var(--muted);
+  font-size: 0.88rem;
+  text-align: center;
 }
 
 .performance-dashboard-inner-card {
@@ -609,6 +687,10 @@ a {
 @media (max-width: 900px) {
   .performance-today-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .performance-activity-grid {
+    grid-template-columns: 1fr;
   }
 }
 

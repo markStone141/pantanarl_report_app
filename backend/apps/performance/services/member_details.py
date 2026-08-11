@@ -1,14 +1,21 @@
+from django.db.models import Prefetch
 from django.urls import reverse
 from django.utils.http import urlencode
 
-from apps.dairymetrics.models import MemberDailyMetricEntry, MetricAdjustment
+from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjustment
 from apps.performance.services.trends import build_adjustment_totals_map
 
 
 def build_member_dashboard_entry_rows(*, member, department, month_start, month_end, field_count_text, field_amount_text):
     member_entries = (
         MemberDailyMetricEntry.objects.select_related("member", "department")
-        .prefetch_related("transactions")
+        .prefetch_related(
+            Prefetch(
+                "transactions",
+                queryset=MemberMetricTransaction.objects.order_by("created_at", "id"),
+                to_attr="ordered_transactions",
+            )
+        )
         .filter(
             member=member,
             department=department,
@@ -23,7 +30,7 @@ def build_member_dashboard_entry_rows(*, member, department, month_start, month_
                 "entry": entry,
                 "count_text": field_count_text(entry),
                 "amount_text": field_amount_text(entry),
-                "transactions": list(entry.transactions.all().order_by("created_at", "id")),
+                "transactions": entry.ordered_transactions,
             }
         )
     return entry_rows

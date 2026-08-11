@@ -69,60 +69,57 @@
         <strong class="mt-6 performance-today-inline-value">{{ dashboard_snapshot.today_rate_text }}</strong>
       </article>
     </div>
-    <div class="grid grid-2 mt-12">
-      <article class="card performance-activity-group performance-activity-group-active">
+    <div class="performance-activity-grid mt-12">
+      <article class="performance-activity-group performance-activity-group-active">
         <div class="performance-activity-group-heading">
           <span class="performance-status-dot" aria-hidden="true"></span>
           <h4>現在活動中メンバー</h4>
           <span class="badge performance-activity-count">{{ dashboard_snapshot.activity_in_progress|length }}名</span>
         </div>
         {% if dashboard_snapshot.activity_in_progress %}
-        <div class="grid mt-10">
+        <div class="performance-activity-member-list mt-10">
           {% for row in dashboard_snapshot.activity_in_progress %}
-          <div class="metric-card performance-activity-member-card">
-            <div class="row">
+          <div class="performance-activity-member-card">
+            <div class="performance-activity-member-heading">
               <strong>{{ row.member_name }}</strong>
-              <span class="badge">{{ row.department_code }}</span>
+              <span class="badge performance-activity-department">{{ row.department_code }}</span>
             </div>
-            <div class="muted">{{ row.updated_at }} 更新</div>
-            <div class="muted mt-4">現場: {{ row.location_name|default:"未入力" }}</div>
-            <div class="mt-8">{{ row.count_text }} / {{ row.amount_text }}</div>
-            <div class="mt-8">
-              <form method="post" action="{% url 'performance_send_activity_reminder' row.entry_id %}" class="inline-form" onsubmit="return confirm('{{ row.member_name }}さんに入力リマインドを送信しますか？');">
-                {% csrf_token %}
-                <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                <button type="submit" class="btn-inline" {% if not row.has_email %}disabled{% endif %}>入力リマインド</button>
-              </form>
+            <div class="performance-activity-member-meta">
+              <span>{{ row.updated_at }} 更新</span>
+              <span>現場: {{ row.location_name|default:"未入力" }}</span>
             </div>
+            <strong class="performance-activity-member-result">{{ row.count_text }} <span aria-hidden="true">/</span> {{ row.amount_text }}</strong>
           </div>
           {% endfor %}
         </div>
         {% else %}
-        <p class="muted">現在活動中のメンバーはいません。</p>
+        <p class="performance-activity-empty">現在活動中のメンバーはいません。</p>
         {% endif %}
       </article>
-      <article class="card performance-activity-group performance-activity-group-finished">
+      <article class="performance-activity-group performance-activity-group-finished">
         <div class="performance-activity-group-heading">
           <span class="performance-status-dot" aria-hidden="true"></span>
           <h4>活動終了メンバー</h4>
           <span class="badge performance-activity-count">{{ dashboard_snapshot.activity_finished|length }}名</span>
         </div>
         {% if dashboard_snapshot.activity_finished %}
-        <div class="grid mt-10">
+        <div class="performance-activity-member-list mt-10">
           {% for row in dashboard_snapshot.activity_finished %}
-          <div class="metric-card performance-activity-member-card">
-            <div class="row">
+          <div class="performance-activity-member-card">
+            <div class="performance-activity-member-heading">
               <strong>{{ row.member_name }}</strong>
-              <span class="badge">{{ row.department_code }}</span>
+              <span class="badge performance-activity-department">{{ row.department_code }}</span>
             </div>
-            <div class="muted">{{ row.updated_at }} 更新</div>
-            <div class="muted mt-4">現場: {{ row.location_name|default:"未入力" }}</div>
-            <div class="mt-8">{{ row.count_text }} / {{ row.amount_text }}</div>
+            <div class="performance-activity-member-meta">
+              <span>{{ row.updated_at }} 更新</span>
+              <span>現場: {{ row.location_name|default:"未入力" }}</span>
+            </div>
+            <strong class="performance-activity-member-result">{{ row.count_text }} <span aria-hidden="true">/</span> {{ row.amount_text }}</strong>
           </div>
           {% endfor %}
         </div>
         {% else %}
-        <p class="muted">活動終了メンバーはいません。</p>
+        <p class="performance-activity-empty">活動終了メンバーはいません。</p>
         {% endif %}
       </article>
     </div>

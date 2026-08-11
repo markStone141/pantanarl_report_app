@@ -203,7 +203,7 @@
         renderMembers(selectedDepartmentId);
         return;
       }
-      const params = new URLSearchParams({ department: selectedDepartmentId });
+      const params = new URLSearchParams({ department: selectedDepartmentId, active_only: "1" });
       if (unCodePrefix) {
         params.set("un_code", unCodePrefix);
       }

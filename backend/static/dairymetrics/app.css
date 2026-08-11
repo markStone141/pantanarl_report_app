@@ -2557,10 +2557,45 @@
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
-.metrics-v2-summary-grid,
 .metrics-v2-history-grid,
 .metrics-v2-distribution-grid {
   gap: 16px;
+}
+
+.metrics-v2-summary-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 10px;
+  border: 1px solid #d7e1ec;
+  border-radius: 12px;
+  background: #eef4f9;
+}
+
+.metrics-v2-summary-tab {
+  min-width: 96px;
+  padding: 9px 18px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #526579;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.metrics-v2-summary-tab.is-active {
+  background: #ffffff;
+  color: #1769aa;
+  box-shadow: 0 1px 3px rgba(33, 56, 80, 0.16);
+}
+
+.metrics-v2-summary-tab:focus-visible {
+  outline: 3px solid rgba(29, 125, 250, 0.28);
+  outline-offset: 2px;
+}
+
+.metrics-v2-summary-panels > [hidden] {
+  display: none;
 }
 
 .metrics-v2-distribution-grid {

@@ -34,7 +34,6 @@ from .views import (
     performance_member_history_detail_list,
     performance_member_history_detail_day_detail,
     performance_past_entry_member_options,
-    performance_send_activity_reminder,
     performance_summary_delete,
 )
 
@@ -45,7 +44,6 @@ urlpatterns = [
     path("history/", performance_history, name="performance_history"),
     path("entries/", performance_admin_entries, name="performance_admin_entries"),
     path("closeout-notes/", performance_closeout_notes, name="performance_closeout_notes"),
-    path("entries/<int:entry_id>/remind/", performance_send_activity_reminder, name="performance_send_activity_reminder"),
     path("member/", performance_member_dashboard, name="performance_member_dashboard"),
     path("member/recent-detail/", performance_member_dashboard_recent_detail, name="performance_member_dashboard_recent_detail"),
     path("member/day-detail/", performance_member_dashboard_day_detail, name="performance_member_dashboard_day_detail"),

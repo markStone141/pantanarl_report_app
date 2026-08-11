@@ -4,7 +4,7 @@
 {% block title %}分析する | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=25" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=26" />
 {% endblock %}
 
 {% block content %}
@@ -109,8 +109,14 @@
   {{ metrics_v2_payload_json|json_script:"metrics-v2-dashboard-data" }}
 
   <section class="mt-16">
-    <div class="grid grid-2 metrics-v2-summary-grid">
-      <article class="card metrics-v2-summary-card">
+    {% if metrics_v2_payload.personal_summary %}
+    <div class="metrics-v2-summary-tabs" role="tablist" aria-label="指標の表示対象">
+      <button id="metrics-v2-summary-tab-personal" class="metrics-v2-summary-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="metrics-v2-summary-panel-personal" data-metrics-v2-summary-tab="personal">個人</button>
+      <button id="metrics-v2-summary-tab-overall" class="metrics-v2-summary-tab" type="button" role="tab" aria-selected="false" aria-controls="metrics-v2-summary-panel-overall" data-metrics-v2-summary-tab="overall" tabindex="-1">全体</button>
+    </div>
+    {% endif %}
+    <div class="metrics-v2-summary-panels">
+      <article id="metrics-v2-summary-panel-overall" class="card metrics-v2-summary-card" {% if metrics_v2_payload.personal_summary %}role="tabpanel" aria-labelledby="metrics-v2-summary-tab-overall" data-metrics-v2-summary-panel="overall" hidden{% endif %}>
         <div class="row">
           <strong>全体の指標</strong>
           <span class="badge">{{ metrics_v2_payload.scope.label }}</span>
@@ -143,7 +149,7 @@
       </article>
 
       {% if metrics_v2_payload.personal_summary %}
-      <article class="card metrics-v2-summary-card">
+      <article id="metrics-v2-summary-panel-personal" class="card metrics-v2-summary-card" role="tabpanel" aria-labelledby="metrics-v2-summary-tab-personal" data-metrics-v2-summary-panel="personal">
         <div class="row">
           <strong>自分の指標</strong>
           <span class="badge">{{ metrics_v2_payload.scope.label }}</span>
@@ -272,6 +278,6 @@
   </section>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=7"></script>
+<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=8"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 {% endblock %}

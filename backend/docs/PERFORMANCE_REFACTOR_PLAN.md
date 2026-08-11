@@ -172,14 +172,44 @@ URL名とテンプレート名は維持する。まず `views.py` のprivate関�
 
 ## 推奨実施順
 
-1. `services/formatters.py` と `services/scopes.py` を追加し、純粋関数だけ移動する。
-2. `performance_index` / `performance_history` のsnapshot構築を `dashboard_snapshots.py` へ移す。
-3. 今日の決済明細/送信メールdetail rowを `today_details.py` へ移す。
-4. メンバーカード生成を `member_cards.py` へ移し、部署ごとのクエリを確認する。
-5. メンバー個別/過去実績contextを `member_pages.py` へ移す。
-6. 補正実績のquery/row生成を `adjustments.py` へ移す。
-7. 補正フォームを `forms_adjustments.py` へ移し、`forms.py` は互換importにする。
-8. tests.pyを機能別に分割する。
+| 工程 | 作業 | 状態 |
+|---|---|---|
+| 1 | `services/formatters.py` と `services/scopes.py` を追加し、純粋関数だけ移動する | 完了 |
+| 2 | `performance_index` / `performance_history` のsnapshot構築を `dashboard_snapshots.py` へ移す | 完了 |
+| 3 | 今日の決済明細/送信メールdetail rowを `today_details.py` へ移す | 完了 |
+| 4 | メンバーカード生成を `member_cards.py` へ移し、部署ごとのクエリを確認する | 完了 |
+| 5 | メンバー個別/過去実績contextを `member_pages.py` へ移す | 完了 |
+| 6 | 補正実績のquery/row生成を `adjustments.py` へ移す | 完了 |
+| 7 | 補正フォームを `forms_adjustments.py` へ移し、`forms.py` は互換importにする | 完了 |
+| 8 | tests.pyを機能別に分割する | 完了 |
+
+工程2ではメンバーカード生成も `dashboard_snapshots.py` へ一時的に移動済み。工程4では、
+`member_cards.py` へ再分離する前に、責務境界と部署ごとのクエリ数を監査する。
+
+工程4ではカード生成、メンバーの部署解決、対象期間メンバー抽出を
+`services/member_cards.py` へ分離した。同一部署のメンバーは一括集計されるため、
+メンバー人数に比例するN+1はない。管理者ダッシュボードのカード集計は、部署ごとに
+月累計3集計、路程累計3集計、最近実績1取得、最近実績の補正1集計を行う。
+部署数には比例するが、UN/WVとキャンセルを含む既存の業務集計境界を維持するため、
+この工程では複数部署をまたぐ一括集計へ変更しない。必要になった場合は
+`apps.dairymetrics.services.final_actuals` に部署別一括APIを設計する別工程として扱う。
+
+工程5ではメンバー個別ダッシュボードと過去実績のcontext構築を
+`services/member_pages.py` へ分離した。権限decorator、POST保存、render、AJAX応答は
+Viewに残し、URL、テンプレート、contextキー、管理者・本人・readonlyの表示仕様を維持した。
+
+工程6では補正実績とWVキャンセルの検索query、一覧表示row生成、両recordの結合と
+並び順を `services/adjustments.py` へ分離した。フォーム制御、保存・削除、ページング、
+AJAX/HTML応答、メンバー候補生成はViewに残し、UN/WV分岐、検索条件、URL、表示仕様を維持した。
+
+工程7では `PerformanceAdjustmentListFilterForm` と `PerformanceMetricAdjustmentForm` を
+`forms_adjustments.py` へ分離した。既存の `forms.py` は両クラスを再公開するファサードとして
+残し、View・テスト・外部コードの従来import経路、フォームフィールド、検証、保存仕様を維持した。
+
+工程8では単一の `tests.py` を `tests/` packageへ変更し、dashboard、member pages、
+admin entries、adjustments、past entries、remindersの6領域へ分割した。共有fixtureは
+`tests/base.py` に集約し、分割前後のAST比較で91件すべてのdecorator・引数・本文が
+一致することと、`apps.performance.tests` 指定で同じ91件が検出・成功することを確認した。
 
 ## 検証方針
 
@@ -198,4 +228,29 @@ git diff --check
 
 ## 次の実装候補
 
-最初の実装単位は `formatters.py` と `scopes.py` の追加が妥当。理由は、DB保存や画面操作に触れず、Active路程の業務ルールを明確に分けられるため。
+全8工程は完了した。残存責務とDBアクセスを再監査し、次期工程を以下に定める。
+
+## 次期改善工程
+
+| 工程 | 作業 | 状態 |
+|---|---|---|
+| 1 | メンバー詳細AJAXのcontext・表示row生成を `member_ajax.py` へ分離する | 完了 |
+| 2 | transactionsを順序付きPrefetchへ変更し、クエリ数テストでN+1防止を固定する | 完了 |
+| 3 | 過去入力の部署別メンバー候補APIをserviceへ分離する | 完了 |
+| 4 | 補正画面のメンバー候補生成を `adjustment_options.py` へ分離する | 完了 |
+
+工程1の監査で、メンバーダッシュボードの日別ドリルダウンが、context生成関数の
+欠落により実行時エラーになる既存不具合を確認した。最初の変更では
+`services/member_ajax.py` に生成処理を復元し、管理者・本人・閲覧専用の履歴URLと
+日別AJAX応答を回帰テストで固定した。残る履歴日別、履歴一覧、直近一覧のcontext生成は、
+同serviceへ移し、Viewには権限、対象メンバー解決、必須日付の404判定、renderだけを残した。
+管理者・本人・閲覧専用のURL、編集可否、期間・日付・limit処理、query評価順は変更していない。
+工程2では、メンバー実績のtransactionsを `created_at`, `id` 順の `Prefetch` で
+`ordered_transactions` へ一括取得する形に変更した。3日分・各2件のtransactionsを持つ
+ケースでも、実績取得、transactions一括取得、補正集計の3クエリで完結することをテストで固定し、
+表示順と既存row構造を維持した。工程3では、過去入力の部署別メンバー候補query・UNコード検索・
+JSON row生成を `services/adjustment_options.py` へ分離し、既存APIの応答構造を維持した。
+工程4では、補正画面が全活動中メンバーを初期取得する処理を廃止し、新規画面は候補0件、
+編集・入力エラー時は選択済みの1部署だけを初期取得する形へ変更した。部署変更時は既存APIを
+遅延利用し、補正用途では活動中メンバーだけを返す。UNコード検索、編集時の選択保持、
+UN/WVのフォーム分岐と保存仕様は変更していない。これで次期改善4工程もすべて完了した。
