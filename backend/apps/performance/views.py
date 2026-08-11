@@ -23,8 +23,6 @@ from apps.dairymetrics.models import (
     MetricAdjustment,
     WVMetricCancellation,
 )
-from apps.mail.models import MailSendHistory
-from apps.mail.services import send_member_direct_mail
 from apps.dairymetrics.services.activity_state import auto_close_stale_entries
 from apps.dairymetrics.services.final_actuals import (
     collect_department_final_actual_totals,
@@ -408,38 +406,6 @@ def performance_history(request: HttpRequest) -> HttpResponse:
         ),
     }
     return render(request, "performance/history.html", context)
-
-@require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
-def performance_send_activity_reminder(request: HttpRequest, entry_id: int) -> HttpResponse:
-    if request.method != "POST":
-        raise Http404
-    entry = get_object_or_404(
-        MemberDailyMetricEntry.objects.select_related("member", "department"),
-        pk=entry_id,
-        activity_closed=False,
-    )
-    sender_member = getattr(request.user, "member_profile", None)
-    target_member = entry.member
-    history = send_member_direct_mail(
-        target_member=target_member,
-        sender_member=sender_member,
-        department=entry.department,
-        sender_name_override="おつかれさまです",
-        subject=f"【リマインド】{entry.entry_date:%Y/%m/%d} の活動入力をお願いします",
-        body=(
-            f"{target_member.name}さん\n\n"
-            "活動お疲れ様でした。活動終了が確認できていませんので"
-            "お手数ですが入力をよろしくお願いします。"
-        ),
-    )
-    status = (
-        f"{target_member.name}さんへリマインドを送信しました。"
-        if history.status == MailSendHistory.STATUS_SENT
-        else f"{target_member.name}さんへのリマインド送信に失敗しました。"
-    )
-    next_url = request.POST.get("next") or reverse("performance_index")
-    separator = "&" if "?" in next_url else "?"
-    return redirect(f"{performance_next_url(next_url, fallback=reverse('performance_index'))}{separator}{urlencode({'status': status})}")
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_entry_edit(request: HttpRequest, entry_id: int) -> HttpResponse:

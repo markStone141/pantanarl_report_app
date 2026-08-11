@@ -10,6 +10,22 @@ from .base import PerformanceTestBase
 
 
 class DashboardTests(PerformanceTestBase):
+    def test_performance_index_does_not_show_manual_activity_reminder(self):
+        active_member = self.create_member(name="活動中メンバー", department=self.department)
+        MemberDailyMetricEntry.objects.create(
+            member=active_member,
+            department=self.department,
+            entry_date=timezone.localdate(),
+            activity_closed=False,
+        )
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "活動中メンバー")
+        self.assertNotContains(response, "入力リマインド")
+        self.assertNotContains(response, "/remind/")
+
     def test_performance_index_wv_overall_activity_trend_does_not_double_count_counts(self):
         wv_department = self.create_department("WV")
         wv_member = self.create_member(name="WV Member", department=wv_department)

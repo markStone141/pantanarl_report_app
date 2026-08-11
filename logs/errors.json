@@ -237,5 +237,20 @@
     "action": "ruffまたはpyflakesによる補助静的解析を試行",
     "reason": "移動後の不要importを機械的に確認するため",
     "next_action": "未導入のため目視検索とDjangoチェック・全テストで確認"
+  },
+  {
+    "timestamp": "2026-08-11T18:50:41+09:00",
+    "expires_at": "2026-11-09T18:50:41+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260811-performance-ui-improvements",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "手動リマインド削除と分析タブの対象テストを実行",
+    "reason": "変更箇所の回帰確認",
+    "next_action": "自動リマインド用importを復元し正しいDairyMetricsテストクラス名で再実行"
   }
 ]

@@ -1,7 +1,6 @@
 from datetime import datetime, time
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 from django.utils import timezone
 from apps.dairymetrics.models import MemberDailyMetricEntry
 from apps.mail.models import MailSendHistory
@@ -10,39 +9,6 @@ from .base import PerformanceTestBase
 
 
 class RemindersTests(PerformanceTestBase):
-    @patch("apps.performance.views.send_member_direct_mail")
-    def test_performance_index_can_send_activity_reminder(self, mocked_send_member_direct_mail):
-        reminder_member = self.create_member(
-            name="Reminder Target",
-            department=self.department,
-            email="reminder@example.com",
-        )
-        entry = MemberDailyMetricEntry.objects.create(
-            member=reminder_member,
-            department=self.department,
-            entry_date=timezone.localdate(),
-            activity_closed=False,
-            support_amount=0,
-            result_count=0,
-        )
-        mocked_send_member_direct_mail.return_value = MailSendHistory(status=MailSendHistory.STATUS_SENT)
-
-        response = self.client.post(
-            reverse("performance_send_activity_reminder", args=[entry.id]),
-            {"next": reverse("performance_index")},
-        )
-
-        self.assertRedirects(
-            response,
-            f"{reverse('performance_index')}?status=Reminder+Target%E3%81%95%E3%82%93%E3%81%B8%E3%83%AA%E3%83%9E%E3%82%A4%E3%83%B3%E3%83%89%E3%82%92%E9%80%81%E4%BF%A1%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%E3%80%82",
-            fetch_redirect_response=False,
-        )
-        mocked_send_member_direct_mail.assert_called_once()
-        self.assertEqual(mocked_send_member_direct_mail.call_args.kwargs["target_member"], reminder_member)
-        self.assertEqual(mocked_send_member_direct_mail.call_args.kwargs["sender_name_override"], "おつかれさまです")
-        self.assertIn("活動お疲れ様でした。活動終了が確認できていませんのでお手数ですが入力をよろしくお願いします。", mocked_send_member_direct_mail.call_args.kwargs["body"])
-
-
     @patch("apps.performance.services.activity_reminders.send_member_direct_mail")
     def test_auto_activity_reminder_sends_to_open_members_with_email(self, mocked_send_member_direct_mail):
         today = timezone.localdate()
