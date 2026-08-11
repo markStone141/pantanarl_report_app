@@ -181,7 +181,7 @@ URL名とテンプレート名は維持する。まず `views.py` のprivate関�
 | 5 | メンバー個別/過去実績contextを `member_pages.py` へ移す | 完了 |
 | 6 | 補正実績のquery/row生成を `adjustments.py` へ移す | 完了 |
 | 7 | 補正フォームを `forms_adjustments.py` へ移し、`forms.py` は互換importにする | 完了 |
-| 8 | tests.pyを機能別に分割する | 次工程 |
+| 8 | tests.pyを機能別に分割する | 完了 |
 
 工程2ではメンバーカード生成も `dashboard_snapshots.py` へ一時的に移動済み。工程4では、
 `member_cards.py` へ再分離する前に、責務境界と部署ごとのクエリ数を監査する。
@@ -205,6 +205,11 @@ AJAX/HTML応答、メンバー候補生成はViewに残し、UN/WV分岐、検�
 工程7では `PerformanceAdjustmentListFilterForm` と `PerformanceMetricAdjustmentForm` を
 `forms_adjustments.py` へ分離した。既存の `forms.py` は両クラスを再公開するファサードとして
 残し、View・テスト・外部コードの従来import経路、フォームフィールド、検証、保存仕様を維持した。
+
+工程8では単一の `tests.py` を `tests/` packageへ変更し、dashboard、member pages、
+admin entries、adjustments、past entries、remindersの6領域へ分割した。共有fixtureは
+`tests/base.py` に集約し、分割前後のAST比較で91件すべてのdecorator・引数・本文が
+一致することと、`apps.performance.tests` 指定で同じ91件が検出・成功することを確認した。
 
 ## 検証方針
 

@@ -51,10 +51,11 @@
 - `performance` のメンバー個別ダッシュボード・過去実績context構築を `services/member_pages.py` へ分離し、Viewを権限・保存・応答制御中心へ縮小した。
 - `performance` の補正実績・WVキャンセルの検索queryと一覧表示row生成を `services/adjustments.py` へ分離した。
 - `performance` の補正一覧・登録フォームを `forms_adjustments.py` へ分離し、既存 `forms.py` のimport互換性を維持した。
+- `performance` の単一 `tests.py` を機能別の6テストモジュールへ分割し、91件のテスト本文と検出件数を維持した。
 
 ## 進行中の作業
 
-- アプリ単位の構成、責務、依存、テスト見直し。`performance` リファクタリング計画は8工程中7工程まで完了。
+- アプリ単位の構成、責務、依存、テスト見直し。`performance` リファクタリング計画は全8工程を完了。
 - 管理者ダッシュボードの主要セクションへのUI部品統一は試作済み。利用者確認後に、他画面への展開範囲を決める。
 
 ## 確定事項
@@ -89,7 +90,7 @@
 
 ## 次に行う作業
 
-- `performance` リファクタリング計画の工程8として、`tests.py` を機能別に分割する。
+- `performance` の次の改善単位を、残存するView責務とDBアクセス候補から選定する。
 
 ## 参照
 
