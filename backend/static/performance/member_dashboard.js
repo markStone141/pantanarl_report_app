@@ -1,4 +1,50 @@
 (function () {
+  function initTodayRecordTabs() {
+    document.querySelectorAll("[data-performance-record-tabs]").forEach(function (tabRoot) {
+      const tabs = Array.from(tabRoot.querySelectorAll("[data-performance-record-tab]"));
+      const panels = Array.from(tabRoot.querySelectorAll("[data-performance-record-panel]"));
+      if (!tabs.length || !panels.length) {
+        return;
+      }
+
+      function activateTab(nextTab, moveFocus) {
+        const targetName = nextTab.dataset.performanceRecordTab;
+        tabs.forEach(function (tab) {
+          const isActive = tab === nextTab;
+          tab.setAttribute("aria-selected", isActive ? "true" : "false");
+          tab.tabIndex = isActive ? 0 : -1;
+        });
+        panels.forEach(function (panel) {
+          panel.hidden = panel.dataset.performanceRecordPanel !== targetName;
+        });
+        if (moveFocus) {
+          nextTab.focus();
+        }
+      }
+
+      tabs.forEach(function (tab, index) {
+        tab.addEventListener("click", function () {
+          activateTab(tab, false);
+        });
+        tab.addEventListener("keydown", function (event) {
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+            return;
+          }
+          event.preventDefault();
+          const direction = event.key === "ArrowRight" ? 1 : -1;
+          const nextIndex = (index + direction + tabs.length) % tabs.length;
+          activateTab(tabs[nextIndex], true);
+        });
+      });
+
+      activateTab(tabs.find(function (tab) {
+        return tab.getAttribute("aria-selected") === "true";
+      }) || tabs[0], false);
+    });
+  }
+
+  initTodayRecordTabs();
+
   function initProgressDonuts() {
     if (typeof window.Chart === "undefined") {
       return;

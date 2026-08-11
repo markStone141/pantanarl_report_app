@@ -1,6 +1,6 @@
 # Project State
 
-最終更新日: 2026-08-07
+最終更新日: 2026-08-11
 
 ## 現在のフェーズ
 
@@ -42,6 +42,7 @@
 - `dairymetrics` の `metrics_v2` service からランキング payload 生成を `metrics_v2_ranking.py` へ分離した。
 - `performance` の現状を監査し、巨大化したView/Form/Testの責務分離計画を `backend/docs/PERFORMANCE_REFACTOR_PLAN.md` に整理した。
 - `performance` の表示フォーマット処理と期間/路程scope解決を `services/formatters.py` / `services/scopes.py` へ分離し、対象テストで互換性を確認した。
+- `performance` の管理者ダッシュボードで、本日の決済・送信メールを件数付きタブの「本日の記録」に統合し、今日の情報から目標達成率へ進む表示密度を改善した。
 
 ## 進行中の作業
 

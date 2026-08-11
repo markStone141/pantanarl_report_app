@@ -114,7 +114,7 @@
     </div>
   </section>
 
-  {% include "performance/partials/department_today_detail_cards.html" %}
+  {% include "performance/partials/department_today_detail_cards.html" with today_detail_tabbed=True %}
 
   <section class="card mt-16">
     <h3>目標達成率</h3>
@@ -308,6 +308,6 @@
 
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'performance/member_dashboard.js' %}?v=7"></script>
+<script src="{% static 'performance/member_dashboard.js' %}?v=8"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 {% endblock %}
