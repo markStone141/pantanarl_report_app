@@ -180,8 +180,8 @@ URL名とテンプレート名は維持する。まず `views.py` のprivate関�
 | 4 | メンバーカード生成を `member_cards.py` へ移し、部署ごとのクエリを確認する | 完了 |
 | 5 | メンバー個別/過去実績contextを `member_pages.py` へ移す | 完了 |
 | 6 | 補正実績のquery/row生成を `adjustments.py` へ移す | 完了 |
-| 7 | 補正フォームを `forms_adjustments.py` へ移し、`forms.py` は互換importにする | 次工程 |
-| 8 | tests.pyを機能別に分割する | 未着手 |
+| 7 | 補正フォームを `forms_adjustments.py` へ移し、`forms.py` は互換importにする | 完了 |
+| 8 | tests.pyを機能別に分割する | 次工程 |
 
 工程2ではメンバーカード生成も `dashboard_snapshots.py` へ一時的に移動済み。工程4では、
 `member_cards.py` へ再分離する前に、責務境界と部署ごとのクエリ数を監査する。
@@ -201,6 +201,10 @@ Viewに残し、URL、テンプレート、contextキー、管理者・本人・
 工程6では補正実績とWVキャンセルの検索query、一覧表示row生成、両recordの結合と
 並び順を `services/adjustments.py` へ分離した。フォーム制御、保存・削除、ページング、
 AJAX/HTML応答、メンバー候補生成はViewに残し、UN/WV分岐、検索条件、URL、表示仕様を維持した。
+
+工程7では `PerformanceAdjustmentListFilterForm` と `PerformanceMetricAdjustmentForm` を
+`forms_adjustments.py` へ分離した。既存の `forms.py` は両クラスを再公開するファサードとして
+残し、View・テスト・外部コードの従来import経路、フォームフィールド、検証、保存仕様を維持した。
 
 ## 検証方針
 

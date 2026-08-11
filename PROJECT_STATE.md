@@ -50,10 +50,11 @@
 - `performance` のメンバーカード生成と対象メンバー・部署解決を `services/member_cards.py` へ分離し、同一部署内でメンバー人数に比例するN+1がないことを確認した。
 - `performance` のメンバー個別ダッシュボード・過去実績context構築を `services/member_pages.py` へ分離し、Viewを権限・保存・応答制御中心へ縮小した。
 - `performance` の補正実績・WVキャンセルの検索queryと一覧表示row生成を `services/adjustments.py` へ分離した。
+- `performance` の補正一覧・登録フォームを `forms_adjustments.py` へ分離し、既存 `forms.py` のimport互換性を維持した。
 
 ## 進行中の作業
 
-- アプリ単位の構成、責務、依存、テスト見直し。`performance` リファクタリング計画は8工程中6工程まで完了。
+- アプリ単位の構成、責務、依存、テスト見直し。`performance` リファクタリング計画は8工程中7工程まで完了。
 - 管理者ダッシュボードの主要セクションへのUI部品統一は試作済み。利用者確認後に、他画面への展開範囲を決める。
 
 ## 確定事項
@@ -74,7 +75,7 @@
 - 承認済み要件、設計書、タスク一覧、意思決定ログ、テスト結果をどのファイルへ集約するか。
 - `PROJECT_STATE.md` の更新頻度を作業単位、PR単位、リリース単位のどれにするか。
 - `dashboard/views.py` は818行まで縮小したが、部署管理の保存処理本体・メールテンプレート生成を別作業として追加分割する余地がある。
-- `performance/views.py` はsnapshot構築、今日の明細、メンバーカード、メンバー個別context、補正実績query/row生成の分離後も、補正フォーム制御、過去入力、AJAXが混在している。
+- `performance/views.py` はsnapshot構築、今日の明細、メンバーカード、メンバー個別context、補正実績query/row生成の分離後も、補正フォーム制御、過去入力、AJAXが混在している。補正フォーム定義は `forms_adjustments.py` へ分離済み。
 - 管理者ダッシュボードのメンバーカード集計はメンバー単位のN+1を避けているが、部署数には比例する。複数部署一括化は `final_actuals` の部署別一括APIを設計する別工程として扱う。
 
 ## ブロッカー
@@ -88,7 +89,7 @@
 
 ## 次に行う作業
 
-- `performance` リファクタリング計画の工程7として、補正フォームを `forms_adjustments.py` へ分離し、`forms.py` を互換importにする。
+- `performance` リファクタリング計画の工程8として、`tests.py` を機能別に分割する。
 
 ## 参照
 
