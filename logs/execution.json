@@ -1655,5 +1655,35 @@
     "action": "目標達成率以降の情報階層、内側カード、モバイル表示をレビュー",
     "reason": "主要セクションが既存の共通規則に統一され、操作と表示内容を維持していることを確認",
     "next_action": "関連差分をコミットしてpush"
+  },
+  {
+    "timestamp": "2026-08-11T17:59:11+09:00",
+    "expires_at": "2026-09-10T17:59:11+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260811-performance-dashboard-snapshots",
+    "loop": 3,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "performance全91テストとDjango・migration・BOM・差分チェックを実行",
+    "reason": "snapshot分離後の外部仕様互換を確認",
+    "next_action": "差分監査後にコミット"
+  },
+  {
+    "timestamp": "2026-08-11T18:00:32+09:00",
+    "expires_at": "2026-09-10T18:00:32+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260811-performance-dashboard-snapshots",
+    "loop": 4,
+    "role": "reporter",
+    "event": "stopped",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "snapshot構築をserviceへ分離し検証完了",
+    "reason": "管理者ダッシュボードと過去実績の表示仕様を維持したままviews.pyを縮小",
+    "next_action": "コミット後にorigin/mainへ反映"
   }
 ]

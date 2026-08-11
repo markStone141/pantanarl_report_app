@@ -79,6 +79,11 @@ from apps.performance.services.scopes import (
 )
 from apps.performance.services.admin_entries import build_admin_entry_management_page
 from apps.performance.services.closeout_notes import resolve_closeout_notes_scope
+from apps.performance.services.dashboard_snapshots import (
+    build_performance_dashboard_snapshot,
+    build_performance_history_snapshot,
+    resolve_member_card_department,
+)
 from apps.performance.services.past_entries import (
     create_past_entry_with_transactions,
     normalize_transaction_payloads,
@@ -102,9 +107,7 @@ from .forms import (
     PerformanceMetricAdjustmentForm,
 )
 
-
 User = get_user_model()
-
 
 def require_performance_roles(*allowed_roles: str, auto_close: bool = True):
     def decorator(view_func):
@@ -124,13 +127,11 @@ def require_performance_roles(*allowed_roles: str, auto_close: bool = True):
 
     return decorator
 
-
 def _resolve_performance_member_department_or_404(*, member, department_id):
     department = get_object_or_404(Department, pk=department_id, is_active=True)
     if not MemberDepartment.objects.filter(member=member, department=department).exists() and member.default_department_id != department.id:
         raise Http404
     return department
-
 
 def performance_login(request: HttpRequest) -> HttpResponse:
     role = resolve_request_role(request)
@@ -151,11 +152,9 @@ def performance_login(request: HttpRequest) -> HttpResponse:
         },
     )
 
-
 def performance_logout(request: HttpRequest) -> HttpResponse:
     auth_logout(request)
     return redirect("performance_login")
-
 
 def _filtered_entries_queryset(cleaned_data):
     queryset = MemberDailyMetricEntry.objects.select_related("member", "department").order_by("-entry_date", "department__code", "member__name")
@@ -173,7 +172,6 @@ def _filtered_entries_queryset(cleaned_data):
         queryset = queryset.filter(entry_date__lte=date_to)
     return queryset
 
-
 def _adjustment_source_types_matching_query(query):
     normalized_query = (query or "").strip().casefold()
     if not normalized_query:
@@ -183,7 +181,6 @@ def _adjustment_source_types_matching_query(query):
         for source_type, label in MetricAdjustment.SOURCE_CHOICES
         if normalized_query in label.casefold()
     ]
-
 
 def _adjustment_search_filter(query):
     filters = (
@@ -196,7 +193,6 @@ def _adjustment_search_filter(query):
     if source_types:
         filters |= Q(source_type__in=source_types)
     return filters
-
 
 def _filtered_adjustments_queryset(cleaned_data):
     queryset = MetricAdjustment.objects.select_related("member", "department", "created_by").order_by("-target_date", "-created_at")
@@ -217,7 +213,6 @@ def _filtered_adjustments_queryset(cleaned_data):
         queryset = queryset.filter(_adjustment_search_filter(query))
     return queryset
 
-
 def _filtered_adjustments_list_queryset(cleaned_data):
     queryset = MetricAdjustment.objects.select_related("member", "department", "created_by").order_by("-target_date", "-created_at")
     department = cleaned_data.get("department")
@@ -227,7 +222,6 @@ def _filtered_adjustments_list_queryset(cleaned_data):
     if query:
         queryset = queryset.filter(_adjustment_search_filter(query))
     return queryset
-
 
 def _filtered_cancellations_list_queryset(cleaned_data):
     queryset = WVMetricCancellation.objects.select_related("member", "department", "created_by").order_by("-target_date", "-created_at")
@@ -250,7 +244,6 @@ def _filtered_cancellations_list_queryset(cleaned_data):
             if department:
                 queryset = queryset.filter(department=department)
     return queryset
-
 
 def _adjustment_list_row(adjustment):
     if adjustment.department.code == "WV":
@@ -280,7 +273,6 @@ def _adjustment_list_row(adjustment):
         "delete_url": reverse("performance_adjustment_delete", args=[adjustment.id]),
     }
 
-
 def _cancellation_list_row(cancellation):
     return {
         "id": cancellation.id,
@@ -297,294 +289,16 @@ def _cancellation_list_row(cancellation):
         "delete_url": reverse("performance_cancellation_delete", args=[cancellation.id]),
     }
 
-
 def _combined_adjustment_list_rows(cleaned_data):
     rows = [_adjustment_list_row(adjustment) for adjustment in _filtered_adjustments_list_queryset(cleaned_data)]
     rows.extend(_cancellation_list_row(cancellation) for cancellation in _filtered_cancellations_list_queryset(cleaned_data))
     return sorted(rows, key=lambda row: (row["target_date"], row["created_at"]), reverse=True)
-
-
-def _build_activity_member_rows(entries):
-    rows = []
-    for entry in entries:
-        support_amount = int(entry.support_amount or 0)
-        daily_target_amount = int(entry.daily_target_amount or 0)
-        rows.append(
-            {
-                "entry_id": entry.id,
-                "member_id": entry.member_id,
-                "member_name": entry.member.name,
-                "department_code": entry.department.code,
-                "department_id": entry.department_id,
-                "updated_at": timezone.localtime(entry.updated_at).strftime("%H:%M"),
-                "location_name": (entry.location_name or "").strip(),
-                "amount_text": f"{support_amount:,}円 / {daily_target_amount:,}円",
-                "count_text": (
-                    f"CS {int(entry.cs_count or 0)} / 難民 {int(entry.refugee_count or 0)}"
-                    if entry.department.code == "WV"
-                    else f"{int(entry.result_count or 0)}件"
-                ),
-                "has_email": bool(entry.member.email),
-            }
-        )
-    return rows
-
-
-def _resolve_member_department_pairs(*, members, selected_department):
-    member_department_pairs = []
-    for member in members:
-        department = _resolve_member_card_department(member=member, selected_department=selected_department)
-        if department is None:
-            continue
-        member_department_pairs.append((member, department))
-    return member_department_pairs
-
-
-def _collect_member_totals_by_department(*, member_department_pairs, start_date, end_date):
-    totals_by_department = {}
-    departments_by_id = {department.id: department for _, department in member_department_pairs}
-    for department in departments_by_id.values():
-        department_member_ids = [member.id for member, current_department in member_department_pairs if current_department.id == department.id]
-        totals_by_department[department.id] = collect_member_final_actual_totals_by_ids(
-            member_ids=department_member_ids,
-            department=department,
-            start_date=start_date,
-            end_date=end_date,
-            include_adjustments=True,
-        )
-    return totals_by_department
-
-
-def _collect_member_latest_entries_by_department(*, member_department_pairs, start_date=None, end_date=None):
-    latest_entries_by_department = {}
-    adjustment_totals_by_department = {}
-    departments_by_id = {department.id: department for _, department in member_department_pairs}
-    for department in departments_by_id.values():
-        department_member_ids = [member.id for member, current_department in member_department_pairs if current_department.id == department.id]
-        entries_qs = MemberDailyMetricEntry.objects.filter(
-            member_id__in=department_member_ids,
-            department=department,
-        )
-        if start_date is not None and end_date is not None:
-            entries_qs = entries_qs.filter(entry_date__range=(start_date, end_date))
-        department_entries = list(
-            entries_qs.select_related("member", "department").order_by("member_id", "-entry_date", "-id")
-        )
-        latest_entries_by_department[department.id] = {}
-        picked_entries = []
-        for entry in department_entries:
-            pair_key = (entry.member_id, entry.department_id)
-            bucket = latest_entries_by_department[department.id].setdefault(pair_key, [])
-            if len(bucket) < 6:
-                bucket.append(entry)
-                picked_entries.append(entry)
-        adjustment_totals_by_department[department.id] = build_adjustment_totals_map(picked_entries)
-    return latest_entries_by_department, adjustment_totals_by_department
-
-
-def _build_member_recent_metrics(*, entries, adjustment_totals_map, department_code):
-    latest_final_counts = []
-    closed_entries = [entry for entry in entries if entry.activity_closed][:3]
-    for latest_entry in closed_entries:
-        latest_totals = adjustment_totals_map.get(
-            (latest_entry.member_id, latest_entry.department_id, latest_entry.entry_date),
-            EMPTY_ADJUSTMENT_TOTALS,
-        )
-        latest_final_counts.append(entry_final_count_value(entry=latest_entry, adjustment_totals=latest_totals))
-
-    zero_streak_warning = len(latest_final_counts) == 3 and all(count == 0 for count in latest_final_counts)
-    active_streak_good = len(latest_final_counts) == 3 and all(count >= 1 for count in latest_final_counts)
-    if not entries:
-        return {
-            "updated_at": "実績なし",
-            "recent_date_text": "-",
-            "recent_amount_text": "-",
-            "recent_count_text": "-",
-            "recent_count_subtext": "",
-            "recent_sort_date": None,
-            "zero_streak_warning": zero_streak_warning,
-            "zero_streak_text": "3稼働連続0件" if zero_streak_warning else "",
-            "active_streak_good": active_streak_good,
-            "active_streak_text": "3稼働連続1件以上" if active_streak_good else "",
-        }
-
-    latest_entry = entries[0]
-    latest_totals = adjustment_totals_map.get(
-        (latest_entry.member_id, latest_entry.department_id, latest_entry.entry_date),
-        EMPTY_ADJUSTMENT_TOTALS,
-    )
-    return {
-        "updated_at": timezone.localtime(latest_entry.updated_at).strftime("%H:%M"),
-        "recent_date_text": latest_entry.entry_date.strftime("%Y/%m/%d"),
-        "recent_amount_text": _amount_text(latest_entry, latest_totals),
-        "recent_count_text": _count_text(latest_entry, latest_totals),
-        "recent_count_subtext": (
-            _wv_count_detail_text(
-                cs_count=int(latest_entry.cs_count or 0) + int(latest_totals["cs_count"]),
-                refugee_count=int(latest_entry.refugee_count or 0) + int(latest_totals["refugee_count"]),
-            )
-            if department_code == "WV"
-            else ""
-        ),
-        "recent_sort_date": latest_entry.entry_date,
-        "zero_streak_warning": zero_streak_warning,
-        "zero_streak_text": "3稼働連続0件" if zero_streak_warning else "",
-        "active_streak_good": active_streak_good,
-        "active_streak_text": "3稼働連続1件以上" if active_streak_good else "",
-    }
-
-
-def _build_scoped_member_cards(*, members, selected_department, scope):
-    cards = []
-    scope_metric_label = {
-        "month": "月累計",
-        "period": "路程累計",
-        "range": "期間累計",
-    }.get(scope.scope, "累計")
-    member_department_pairs = _resolve_member_department_pairs(
-        members=members,
-        selected_department=selected_department,
-    )
-    department_totals_map = _collect_member_totals_by_department(
-        member_department_pairs=member_department_pairs,
-        start_date=scope.start_date,
-        end_date=scope.end_date,
-    )
-    latest_entries_by_pair, adjustment_totals_by_pair = _collect_member_latest_entries_by_department(
-        member_department_pairs=member_department_pairs,
-        start_date=scope.start_date,
-        end_date=scope.end_date,
-    )
-
-    for member, department in member_department_pairs:
-        scoped_totals = department_totals_map.get(department.id, {}).get(member.id, {})
-        scoped_entries = latest_entries_by_pair.get(department.id, {}).get((member.id, department.id), [])
-        latest_adjustment_totals = adjustment_totals_by_pair.get(department.id, {})
-        recent_metrics = _build_member_recent_metrics(
-            entries=scoped_entries,
-            adjustment_totals_map=latest_adjustment_totals,
-            department_code=department.code,
-        )
-        cards.append(
-            {
-                "member_name": member.name,
-                "department_code": department.code,
-                "updated_at": recent_metrics["updated_at"],
-                "scope_label": scope_metric_label,
-                "scope_amount_text": _final_amount_text(totals=scoped_totals),
-                "scope_count_text": _final_count_text(department_code=department.code, totals=scoped_totals),
-                "scope_count_subtext": _final_count_subtext(department_code=department.code, totals=scoped_totals),
-                "recent_date_text": recent_metrics["recent_date_text"],
-                "recent_amount_text": recent_metrics["recent_amount_text"],
-                "recent_count_text": recent_metrics["recent_count_text"],
-                "recent_count_subtext": recent_metrics["recent_count_subtext"],
-                "recent_sort_date": recent_metrics["recent_sort_date"],
-                "zero_streak_warning": recent_metrics["zero_streak_warning"],
-                "zero_streak_text": recent_metrics["zero_streak_text"],
-                "active_streak_good": recent_metrics["active_streak_good"],
-                "active_streak_text": recent_metrics["active_streak_text"],
-                "detail_url": reverse("performance_member_insight", args=[member.id, department.id]),
-            }
-        )
-    cards.sort(
-        key=lambda card: (
-            card["recent_sort_date"] is not None,
-            card["recent_sort_date"] or date.min,
-            card["member_name"],
-        ),
-        reverse=True,
-    )
-    return cards
-
-
-def _totals_count_text_for_dashboard(*, department, totals):
-    if department is not None:
-        return _final_count_text(department_code=department.code, totals=totals)
-    total_count = (
-        int(totals.get("result_count") or 0)
-        + int(totals.get("return_postal_count") or 0)
-        + int(totals.get("return_qr_count") or 0)
-        + int(totals.get("cs_count") or 0)
-        + int(totals.get("refugee_count") or 0)
-    )
-    return f"{total_count}件相当"
-
-
-def _today_target_text_for_dashboard(*, department, count_target, amount_target):
-    return f"{int(amount_target or 0):,}円"
-
-
-def _today_rate_text_for_dashboard(*, actual_count, actual_amount, count_target, amount_target):
-    amount_rate = None
-    if amount_target and int(amount_target) > 0:
-        amount_rate = round((int(actual_amount or 0) / int(amount_target)) * 100, 1)
-    if amount_rate is not None:
-        return f"{amount_rate}%"
-    return "-"
-
-
-def _resolve_member_card_department(*, member, selected_department=None):
-    if selected_department is not None:
-        return selected_department
-    if member.default_department_id and member.default_department and member.default_department.is_active:
-        return member.default_department
-    prefetched_links = getattr(member, "_prefetched_objects_cache", {}).get("department_links")
-    if prefetched_links is not None:
-        active_departments = sorted(
-            [
-                link.department
-                for link in prefetched_links
-                if link.department and link.department.is_active
-            ],
-            key=lambda department: (department.code, department.id),
-        )
-        return active_departments[0] if active_departments else None
-    return (
-        Department.objects.filter(member_links__member=member, is_active=True)
-        .order_by("code", "id")
-        .first()
-    )
-
-
-def _members_for_history_scope(*, department, start_date, end_date):
-    active_member_ids = set(
-        Member.objects.active()
-        .filter(department_links__department=department, department_links__department__is_active=True)
-        .values_list("id", flat=True)
-    )
-    scoped_member_ids = set(
-        MemberDailyMetricEntry.objects.filter(
-            department=department,
-            entry_date__range=(start_date, end_date),
-        ).values_list("member_id", flat=True)
-    )
-    scoped_member_ids.update(
-        MetricAdjustment.objects.filter(
-            department=department,
-            target_date__range=(start_date, end_date),
-        ).values_list("member_id", flat=True)
-    )
-    member_ids = active_member_ids | scoped_member_ids
-    if not member_ids:
-        return []
-    return list(
-        Member.objects.filter(
-            id__in=member_ids,
-            department_links__department=department,
-            department_links__department__is_active=True,
-        )
-        .select_related("default_department")
-        .distinct()
-        .order_by("name", "id")
-    )
-
 
 def _resolve_default_dashboard_department():
     return (
         Department.objects.filter(is_active=True, code="UN").first()
         or Department.objects.filter(is_active=True).order_by("code", "id").first()
     )
-
 
 def _resolve_default_dashboard_department_for_request(request: HttpRequest):
     if resolve_request_role(request) == ROLE_REPORT:
@@ -603,7 +317,6 @@ def _resolve_default_dashboard_department_for_request(request: HttpRequest):
                 return department
     return _resolve_default_dashboard_department()
 
-
 def _parse_selected_date(value):
     if not value:
         return None
@@ -611,369 +324,6 @@ def _parse_selected_date(value):
         return date.fromisoformat(value)
     except ValueError:
         return None
-
-
-def _build_active_member_cards(*, members, today, target_month, target_period, selected_department=None):
-    cards = []
-    member_department_pairs = _resolve_member_department_pairs(
-        members=members,
-        selected_department=selected_department,
-    )
-    month_totals_map = _collect_member_totals_by_department(
-        member_department_pairs=member_department_pairs,
-        start_date=target_month,
-        end_date=today,
-    )
-    period_totals_map = _collect_member_totals_by_department(
-        member_department_pairs=member_department_pairs,
-        start_date=target_period.start_date if target_period else today,
-        end_date=min(target_period.end_date, today) if target_period else today,
-    )
-    latest_entries_by_pair, adjustment_totals_by_pair = _collect_member_latest_entries_by_department(
-        member_department_pairs=member_department_pairs,
-    )
-
-    for member, department in member_department_pairs:
-        month_totals = month_totals_map.get(department.id, {}).get(member.id, {})
-        period_totals = period_totals_map.get(department.id, {}).get(member.id, {})
-        latest_entries = latest_entries_by_pair.get(department.id, {}).get((member.id, department.id), [])
-        latest_adjustment_totals = adjustment_totals_by_pair.get(department.id, {})
-        recent_metrics = _build_member_recent_metrics(
-            entries=latest_entries,
-            adjustment_totals_map=latest_adjustment_totals,
-            department_code=department.code,
-        )
-        cards.append(
-            {
-                "member_name": member.name,
-                "department_code": department.code,
-                "updated_at": recent_metrics["updated_at"],
-                "month_amount_text": _final_amount_text(totals=month_totals),
-                "month_count_text": _final_count_text(department_code=department.code, totals=month_totals),
-                "month_count_subtext": _final_count_subtext(department_code=department.code, totals=month_totals),
-                "period_amount_text": _final_amount_text(totals=period_totals),
-                "period_count_text": _final_count_text(department_code=department.code, totals=period_totals),
-                "period_count_subtext": _final_count_subtext(department_code=department.code, totals=period_totals),
-                "recent_date_text": recent_metrics["recent_date_text"],
-                "recent_amount_text": recent_metrics["recent_amount_text"],
-                "recent_count_text": recent_metrics["recent_count_text"],
-                "recent_count_subtext": recent_metrics["recent_count_subtext"],
-                "recent_sort_date": recent_metrics["recent_sort_date"],
-                "zero_streak_warning": recent_metrics["zero_streak_warning"],
-                "zero_streak_text": recent_metrics["zero_streak_text"],
-                "active_streak_good": recent_metrics["active_streak_good"],
-                "active_streak_text": recent_metrics["active_streak_text"],
-                "detail_url": reverse("performance_member_insight", args=[member.id, department.id]),
-            }
-        )
-    cards.sort(
-        key=lambda card: (
-            card["recent_sort_date"] is not None,
-            card["recent_sort_date"] or date.min,
-            card["member_name"],
-        ),
-        reverse=True,
-    )
-    return cards
-
-
-def _build_performance_dashboard_snapshot(*, department=None, target_month=None, period=None):
-    today = timezone.localdate()
-    target_month = target_month or today.replace(day=1)
-    period = period or _resolve_current_period(today)
-    active_entries = MemberDailyMetricEntry.objects.select_related("member", "department").filter(entry_date=today)
-    if department:
-        active_entries = active_entries.filter(department=department)
-        departments = [department]
-    else:
-        department_ids = list(active_entries.order_by("department__code").values_list("department_id", flat=True).distinct())
-        departments = list(Department.objects.filter(id__in=department_ids).order_by("code"))
-    active_entries = list(active_entries.order_by("department__code", "member__name"))
-    activity_in_progress = [entry for entry in active_entries if not entry.activity_closed]
-    activity_finished = [entry for entry in active_entries if entry.activity_closed]
-    today_entry_totals = (
-        collect_department_final_actual_totals(
-            department,
-            today,
-            today,
-            include_adjustments=False,
-        )
-        if department is not None
-        else collect_department_final_actual_totals_by_codes(
-            target_codes=[current_department.code for current_department in departments],
-            start_date=today,
-            end_date=today,
-            include_adjustments=False,
-        )
-    )
-    if department is None:
-        merged_today_totals = {
-            "result_count": 0,
-            "support_amount": 0,
-            "return_postal_count": 0,
-            "return_postal_amount": 0,
-            "return_qr_count": 0,
-            "return_qr_amount": 0,
-            "cs_count": 0,
-            "refugee_count": 0,
-            "approach_count": 0,
-            "communication_count": 0,
-        }
-        for department_totals in today_entry_totals.values():
-            for key in merged_today_totals:
-                merged_today_totals[key] += int(department_totals.get(key) or 0)
-        today_entry_totals = merged_today_totals
-    summary_queryset = DepartmentDailyMetricSummary.objects.filter(entry_date=today)
-    if department is not None:
-        summary_queryset = summary_queryset.filter(department=department)
-    elif departments:
-        summary_queryset = summary_queryset.filter(department__in=departments)
-    today_targets = summary_queryset.aggregate(
-        total_count=Sum("daily_target_count"),
-        total_amount=Sum("daily_target_amount"),
-    )
-    today_target_count = int(today_targets.get("total_count") or 0)
-    today_target_amount = int(today_targets.get("total_amount") or 0)
-    today_actual_count = _final_count_value(
-        department_code=department.code if department is not None else "",
-        totals=today_entry_totals,
-    ) if department is not None else (
-        int(today_entry_totals.get("result_count") or 0)
-        + int(today_entry_totals.get("return_postal_count") or 0)
-        + int(today_entry_totals.get("return_qr_count") or 0)
-        + int(today_entry_totals.get("cs_count") or 0)
-        + int(today_entry_totals.get("refugee_count") or 0)
-    )
-    today_actual_amount = (
-        int(today_entry_totals.get("support_amount") or 0)
-        + int(today_entry_totals.get("return_postal_amount") or 0)
-        + int(today_entry_totals.get("return_qr_amount") or 0)
-    )
-    if department:
-        active_members = list(
-            Member.objects.active()
-            .filter(department_links__department=department, department_links__department__is_active=True)
-            .select_related("default_department")
-            .prefetch_related("department_links__department")
-            .distinct()
-            .order_by("name", "id")
-        )
-    else:
-        active_members = list(
-            Member.objects.active()
-            .filter(Q(default_department__is_active=True) | Q(department_links__department__is_active=True))
-            .select_related("default_department")
-            .prefetch_related("department_links__department")
-            .distinct()
-            .order_by("name", "id")
-        )
-
-    target_codes = [department.code for department in departments]
-
-    month_totals_by_code = collect_department_final_actual_totals_by_codes(
-        target_codes=target_codes,
-        start_date=target_month,
-        end_date=today,
-        include_adjustments=True,
-    )
-    period_totals_by_code = collect_department_final_actual_totals_by_codes(
-        target_codes=target_codes,
-        start_date=period.start_date if period else today,
-        end_date=min(period.end_date, today) if period else today,
-        include_adjustments=True,
-    ) if target_codes else {}
-    month_adjustment_amounts = collect_adjustment_amounts_by_codes(
-        target_codes=target_codes,
-        start_date=target_month,
-        end_date=today,
-    )
-    period_adjustment_amounts = collect_adjustment_amounts_by_codes(
-        target_codes=target_codes,
-        start_date=period.start_date if period else today,
-        end_date=min(period.end_date, today) if period else today,
-    ) if target_codes else {}
-
-    month_target_amounts = resolve_month_target_amounts_by_code(departments=departments, target_month=target_month)
-    period_target_amounts = resolve_period_target_amounts_by_code(departments=departments, period=period)
-
-    month_progress_cards = []
-    period_progress_cards = []
-    for current_department in departments:
-        month_totals = month_totals_by_code.get(current_department.code, {})
-        period_totals = period_totals_by_code.get(current_department.code, {})
-        month_progress_cards.append(
-            build_progress_card(
-                label=current_department.code,
-                actual_amount=int(month_totals.get("support_amount") or 0)
-                + int(month_totals.get("return_postal_amount") or 0)
-                + int(month_totals.get("return_qr_amount") or 0),
-                target_amount=int(month_target_amounts.get(current_department.code) or 0),
-                summary_text=f"{target_month:%Y/%m} の補正込み累計",
-                base_actual_amount=max(
-                    (
-                        int(month_totals.get("support_amount") or 0)
-                        + int(month_totals.get("return_postal_amount") or 0)
-                        + int(month_totals.get("return_qr_amount") or 0)
-                    )
-                    - int(month_adjustment_amounts.get(current_department.code) or 0),
-                    0,
-                ),
-                adjustment_amount=int(month_adjustment_amounts.get(current_department.code) or 0),
-            )
-        )
-        period_progress_cards.append(
-            build_progress_card(
-                label=current_department.code,
-                actual_amount=int(period_totals.get("support_amount") or 0)
-                + int(period_totals.get("return_postal_amount") or 0)
-                + int(period_totals.get("return_qr_amount") or 0),
-                target_amount=int(period_target_amounts.get(current_department.code) or 0),
-                summary_text=_period_display_label(period),
-                base_actual_amount=max(
-                    (
-                        int(period_totals.get("support_amount") or 0)
-                        + int(period_totals.get("return_postal_amount") or 0)
-                        + int(period_totals.get("return_qr_amount") or 0)
-                    )
-                    - int(period_adjustment_amounts.get(current_department.code) or 0),
-                    0,
-                ),
-                adjustment_amount=int(period_adjustment_amounts.get(current_department.code) or 0),
-            )
-        )
-
-    return {
-        "today": today,
-        "today_total_count_text": _totals_count_text_for_dashboard(department=department, totals=today_entry_totals),
-        "today_total_count_subtext": (
-            _final_count_subtext(department_code=department.code, totals=today_entry_totals)
-            if department is not None
-            else ""
-        ),
-        "today_total_amount_text": _final_amount_text(totals=today_entry_totals),
-        "today_target_text": _today_target_text_for_dashboard(
-            department=department,
-            count_target=today_target_count,
-            amount_target=today_target_amount,
-        ),
-        "today_rate_text": _today_rate_text_for_dashboard(
-            actual_count=today_actual_count,
-            actual_amount=today_actual_amount,
-            count_target=today_target_count,
-            amount_target=today_target_amount,
-        ),
-        "overall_activity_trend": build_overall_activity_trend(department=department),
-        "activity_in_progress": _build_activity_member_rows(activity_in_progress),
-        "activity_finished": _build_activity_member_rows(activity_finished),
-        "active_member_cards": _build_active_member_cards(
-            members=active_members,
-            today=today,
-            target_month=target_month,
-            target_period=period,
-            selected_department=department,
-        ),
-        "month_progress_cards": month_progress_cards,
-        "period_progress_cards": period_progress_cards,
-        "current_period": period,
-        "current_period_display": _period_display_label(period),
-    }
-
-
-def _build_performance_history_snapshot(*, department, scope):
-    target_codes = [department.code]
-    scoped_totals_by_code = collect_department_final_actual_totals_by_codes(
-        target_codes=target_codes,
-        start_date=scope.start_date,
-        end_date=scope.end_date,
-        include_adjustments=True,
-    )
-    scoped_totals = scoped_totals_by_code.get(department.code, {})
-    scoped_adjustment_amounts = collect_adjustment_amounts_by_codes(
-        target_codes=target_codes,
-        start_date=scope.start_date,
-        end_date=scope.end_date,
-    )
-    month_progress_cards = []
-    period_progress_cards = []
-    if scope.scope == "month" and scope.month_start:
-        month_target_amount = int(
-            resolve_month_target_amounts_by_code(
-                departments=[department],
-                target_month=scope.month_start,
-            ).get(department.code)
-            or 0
-        )
-        month_progress_cards.append(
-            build_progress_card(
-                label=department.code,
-                actual_amount=int(scoped_totals.get("support_amount") or 0)
-                + int(scoped_totals.get("return_postal_amount") or 0)
-                + int(scoped_totals.get("return_qr_amount") or 0),
-                target_amount=month_target_amount,
-                summary_text=f"{scope.month_start:%Y/%m} の補正込み累計",
-                base_actual_amount=max(
-                    (
-                        int(scoped_totals.get("support_amount") or 0)
-                        + int(scoped_totals.get("return_postal_amount") or 0)
-                        + int(scoped_totals.get("return_qr_amount") or 0)
-                    )
-                    - int(scoped_adjustment_amounts.get(department.code) or 0),
-                    0,
-                ),
-                adjustment_amount=int(scoped_adjustment_amounts.get(department.code) or 0),
-            )
-        )
-    if scope.scope == "period" and scope.period:
-        period_target_amount = int(
-            resolve_period_target_amounts_by_code(
-                departments=[department],
-                period=scope.period,
-            ).get(department.code)
-            or 0
-        )
-        period_progress_cards.append(
-            build_progress_card(
-                label=department.code,
-                actual_amount=int(scoped_totals.get("support_amount") or 0)
-                + int(scoped_totals.get("return_postal_amount") or 0)
-                + int(scoped_totals.get("return_qr_amount") or 0),
-                target_amount=period_target_amount,
-                summary_text=scope.period.name,
-                base_actual_amount=max(
-                    (
-                        int(scoped_totals.get("support_amount") or 0)
-                        + int(scoped_totals.get("return_postal_amount") or 0)
-                        + int(scoped_totals.get("return_qr_amount") or 0)
-                    )
-                    - int(scoped_adjustment_amounts.get(department.code) or 0),
-                    0,
-                ),
-                adjustment_amount=int(scoped_adjustment_amounts.get(department.code) or 0),
-            )
-        )
-
-    active_members = _members_for_history_scope(
-        department=department,
-        start_date=scope.start_date,
-        end_date=scope.end_date,
-    )
-
-    return {
-        "scope": scope,
-        "overall_activity_trend": build_overall_activity_trend(
-            department=department,
-            start_date=scope.start_date,
-            end_date=scope.end_date,
-        ),
-        "active_member_cards": _build_scoped_member_cards(
-            members=active_members,
-            selected_department=department,
-            scope=scope,
-        ),
-        "month_progress_cards": month_progress_cards,
-        "period_progress_cards": period_progress_cards,
-    }
-
 
 def _department_today_transaction_detail_rows(*, department, target_date):
     transactions = (
@@ -1010,7 +360,6 @@ def _department_today_transaction_detail_rows(*, department, target_date):
         )
     return rows
 
-
 def _department_today_mail_detail_rows(*, department, target_date):
     histories = (
         MailSendHistory.objects.filter(
@@ -1038,7 +387,6 @@ def _department_today_mail_detail_rows(*, department, target_date):
         )
     return rows
 
-
 def _build_department_today_detail_context(*, department, target_date, next_url=""):
     return {
         "today_detail_date": target_date,
@@ -1053,7 +401,6 @@ def _build_department_today_detail_context(*, department, target_date, next_url=
         ),
     }
 
-
 def _parse_selected_month(value, *, default):
     if not value:
         return default.replace(day=1)
@@ -1061,7 +408,6 @@ def _parse_selected_month(value, *, default):
         return date.fromisoformat(f"{value}-01")
     except ValueError:
         return default.replace(day=1)
-
 
 def _build_member_dashboard_context(*, request, member, department, is_admin=False):
     today = timezone.localdate()
@@ -1348,7 +694,6 @@ def _build_member_dashboard_context(*, request, member, department, is_admin=Fal
         "can_edit": True,
     }
 
-
 def _build_member_history_context(*, request, member, department, is_admin=False):
     today = timezone.localdate()
     dashboard_scope = request.GET.get("dashboard_scope") or "month"
@@ -1554,7 +899,6 @@ def _build_member_history_context(*, request, member, department, is_admin=False
         ),
     }
 
-
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_index(request: HttpRequest) -> HttpResponse:
     today = timezone.localdate()
@@ -1568,7 +912,7 @@ def performance_index(request: HttpRequest) -> HttpResponse:
     dashboard_period = _resolve_current_period(today)
     dashboard_start = request.GET.get("dashboard_start") or ""
     dashboard_end = request.GET.get("dashboard_end") or ""
-    dashboard_snapshot = _build_performance_dashboard_snapshot(
+    dashboard_snapshot = build_performance_dashboard_snapshot(
         department=dashboard_department,
         target_month=dashboard_month,
         period=dashboard_period,
@@ -1595,7 +939,6 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         ),
     }
     return render(request, "performance/index.html", context)
-
 
 @require_performance_roles(ROLE_ADMIN)
 def performance_admin_entries(request: HttpRequest) -> HttpResponse:
@@ -1627,7 +970,6 @@ def performance_admin_entries(request: HttpRequest) -> HttpResponse:
         "current_query_string": current_query.urlencode(),
     }
     return render(request, "performance/admin_entries.html", context)
-
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT, auto_close=False)
 def performance_closeout_notes(request: HttpRequest) -> HttpResponse:
@@ -1701,7 +1043,6 @@ def performance_closeout_notes(request: HttpRequest) -> HttpResponse:
     )
     return render(request, "performance/closeout_notes.html", context)
 
-
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_history(request: HttpRequest) -> HttpResponse:
     today = timezone.localdate()
@@ -1726,7 +1067,7 @@ def performance_history(request: HttpRequest) -> HttpResponse:
         requested_start=_parse_selected_date(dashboard_start),
         requested_end=_parse_selected_date(dashboard_end),
     )
-    history_snapshot = _build_performance_history_snapshot(
+    history_snapshot = build_performance_history_snapshot(
         department=dashboard_department,
         scope=scope,
     )
@@ -1751,7 +1092,6 @@ def performance_history(request: HttpRequest) -> HttpResponse:
         ),
     }
     return render(request, "performance/history.html", context)
-
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_send_activity_reminder(request: HttpRequest, entry_id: int) -> HttpResponse:
@@ -1784,7 +1124,6 @@ def performance_send_activity_reminder(request: HttpRequest, entry_id: int) -> H
     next_url = request.POST.get("next") or reverse("performance_index")
     separator = "&" if "?" in next_url else "?"
     return redirect(f"{performance_next_url(next_url, fallback=reverse('performance_index'))}{separator}{urlencode({'status': status})}")
-
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_entry_edit(request: HttpRequest, entry_id: int) -> HttpResponse:
@@ -1833,7 +1172,6 @@ def performance_entry_edit(request: HttpRequest, entry_id: int) -> HttpResponse:
     }
     return render(request, "performance/entry_edit.html", context)
 
-
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_entry_delete(request: HttpRequest, entry_id: int) -> HttpResponse:
     entry = get_object_or_404(MemberDailyMetricEntry.objects.select_related("member", "department"), pk=entry_id)
@@ -1862,7 +1200,6 @@ def performance_entry_delete(request: HttpRequest, entry_id: int) -> HttpRespons
         separator = "&" if "?" in back_url else "?"
         return redirect(f"{back_url}{separator}deleted=entry")
     raise Http404
-
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_transaction_edit(request: HttpRequest, transaction_id: int) -> HttpResponse:
@@ -1913,7 +1250,6 @@ def performance_transaction_edit(request: HttpRequest, transaction_id: int) -> H
     }
     return render(request, "performance/transaction_edit.html", context)
 
-
 @require_performance_roles(ROLE_ADMIN)
 def performance_transaction_delete(request: HttpRequest, transaction_id: int) -> HttpResponse:
     if request.method != "POST":
@@ -1928,7 +1264,6 @@ def performance_transaction_delete(request: HttpRequest, transaction_id: int) ->
     transaction.delete()
     separator = "&" if "?" in back_url else "?"
     return redirect(f"{back_url}{separator}deleted=transaction")
-
 
 @require_performance_roles(ROLE_ADMIN)
 def performance_member_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
@@ -1965,14 +1300,12 @@ def performance_member_detail(request: HttpRequest, member_id: int, department_i
     context = _build_member_dashboard_context(request=request, member=member, department=department, is_admin=True)
     return render(request, "performance/member_detail.html", context)
 
-
 @require_performance_roles(ROLE_ADMIN)
 def performance_member_history_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
     department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
     context = _build_member_history_context(request=request, member=member, department=department, is_admin=True)
     return render(request, "performance/member_history.html", context)
-
 
 def _render_member_history_day_detail_response(
     *,
@@ -2027,7 +1360,6 @@ def _render_member_history_day_detail_response(
         "can_edit": can_edit,
     }
     return render(request, "performance/partials/member_history_day_detail_cards.html", context)
-
 
 def _render_member_history_list_response(
     *,
@@ -2124,20 +1456,17 @@ def _render_member_history_list_response(
     }
     return render(request, "performance/partials/member_history_day_detail_cards.html", context)
 
-
 @require_performance_roles(ROLE_ADMIN)
 def performance_member_history_detail_day_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
     department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
     return _render_member_history_day_detail_response(request=request, member=member, department=department, is_admin=True)
 
-
 @require_performance_roles(ROLE_ADMIN)
 def performance_member_history_detail_list(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
     department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
     return _render_member_history_list_response(request=request, member=member, department=department, is_admin=True)
-
 
 def _render_member_day_detail_response(
     *,
@@ -2196,7 +1525,6 @@ def _render_member_day_detail_response(
                 f"?{urlencode({'next': reset_url})}"
             )
     return render(request, "performance/partials/member_day_detail_cards.html", context)
-
 
 def _render_member_recent_detail_response(
     *,
@@ -2289,20 +1617,17 @@ def _render_member_recent_detail_response(
             )
     return render(request, "performance/partials/member_day_detail_cards.html", context)
 
-
 @require_performance_roles(ROLE_ADMIN)
 def performance_member_detail_day_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
     department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
     return _render_member_day_detail_response(request=request, member=member, department=department, is_admin=True)
 
-
 @require_performance_roles(ROLE_ADMIN)
 def performance_member_detail_recent_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
     department = _resolve_performance_member_department_or_404(member=member, department_id=department_id)
     return _render_member_recent_detail_response(request=request, member=member, department=department, is_admin=True)
-
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_insight(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
@@ -2329,7 +1654,6 @@ def performance_member_insight(request: HttpRequest, member_id: int, department_
     context["recent_detail_ajax_url"] = reverse("performance_member_insight_recent_detail", args=[member.id, department.id])
     return render(request, "performance/member_detail.html", context)
 
-
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_insight_day_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
@@ -2342,7 +1666,6 @@ def performance_member_insight_day_detail(request: HttpRequest, member_id: int, 
         readonly_member_view=True,
     )
 
-
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_insight_recent_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
@@ -2354,7 +1677,6 @@ def performance_member_insight_recent_detail(request: HttpRequest, member_id: in
         is_admin=request.user.is_staff or request.user.is_superuser,
         readonly_member_view=True,
     )
-
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_history_insight(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
@@ -2380,7 +1702,6 @@ def performance_member_history_insight(request: HttpRequest, member_id: int, dep
     context["detail_ajax_url"] = reverse("performance_member_history_insight_list", args=[member.id, department.id])
     return render(request, "performance/member_history.html", context)
 
-
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_history_insight_day_detail(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
     member = get_object_or_404(Member.objects.select_related("default_department"), pk=member_id)
@@ -2392,7 +1713,6 @@ def performance_member_history_insight_day_detail(request: HttpRequest, member_i
         is_admin=request.user.is_staff or request.user.is_superuser,
         readonly_member_view=True,
     )
-
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_history_insight_list(request: HttpRequest, member_id: int, department_id: int) -> HttpResponse:
@@ -2406,7 +1726,6 @@ def performance_member_history_insight_list(request: HttpRequest, member_id: int
         readonly_member_view=True,
     )
 
-
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_dashboard(request: HttpRequest) -> HttpResponse:
     if request.user.is_staff or request.user.is_superuser:
@@ -2414,7 +1733,7 @@ def performance_member_dashboard(request: HttpRequest) -> HttpResponse:
     member = getattr(request.user, "member_profile", None)
     if member is None:
         raise Http404
-    department = _resolve_member_card_department(member=member)
+    department = resolve_member_card_department(member=member)
     if department is None:
         raise Http404
     if request.method == "POST":
@@ -2446,7 +1765,6 @@ def performance_member_dashboard(request: HttpRequest) -> HttpResponse:
     context = _build_member_dashboard_context(request=request, member=member, department=department, is_admin=False)
     return render(request, "performance/member_detail.html", context)
 
-
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_dashboard_day_detail(request: HttpRequest) -> HttpResponse:
     if request.user.is_staff or request.user.is_superuser:
@@ -2454,11 +1772,10 @@ def performance_member_dashboard_day_detail(request: HttpRequest) -> HttpRespons
     member = getattr(request.user, "member_profile", None)
     if member is None:
         raise Http404
-    department = _resolve_member_card_department(member=member)
+    department = resolve_member_card_department(member=member)
     if department is None:
         raise Http404
     return _render_member_day_detail_response(request=request, member=member, department=department, is_admin=False)
-
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_dashboard_recent_detail(request: HttpRequest) -> HttpResponse:
@@ -2467,11 +1784,10 @@ def performance_member_dashboard_recent_detail(request: HttpRequest) -> HttpResp
     member = getattr(request.user, "member_profile", None)
     if member is None:
         raise Http404
-    department = _resolve_member_card_department(member=member)
+    department = resolve_member_card_department(member=member)
     if department is None:
         raise Http404
     return _render_member_recent_detail_response(request=request, member=member, department=department, is_admin=False)
-
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_history(request: HttpRequest) -> HttpResponse:
@@ -2480,12 +1796,11 @@ def performance_member_history(request: HttpRequest) -> HttpResponse:
     member = getattr(request.user, "member_profile", None)
     if member is None:
         raise Http404
-    department = _resolve_member_card_department(member=member)
+    department = resolve_member_card_department(member=member)
     if department is None:
         raise Http404
     context = _build_member_history_context(request=request, member=member, department=department, is_admin=False)
     return render(request, "performance/member_history.html", context)
-
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_history_list(request: HttpRequest) -> HttpResponse:
@@ -2494,11 +1809,10 @@ def performance_member_history_list(request: HttpRequest) -> HttpResponse:
     member = getattr(request.user, "member_profile", None)
     if member is None:
         raise Http404
-    department = _resolve_member_card_department(member=member)
+    department = resolve_member_card_department(member=member)
     if department is None:
         raise Http404
     return _render_member_history_list_response(request=request, member=member, department=department, is_admin=False)
-
 
 @require_performance_roles(ROLE_ADMIN, ROLE_REPORT)
 def performance_member_history_day_detail(request: HttpRequest) -> HttpResponse:
@@ -2507,11 +1821,10 @@ def performance_member_history_day_detail(request: HttpRequest) -> HttpResponse:
     member = getattr(request.user, "member_profile", None)
     if member is None:
         raise Http404
-    department = _resolve_member_card_department(member=member)
+    department = resolve_member_card_department(member=member)
     if department is None:
         raise Http404
     return _render_member_history_day_detail_response(request=request, member=member, department=department, is_admin=False)
-
 
 @require_performance_roles(ROLE_ADMIN)
 def performance_past_entry_create(request: HttpRequest) -> HttpResponse:
@@ -2612,7 +1925,6 @@ def performance_past_entry_create(request: HttpRequest) -> HttpResponse:
     }
     return render(request, "performance/past_entry_create.html", context)
 
-
 @require_performance_roles(ROLE_ADMIN)
 def performance_past_entry_member_options(request: HttpRequest) -> HttpResponse:
     department_id = request.GET.get("department")
@@ -2633,7 +1945,6 @@ def performance_past_entry_member_options(request: HttpRequest) -> HttpResponse:
     )
     return JsonResponse({"options": options})
 
-
 @require_performance_roles(ROLE_ADMIN)
 def performance_summary_delete(request: HttpRequest, summary_id: int) -> HttpResponse:
     if request.method != "POST":
@@ -2653,7 +1964,6 @@ def performance_summary_delete(request: HttpRequest, summary_id: int) -> HttpRes
         return redirect(f"{performance_next_url(next_url, fallback=reverse('performance_admin_entries'))}{separator}deleted=summary")
     separator = "&" if "?" in next_url else "?"
     return redirect(f"{performance_next_url(next_url, fallback=reverse('performance_admin_entries'))}{separator}status=summary_not_empty")
-
 
 @require_performance_roles(ROLE_ADMIN)
 def performance_adjustments(request: HttpRequest) -> HttpResponse:
@@ -2754,14 +2064,12 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
     }
     return render(request, "performance/adjustments.html", context)
 
-
 @require_performance_roles(ROLE_ADMIN)
 def performance_adjustment_delete(request: HttpRequest, adjustment_id: int) -> HttpResponse:
     adjustment = get_object_or_404(MetricAdjustment, pk=adjustment_id)
     if request.method == "POST":
         adjustment.delete()
     return redirect(reverse("performance_adjustments"))
-
 
 @require_performance_roles(ROLE_ADMIN)
 def performance_cancellation_delete(request: HttpRequest, cancellation_id: int) -> HttpResponse:
