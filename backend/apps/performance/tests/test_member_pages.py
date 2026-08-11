@@ -5,6 +5,8 @@ from django.utils import timezone
 from apps.accounts.models import Member, MemberDepartment
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction, MemberMonthMetricTarget, MemberPeriodMetricTarget, MetricAdjustment
 from apps.performance.services.member_ajax import build_member_dashboard_detail_context
+from apps.performance.services.member_details import build_member_dashboard_entry_rows
+from apps.performance.services.formatters import field_amount_text, field_count_text
 from apps.targets.models import Period
 from .base import PerformanceTestBase
 
@@ -12,6 +14,45 @@ User = get_user_model()
 
 
 class MemberPagesTests(PerformanceTestBase):
+    def test_member_dashboard_entry_rows_prefetch_transactions_in_fixed_query_count(self):
+        entries = [
+            MemberDailyMetricEntry.objects.create(
+                member=self.member,
+                department=self.department,
+                entry_date=date(2026, 8, day),
+            )
+            for day in (8, 9, 10)
+        ]
+        expected_transaction_ids = {}
+        for entry in entries:
+            transactions = [
+                MemberMetricTransaction.objects.create(
+                    entry=entry,
+                    support_amount=amount,
+                    age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+                    gender=MemberMetricTransaction.GENDER_FEMALE,
+                    nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+                )
+                for amount in (1000, 2000)
+            ]
+            expected_transaction_ids[entry.id] = [transaction.id for transaction in transactions]
+
+        with self.assertNumQueries(3):
+            rows = build_member_dashboard_entry_rows(
+                member=self.member,
+                department=self.department,
+                month_start=date(2026, 8, 1),
+                month_end=date(2026, 8, 31),
+                field_count_text=field_count_text,
+                field_amount_text=field_amount_text,
+            )
+
+        self.assertEqual([row["entry"].id for row in rows], [entry.id for entry in reversed(entries)])
+        self.assertEqual(
+            [[transaction.id for transaction in row["transactions"]] for row in rows],
+            [expected_transaction_ids[entry.id] for entry in reversed(entries)],
+        )
+
     def test_member_dashboard_day_detail_context_uses_each_history_route(self):
         common = {
             "member": self.member,
