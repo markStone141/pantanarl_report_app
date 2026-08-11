@@ -139,7 +139,7 @@
     </div>
     <div class="grid grid-2 mt-12">
       {% for card in dashboard_snapshot.month_progress_cards %}
-      <article class="card performance-progress-card">
+      <article class="card performance-progress-card performance-dashboard-inner-card">
         <div class="row">
           <strong>月目標達成率</strong>
         </div>
@@ -181,13 +181,13 @@
         </div>
       </article>
       {% empty %}
-      <article class="card performance-progress-card">
+      <article class="card performance-progress-card performance-dashboard-inner-card">
         <p class="muted">対象部署の月目標データがありません。</p>
       </article>
       {% endfor %}
 
       {% for card in dashboard_snapshot.period_progress_cards %}
-      <article class="card performance-progress-card">
+      <article class="card performance-progress-card performance-dashboard-inner-card">
         <div class="row">
           <strong>路程目標達成率</strong>
         </div>
@@ -229,15 +229,20 @@
         </div>
       </article>
       {% empty %}
-      <article class="card performance-progress-card">
+      <article class="card performance-progress-card performance-dashboard-inner-card">
         <p class="muted">対象部署の路程目標データがありません。</p>
       </article>
       {% endfor %}
     </div>
   </section>
 
-  <section class="card mt-16">
-    <h3>直近稼働の全体実績推移</h3>
+  <section class="card mt-16 performance-dashboard-section">
+    <div class="performance-dashboard-section-heading">
+      <div>
+        <span class="performance-dashboard-section-kicker">TREND</span>
+        <h3>直近稼働の全体実績推移</h3>
+      </div>
+    </div>
     <p id="performance-trend-description" class="muted">1稼働 = 実績が登録された1日です。金額は棒、{{ dashboard_snapshot.overall_activity_trend.count_label }}は折れ線で表示します。</p>
     {% if dashboard_snapshot.overall_activity_trend.has_data %}
     {{ dashboard_snapshot.overall_activity_trend|json_script:"performance-activity-trend-data" }}
@@ -262,7 +267,7 @@
       <button type="button" id="performance-trend-mode-activity" class="btn-inline">AP/CM</button>
       {% if dashboard_snapshot.overall_activity_trend.is_wv %}<button type="button" id="performance-trend-mode-wv" class="btn-inline">CS/難民</button>{% endif %}
     </div>
-    <div class="performance-chart-card mt-12">
+    <div class="performance-chart-card performance-dashboard-inner-card mt-12">
       <canvas id="performance-activity-trend-chart" aria-label="直近稼働の全体実績推移"></canvas>
     </div>
     {% else %}
@@ -270,9 +275,14 @@
     {% endif %}
   </section>
 
-  <section class="card mt-16">
-    <h3>有効メンバー一覧</h3>
-    <div class="muted mt-6">路程累計: {{ dashboard_snapshot.current_period_display }}</div>
+  <section class="card mt-16 performance-dashboard-section">
+    <div class="performance-dashboard-section-heading">
+      <div>
+        <span class="performance-dashboard-section-kicker">MEMBERS</span>
+        <h3>有効メンバー一覧</h3>
+      </div>
+      <span class="performance-dashboard-section-date">路程累計: {{ dashboard_snapshot.current_period_display }}</span>
+    </div>
     {% if dashboard_snapshot.active_member_cards %}
     <div class="performance-member-list mt-12">
       <div class="performance-member-list-head">

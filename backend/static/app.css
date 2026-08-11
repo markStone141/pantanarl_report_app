@@ -548,6 +548,17 @@ a {
   box-shadow: none;
 }
 
+.performance-dashboard-inner-card {
+  background: var(--dashboard-surface-subtle);
+  border: 1px solid var(--dashboard-border-subtle);
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.performance-chart-card.performance-dashboard-inner-card {
+  padding: 16px;
+}
+
 .performance-record-tabs {
   display: flex;
   gap: 6px;

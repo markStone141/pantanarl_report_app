@@ -87,5 +87,35 @@
     "action": "Docs JavaScript lintを実行",
     "reason": "eslintが環境に未導入のため起動不可。Docs JavaScriptは変更対象外",
     "next_action": "依存導入は今回の対象外とし、関連検証結果を明記"
+  },
+  {
+    "timestamp": "2026-08-11T17:47:36+09:00",
+    "expires_at": "2026-11-09T17:47:36+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260811-dashboard-goal-sections",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "対象テストメソッドを指定して実行",
+    "reason": "管理者ダッシュボードUI変更の最小回帰確認",
+    "next_action": "実際のテストメソッド名を確認して再実行"
+  },
+  {
+    "timestamp": "2026-08-11T17:48:56+09:00",
+    "expires_at": "2026-11-09T17:48:56+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260811-dashboard-goal-sections",
+    "loop": 3,
+    "role": "reporter",
+    "event": "stopped",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "コミット374ff50をorigin/mainへpush",
+    "reason": "実行環境の安全確認が現在の依頼をmain直接更新の明示承認として扱わず停止",
+    "next_action": "ユーザーから送信先とmain更新の明示承認を受けてpush"
   }
 ]
