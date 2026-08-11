@@ -97,6 +97,7 @@ from apps.performance.services.trends import (
     build_overall_activity_trend,
     entry_final_count_value,
 )
+from apps.performance.services.today_details import build_department_today_detail_context
 from .forms import (
     PerformanceAdminEntryFilterForm,
     PerformanceAdjustmentListFilterForm,
@@ -324,82 +325,6 @@ def _parse_selected_date(value):
         return date.fromisoformat(value)
     except ValueError:
         return None
-
-def _department_today_transaction_detail_rows(*, department, target_date):
-    transactions = (
-        MemberMetricTransaction.objects.filter(
-            entry__department=department,
-            entry__entry_date=target_date,
-        )
-        .select_related("entry", "entry__member", "entry__department")
-        .order_by("-entry__updated_at", "-id")
-    )
-    rows = []
-    for tx in transactions:
-        if department.code == "WV":
-            if tx.wv_result_type == MemberMetricTransaction.WV_RESULT_CS:
-                type_text = f"CS {int(tx.wv_cs_count or 0)}口"
-            elif tx.wv_result_type == MemberMetricTransaction.WV_RESULT_REFUGEE:
-                type_text = f"難民 {int(tx.wv_refugee_amount or 0):,}円"
-            else:
-                type_text = f"CS {int(tx.wv_cs_count or 0)}口 + 難民 {int(tx.wv_refugee_amount or 0):,}円"
-        else:
-            type_text = "1件"
-        rows.append(
-            {
-                "id": tx.id,
-                "member_name": tx.entry.member.name,
-                "location_name": tx.location or tx.entry.location_name or "-",
-                "amount_text": f"{int(tx.support_amount or 0):,}円",
-                "type_text": type_text,
-                "detail_text": f"{tx.get_age_band_display()} / {tx.get_gender_display()} / {tx.get_nationality_type_display()}",
-                "comment": tx.comment,
-                "edit_url": reverse("performance_transaction_edit", args=[tx.id]),
-                "delete_url": reverse("performance_transaction_delete", args=[tx.id]),
-            }
-        )
-    return rows
-
-def _department_today_mail_detail_rows(*, department, target_date):
-    histories = (
-        MailSendHistory.objects.filter(
-            department=department,
-            activity_date=target_date,
-            is_test=False,
-            transaction__isnull=False,
-        )
-        .select_related("sender_member", "transaction", "transaction__entry", "recipient_group")
-        .order_by("-created_at", "-id")
-    )
-    rows = []
-    for history in histories:
-        rows.append(
-            {
-                "member_name": history.transaction.entry.member.name if history.transaction and history.transaction.entry_id else "-",
-                "subject": history.subject_snapshot,
-                "status_text": history.get_status_display(),
-                "status_value": history.status,
-                "sent_at_text": timezone.localtime(history.sent_at).strftime("%Y/%m/%d %H:%M") if history.sent_at else "-",
-                "recipient_text": history.sent_to_snapshot or "-",
-                "body_text": history.body_snapshot,
-                "error_text": history.error_message,
-            }
-        )
-    return rows
-
-def _build_department_today_detail_context(*, department, target_date, next_url=""):
-    return {
-        "today_detail_date": target_date,
-        "today_detail_next_url": next_url,
-        "today_transaction_rows": _department_today_transaction_detail_rows(
-            department=department,
-            target_date=target_date,
-        ),
-        "today_mail_rows": _department_today_mail_detail_rows(
-            department=department,
-            target_date=target_date,
-        ),
-    }
 
 def _parse_selected_month(value, *, default):
     if not value:
@@ -932,7 +857,7 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         "dashboard_start": dashboard_start,
         "dashboard_end": dashboard_end,
         "status_message": request.GET.get("status") or "",
-        **_build_department_today_detail_context(
+        **build_department_today_detail_context(
             department=dashboard_department,
             target_date=today,
             next_url=request.get_full_path(),
@@ -1085,7 +1010,7 @@ def performance_history(request: HttpRequest) -> HttpResponse:
         "dashboard_start": dashboard_start,
         "dashboard_end": dashboard_end,
         "history_snapshot": history_snapshot,
-        **_build_department_today_detail_context(
+        **build_department_today_detail_context(
             department=dashboard_department,
             target_date=today,
             next_url=request.get_full_path(),
