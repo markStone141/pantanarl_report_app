@@ -162,5 +162,20 @@
     "action": "performance全91テストを実行",
     "reason": "member_cards分離後の回帰確認",
     "next_action": "活動中・終了メンバー行生成をsnapshot責務へ戻して再検証"
+  },
+  {
+    "timestamp": "2026-08-11T18:30:34+09:00",
+    "expires_at": "2026-11-09T18:30:34+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260811-performance-adjustments",
+    "loop": 1,
+    "role": "reporter",
+    "event": "stopped",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "終了ログ記録コマンドを実行",
+    "reason": "リポジトリルートからのスクリプトパスを誤指定して停止",
+    "next_action": "正しいbackend/scriptsパスで再実行"
   }
 ]

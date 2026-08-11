@@ -179,8 +179,8 @@ URL名とテンプレート名は維持する。まず `views.py` のprivate関�
 | 3 | 今日の決済明細/送信メールdetail rowを `today_details.py` へ移す | 完了 |
 | 4 | メンバーカード生成を `member_cards.py` へ移し、部署ごとのクエリを確認する | 完了 |
 | 5 | メンバー個別/過去実績contextを `member_pages.py` へ移す | 完了 |
-| 6 | 補正実績のquery/row生成を `adjustments.py` へ移す | 次工程 |
-| 7 | 補正フォームを `forms_adjustments.py` へ移し、`forms.py` は互換importにする | 未着手 |
+| 6 | 補正実績のquery/row生成を `adjustments.py` へ移す | 完了 |
+| 7 | 補正フォームを `forms_adjustments.py` へ移し、`forms.py` は互換importにする | 次工程 |
 | 8 | tests.pyを機能別に分割する | 未着手 |
 
 工程2ではメンバーカード生成も `dashboard_snapshots.py` へ一時的に移動済み。工程4では、
@@ -197,6 +197,10 @@ URL名とテンプレート名は維持する。まず `views.py` のprivate関�
 工程5ではメンバー個別ダッシュボードと過去実績のcontext構築を
 `services/member_pages.py` へ分離した。権限decorator、POST保存、render、AJAX応答は
 Viewに残し、URL、テンプレート、contextキー、管理者・本人・readonlyの表示仕様を維持した。
+
+工程6では補正実績とWVキャンセルの検索query、一覧表示row生成、両recordの結合と
+並び順を `services/adjustments.py` へ分離した。フォーム制御、保存・削除、ページング、
+AJAX/HTML応答、メンバー候補生成はViewに残し、UN/WV分岐、検索条件、URL、表示仕様を維持した。
 
 ## 検証方針
 
