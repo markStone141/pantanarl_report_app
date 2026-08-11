@@ -178,8 +178,8 @@ URL名とテンプレート名は維持する。まず `views.py` のprivate関�
 | 2 | `performance_index` / `performance_history` のsnapshot構築を `dashboard_snapshots.py` へ移す | 完了 |
 | 3 | 今日の決済明細/送信メールdetail rowを `today_details.py` へ移す | 完了 |
 | 4 | メンバーカード生成を `member_cards.py` へ移し、部署ごとのクエリを確認する | 完了 |
-| 5 | メンバー個別/過去実績contextを `member_pages.py` へ移す | 次工程 |
-| 6 | 補正実績のquery/row生成を `adjustments.py` へ移す | 未着手 |
+| 5 | メンバー個別/過去実績contextを `member_pages.py` へ移す | 完了 |
+| 6 | 補正実績のquery/row生成を `adjustments.py` へ移す | 次工程 |
 | 7 | 補正フォームを `forms_adjustments.py` へ移し、`forms.py` は互換importにする | 未着手 |
 | 8 | tests.pyを機能別に分割する | 未着手 |
 
@@ -193,6 +193,10 @@ URL名とテンプレート名は維持する。まず `views.py` のprivate関�
 部署数には比例するが、UN/WVとキャンセルを含む既存の業務集計境界を維持するため、
 この工程では複数部署をまたぐ一括集計へ変更しない。必要になった場合は
 `apps.dairymetrics.services.final_actuals` に部署別一括APIを設計する別工程として扱う。
+
+工程5ではメンバー個別ダッシュボードと過去実績のcontext構築を
+`services/member_pages.py` へ分離した。権限decorator、POST保存、render、AJAX応答は
+Viewに残し、URL、テンプレート、contextキー、管理者・本人・readonlyの表示仕様を維持した。
 
 ## 検証方針
 
