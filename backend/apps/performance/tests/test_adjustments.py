@@ -169,8 +169,16 @@ class AdjustmentsTests(PerformanceTestBase):
     def test_performance_adjustment_member_options_include_un_activity_code(self):
         self.member.un_activity_code = "12345"
         self.member.save(update_fields=["un_activity_code"])
+        adjustment = MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 5, 13),
+            source_type=MetricAdjustment.SOURCE_QR,
+            return_qr_count=1,
+            return_qr_amount=500,
+        )
 
-        response = self.client.get(reverse("performance_adjustments"))
+        response = self.client.get(reverse("performance_adjustments"), {"edit": adjustment.id})
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "UNコード")
@@ -179,6 +187,51 @@ class AdjustmentsTests(PerformanceTestBase):
         self.assertEqual(options[0]["id"], self.member.id)
         self.assertEqual(options[0]["name"], self.member.name)
         self.assertEqual(options[0]["un_activity_code"], "12345")
+
+
+    def test_performance_adjustment_member_options_only_load_selected_department(self):
+        other_department = self.create_department("WV")
+        other_member = self.create_member(name="Other Member", department=other_department)
+        adjustment = MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 5, 13),
+            source_type=MetricAdjustment.SOURCE_QR,
+            return_qr_count=1,
+            return_qr_amount=500,
+        )
+
+        response = self.client.get(reverse("performance_adjustments"), {"edit": adjustment.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(set(response.context["member_options"]), {str(self.department.id)})
+        self.assertEqual(
+            [option["id"] for option in response.context["member_options"][str(self.department.id)]],
+            [self.member.id],
+        )
+        self.assertNotContains(response, f'"id": {other_member.id}')
+
+
+    def test_performance_adjustment_create_page_does_not_preload_member_options(self):
+        response = self.client.get(reverse("performance_adjustments"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["member_options"], {})
+
+
+    def test_performance_adjustment_member_options_api_excludes_inactive_members(self):
+        inactive_member = self.create_member(name="Inactive Member", department=self.department)
+        inactive_member.is_active = False
+        inactive_member.save(update_fields=["is_active"])
+
+        response = self.client.get(
+            reverse("performance_past_entry_member_options"),
+            {"department": self.department.id, "active_only": "1"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([option["id"] for option in response.json()["options"]], [self.member.id])
 
 
     def test_performance_adjustment_create_wv_cs_sets_fixed_amount_and_count(self):

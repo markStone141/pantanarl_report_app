@@ -69,6 +69,11 @@ from apps.performance.services.adjustments import (
     combined_adjustment_list_rows,
     filtered_adjustments_queryset,
 )
+from apps.performance.services.adjustment_options import (
+    active_department_code_map,
+    adjustment_member_options,
+    department_member_options,
+)
 from apps.performance.services.closeout_notes import resolve_closeout_notes_scope
 from apps.performance.services.dashboard_snapshots import (
     build_performance_dashboard_snapshot,
@@ -1023,21 +1028,10 @@ def performance_past_entry_create(request: HttpRequest) -> HttpResponse:
 
 @require_performance_roles(ROLE_ADMIN)
 def performance_past_entry_member_options(request: HttpRequest) -> HttpResponse:
-    department_id = request.GET.get("department")
-    if not department_id or not department_id.isdigit():
-        return JsonResponse({"options": []})
-    department = Department.objects.filter(pk=int(department_id), is_active=True).first()
-    if department is None:
-        return JsonResponse({"options": []})
-    queryset = Member.objects.filter(department_links__department=department).distinct().order_by("name")
-    un_code = "".join(character for character in request.GET.get("un_code", "").strip() if character.isdigit())[:5]
-    if un_code:
-        queryset = queryset.filter(un_activity_code__startswith=un_code)
-    options = list(
-        queryset
-        .distinct()
-        .order_by("name")
-        .values("id", "name", "un_activity_code")
+    options = department_member_options(
+        department_id=request.GET.get("department"),
+        un_code_prefix=request.GET.get("un_code", ""),
+        active_only=request.GET.get("active_only") == "1",
     )
     return JsonResponse({"options": options})
 
@@ -1107,28 +1101,6 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
 
     paginator = Paginator(adjustments_queryset, 20)
     page_obj = paginator.get_page(request.GET.get("page") or 1)
-    member_options = {}
-    department_code_map = {
-        str(department.id): department.code
-        for department in Department.objects.filter(is_active=True).order_by("code")
-    }
-    for member in (
-        Member.objects.active()
-        .filter(department_links__department__is_active=True)
-        .prefetch_related("department_links__department")
-        .order_by("name", "id")
-        .distinct()
-    ):
-        for link in member.department_links.all():
-            if link.department_id is None or not link.department.is_active:
-                continue
-            member_options.setdefault(str(link.department_id), []).append(
-                {
-                    "id": member.id,
-                    "name": member.name,
-                    "un_activity_code": member.un_activity_code or "",
-                }
-            )
     list_context = {
         "adjustments": page_obj.object_list,
         "page_obj": page_obj,
@@ -1145,6 +1117,9 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
             }
         )
 
+    selected_department_id = form["department"].value()
+    member_options = adjustment_member_options(department_id=selected_department_id)
+    department_code_map = active_department_code_map()
     context = {
         "nav_items": performance_nav_items(),
         "filter_form": filter_form,

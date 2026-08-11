@@ -267,5 +267,20 @@
     "action": "npm run lintはeslint未導入のため実行不可。JavaScript変更なし",
     "reason": "補助的な静的検査。全94テスト、Django、migration、BOM、差分チェックは成功",
     "next_action": "HTML/CSS差分を手動監査し必須チェック結果で判断"
+  },
+  {
+    "timestamp": "2026-08-11T19:02:44+09:00",
+    "expires_at": "2026-11-09T19:02:44+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260811-performance-options",
+    "loop": 1,
+    "role": "observer",
+    "event": "result_observed",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "状態ファイルと直近要約の表示を試行",
+    "reason": "backendからリポジトリ直下への相対パス指定が不足",
+    "next_action": "正しい相対パスで内容を確認し工程3・4の完了状態を更新"
   }
 ]
