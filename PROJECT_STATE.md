@@ -4,7 +4,9 @@
 
 ## 現在のフェーズ
 
-- 全アプリUI展開・工程10完了: Git bundle引き渡し・PUSH・公開環境確認待ち
+- 全アプリUI展開・工程10完了。
+- 工程11「共通ボタンUI展開」は計画作成済み、実装開始待ち。
+- 直前のGit bundleは引き渡し済み。工程11のPUSH・公開は未実施。
 
 ## プロジェクト全体の目標
 
@@ -84,6 +86,8 @@
 
 ## 進行中の作業
 
+- 工程11で、共通メニュー／NAVの雰囲気へ本文側のボタンUIを段階的に統一する。
+- 詳細は `backend/docs/BUTTON_UI_ROLLOUT_PLAN.md` を参照する。
 - PUSH後、工程4までの画面を含む公開環境でPC／モバイルの視覚確認を行う。
 - `performance` の監査済み14コミットはGitHubへのPUSHと公開環境確認が未完了。UI工程とは状態を分けて管理する。
 
@@ -181,9 +185,9 @@
 
 ## 次に行う作業
 
-- 作成済みGit bundleを利用者のPCで復元し、監査済み作業ブランチをGitHubへPUSHする。
-- GitHub上でPull Requestを作成し、レビュー後に `main` へマージする。
-- デプロイ後、公開環境のPC／モバイル主要導線を確認して公開判定を確定する。
+- 工程11-1としてボタン台帳を作成し、共通ボタン体系を `ui_foundation.css` へ実装する。
+- `dashboard` と `performance` の代表画面で試験適用し、対象テストと全体回帰後にローカルコミットする。
+- 工程11完了後、新しいGit bundleを作成し、GitHubへPUSHする。
 
 ## 参照
 
@@ -192,5 +196,6 @@
 - `backend/docs/PERFORMANCE_RELEASE_AUDIT_2026-08-12.md`
 - `backend/docs/UI_ROLLOUT_PLAN.md`
 - `backend/docs/UI_SCREEN_INVENTORY.md`
+- `backend/docs/BUTTON_UI_ROLLOUT_PLAN.md`
 - `backend/docs/GIT_BUNDLE_PUSH_WORKFLOW.md`
 - `logs/latest-summary.md`

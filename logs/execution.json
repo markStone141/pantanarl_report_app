@@ -2900,5 +2900,20 @@
     "action": "Git bundle引き渡し手順の参照、BOM、EOF、差分を検査",
     "reason": "不完全なPUSH手順や壊れた文書参照を防ぐため",
     "next_action": "文書変更をコミットし、最新コミットを含むbundleを作成"
+  },
+  {
+    "timestamp": "2026-08-12T12:43:56+09:00",
+    "expires_at": "2026-09-11T12:43:56+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260812-button-ui-plan",
+    "loop": 1,
+    "role": "planner",
+    "event": "plan_created",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "共通メニューの視覚言語へ本文ボタンを統一する工程11計画を作成",
+    "reason": "メニューとメイン画面のボタンに視覚的な不整合があるため",
+    "next_action": "工程11-1でボタン台帳と共通ボタンCSSを実装"
   }
 ]
