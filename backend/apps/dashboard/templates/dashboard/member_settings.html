@@ -4,9 +4,10 @@
 {% block title %}メンバー管理 | Report App{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="app-shell">
   {% include "includes/app_navigation.html" with page_title="メンバー管理" page_subtitle="名前・所属部署・ログイン情報を管理します。" %}
 
+  <main class="container app-shell-content">
   <section class="mt-16">
     <article class="card ui-section">
       {% include "includes/ui_section_heading.html" with kicker="MEMBERS" title="メンバー一覧" description="検索や登録状況で絞り込み、必要な設定へ進めます。" %}
@@ -48,6 +49,7 @@
       </div>
     </article>
   </section>
+  </main>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=7"></script>
 <script>

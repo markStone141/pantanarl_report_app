@@ -4,9 +4,10 @@
 {% block title %}ID・パスワード一括管理 | Report App{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="app-shell">
   {% include "includes/app_navigation.html" with page_title="ID・パスワード一括管理" page_subtitle="20件ずつ表示し、入力した項目だけを変更します。" %}
 
+  <main class="container app-shell-content">
   <section class="card ui-section mt-16">
     {% include "includes/ui_section_heading.html" with kicker="LOGIN" title="ログイン情報" description="検索で対象を絞り込み、変更内容を確認してから一括更新します。" %}
     {% if status_message %}
@@ -73,6 +74,7 @@
       </div>
     </div>
   </section>
+  </main>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=7"></script>
 <script>

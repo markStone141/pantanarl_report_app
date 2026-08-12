@@ -779,6 +779,8 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
                 response = self.client.get(reverse(page_name))
 
                 self.assertEqual(response.status_code, 200)
+                self.assertContains(response, '<div class="app-shell">', html=False)
+                self.assertContains(response, '<main class="container app-shell-content">', html=False)
                 self.assertContains(response, 'class="app-side-nav dashboard-drawer-nav"', html=False)
                 self.assertContains(
                     response,
