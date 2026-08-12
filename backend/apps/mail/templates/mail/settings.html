@@ -63,7 +63,7 @@
         <label class="checkbox-label" for="id_is_active">{{ form.is_active }} {{ form.is_active.label }}</label>
         {% if form.is_active.errors %}<div class="error-text">{{ form.is_active.errors|striptags }}</div>{% endif %}
 
-        <button type="submit" class="mt-12">設定を保存</button>
+        <button type="submit" class="ui-button ui-button--primary mt-12">設定を保存</button>
       </form>
     </article>
 
@@ -84,7 +84,7 @@
         {{ test_form.group }}
         {% if test_form.group.errors %}<div class="error-text">{{ test_form.group.errors|striptags }}</div>{% endif %}
 
-        <button type="submit" class="mt-12">送信先を確認</button>
+        <button type="submit" class="ui-button ui-button--secondary mt-12">送信先を確認</button>
       </form>
 
       {% if preview_summary %}

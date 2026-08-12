@@ -116,7 +116,7 @@
       </table>
 
       <div style="margin-top: 10px;">
-        <button type="button" id="add-row" class="btn-inline">メンバーを追加</button>
+        <button type="button" id="add-row" class="ui-button ui-button--secondary">メンバーを追加</button>
       </div>
 
       {% if not members %}
@@ -126,7 +126,7 @@
       {% endif %}
 
       <div style="margin-top: 14px;">
-        <button type="submit" data-submit-button>{% if is_edit %}変更を保存{% else %}報告を送信{% endif %}</button>
+        <button type="submit" class="ui-button ui-button--primary" data-submit-button>{% if is_edit %}変更を保存{% else %}報告を送信{% endif %}</button>
         <span class="muted" data-submit-status role="status" aria-live="polite"></span>
       </div>
     </form>
@@ -178,12 +178,10 @@
               <div>詳細データなし</div>
               {% endfor %}
             </div>
-            <a href="{% url 'report_edit' report.id %}?next={{ current_view_name }}">
-              <button type="button" class="btn-inline">修正</button>
-            </a>
+            <a href="{% url 'report_edit' report.id %}?next={{ current_view_name }}" class="ui-button ui-button--secondary">修正</a>
             <form method="post" action="{% url 'report_delete' dept_code report.id %}" style="display:inline;" onsubmit="return confirm('この報告を削除します。よろしいですか？');">
               {% csrf_token %}
-              <button type="submit" class="btn-inline btn-danger">削除</button>
+              <button type="submit" class="ui-button ui-button--danger">削除</button>
             </form>
           </td>
         </tr>
@@ -250,6 +248,8 @@
         if (submitButton) {
           submitButton.disabled = true;
           submitButton.setAttribute("aria-disabled", "true");
+          submitButton.setAttribute("aria-busy", "true");
+          submitButton.classList.add("is-loading");
           submitButton.textContent = form.dataset.submitLabel || "送信中…";
         }
         if (submitStatus) submitStatus.textContent = "保存が完了するまで、そのままお待ちください。";

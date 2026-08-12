@@ -51,12 +51,12 @@
                   </td>
                   <td>
                     <div class="inline-row">
-                      <a class="icon-btn" href="{% url 'mail_group_settings' %}?edit={{ group.id }}" aria-label="メールグループを編集">
+                      <a class="ui-icon-button icon-btn" href="{% url 'mail_group_settings' %}?edit={{ group.id }}" aria-label="メールグループを編集" title="編集">
                         <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                       </a>
                       <form method="post" action="{% url 'mail_group_delete' group.id %}" onsubmit="return confirm('このメールグループを削除しますか？');">
                         {% csrf_token %}
-                        <button type="submit" class="icon-btn icon-btn-danger" aria-label="メールグループを削除">
+                        <button type="submit" class="ui-icon-button ui-icon-button--danger icon-btn icon-btn-danger" aria-label="メールグループを削除" title="削除">
                           <i class="fa-solid fa-trash" aria-hidden="true"></i>
                         </button>
                       </form>
@@ -115,9 +115,9 @@
             </div>
             {% if form.members.errors %}<div class="error-text">{{ form.members.errors|striptags }}</div>{% endif %}
 
-            <button type="submit" class="mt-12">{% if edit_group %}グループを更新{% else %}グループを追加{% endif %}</button>
+            <button type="submit" class="ui-button ui-button--primary mt-12">{% if edit_group %}グループを更新{% else %}グループを追加{% endif %}</button>
             {% if edit_group %}
-            <a href="{% url 'mail_group_settings' %}" class="mt-8">編集をキャンセル</a>
+            <a href="{% url 'mail_group_settings' %}" class="ui-button ui-button--quiet mt-8">編集をキャンセル</a>
             {% endif %}
           </form>
         </div>
@@ -140,7 +140,7 @@
             {{ routing_form.wv_group }}
             {% if routing_form.wv_group.errors %}<div class="error-text">{{ routing_form.wv_group.errors|striptags }}</div>{% endif %}
 
-            <button type="submit" class="mt-12">既定グループを保存</button>
+            <button type="submit" class="ui-button ui-button--primary mt-12">既定グループを保存</button>
           </form>
         </div>
       </details>
@@ -183,7 +183,7 @@
 
             {{ settings_form.is_active.as_hidden }}
 
-            <button type="submit" class="mt-12">設定を保存</button>
+            <button type="submit" class="ui-button ui-button--primary mt-12">設定を保存</button>
           </form>
         </div>
       </details>
@@ -208,8 +208,8 @@
             {% if test_form.group.errors %}<div class="error-text">{{ test_form.group.errors|striptags }}</div>{% endif %}
 
             <div class="inline-row mt-12">
-              <button type="submit" name="action" value="test_preview">送信先を確認</button>
-              <button type="submit" name="action" value="test_send">テスト送信</button>
+              <button type="submit" class="ui-button ui-button--secondary" name="action" value="test_preview">送信先を確認</button>
+              <button type="submit" class="ui-button ui-button--primary" name="action" value="test_send">テスト送信</button>
             </div>
           </form>
 

@@ -25,7 +25,7 @@
         <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
-      <button type="submit" class="btn-inline">絞り込む</button>
+      <button type="submit" class="ui-button ui-button--secondary">絞り込む</button>
     </form>
   </section>
 
@@ -58,11 +58,11 @@
     {% if paginator.num_pages > 1 %}
     <div class="target-history-pagination">
       {% if page_obj.has_previous %}
-      <a class="btn-inline" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">前へ</a>
+      <a class="ui-button ui-button--secondary" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">前へ</a>
       {% endif %}
       <span class="muted">{{ page_obj.number }} / {{ paginator.num_pages }} ページ</span>
       {% if page_obj.has_next %}
-      <a class="btn-inline" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">次へ</a>
+      <a class="ui-button ui-button--secondary" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">次へ</a>
       {% endif %}
     </div>
     {% endif %}
