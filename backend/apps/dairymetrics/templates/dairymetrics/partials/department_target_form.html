@@ -1,6 +1,6 @@
 {% load humanize %}
 
-<form method="post">
+<form method="post" data-submit-lock data-submit-label="保存中…">
   {% csrf_token %}
   <input type="hidden" name="action" value="save_department_target">
   <input type="hidden" name="department_code" value="{{ selected_department_code }}">
@@ -41,4 +41,5 @@
     <button type="button" class="btn-inline dairymetrics-secondary-btn" {{ close_button_attr|safe }}>{{ close_button_label }}</button>
     {% endif %}
   </div>
+  <span class="muted" data-submit-status role="status" aria-live="polite"></span>
 </form>

@@ -9,7 +9,7 @@
     <button type="button" class="btn-inline dairymetrics-save-btn" data-open-entry-panel>決済を入力する</button>
   </div>
   <section class="dairymetrics-v2-entry-panel" id="dairymetrics-v2-entry-panel" {% if not open_entry_panel %}hidden{% endif %}>
-    <form method="post">
+    <form method="post" data-submit-lock data-submit-label="登録中…">
       {% csrf_token %}
       <input type="hidden" name="transaction_id" id="v2-transaction-id" value="">
       <input type="hidden" name="department_code" value="{{ selected_department_code }}">
@@ -110,6 +110,7 @@
         <button type="submit" name="action" value="save_transaction" class="btn-inline" id="v2-transaction-save-button">登録して閉じる</button>
         <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-entry-panel>閉じる</button>
       </div>
+      <span class="muted" data-submit-status role="status" aria-live="polite"></span>
     </form>
   </section>
 </section>

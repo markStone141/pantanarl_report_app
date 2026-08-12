@@ -8,8 +8,15 @@
 {% endblock %}
 
 {% block content %}
-<div class="container" data-personal-setup-fields-url="{% url 'dairymetrics_entry_v2_personal_setup_fields' %}">
-  {% include "dairymetrics/partials/transaction_topbar.html" %}
+<div class="app-shell" data-personal-setup-fields-url="{% url 'dairymetrics_entry_v2_personal_setup_fields' %}">
+  {% include "includes/app_navigation.html" with page_title="決済入力" page_subtitle=member.name|add:"さんでログイン中" %}
+  <main class="container app-shell-content">
+
+  <nav class="ui-tabs mt-16" aria-label="決済入力の流れ">
+    <span class="ui-tab{% if not has_personal_target or not has_department_target %} is-active{% endif %}">1. 活動準備</span>
+    <span class="ui-tab{% if has_personal_target and has_department_target and not entry.activity_closed %} is-active{% endif %}">2. 決済入力</span>
+    <span class="ui-tab{% if entry.activity_closed %} is-active{% endif %}">3. 活動終了</span>
+  </nav>
 
   <section class="card dairymetrics-form-card dairymetrics-v2-transaction-shell">
     {% include "dairymetrics/partials/transaction_notices.html" %}
@@ -290,7 +297,7 @@
         <button type="button" class="btn-inline dairymetrics-close-activity-btn" data-open-closeout>活動終了時の最終実績を確認</button>
       </div>
       <section class="dairymetrics-v2-closeout-panel" id="dairymetrics-v2-closeout-panel" {% if not open_closeout_panel %}hidden{% endif %}>
-        <form method="post">
+        <form method="post" data-submit-lock data-submit-label="保存中…">
           {% csrf_token %}
           <input type="hidden" name="action" value="save_closeout">
           <input type="hidden" name="department_code" value="{{ selected_department_code }}">
@@ -346,6 +353,7 @@
       </section>
     </section>
   </section>
+  </main>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 <script>
@@ -984,6 +992,30 @@
       }
       mailSubmitting = true;
       showMailSendingState();
+    });
+    document.addEventListener("submit", function (event) {
+      const form = event.target.closest("form[data-submit-lock]");
+      if (!form) return;
+      if (form.dataset.submitting === "1") {
+        event.preventDefault();
+        return;
+      }
+      form.dataset.submitting = "1";
+      const submitter = event.submitter;
+      if (submitter?.name) {
+        const submittedAction = document.createElement("input");
+        submittedAction.type = "hidden";
+        submittedAction.name = submitter.name;
+        submittedAction.value = submitter.value;
+        form.appendChild(submittedAction);
+      }
+      form.querySelectorAll("button[type='submit']").forEach(function (button) {
+        button.disabled = true;
+        button.setAttribute("aria-disabled", "true");
+        if (button === submitter) button.textContent = form.dataset.submitLabel || "保存中…";
+      });
+      const status = form.querySelector("[data-submit-status]");
+      if (status) status.textContent = "完了するまで、そのままお待ちください。";
     });
     document.querySelectorAll("[data-clear-on-focus]").forEach(function (input) {
       input.addEventListener("focus", function () {

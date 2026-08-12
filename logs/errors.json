@@ -387,5 +387,20 @@
     "action": "npm run lintはeslint不在で起動不可",
     "reason": "既存の補助チェック環境を確認",
     "next_action": "eslint依存が復元された環境で再実行"
+  },
+  {
+    "timestamp": "2026-08-12T11:30:28+09:00",
+    "expires_at": "2026-11-10T11:30:28+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260812-ui-phase6-dairymetrics",
+    "loop": 1,
+    "role": "validator",
+    "event": "result_observed",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "npm run lintはeslint未配置のため起動不可",
+    "reason": "公開前静的検査の実行環境不足",
+    "next_action": "eslint配置済み環境で工程10に再実行"
   }
 ]

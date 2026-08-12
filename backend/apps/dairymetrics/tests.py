@@ -131,6 +131,29 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertEqual(response.context["testimony_notification"]["count"], 1)
         self.assertNotContains(response, unread_article.title)
 
+    def test_entry_v2_transaction_uses_shared_navigation_and_step_status(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_entry_v2_transaction_demo"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="app-side-nav dashboard-drawer-nav"')
+        self.assertContains(response, 'aria-label="決済入力の流れ"')
+        self.assertContains(response, "1. 活動準備")
+        self.assertContains(response, "2. 決済入力")
+        self.assertContains(response, "3. 活動終了")
+        self.assertContains(response, reverse("performance_member_dashboard"))
+
+    def test_entry_v2_transaction_forms_expose_submit_lock_status(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dairymetrics_entry_v2_transaction_demo"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "data-submit-lock")
+        self.assertContains(response, 'aria-live="polite"')
+        self.assertContains(response, "form.dataset.submitting")
+
     def test_entry_v2_transaction_demo_shows_unread_recent_talks_count(self):
         now = timezone.now()
         unread_post = KnowledgePost.objects.create(
