@@ -98,9 +98,18 @@ git diff
 
 ### GitHubへ直接PUSHできない場合
 
+- この報告アプリ案件でユーザーがPUSHを指示した場合、ChatGPT作業環境からの直接PUSH可否を毎回試さない
+- デフォルトPUSHは「bundle作成・検証・受け渡し → 利用者のWSLからPUSH」とする
 - 監査済み作業ブランチをGit bundleへ収録し、利用者のPCからPUSHする
 - bundle作成後は `git bundle verify` と `git bundle list-heads` を必ず実行する
-- bundleから復元したPCでは `origin` をGitHub URLへ差し替え、作業ブランチをPUSHする
+- 利用者側の標準環境はWSLとし、ダウンロード先は `/mnt/e/Downloads` とする
+- bundleは既存clone先を再利用せず、コミットIDを含む新しい別フォルダへcloneする
+- clone直後に `git rev-parse --short HEAD` が案内済みコミットIDと一致することを確認する
+- bundleから復元したWSLでは `origin` をGitHub URLへ差し替え、通常の `git push` で作業ブランチをPUSHする
+- PUSH自体にGitHub CLI（`gh`）は不要であり、`gh`未導入を理由にPUSH工程を停止しない
+- `Everything up-to-date` だけで成功と判断せず、PUSH後にGitHub側の対象ブランチの最新コミットを確認する
+- PR作成と公開はPUSHとは別工程として扱う
+- ユーザーへ同じ環境説明や方式選択を繰り返し求めず、必要なWSLコマンドをコミットID入りで提示する
 - `main` へ直接PUSHせず、Pull Request経由で反映する
 - 詳細は `backend/docs/GIT_BUNDLE_PUSH_WORKFLOW.md` を参照する
 

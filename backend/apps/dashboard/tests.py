@@ -1,5 +1,7 @@
 from datetime import timedelta
+from pathlib import Path
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -29,6 +31,13 @@ class MemberSettingsViewTests(TestCase):
         session = self.client.session
         session["role"] = "admin"
         session.save()
+
+    def test_shared_drawer_links_use_explicit_navigation(self):
+        drawer_script = (Path(settings.BASE_DIR) / "static/dashboard/mobile_drawer.js").read_text(encoding="utf-8")
+
+        self.assertIn('nav.addEventListener("click"', drawer_script)
+        self.assertIn('event.target.closest("a[href]")', drawer_script)
+        self.assertIn("window.location.assign(destination)", drawer_script)
 
     def test_register_member_creates_record(self):
         response = self.client.post(
