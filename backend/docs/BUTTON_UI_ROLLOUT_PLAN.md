@@ -59,6 +59,8 @@
 - NAVと並べたときの色、角丸、高さ、余白、focusをPC／モバイルで確認する。
 - 同じ操作に複数の見た目が割り当てられていないか確認する。
 
+状態: 2026-08-12 完了。`dashboard` と `performance` の代表画面へ適用し、PUSH前確認用の `docs/button-ui-preview.html` を追加した。
+
 完了条件:
 
 - 共通クラスと状態が `ui_foundation.css` と `UI_FOUNDATION.md` に定義される。

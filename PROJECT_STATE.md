@@ -5,7 +5,7 @@
 ## 現在のフェーズ
 
 - 全アプリUI展開・工程10完了。
-- 工程11「共通ボタンUI展開」は計画作成済み、実装開始待ち。
+- 工程11-1「ボタン台帳と基準UI」を完了。工程11-2開始待ち。
 - 直前のGit bundleは引き渡し済み。工程11のPUSH・公開は未実施。
 
 ## プロジェクト全体の目標
@@ -185,9 +185,19 @@
 
 ## 次に行う作業
 
-- 工程11-1としてボタン台帳を作成し、共通ボタン体系を `ui_foundation.css` へ実装する。
-- `dashboard` と `performance` の代表画面で試験適用し、対象テストと全体回帰後にローカルコミットする。
+- 工程11-2として管理・設定・日常入力系へ共通ボタン体系を段階展開する。
+- PUSH前の見た目確認には `docs/button-ui-preview.html` を使用し、変更前後、6分類、モバイルタブ、注意状態を確認する。
 - 工程11完了後、新しいGit bundleを作成し、GitHubへPUSHする。
+
+## 工程11-1の終了判定
+
+- 実装: 共通ボタン6分類と状態を `ui_foundation.css` へ追加し、`dashboard` と `performance` の代表画面へ適用した。
+- 追加修正: 「本日の記録」の決済／メールタブをモバイルで2等分し、3稼働連続0件の一覧行を薄い赤にした。
+- 決済入力: 3稼働以上連続で最終決済件数が0の場合、画面を薄い赤にして「N稼働連続で決済がありません」と表示する。
+- プレビュー: 認証・DB・PUSH不要の `docs/button-ui-preview.html` を追加した。
+- 検証: 対象62テスト、全398テスト、Django check、migration、BOM、HTML、JavaScript、CSS、差分検査が成功した。
+- 環境課題: `pre-commit` は未導入のため実行不可。EOFは `git diff --check` で確認した。
+- PUSH／公開: 未実施。
 
 ## 参照
 
@@ -197,5 +207,6 @@
 - `backend/docs/UI_ROLLOUT_PLAN.md`
 - `backend/docs/UI_SCREEN_INVENTORY.md`
 - `backend/docs/BUTTON_UI_ROLLOUT_PLAN.md`
+- `backend/docs/BUTTON_UI_INVENTORY.md`
 - `backend/docs/GIT_BUNDLE_PUSH_WORKFLOW.md`
 - `logs/latest-summary.md`

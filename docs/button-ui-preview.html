@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>共通ボタンUI テスト画面</title>
+  <link rel="stylesheet" href="../backend/static/app.css" />
+  <link rel="stylesheet" href="../backend/static/ui_foundation.css" />
+  <link rel="stylesheet" href="../backend/static/dashboard/mobile_drawer.css" />
+  <link rel="stylesheet" href="../backend/static/dairymetrics/app.css" />
+  <style>
+    .preview-shell { min-height: 100vh; }
+    .preview-nav { position: static; height: auto; min-height: 100vh; }
+    .preview-main { min-width: 0; padding: 24px 32px 48px; }
+    .preview-heading { margin: 0 0 20px; }
+    .preview-heading p { max-width: 720px; }
+    .preview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .preview-span { grid-column: 1 / -1; }
+    .preview-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .preview-label { margin: 0 0 10px; color: var(--ui-text-muted); font-size: .82rem; font-weight: 750; }
+    .preview-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .preview-panel { padding: 16px; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-md); background: var(--ui-surface-subtle); }
+    .preview-menu-sample { display: flex; gap: 6px; flex-wrap: wrap; padding: 12px; border-radius: 12px; background: #123b6d; }
+    .preview-menu-sample span { padding: 8px 10px; border-radius: 9px; color: rgba(245, 249, 255, .88); font-size: .84rem; font-weight: 650; }
+    .preview-menu-sample .is-current { color: #123b6d; background: #fff; }
+    .preview-note { margin-top: 12px; color: var(--ui-text-muted); font-size: .86rem; }
+    @media (max-width: 768px) {
+      .preview-shell { display: block; }
+      .preview-nav { display: none; }
+      .preview-main { padding: 18px 12px 36px; }
+      .preview-grid, .preview-compare { grid-template-columns: 1fr; }
+      .preview-span { grid-column: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell preview-shell">
+    <aside class="app-side-nav preview-nav" aria-label="メニューの雰囲気見本">
+      <div class="app-side-nav-brand">
+        <span class="app-side-nav-mark">R</span>
+        <div><strong>Report App</strong><small>ボタンUI確認</small></div>
+      </div>
+      <div class="app-nav-group">
+        <span class="app-nav-group-label">MAIN</span>
+        <a class="is-current" href="#buttons">ボタン見本</a>
+        <a href="#comparison">変更前後</a>
+        <a href="#states">状態確認</a>
+      </div>
+    </aside>
+
+    <main class="preview-main">
+      <header class="preview-heading">
+        <span class="ui-section-kicker">PHASE 11-1 PREVIEW</span>
+        <h1>メニューと親和性を合わせたボタン</h1>
+        <p class="muted">PUSH前の確認専用画面です。リンクやボタンは外部送信せず、状態表示だけを切り替えます。画面幅を狭めるとモバイル時の折返しも確認できます。</p>
+      </header>
+
+      <div class="preview-grid" id="buttons">
+        <section class="ui-section preview-span">
+          <p class="preview-label">基準にしたメニューの色・角丸・境界線</p>
+          <div class="preview-menu-sample" aria-label="メニューの見本">
+            <span class="is-current">総合管理</span><span>実績管理</span><span>報告履歴</span><span>設定</span>
+          </div>
+        </section>
+
+        <section class="ui-section">
+          <span class="ui-section-kicker">ACTION</span>
+          <h2>通常操作</h2>
+          <div class="preview-row">
+            <button type="button" class="ui-button ui-button--primary">保存する</button>
+            <button type="button" class="ui-button ui-button--secondary">編集する</button>
+            <button type="button" class="ui-button ui-button--quiet">キャンセル</button>
+            <button type="button" class="ui-button ui-button--danger">削除する</button>
+          </div>
+        </section>
+
+        <section class="ui-section">
+          <span class="ui-section-kicker">CHOICE</span>
+          <h2>表示切替・選択</h2>
+          <div class="preview-row" data-preview-choice-group>
+            <button type="button" class="ui-choice-button is-active" aria-pressed="true">本日表示</button>
+            <button type="button" class="ui-choice-button" aria-pressed="false">前日表示</button>
+            <button type="button" class="ui-choice-button" aria-pressed="false">期間表示</button>
+          </div>
+        </section>
+
+        <section class="ui-section" id="states">
+          <span class="ui-section-kicker">STATE</span>
+          <h2>処理中・無効</h2>
+          <div class="preview-row">
+            <button type="button" class="ui-button ui-button--primary is-loading" aria-busy="true">保存中…</button>
+            <button type="button" class="ui-button ui-button--primary" disabled>保存できません</button>
+            <button type="button" class="ui-button ui-button--secondary" id="preview-loading-toggle">処理中を試す</button>
+          </div>
+          <p class="preview-note" id="preview-status" role="status">「処理中を試す」で3秒間だけ状態が変わります。</p>
+        </section>
+
+        <section class="ui-section">
+          <span class="ui-section-kicker">ICON</span>
+          <h2>小さな操作</h2>
+          <div class="preview-row">
+            <button type="button" class="ui-icon-button" aria-label="編集" title="編集">✎</button>
+            <button type="button" class="ui-icon-button" aria-label="お気に入り" title="お気に入り">☆</button>
+            <button type="button" class="ui-icon-button ui-icon-button--danger" aria-label="削除" title="削除">×</button>
+          </div>
+        </section>
+
+        <section class="ui-section preview-span" id="comparison">
+          <span class="ui-section-kicker">COMPARISON</span>
+          <h2>変更前後の比較</h2>
+          <div class="preview-compare">
+            <div class="preview-panel">
+              <p class="preview-label">変更前：操作の重要度が同じに見える</p>
+              <div class="preview-row">
+                <button type="button" class="btn-inline">保存する</button>
+                <button type="button" class="btn-inline">編集する</button>
+                <button type="button" class="btn-inline">キャンセル</button>
+              </div>
+            </div>
+            <div class="preview-panel">
+              <p class="preview-label">変更後：主要・通常・補助を区別</p>
+              <div class="preview-row">
+                <button type="button" class="ui-button ui-button--primary">保存する</button>
+                <button type="button" class="ui-button ui-button--secondary">編集する</button>
+                <button type="button" class="ui-button ui-button--quiet">キャンセル</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="ui-section">
+          <span class="ui-section-kicker">MOBILE TAB</span>
+          <h2>本日の記録</h2>
+          <p class="preview-label">横スクロールせず、2項目を画面幅内に均等配置</p>
+          <div class="performance-record-tabs ui-tabs" role="tablist" aria-label="本日の記録の見本">
+            <button type="button" class="performance-record-tab ui-tab" role="tab" aria-selected="true">決済 <span class="performance-record-tab-count">4件</span></button>
+            <button type="button" class="performance-record-tab ui-tab" role="tab" aria-selected="false">メール <span class="performance-record-tab-count">3件</span></button>
+          </div>
+        </section>
+
+        <section class="ui-section">
+          <span class="ui-section-kicker">WARNING</span>
+          <h2>有効メンバー一覧</h2>
+          <p class="preview-label">要確認は選択中の青と区別し、薄い赤で表示</p>
+          <a class="performance-member-list-row performance-member-card-link-warning" href="#states">
+            <div class="performance-member-list-cell performance-member-list-name">
+              <div class="performance-member-list-name-row">
+                <strong>メンバー見本</strong>
+                <span class="badge performance-warning-badge performance-member-list-badge">3稼働連続0件</span>
+              </div>
+            </div>
+            <div class="muted">0件 → 0件 → 0件</div>
+            <strong>今月累計 0円</strong>
+          </a>
+        </section>
+
+        <section class="ui-section preview-span dairymetrics-zero-payment-streak-page">
+          <span class="ui-section-kicker">MEMBER ENTRY WARNING</span>
+          <h2>メンバーの決済入力画面</h2>
+          <div class="dairymetrics-zero-payment-streak-alert" role="status">
+            <strong>3稼働連続で決済がありません</strong>
+            <span>今日の活動で流れを変えていきましょう。</span>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.querySelectorAll("[data-preview-choice-group]").forEach(function (group) {
+      group.addEventListener("click", function (event) {
+        const target = event.target.closest(".ui-choice-button");
+        if (!target) return;
+        group.querySelectorAll(".ui-choice-button").forEach(function (button) {
+          const selected = button === target;
+          button.classList.toggle("is-active", selected);
+          button.setAttribute("aria-pressed", selected ? "true" : "false");
+        });
+      });
+    });
+
+    const loadingButton = document.getElementById("preview-loading-toggle");
+    const status = document.getElementById("preview-status");
+    loadingButton.addEventListener("click", function () {
+      loadingButton.classList.add("is-loading");
+      loadingButton.setAttribute("aria-busy", "true");
+      loadingButton.disabled = true;
+      loadingButton.textContent = "確認中…";
+      status.textContent = "処理中です。連続操作はできません。";
+      window.setTimeout(function () {
+        loadingButton.classList.remove("is-loading");
+        loadingButton.removeAttribute("aria-busy");
+        loadingButton.disabled = false;
+        loadingButton.textContent = "処理中を試す";
+        status.textContent = "処理が完了し、再び操作できる状態になりました。";
+      }, 3000);
+    });
+  </script>
+</body>
+</html>
