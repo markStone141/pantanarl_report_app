@@ -11,6 +11,12 @@ from .base import PerformanceTestBase
 
 
 class AdjustmentsTests(PerformanceTestBase):
+    def test_performance_adjustments_uses_shared_button_hierarchy(self):
+        response = self.client.get(reverse("performance_adjustments"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ui-button--primary")
+
     def test_performance_index_renders_final_actual_rows_with_adjustment_totals(self):
         entry = MemberDailyMetricEntry.objects.create(
             member=self.member,

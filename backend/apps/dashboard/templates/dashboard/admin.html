@@ -9,9 +9,9 @@
   <main class="container app-shell-content">
 
   <section class="card ui-section mt-16">
-    <div class="inline-row">
-      <a href="{% url 'dashboard_index' %}?mode=today" class="department-button" style="{% if selected_mode == 'today' %}{% else %}background:#fff; color:var(--brand); border:1px solid var(--brand);{% endif %}">本日表示</a>
-      <a href="{% url 'dashboard_index' %}?mode=prev" class="department-button" style="{% if selected_mode == 'prev' %}{% else %}background:#fff; color:var(--brand); border:1px solid var(--brand);{% endif %}">前日表示</a>
+    <div class="ui-button-group">
+      <a href="{% url 'dashboard_index' %}?mode=today" class="ui-choice-button{% if selected_mode == 'today' %} is-active{% endif %}" {% if selected_mode == 'today' %}aria-current="page"{% endif %}>本日表示</a>
+      <a href="{% url 'dashboard_index' %}?mode=prev" class="ui-choice-button{% if selected_mode == 'prev' %} is-active{% endif %}" {% if selected_mode == 'prev' %}aria-current="page"{% endif %}>前日表示</a>
       <span class="badge">表示日: {{ today_str }}</span>
     </div>
   </section>
@@ -22,7 +22,7 @@
       <span class="badge" id="mail-source-date"></span>
     </div>
     <textarea id="mail-comment" placeholder="コメントを入力"></textarea>
-    <button type="button" id="build-mail" class="mt-10">テンプレート生成</button>
+    <button type="button" id="build-mail" class="ui-button ui-button--primary mt-10">テンプレート生成</button>
   </section>
 
   <section class="card ui-section mt-16">
@@ -52,7 +52,7 @@
           <td data-label="金額">{{ row.amount_text }}</td>
           <td data-label="修正">
             {% if row.report_id %}
-            <a href="{% url 'report_edit' row.report_id %}"><button type="button" class="btn-inline">修正</button></a>
+            <a href="{% url 'report_edit' row.report_id %}" class="ui-button ui-button--secondary">修正</a>
             {% else %}
             -
             {% endif %}
@@ -173,8 +173,8 @@
     <div class="modal-header">
       <strong>メール本文プレビュー</strong>
       <div class="modal-actions">
-        <button type="button" id="copy-mail-preview" class="btn-inline">コピー</button>
-        <button type="button" id="close-mail-preview" class="btn-inline">閉じる</button>
+        <button type="button" id="copy-mail-preview" class="ui-button ui-button--secondary">コピー</button>
+        <button type="button" id="close-mail-preview" class="ui-button ui-button--quiet">閉じる</button>
       </div>
     </div>
     <div class="modal-body">

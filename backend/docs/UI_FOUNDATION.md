@@ -4,7 +4,7 @@
 
 ## 目的
 
-各アプリ固有の情報設計を維持しながら、色、余白、見出し、カード、フォーム、タブ、画面状態の意味と操作感を統一する。新規画面は `static/ui_foundation.css` を優先し、既存の同義クラスを増やさない。
+各アプリ固有の情報設計を維持しながら、色、余白、見出し、カード、フォーム、タブ、ボタン、画面状態の意味と操作感を統一する。新規画面は `static/ui_foundation.css` を優先し、既存の同義クラスを増やさない。
 
 ## 読み込み
 
@@ -35,6 +35,20 @@
 | 空状態 | `.ui-state` | 「何もない理由」と必要なら次の操作を示す |
 | 読み込み | `.ui-state.ui-state--loading` | 通信開始前に表示し、完了・失敗時に必ず解除する |
 | 結果通知 | `.ui-feedback--success/warning/error` | 保存結果など画面全体に関わる状態に使う |
+| 主要操作 | `.ui-button.ui-button--primary` | 保存、登録、送信など、操作群で最も重要な1操作に使う |
+| 通常操作 | `.ui-button.ui-button--secondary` | 編集、詳細、追加読み込みなどに使う |
+| 補助操作 | `.ui-button.ui-button--quiet` | キャンセル、閉じる、リセットなどに使う |
+| 危険操作 | `.ui-button.ui-button--danger` | 削除、無効化、活動終了などに使う |
+| アイコン操作 | `.ui-icon-button` | `aria-label` と `title` を付け、危険操作は `--danger` を併用する |
+| 選択操作 | `.ui-choice-button` | 表示切替、フィルタ、タブに使い、選択状態を属性と文字でも示す |
+
+## ボタン規則
+
+- 主要操作をNAVと同じ濃紺で表し、画面または操作群につき原則1つに絞る。
+- `hover`、`focus-visible`、`active`、`disabled`、`.is-loading` を共通定義で扱う。
+- `.is-loading` では `aria-busy="true"` と処理中の文言を併用し、二重送信防止ロジックは画面側で維持する。
+- `Choice` の選択中は `.is-active` だけでなく `aria-pressed`、`aria-selected` または `aria-current` を付ける。
+- 静的な確認画面は `docs/button-ui-preview.html`。Django、DB、ログインなしで直接確認できる。
 
 ## アクセシビリティとモバイル
 
@@ -47,7 +61,8 @@
 ## 適用状況
 
 - `dashboard` 管理トップ: セクション、共通見出し、サマリー。
-- `performance` 管理トップ: セクション、共通見出し、サマリー、フォーム、タブ、空状態、結果通知。
+- `dashboard` 管理トップ: Primary、Secondary、Quiet、Choiceを試験適用。
+- `performance` 補正実績: Primary、Secondary、Quiet、Icon、Dangerを試験適用。
 - 共通NAV: `includes/app_navigation.html` と `dashboard/mobile_drawer.css` を引き続き使用する。
 
 工程5以降は、対象アプリごとに既存クラスとの競合を確認してから、この基盤へ段階的に移行する。
