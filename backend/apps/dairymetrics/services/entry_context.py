@@ -34,6 +34,7 @@ from apps.dairymetrics.services.entry_v2 import (
     is_wv_department,
     transaction_result_type_label,
 )
+from apps.dairymetrics.services.final_actuals import consecutive_closed_activities_without_payments
 
 
 def build_entry_form(*, member, data=None, department_code="", entry_date=None):
@@ -619,6 +620,15 @@ def build_transaction_entry_context(
     transaction_age_band_value = transaction_form["age_band"].value() or MemberMetricTransaction.AGE_BAND_SEVENTIES
     personal_entry_date_value = str(personal_setup_form["entry_date"].value() or entry_date.strftime("%Y-%m-%d"))
     department_entry_date_value = str(department_target_form["entry_date"].value() or entry_date.strftime("%Y-%m-%d"))
+    zero_payment_streak = (
+        consecutive_closed_activities_without_payments(
+            member=member,
+            department=selected_department_obj,
+            through_date=entry_date,
+        )
+        if selected_department_obj
+        else 0
+    )
 
     return {
         **base_context,
@@ -671,6 +681,8 @@ def build_transaction_entry_context(
         "personal_entry_date_value": personal_entry_date_value,
         "department_entry_date_value": department_entry_date_value,
         "current_location_name": current_location_name,
+        "zero_payment_streak": zero_payment_streak,
+        "show_zero_payment_streak_warning": zero_payment_streak >= 3,
         "show_student_field": transaction_age_band_value
         in {
             MemberMetricTransaction.AGE_BAND_TEENS,

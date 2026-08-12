@@ -27,13 +27,13 @@
         </td>
         <td data-label="操作">
           {% if adjustment.edit_url %}
-          <a class="icon-btn" href="{{ adjustment.edit_url }}" aria-label="{{ adjustment.member_name }}の補正実績を編集">
+          <a class="ui-icon-button" href="{{ adjustment.edit_url }}" aria-label="{{ adjustment.member_name }}の補正実績を編集" title="編集">
             <i class="fa-solid fa-pen"></i>
           </a>
           {% endif %}
           <form method="post" action="{{ adjustment.delete_url }}" style="display:inline;" onsubmit="return confirm('この補正実績を削除します。よろしいですか？');">
             {% csrf_token %}
-            <button class="icon-btn icon-btn-danger" type="submit" aria-label="{{ adjustment.member_name }}の補正実績を削除">
+            <button class="ui-icon-button ui-icon-button--danger" type="submit" aria-label="{{ adjustment.member_name }}の補正実績を削除" title="削除">
               <i class="fa-solid fa-trash"></i>
             </button>
           </form>
@@ -45,7 +45,7 @@
 </div>
 {% if page_obj.has_next %}
 <div class="inline-row mt-12">
-  <button type="button" class="btn-inline" id="performance-adjustments-load-more-btn" data-next-page="{{ page_obj.next_page_number }}">さらに20件表示</button>
+  <button type="button" class="ui-button ui-button--secondary" id="performance-adjustments-load-more-btn" data-next-page="{{ page_obj.next_page_number }}">さらに20件表示</button>
 </div>
 {% endif %}
 {% else %}

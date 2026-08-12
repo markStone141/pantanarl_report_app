@@ -33,7 +33,8 @@
           {% for tag_name in available_tag_names %}
             <button
               type="button"
-              class="post-edit-tag-btn"
+              class="post-edit-tag-btn ui-choice-button"
+              aria-pressed="false"
               data-tag="{{ tag_name }}"
             >{{ tag_name }}</button>
           {% endfor %}
@@ -45,8 +46,8 @@
         <div class="error-text">{{ form.non_field_errors|join:", " }}</div>
       {% endif %}
       <div class="row talks-row-end">
-        <a href="{% url 'talks_detail' post.id %}" class="post-edit-cancel-link">キャンセル</a>
-        <button type="submit" class="btn-inline">保存する</button>
+        <a href="{% url 'talks_detail' post.id %}" class="post-edit-cancel-link ui-button ui-button--quiet">キャンセル</a>
+        <button type="submit" class="btn-inline ui-button ui-button--primary">保存する</button>
       </div>
     </form>
   </section>

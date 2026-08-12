@@ -16,16 +16,16 @@
   <section class="card mt-16 report-history-card">
     <div class="row mb-10 report-filter-row" style="gap:8px; align-items:center;">
       <h3>送信済みデータ</h3>
-      <button type="button" id="report-filter-fab" class="btn-inline report-filter-fab" aria-label="部門フィルタを開く" aria-expanded="false">
+      <button type="button" id="report-filter-fab" class="ui-button ui-button--secondary report-filter-fab" aria-label="部門フィルタを開く" aria-expanded="false">
         <i class="fa-solid fa-filter" aria-hidden="true"></i> フィルタ
       </button>
       <div id="report-filter-panel" class="inline-row report-filter-panel" style="gap:6px;">
-        <button type="button" id="report-filter-close" class="btn-inline report-filter-close" aria-label="部門フィルタを閉じる">
+        <button type="button" id="report-filter-close" class="ui-icon-button report-filter-close" aria-label="部門フィルタを閉じる" title="閉じる">
           <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>
-        <button type="button" class="btn-inline report-filter-btn is-active" data-dept="">すべて</button>
+        <button type="button" class="ui-choice-button report-filter-btn is-active" data-dept="" aria-pressed="true">すべて</button>
         {% for dept in filter_departments %}
-          <button type="button" class="btn-inline report-filter-btn" data-dept="{{ dept.code }}">{{ dept.name }}</button>
+          <button type="button" class="ui-choice-button report-filter-btn" data-dept="{{ dept.code }}" aria-pressed="false">{{ dept.name }}</button>
         {% endfor %}
         <form method="get" class="report-filter-search-form">
           <div>
@@ -41,8 +41,8 @@
             <input id="date_to" type="date" name="date_to" value="{{ date_to }}">
           </div>
           <div class="inline-row">
-            <button type="submit" class="btn-inline">検索</button>
-            <a href="{% url 'report_history' %}" class="btn-inline">リセット</a>
+            <button type="submit" class="ui-button ui-button--secondary">検索</button>
+            <a href="{% url 'report_history' %}" class="ui-button ui-button--quiet">リセット</a>
           </div>
         </form>
       </div>
@@ -56,9 +56,9 @@
       <input type="hidden" name="date_to" value="{{ date_to }}">
 
       <div class="row mb-10 report-bulk-actions" style="gap:8px; justify-content:flex-start;">
-        <button type="button" class="btn-inline" id="select-visible-btn">全選択</button>
-        <button type="button" class="btn-inline" id="clear-visible-btn">選択解除</button>
-        <button type="submit" class="btn-inline" id="bulk-delete-btn">選択削除</button>
+        <button type="button" class="ui-button ui-button--secondary" id="select-visible-btn">全選択</button>
+        <button type="button" class="ui-button ui-button--quiet" id="clear-visible-btn">選択解除</button>
+        <button type="submit" class="ui-button ui-button--danger" id="bulk-delete-btn">選択削除</button>
       </div>
 
       <div class="table-scroll">
@@ -88,7 +88,7 @@
             <td class="hide-mobile">{{ report.created_at|date:"Y-m-d H:i" }}</td>
             <td class="hide-mobile">{% if report.edited_at %}{{ report.edited_at|date:"Y-m-d H:i" }}{% else %}-{% endif %}</td>
             <td class="report-edit-cell">
-              <a href="{% url 'report_edit' report.id %}?next=report_history" class="report-edit-icon-btn" aria-label="修正">
+              <a href="{% url 'report_edit' report.id %}?next=report_history" class="ui-icon-button report-edit-icon-btn" aria-label="修正" title="修正">
                 <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
               </a>
             </td>
@@ -159,13 +159,7 @@
       buttons.forEach(function (btn) {
         const isActive = (btn.dataset.dept || "") === code;
         btn.classList.toggle("is-active", isActive);
-        if (isActive) {
-          btn.style.background = "#126e82";
-          btn.style.color = "#fff";
-        } else {
-          btn.style.background = "";
-          btn.style.color = "";
-        }
+        btn.setAttribute("aria-pressed", isActive ? "true" : "false");
       });
       updateBulkDeleteState();
     }

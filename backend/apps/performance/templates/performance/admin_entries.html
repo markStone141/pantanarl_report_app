@@ -42,7 +42,7 @@
         {{ filter_form.date_to }}
       </div>
       <div>
-        <button type="submit">表示</button>
+        <button type="submit" class="ui-button ui-button--secondary">表示</button>
       </div>
     </form>
   </section>
@@ -66,7 +66,7 @@
       <div class="mt-12">
         <form method="post" action="{{ row.delete_summary_url }}" class="inline-form" onsubmit="return confirm('この全体エントリーを削除します。よろしいですか？');">
           {% csrf_token %}
-          <button type="submit" class="icon-btn icon-btn-danger" aria-label="全体エントリーを削除">
+          <button type="submit" class="ui-icon-button ui-icon-button--danger icon-btn icon-btn-danger" aria-label="全体エントリーを削除" title="削除">
             <i class="fa-solid fa-trash" aria-hidden="true"></i>
           </button>
         </form>
@@ -93,12 +93,12 @@
               <td>{{ entry_row.count_text }} / {{ entry_row.amount_text }}</td>
               <td class="report-edit-cell">
                 <div class="row" style="justify-content:flex-end; gap:8px;">
-                  <a href="{{ entry_row.edit_url }}" class="icon-btn" aria-label="日次実績を修正">
+                  <a href="{{ entry_row.edit_url }}" class="ui-icon-button icon-btn" aria-label="日次実績を修正" title="修正">
                     <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                   </a>
                   <form method="post" action="{{ entry_row.delete_url }}" class="inline-form" onsubmit="return confirm('この日次実績を削除します。よろしいですか？');">
                     {% csrf_token %}
-                    <button type="submit" class="icon-btn icon-btn-danger" aria-label="日次実績を削除">
+                    <button type="submit" class="ui-icon-button ui-icon-button--danger icon-btn icon-btn-danger" aria-label="日次実績を削除" title="削除">
                       <i class="fa-solid fa-trash" aria-hidden="true"></i>
                     </button>
                   </form>
@@ -125,10 +125,10 @@
     <div class="muted">{{ page_obj.paginator.count }}件中 {{ page_obj.start_index }}-{{ page_obj.end_index }}件</div>
     <div class="row" style="gap:8px;">
       {% if page_obj.has_previous %}
-      <a class="btn-inline" href="?{% if current_query_string %}{{ current_query_string }}&{% endif %}page={{ page_obj.previous_page_number }}">前へ</a>
+      <a class="ui-button ui-button--secondary" href="?{% if current_query_string %}{{ current_query_string }}&{% endif %}page={{ page_obj.previous_page_number }}">前へ</a>
       {% endif %}
       {% if page_obj.has_next %}
-      <a class="btn-inline" href="?{% if current_query_string %}{{ current_query_string }}&{% endif %}page={{ page_obj.next_page_number }}">次へ</a>
+      <a class="ui-button ui-button--secondary" href="?{% if current_query_string %}{{ current_query_string }}&{% endif %}page={{ page_obj.next_page_number }}">次へ</a>
       {% endif %}
     </div>
   </nav>

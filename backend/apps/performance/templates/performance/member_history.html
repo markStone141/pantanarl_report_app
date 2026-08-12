@@ -59,7 +59,7 @@
         <input type="date" name="dashboard_end" value="{{ dashboard_end }}" aria-label="終了日">
       </div>
       <div>
-        <button type="submit">表示</button>
+        <button type="submit" class="ui-button ui-button--secondary">表示</button>
       </div>
     </form>
   </section>
@@ -185,15 +185,15 @@
       </span>
     </div>
     <div class="performance-trend-controls mt-12">
-      <button type="button" id="performance-trend-decrease" class="btn-inline">-10</button>
+      <button type="button" id="performance-trend-decrease" class="ui-button ui-button--secondary">-10</button>
       <span id="performance-trend-visible-count" class="muted"></span>
-      <button type="button" id="performance-trend-increase" class="btn-inline">+10</button>
+      <button type="button" id="performance-trend-increase" class="ui-button ui-button--secondary">+10</button>
     </div>
     <div class="performance-trend-mode-switch mt-12">
-      <button type="button" id="performance-trend-mode-amount" class="btn-inline is-active">金額/件数</button>
-      <button type="button" id="performance-trend-mode-rate" class="btn-inline">日目達成率</button>
-      <button type="button" id="performance-trend-mode-activity" class="btn-inline">AP/CM</button>
-      {% if activity_trend.is_wv %}<button type="button" id="performance-trend-mode-wv" class="btn-inline">CS/難民</button>{% endif %}
+      <button type="button" id="performance-trend-mode-amount" class="ui-choice-button is-active" aria-pressed="true">金額/件数</button>
+      <button type="button" id="performance-trend-mode-rate" class="ui-choice-button" aria-pressed="false">日目達成率</button>
+      <button type="button" id="performance-trend-mode-activity" class="ui-choice-button" aria-pressed="false">AP/CM</button>
+      {% if activity_trend.is_wv %}<button type="button" id="performance-trend-mode-wv" class="ui-choice-button" aria-pressed="false">CS/難民</button>{% endif %}
     </div>
     <div class="performance-chart-card mt-12">
       <canvas id="performance-activity-trend-chart" aria-label="{{ history_scope.label }} の実績推移"></canvas>
@@ -205,7 +205,7 @@
       {% if detail_filter_mode == "buttons" %}
       <div class="performance-trend-date-links" data-performance-history-date-links>
         {% for item in detail_filter_dates %}
-        <button type="button" class="performance-trend-date-link" data-history-date="{{ item.date }}">{{ item.label }}</button>
+        <button type="button" class="ui-button ui-button--secondary performance-trend-date-link" data-history-date="{{ item.date }}">{{ item.label }}</button>
         {% endfor %}
       </div>
       {% else %}

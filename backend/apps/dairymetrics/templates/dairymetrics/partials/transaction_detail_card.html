@@ -23,7 +23,7 @@
     {% for reaction in transaction.reaction_options %}
     <button
       type="button"
-      class="dairymetrics-v2-reaction-btn{% if reaction.is_selected %} is-selected{% endif %}"
+      class="ui-choice-button dairymetrics-v2-reaction-btn{% if reaction.is_selected %} is-selected{% endif %}"
       data-transaction-reaction-button
       data-reaction-type="{{ reaction.type }}"
       aria-pressed="{% if reaction.is_selected %}true{% else %}false{% endif %}"
@@ -54,7 +54,7 @@
   <div class="dairymetrics-v2-inline-actions">
     <button
       type="button"
-      class="btn-inline dairymetrics-secondary-btn"
+      class="ui-button ui-button--secondary dairymetrics-secondary-btn"
       data-edit-transaction
       data-transaction-id="{{ transaction.id }}"
       data-transaction-amount="{{ transaction.amount_value }}"
@@ -79,15 +79,16 @@
       <input type="hidden" name="transaction_id" value="{{ transaction.id }}">
       <button
         type="submit"
-        class="icon-btn icon-btn-danger"
+        class="ui-icon-button ui-icon-button--danger icon-btn icon-btn-danger"
         aria-label="決済を削除"
+        title="削除"
       >
         <i class="fa-solid fa-trash" aria-hidden="true"></i>
       </button>
     </form>
     <button
       type="button"
-      class="btn-inline dairymetrics-v2-mail-send-link"
+      class="ui-button ui-button--secondary dairymetrics-v2-mail-send-link"
       data-open-mail-modal
       data-preview-transaction-id="{{ transaction.id }}"
       data-preview-history-id="{{ transaction.latest_history_id }}"

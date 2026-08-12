@@ -4,13 +4,20 @@
 {% block title %}決済登録 | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=25" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=26" />
 {% endblock %}
 
 {% block content %}
 <div class="app-shell" data-personal-setup-fields-url="{% url 'dairymetrics_entry_v2_personal_setup_fields' %}">
   {% include "includes/app_navigation.html" with page_title="決済入力" page_subtitle=member.name|add:"さんでログイン中" %}
-  <main class="container app-shell-content">
+  <main class="container app-shell-content{% if show_zero_payment_streak_warning %} dairymetrics-zero-payment-streak-page{% endif %}">
+
+  {% if show_zero_payment_streak_warning %}
+  <div class="dairymetrics-zero-payment-streak-alert" role="status">
+    <strong>{{ zero_payment_streak }}稼働連続で決済がありません</strong>
+    <span>今日の活動で流れを変えていきましょう。</span>
+  </div>
+  {% endif %}
 
   <nav class="ui-tabs mt-16" aria-label="決済入力の流れ">
     <span class="ui-tab{% if not has_personal_target or not has_department_target %} is-active{% endif %}">1. 活動準備</span>
@@ -66,7 +73,7 @@
         </div>
         <div class="dairymetrics-subtext">個人の日目標と同じフォームから更新できます。</div>
         <div class="dairymetrics-v2-inline-actions">
-          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-personal-target-edit>修正する</button>
+          <button type="button" class="ui-button ui-button--secondary dairymetrics-secondary-btn" data-open-personal-target-edit>修正する</button>
         </div>
       </article>
       {% for card in progress_cards %}
@@ -90,7 +97,7 @@
         {% endif %}
         {% if card.label == "個人の日目標" %}
         <div class="dairymetrics-v2-inline-actions">
-          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-personal-target-edit>修正する</button>
+          <button type="button" class="ui-button ui-button--secondary dairymetrics-secondary-btn" data-open-personal-target-edit>修正する</button>
         </div>
         <section class="dairymetrics-v2-entry-panel" id="dairymetrics-v2-personal-target-panel" {% if not open_personal_target_panel %}hidden{% endif %}>
           <div id="dairymetrics-v2-inline-personal-setup-form-root">
@@ -100,7 +107,7 @@
         {% endif %}
         {% if card.label == "全体の日目標" %}
         <div class="dairymetrics-v2-inline-actions">
-          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-department-target-edit>修正する</button>
+          <button type="button" class="ui-button ui-button--secondary dairymetrics-secondary-btn" data-open-department-target-edit>修正する</button>
         </div>
         <section class="dairymetrics-v2-entry-panel" id="dairymetrics-v2-department-target-panel" {% if not open_department_target_panel %}hidden{% endif %}>
           <div id="dairymetrics-v2-inline-department-target-form-root">
@@ -191,14 +198,14 @@
         {% endif %}
         {% if older_transactions %}
         <div class="dairymetrics-v2-transaction-actions">
-          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-transaction-list{% if reaction_notification_open or transaction_notification_open %} hidden{% endif %}>全体決済一覧をもっと見る</button>
+          <button type="button" class="ui-button ui-button--secondary dairymetrics-secondary-btn" data-open-transaction-list{% if reaction_notification_open or transaction_notification_open %} hidden{% endif %}>全体決済一覧をもっと見る</button>
         </div>
         <div class="dairymetrics-v2-transaction-list" id="dairymetrics-v2-older-transaction-list"{% if not reaction_notification_open and not transaction_notification_open %} hidden{% endif %}>
           {% for transaction in older_transactions %}
             {% include "dairymetrics/partials/transaction_detail_card.html" with transaction=transaction %}
           {% endfor %}
           <div class="dairymetrics-v2-transaction-actions">
-            <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-transaction-list>閉じる</button>
+            <button type="button" class="ui-button ui-button--quiet dairymetrics-secondary-btn" data-close-transaction-list>閉じる</button>
           </div>
         </div>
         {% endif %}
@@ -210,7 +217,7 @@
           <p class="muted">自分の分も他メンバーの分も含めて、その日その部署で送信済みのメールを見られます。</p>
         </div>
         <div class="dairymetrics-v2-transaction-actions">
-          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-sent-mail-list>当日送信メールを見る</button>
+          <button type="button" class="ui-button ui-button--secondary dairymetrics-secondary-btn" data-open-sent-mail-list>当日送信メールを見る</button>
         </div>
         <div class="dairymetrics-v2-transaction-list" id="dairymetrics-v2-sent-mail-list" hidden>
         {% if sent_mail_histories %}
@@ -221,7 +228,7 @@
               <span>{{ mail.sender_name }}</span>
               <span>{{ mail.amount|intcomma }}円</span>
               <span>
-                <button type="button" class="btn-inline dairymetrics-secondary-btn" data-open-sent-mail-detail>内容</button>
+                <button type="button" class="ui-button ui-button--secondary dairymetrics-secondary-btn" data-open-sent-mail-detail>内容</button>
               </span>
             </div>
             <div class="dairymetrics-v2-mail-history-detail" hidden>
@@ -233,7 +240,7 @@
               {% endif %}
               <pre class="dairymetrics-v2-mail-body">{{ mail.body }}</pre>
               <div class="dairymetrics-v2-inline-actions">
-                <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-sent-mail-detail>閉じる</button>
+                <button type="button" class="ui-button ui-button--quiet dairymetrics-secondary-btn" data-close-sent-mail-detail>閉じる</button>
               </div>
             </div>
           </div>
@@ -242,7 +249,7 @@
         <p class="muted">まだ当日送信メールはありません。</p>
         {% endif %}
         <div class="dairymetrics-v2-transaction-actions">
-          <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-sent-mail-list>閉じる</button>
+          <button type="button" class="ui-button ui-button--quiet dairymetrics-secondary-btn" data-close-sent-mail-list>閉じる</button>
         </div>
         </div>
       </article>
@@ -281,9 +288,9 @@
         <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
         <input type="hidden" name="preview_transaction_id" id="dairymetrics-v2-mail-transaction-id" value="">
         <input type="hidden" name="preview_history_id" id="dairymetrics-v2-mail-history-id" value="">
-        <button type="button" class="btn-inline dairymetrics-secondary-btn" data-edit-from-mail-modal>閉じて内容を修正</button>
-        <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-mail-modal>閉じる</button>
-        <button type="submit" class="btn-inline dairymetrics-save-btn" id="dairymetrics-v2-mail-submit-button">送信</button>
+        <button type="button" class="ui-button ui-button--secondary dairymetrics-secondary-btn" data-edit-from-mail-modal>閉じて内容を修正</button>
+        <button type="button" class="ui-button ui-button--quiet dairymetrics-secondary-btn" data-close-mail-modal>閉じる</button>
+        <button type="submit" class="ui-button ui-button--primary dairymetrics-save-btn" id="dairymetrics-v2-mail-submit-button">送信</button>
         </div>
       </form>
     </section>
@@ -294,7 +301,7 @@
         <p class="muted">決済明細の合計件数・金額は自動反映し、最後に数値と印象的だったケースを記録します。</p>
       </div>
       <div class="dairymetrics-v2-transaction-actions">
-        <button type="button" class="btn-inline dairymetrics-close-activity-btn" data-open-closeout>活動終了時の最終実績を確認</button>
+        <button type="button" class="ui-button ui-button--danger dairymetrics-close-activity-btn" data-open-closeout>活動終了時の最終実績を確認</button>
       </div>
       <section class="dairymetrics-v2-closeout-panel" id="dairymetrics-v2-closeout-panel" {% if not open_closeout_panel %}hidden{% endif %}>
         <form method="post" data-submit-lock data-submit-label="保存中…">
@@ -345,8 +352,8 @@
               {% if closeout_form.memo.errors %}<div class="error-text">{{ closeout_form.memo.errors|striptags }}</div>{% endif %}
             </div>
             <div class="dairymetrics-field-full dairymetrics-form-actions">
-              <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-closeout>閉じる</button>
-              <button type="submit" class="btn-inline dairymetrics-close-activity-btn">活動終了を保存</button>
+              <button type="button" class="ui-button ui-button--quiet dairymetrics-secondary-btn" data-close-closeout>閉じる</button>
+              <button type="submit" class="ui-button ui-button--danger dairymetrics-close-activity-btn">活動終了を保存</button>
             </div>
           </div>
         </form>

@@ -29,7 +29,7 @@
       <div>{{ selection_form.department }}</div>
       <div>{{ selection_form.member }}</div>
       <div>{{ selection_form.entry_date }}</div>
-      <div><button type="submit">入力準備</button></div>
+      <div><button type="submit" class="ui-button ui-button--secondary">入力準備</button></div>
     </form>
     {% if selection_form.errors %}
     <div class="note mt-12">{{ selection_form.errors|striptags }}</div>
@@ -46,7 +46,7 @@
       <form method="post" action="{% url 'performance_entry_delete' existing_entry.id %}" class="inline-form">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ existing_entry_next_url }}">
-        <button type="submit" class="icon-btn danger" aria-label="既存実績を削除" onclick="return confirm('この日の実績を削除しますか？ 決済明細も一緒に削除されます。');">
+        <button type="submit" class="ui-icon-button ui-icon-button--danger icon-btn danger" aria-label="既存実績を削除" title="削除" onclick="return confirm('この日の実績を削除しますか？ 決済明細も一緒に削除されます。');">
           <i class="fa-solid fa-trash" aria-hidden="true"></i>
         </button>
       </form>
@@ -135,7 +135,7 @@
           </div>
         </div>
         <div class="mt-12">
-          <button type="button" class="btn-inline" data-past-entry-add-transaction>決済を追加</button>
+          <button type="button" class="ui-button ui-button--secondary" data-past-entry-add-transaction>決済を追加</button>
         </div>
         {% if transaction_errors %}
         <div class="note mt-12">
@@ -155,7 +155,7 @@
       </section>
 
       <div class="mt-16">
-        <button type="submit" class="btn-inline dairymetrics-save-btn">過去実績を登録</button>
+        <button type="submit" class="ui-button ui-button--primary dairymetrics-save-btn">過去実績を登録</button>
       </div>
     </form>
   </section>
@@ -254,7 +254,7 @@
           <div class="metric-card mt-10">
             <div class="row">
               <strong>${csrfSafe(transactionSummary(row))}</strong>
-              <button type="button" class="icon-btn danger" data-remove-transaction="${index}" aria-label="決済を削除">
+              <button type="button" class="ui-icon-button ui-icon-button--danger icon-btn danger" data-remove-transaction="${index}" aria-label="決済を削除" title="削除">
                 <i class="fa-solid fa-trash" aria-hidden="true"></i>
               </button>
             </div>

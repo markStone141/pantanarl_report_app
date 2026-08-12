@@ -748,6 +748,15 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertNotContains(response, 'href="/metrics/"', html=False)
         self.assertContains(response, 'aria-current="page"', html=False)
 
+    def test_dashboard_uses_shared_button_hierarchy(self):
+        response = self.client.get(reverse("dashboard_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ui-button--primary")
+        self.assertContains(response, "ui-button--secondary")
+        self.assertContains(response, "ui-button--quiet")
+        self.assertContains(response, "ui-choice-button")
+
     def test_management_settings_pages_use_shared_navigation_and_foundation(self):
         page_names = (
             "member_settings",

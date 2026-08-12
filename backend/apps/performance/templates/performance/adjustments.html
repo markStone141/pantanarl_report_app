@@ -106,9 +106,9 @@
         {% endif %}
       </div>
       <div class="dairymetrics-field-full dairymetrics-form-actions">
-        <button type="submit">{% if edit_adjustment %}補正実績を更新{% else %}補正実績を保存{% endif %}</button>
+        <button type="submit" class="ui-button ui-button--primary">{% if edit_adjustment %}補正実績を更新{% else %}補正実績を保存{% endif %}</button>
         {% if edit_adjustment %}
-        <a class="btn-inline" href="{% url 'performance_adjustments' %}">編集をキャンセル</a>
+        <a class="ui-button ui-button--quiet" href="{% url 'performance_adjustments' %}">編集をキャンセル</a>
         {% endif %}
       </div>
     </form>
@@ -126,7 +126,7 @@
           {% endfor %}
         </select>
         {% if list_filter_form.q.value or list_filter_form.cleaned_data.department %}
-        <a href="{% url 'performance_adjustments' %}" class="btn-inline">リセット</a>
+        <a href="{% url 'performance_adjustments' %}" class="ui-button ui-button--quiet">リセット</a>
         {% endif %}
       </form>
     </div>

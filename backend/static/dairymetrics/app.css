@@ -3061,6 +3061,34 @@
   }
 }
 
+.dairymetrics-zero-payment-streak-page {
+  padding: 16px;
+  border: 1px solid #f2c1c1;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 241, 241, 0.86), rgba(255, 248, 248, 0.7));
+}
+
+.dairymetrics-zero-payment-streak-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid #e9a9a9;
+  border-radius: 12px;
+  background: #fff1f1;
+  color: #8f1d1d;
+}
+
+.dairymetrics-zero-payment-streak-alert strong {
+  font-size: 0.96rem;
+}
+
+.dairymetrics-zero-payment-streak-alert span {
+  color: #7b3434;
+  font-size: 0.88rem;
+}
+
 @media (max-width: 900px) {
   .dairymetrics-v2-activity-groups {
     grid-template-columns: 1fr;
@@ -3094,6 +3122,16 @@
 }
 
 @media (max-width: 640px) {
+  .dairymetrics-zero-payment-streak-page {
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .dairymetrics-zero-payment-streak-alert {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .metrics-v2-distribution-grid {
     grid-template-columns: 1fr;
   }

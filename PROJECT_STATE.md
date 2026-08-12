@@ -4,7 +4,10 @@
 
 ## 現在のフェーズ
 
-- 全アプリUI展開・工程10完了: Git bundle引き渡し・PUSH・公開環境確認待ち
+- 全アプリUI展開・工程10完了。
+- 工程11-4「ボタンUI横断監査と公開前確認」を完了。工程11はローカル完了。
+- ボタンUIのチャット確認用SVGは利用者の見た目確認済み。
+- 工程12「PUSH引き渡し準備」のローカル検証を完了。工程11のPUSH・公開は未実施。
 
 ## プロジェクト全体の目標
 
@@ -84,6 +87,9 @@
 
 ## 進行中の作業
 
+- 工程11までの変更を収録した新しいGit bundleを作成し、利用者へ引き渡す。
+- 利用者のPCから作業ブランチをGitHubへPUSHし、公開環境でPC／モバイルの最終視覚確認を行う。
+- 詳細は `backend/docs/BUTTON_UI_ROLLOUT_PLAN.md` を参照する。
 - PUSH後、工程4までの画面を含む公開環境でPC／モバイルの視覚確認を行う。
 - `performance` の監査済み14コミットはGitHubへのPUSHと公開環境確認が未完了。UI工程とは状態を分けて管理する。
 
@@ -181,9 +187,63 @@
 
 ## 次に行う作業
 
-- 作成済みGit bundleを利用者のPCで復元し、監査済み作業ブランチをGitHubへPUSHする。
-- GitHub上でPull Requestを作成し、レビュー後に `main` へマージする。
-- デプロイ後、公開環境のPC／モバイル主要導線を確認して公開判定を確定する。
+- 新しいGit bundleの完全性と収録ブランチを確認し、利用者へ引き渡す。
+- 利用者のPCから作業ブランチをGitHubへPUSHし、Pull RequestとCIを確認する。
+- `main` へのマージ・デプロイ後、公開環境のPC／モバイル主要導線を確認する。
+
+## 工程12の開始判定
+
+- 入力: 工程11までの54コミットと、チャット確認用SVGに対する利用者の見た目承認。
+- 対象: 全398テスト、Django check、migration、BOM、Git差分、bundle完全性、収録ブランチ。
+- 対象外: GitHubへのPUSH、Pull Request作成、`main`へのマージ、デプロイ、公開環境の操作。
+- 完了条件: 最新コミットを含む作業ブランチのbundleを作成し、`git bundle verify`と`git bundle list-heads`が成功する。
+- 公開判定: bundle作成は公開ではない。公開完了はPUSH・PR・CI・マージ・デプロイ後のPC／モバイル主要導線確認を条件とする。
+
+## 工程12の終了判定
+
+- 承認: チャット確認用SVGの見た目は利用者確認済み。
+- 検証: 全398テスト、Django check、migration差分、BOM、Git差分が成功した。
+- 引き渡し: 作業ブランチだけを収録するGit bundleの完全性と収録参照を確認した。
+- 残作業: 利用者のPCからのPUSH、Pull Request、CI、`main`へのマージ、デプロイ、公開環境のPC／モバイル確認。
+- PUSH／公開: 未実施。
+
+## 工程11-1の終了判定
+
+- 実装: 共通ボタン6分類と状態を `ui_foundation.css` へ追加し、`dashboard` と `performance` の代表画面へ適用した。
+- 追加修正: 「本日の記録」の決済／メールタブをモバイルで2等分し、3稼働連続0件の一覧行を薄い赤にした。
+- 決済入力: 3稼働以上連続で最終決済件数が0の場合、画面を薄い赤にして「N稼働連続で決済がありません」と表示する。
+- プレビュー: 認証・DB・PUSH不要の `docs/button-ui-preview.html` を追加した。
+- 検証: 対象62テスト、全398テスト、Django check、migration、BOM、HTML、JavaScript、CSS、差分検査が成功した。
+- 環境課題: `pre-commit` は未導入のため実行不可。EOFは `git diff --check` で確認した。
+- PUSH／公開: 未実施。
+
+## 工程11-2の終了判定
+
+- 実装: `dashboard`、`performance`、`targets`、`mail`、`reports`、`dairymetrics` の保存・登録・送信をPrimary、編集・詳細をSecondary、閉じる・戻るをQuiet、削除・無効化・活動終了をDanger、表示切替をChoiceへ整理した。
+- 操作: 既存のフォームID、URL、権限、確認処理、二重送信防止を維持し、報告送信中は共通ローディング状態、表示切替は `aria-pressed` と見た目を同期した。
+- 維持事項: 「本日の記録」のモバイル2分割タブ、3稼働連続0件の薄い赤表示、決済入力の「N稼働連続で決済がありません」を維持した。
+- 固有操作: ページ番号リンク、NAVトグル、グラフ内の日付操作、フローティング検索ボタンは配置依存のため工程11-4で競合を最終監査する。
+- 検証: 全398テスト、Django check、migration、BOM、JavaScript構文、EOF、差分検査が成功した。npm lintは `eslint` 未配置、pre-commitはコマンド未導入のため実行不可。
+- PUSH／公開: 未実施。
+
+## 工程11-3の終了判定
+
+- 実装: `talks`、`testimony`、`monthly_guide`、`mosaic`、`accounts` の主要・補助・危険・選択・アイコン操作へ共通ボタン体系を適用した。
+- 操作: タグ、反応、お気に入り、試乗車種は選択状態と `aria-pressed` を同期し、AJAX後も状態を維持する。`mosaic` の保存時は無効化、`aria-busy`、共通ローディング表示を同期した。
+- 維持事項: 独立アプリのブランド、URL、フォームID、権限、投稿・コメント・反応・コピー・保存処理を維持した。
+- 固有操作: ページ番号、ドロワー開閉、モバイルFAB、シート閉じる操作は配置依存のため工程11-4で競合を最終監査する。
+- 検証: 対象93テスト、`talks` 再確認34テスト、全398テスト、Django check、migration、BOM、JavaScript構文、EOF、差分検査が成功した。補助コマンドで存在しないテストクラスを指定した1件は正しいモジュール指定で再実行し、作業ログへ記録した。
+- 環境課題: npm lintは `eslint` 未配置、pre-commitはコマンド未導入のため実行不可。
+- PUSH／公開: 未実施。
+
+## 工程11-4の終了判定
+
+- 監査: 共通クラスなしの旧 `.btn-inline` 36件を確認し、ページ移動21件とモバイルドロワー開閉15件の固有操作として分類した。業務操作の移行漏れは確認されなかった。
+- プレビュー: `docs/button-ui-preview.html` から外部CSS参照を除き、チャットのリンクから直接完成デザインを表示できる自己完結HTMLへ変更した。
+- 操作: 既存URL、権限、フォーム、AJAX、キーボード状態、モバイル2分割タブ、決済なし注意表示を維持した。
+- 検証: 全398テスト、Django check、migration、BOM、HTML解析、JavaScript構文、CSS構造、EOF、差分検査が成功した。
+- 環境課題: npm lintは `eslint` 未配置、pre-commitはコマンド未導入のため実行不可。
+- PUSH／公開: 未実施。
 
 ## 参照
 
@@ -192,5 +252,7 @@
 - `backend/docs/PERFORMANCE_RELEASE_AUDIT_2026-08-12.md`
 - `backend/docs/UI_ROLLOUT_PLAN.md`
 - `backend/docs/UI_SCREEN_INVENTORY.md`
+- `backend/docs/BUTTON_UI_ROLLOUT_PLAN.md`
+- `backend/docs/BUTTON_UI_INVENTORY.md`
 - `backend/docs/GIT_BUNDLE_PUSH_WORKFLOW.md`
 - `logs/latest-summary.md`

@@ -131,6 +131,43 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertEqual(response.context["testimony_notification"]["count"], 1)
         self.assertNotContains(response, unread_article.title)
 
+    def test_entry_v2_warns_after_three_closed_activities_without_payments(self):
+        today = timezone.localdate()
+        for offset in range(1, 4):
+            MemberDailyMetricEntry.objects.create(
+                member=self.member,
+                department=self.department,
+                entry_date=today - timedelta(days=offset),
+                result_count=0,
+                support_amount=0,
+                activity_closed=True,
+            )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_entry_v2_transaction_demo"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "3稼働連続で決済がありません")
+        self.assertContains(response, "dairymetrics-zero-payment-streak-page")
+
+    def test_entry_v2_does_not_warn_before_three_zero_payment_activities(self):
+        today = timezone.localdate()
+        for offset in range(1, 3):
+            MemberDailyMetricEntry.objects.create(
+                member=self.member,
+                department=self.department,
+                entry_date=today - timedelta(days=offset),
+                result_count=0,
+                support_amount=0,
+                activity_closed=True,
+            )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("dairymetrics_entry_v2_transaction_demo"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "稼働連続で決済がありません")
+
     def test_entry_v2_transaction_uses_shared_navigation_and_step_status(self):
         self.client.force_login(self.user)
 

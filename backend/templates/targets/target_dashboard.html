@@ -58,7 +58,7 @@
           {% endfor %}
         </select>
       </div>
-      <div><button type="submit" class="btn-inline">絞り込み</button></div>
+      <div><button type="submit" class="ui-button ui-button--secondary">絞り込み</button></div>
     </form>
     <div class="target-history-headline">
       <span class="muted">{{ month_history_paginator.count }}件 / 10件ずつ表示</span>
@@ -73,7 +73,7 @@
           </div>
           <div class="target-history-actions target-history-actions-inline">
             <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
-            <a class="btn-inline" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">編集</a>
+            <a class="ui-button ui-button--secondary" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">編集</a>
           </div>
         </div>
         <details class="target-history-details">
@@ -151,7 +151,7 @@
           {% endfor %}
         </select>
       </div>
-      <div><button type="submit" class="btn-inline">絞り込み</button></div>
+      <div><button type="submit" class="ui-button ui-button--secondary">絞り込み</button></div>
     </form>
     <div class="target-history-headline">
       <span class="muted">{{ period_history_paginator.count }}件 / 10件ずつ表示</span>
@@ -167,7 +167,7 @@
           </div>
           <div class="target-history-actions target-history-actions-inline">
             <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
-            <a class="btn-inline" href="{% url 'target_period_settings' %}?period={{ row.id }}">編集</a>
+            <a class="ui-button ui-button--secondary" href="{% url 'target_period_settings' %}?period={{ row.id }}">編集</a>
           </div>
         </div>
         <details class="target-history-details">

@@ -63,6 +63,8 @@
       if (button) {
         button.disabled = true;
         button.setAttribute("aria-disabled", "true");
+        button.classList.add("is-loading");
+        button.setAttribute("aria-busy", "true");
         button.dataset.originalLabel = button.textContent;
         button.textContent = "保存中…";
       }

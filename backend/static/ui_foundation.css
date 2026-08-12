@@ -23,11 +23,199 @@
   --ui-radius-md: 14px;
   --ui-radius-lg: 20px;
   --ui-shadow-card: 0 6px 18px rgba(15, 39, 68, 0.055);
+  --ui-button-height: 40px;
+  --ui-button-radius: 10px;
+  --ui-button-shadow: 0 4px 12px rgba(18, 59, 109, 0.12);
 }
 
 :where(a, button, input, select, textarea, summary):focus-visible {
   outline: 3px solid var(--ui-focus);
   outline-offset: 2px;
+}
+
+.ui-button,
+.ui-icon-button,
+.ui-choice-button {
+  appearance: none;
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease,
+    color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.ui-button {
+  width: auto;
+  min-height: var(--ui-button-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-2);
+  padding: 8px 15px;
+  border-radius: var(--ui-button-radius);
+  font-size: 0.9rem;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: none;
+}
+
+.ui-button:hover,
+.ui-icon-button:hover,
+.ui-choice-button:hover {
+  filter: none;
+  transform: translateY(-1px);
+}
+
+.ui-button:active,
+.ui-icon-button:active,
+.ui-choice-button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.ui-button--primary {
+  border-color: #123b6d;
+  background: #123b6d;
+  color: #fff;
+  box-shadow: var(--ui-button-shadow);
+}
+
+.ui-button--primary:hover {
+  border-color: #0d315d;
+  background: #0d315d;
+  color: #fff;
+}
+
+.ui-button--secondary {
+  border-color: #b9c9dc;
+  background: var(--ui-surface);
+  color: #123b6d;
+}
+
+.ui-button--secondary:hover {
+  border-color: #8fa9c6;
+  background: var(--ui-surface-accent);
+  color: #0d315d;
+}
+
+.ui-button--quiet {
+  border-color: transparent;
+  background: transparent;
+  color: #365571;
+}
+
+.ui-button--quiet:hover {
+  border-color: var(--ui-border);
+  background: var(--ui-surface-subtle);
+  color: #123b6d;
+}
+
+.ui-button--danger {
+  border-color: #e2aaa5;
+  background: var(--ui-surface);
+  color: var(--ui-danger);
+}
+
+.ui-button--danger:hover {
+  border-color: #cf7e77;
+  background: var(--ui-danger-soft);
+  color: #8f1b13;
+}
+
+.ui-icon-button {
+  width: var(--ui-button-height);
+  min-width: var(--ui-button-height);
+  height: var(--ui-button-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-color: #b9c9dc;
+  border-radius: var(--ui-button-radius);
+  background: var(--ui-surface);
+  color: #123b6d;
+  box-shadow: none;
+}
+
+.ui-icon-button:hover {
+  border-color: #8fa9c6;
+  background: var(--ui-surface-accent);
+  color: #0d315d;
+}
+
+.ui-icon-button--danger {
+  border-color: #e2aaa5;
+  color: var(--ui-danger);
+}
+
+.ui-icon-button--danger:hover {
+  border-color: #cf7e77;
+  background: var(--ui-danger-soft);
+  color: #8f1b13;
+}
+
+.ui-choice-button {
+  width: auto;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 13px;
+  border-color: var(--ui-border);
+  border-radius: 999px;
+  background: var(--ui-surface);
+  color: var(--ui-text-muted);
+  box-shadow: none;
+  text-decoration: none;
+}
+
+.ui-choice-button:hover {
+  border-color: #a9bdd3;
+  background: var(--ui-surface-accent);
+  color: #123b6d;
+}
+
+.ui-choice-button.is-active,
+.ui-choice-button[aria-pressed="true"],
+.ui-choice-button[aria-selected="true"] {
+  border-color: #123b6d;
+  background: #123b6d;
+  color: #fff;
+}
+
+.ui-button:disabled,
+.ui-button[aria-disabled="true"],
+.ui-icon-button:disabled,
+.ui-icon-button[aria-disabled="true"],
+.ui-choice-button:disabled,
+.ui-choice-button[aria-disabled="true"] {
+  opacity: 0.52;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.ui-button.is-loading {
+  pointer-events: none;
+}
+
+.ui-button.is-loading::before {
+  width: 14px;
+  height: 14px;
+  content: "";
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ui-spin 0.75s linear infinite;
+}
+
+.ui-button-group {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  flex-wrap: wrap;
 }
 
 .ui-section {
@@ -210,7 +398,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ui-state--loading::before { animation: none; }
+  .ui-state--loading::before,
+  .ui-button.is-loading::before { animation: none; }
 }
 
 @media (max-width: 768px) {

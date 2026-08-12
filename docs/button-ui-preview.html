@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>共通ボタンUI テスト画面</title>
+  <style>
+    :root { --ui-surface:#fff; --ui-surface-subtle:#f8fafc; --ui-surface-accent:#f1f7fe; --ui-text:#1b2430; --ui-text-muted:#69788c; --ui-border:#dfe7f0; --ui-focus:rgba(10,132,255,.3); --ui-danger:#b42318; --ui-danger-soft:#fff2f0; --ui-radius-md:14px; --ui-radius-lg:20px; --ui-button-height:40px; --ui-button-radius:10px; --ui-button-shadow:0 4px 12px rgba(18,59,109,.12); }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ui-text); background: #f4f7fb; font-family: Inter, "Noto Sans JP", system-ui, sans-serif; }
+    h1 { margin: 5px 0 8px; color: #102a49; font-size: clamp(1.65rem,3vw,2.25rem); }
+    h2 { margin: 5px 0 16px; color: #183654; font-size: 1.1rem; }
+    a { text-decoration: none; }
+    .muted { color: var(--ui-text-muted); }
+    :where(a,button):focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 2px; }
+    .app-shell { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0,1fr); }
+    .app-side-nav { padding: 22px 14px 18px; background: #123b6d; color: #fff; }
+    .app-side-nav-brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 20px; border-bottom: 1px solid rgba(255,255,255,.14); }
+    .app-side-nav-brand strong,.app-side-nav-brand small { display: block; }
+    .app-side-nav-brand small { margin-top: 1px; color: rgba(235,244,255,.68); font-size: .7rem; }
+    .app-side-nav-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; color: #123b6d; background: #fff; font-weight: 900; }
+    .app-nav-group { display: grid; gap: 3px; padding: 13px 0 2px; }
+    .app-nav-group-label { padding: 0 10px 5px; color: rgba(218,233,250,.64); font-size: .68rem; font-weight: 800; letter-spacing: .08em; }
+    .app-side-nav a { min-height: 38px; display: flex; align-items: center; padding: 8px 10px; border-radius: 9px; color: rgba(245,249,255,.88); font-size: .84rem; font-weight: 650; }
+    .app-side-nav a:hover,.app-side-nav a:focus-visible { color: #fff; background: rgba(255,255,255,.11); }
+    .app-side-nav a.is-current { color: #123b6d; background: #fff; box-shadow: 0 5px 14px rgba(4,23,45,.18); }
+    .ui-button,.ui-icon-button,.ui-choice-button { appearance: none; border: 1px solid transparent; font: inherit; font-weight: 750; cursor: pointer; transition: background-color .16s,border-color .16s,color .16s,transform .16s; }
+    .ui-button { min-height: var(--ui-button-height); display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 15px; border-radius: var(--ui-button-radius); font-size: .9rem; }
+    .ui-button:hover,.ui-icon-button:hover,.ui-choice-button:hover { transform: translateY(-1px); }
+    .ui-button--primary { border-color:#123b6d; background:#123b6d; color:#fff; box-shadow:var(--ui-button-shadow); }
+    .ui-button--primary:hover { background:#0d315d; }
+    .ui-button--secondary { border-color:#b9c9dc; background:#fff; color:#123b6d; }
+    .ui-button--secondary:hover { border-color:#8fa9c6; background:var(--ui-surface-accent); }
+    .ui-button--quiet { background:transparent; color:#365571; }
+    .ui-button--quiet:hover { border-color:var(--ui-border); background:var(--ui-surface-subtle); }
+    .ui-button--danger { border-color:#e2aaa5; background:#fff; color:var(--ui-danger); }
+    .ui-button--danger:hover { border-color:#cf7e77; background:var(--ui-danger-soft); }
+    .ui-icon-button { width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-color:#b9c9dc; border-radius:10px; background:#fff; color:#123b6d; }
+    .ui-icon-button--danger { border-color:#e2aaa5; color:var(--ui-danger); }
+    .ui-choice-button { min-height:38px; padding:7px 13px; border-color:var(--ui-border); border-radius:999px; background:#fff; color:var(--ui-text-muted); }
+    .ui-choice-button.is-active,.ui-choice-button[aria-pressed="true"] { border-color:#123b6d; background:#123b6d; color:#fff; }
+    .ui-button:disabled { opacity:.52; cursor:not-allowed; transform:none; }
+    .ui-button.is-loading { pointer-events:none; }
+    .ui-button.is-loading::before { width:14px; height:14px; content:""; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:ui-spin .75s linear infinite; }
+    @keyframes ui-spin { to { transform:rotate(360deg); } }
+    .ui-section { padding:20px; border:1px solid var(--ui-border); border-radius:var(--ui-radius-lg); background:#fff; box-shadow:0 6px 18px rgba(15,39,68,.055); }
+    .ui-section-kicker { color:#315b86; font-size:.68rem; font-weight:850; letter-spacing:.12em; }
+    .btn-inline { min-height:36px; padding:7px 12px; border:1px solid #aeb8c3; border-radius:4px; background:#eee; color:#222; font:inherit; }
+    .performance-record-tabs { display:flex; gap:6px; padding:4px; border-radius:10px; background:#eef4fb; }
+    .performance-record-tab { flex:1 1 0; min-width:0; min-height:44px; padding:9px 14px; border:1px solid transparent; border-radius:8px; background:transparent; color:#69788c; font-weight:700; }
+    .performance-record-tab[aria-selected="true"] { border-color:#d5e3f2; background:#fff; color:#0f2744; box-shadow:0 1px 3px rgba(15,39,68,.08); }
+    .performance-member-list-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:12px; padding:14px; border:1px solid #efc8c8; border-left:4px solid #dc5b5b; border-radius:12px; color:inherit; background:linear-gradient(180deg,rgba(254,226,226,.98),rgba(255,245,245,.98)); }
+    .performance-member-list-name-row { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; }
+    .performance-warning-badge { padding:3px 7px; border-radius:999px; background:#ffe0e0; color:#9b2828; font-size:.75rem; }
+    .dairymetrics-zero-payment-streak-page { border-color:#f2c1c1; background:linear-gradient(180deg,rgba(255,241,241,.86),rgba(255,248,248,.7)); }
+    .dairymetrics-zero-payment-streak-alert { display:flex; align-items:center; gap:8px 14px; flex-wrap:wrap; padding:12px 14px; border:1px solid #e9a9a9; border-radius:12px; background:#fff1f1; color:#8f1d1d; }
+    .dairymetrics-zero-payment-streak-alert span { color:#7b3434; font-size:.88rem; }
+    .preview-shell { min-height: 100vh; }
+    .preview-nav { position: static; height: auto; min-height: 100vh; }
+    .preview-main { min-width: 0; padding: 24px 32px 48px; }
+    .preview-heading { margin: 0 0 20px; }
+    .preview-heading p { max-width: 720px; }
+    .preview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .preview-span { grid-column: 1 / -1; }
+    .preview-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .preview-label { margin: 0 0 10px; color: var(--ui-text-muted); font-size: .82rem; font-weight: 750; }
+    .preview-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .preview-panel { padding: 16px; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-md); background: var(--ui-surface-subtle); }
+    .preview-menu-sample { display: flex; gap: 6px; flex-wrap: wrap; padding: 12px; border-radius: 12px; background: #123b6d; }
+    .preview-menu-sample span { padding: 8px 10px; border-radius: 9px; color: rgba(245, 249, 255, .88); font-size: .84rem; font-weight: 650; }
+    .preview-menu-sample .is-current { color: #123b6d; background: #fff; }
+    .preview-note { margin-top: 12px; color: var(--ui-text-muted); font-size: .86rem; }
+    @media (max-width: 768px) {
+      .preview-shell { display: block; }
+      .preview-nav { display: none; }
+      .preview-main { padding: 18px 12px 36px; }
+      .preview-grid, .preview-compare { grid-template-columns: 1fr; }
+      .preview-span { grid-column: auto; }
+      .performance-member-list-row { grid-template-columns: 1fr; }
+      .performance-record-tab { width: 50%; padding-inline: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell preview-shell">
+    <aside class="app-side-nav preview-nav" aria-label="メニューの雰囲気見本">
+      <div class="app-side-nav-brand">
+        <span class="app-side-nav-mark">R</span>
+        <div><strong>Report App</strong><small>ボタンUI確認</small></div>
+      </div>
+      <div class="app-nav-group">
+        <span class="app-nav-group-label">MAIN</span>
+        <a class="is-current" href="#buttons">ボタン見本</a>
+        <a href="#comparison">変更前後</a>
+        <a href="#states">状態確認</a>
+      </div>
+    </aside>
+
+    <main class="preview-main">
+      <header class="preview-heading">
+        <span class="ui-section-kicker">PHASE 11-4 PREVIEW</span>
+        <h1>メニューと親和性を合わせたボタン</h1>
+        <p class="muted">PUSH前の確認専用画面です。リンクやボタンは外部送信せず、状態表示だけを切り替えます。画面幅を狭めるとモバイル時の折返しも確認できます。</p>
+      </header>
+
+      <div class="preview-grid" id="buttons">
+        <section class="ui-section preview-span">
+          <p class="preview-label">基準にしたメニューの色・角丸・境界線</p>
+          <div class="preview-menu-sample" aria-label="メニューの見本">
+            <span class="is-current">総合管理</span><span>実績管理</span><span>報告履歴</span><span>設定</span>
+          </div>
+        </section>
+
+        <section class="ui-section">
+          <span class="ui-section-kicker">ACTION</span>
+          <h2>通常操作</h2>
+          <div class="preview-row">
+            <button type="button" class="ui-button ui-button--primary">保存する</button>
+            <button type="button" class="ui-button ui-button--secondary">編集する</button>
+            <button type="button" class="ui-button ui-button--quiet">キャンセル</button>
+            <button type="button" class="ui-button ui-button--danger">削除する</button>
+          </div>
+        </section>
+
+        <section class="ui-section">
+          <span class="ui-section-kicker">CHOICE</span>
+          <h2>表示切替・選択</h2>
+          <div class="preview-row" data-preview-choice-group>
+            <button type="button" class="ui-choice-button is-active" aria-pressed="true">本日表示</button>
+            <button type="button" class="ui-choice-button" aria-pressed="false">前日表示</button>
+            <button type="button" class="ui-choice-button" aria-pressed="false">期間表示</button>
+          </div>
+        </section>
+
+        <section class="ui-section" id="states">
+          <span class="ui-section-kicker">STATE</span>
+          <h2>処理中・無効</h2>
+          <div class="preview-row">
+            <button type="button" class="ui-button ui-button--primary is-loading" aria-busy="true">保存中…</button>
+            <button type="button" class="ui-button ui-button--primary" disabled>保存できません</button>
+            <button type="button" class="ui-button ui-button--secondary" id="preview-loading-toggle">処理中を試す</button>
+          </div>
+          <p class="preview-note" id="preview-status" role="status">「処理中を試す」で3秒間だけ状態が変わります。</p>
+        </section>
+
+        <section class="ui-section">
+          <span class="ui-section-kicker">ICON</span>
+          <h2>小さな操作</h2>
+          <div class="preview-row">
+            <button type="button" class="ui-icon-button" aria-label="編集" title="編集">✎</button>
+            <button type="button" class="ui-icon-button" aria-label="お気に入り" title="お気に入り">☆</button>
+            <button type="button" class="ui-icon-button ui-icon-button--danger" aria-label="削除" title="削除">×</button>
+          </div>
+        </section>
+
+        <section class="ui-section preview-span" id="comparison">
+          <span class="ui-section-kicker">COMPARISON</span>
+          <h2>変更前後の比較</h2>
+          <div class="preview-compare">
+            <div class="preview-panel">
+              <p class="preview-label">変更前：操作の重要度が同じに見える</p>
+              <div class="preview-row">
+                <button type="button" class="btn-inline">保存する</button>
+                <button type="button" class="btn-inline">編集する</button>
+                <button type="button" class="btn-inline">キャンセル</button>
+              </div>
+            </div>
+            <div class="preview-panel">
+              <p class="preview-label">変更後：主要・通常・補助を区別</p>
+              <div class="preview-row">
+                <button type="button" class="ui-button ui-button--primary">保存する</button>
+                <button type="button" class="ui-button ui-button--secondary">編集する</button>
+                <button type="button" class="ui-button ui-button--quiet">キャンセル</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="ui-section">
+          <span class="ui-section-kicker">MOBILE TAB</span>
+          <h2>本日の記録</h2>
+          <p class="preview-label">横スクロールせず、2項目を画面幅内に均等配置</p>
+          <div class="performance-record-tabs ui-tabs" role="tablist" aria-label="本日の記録の見本">
+            <button type="button" class="performance-record-tab ui-tab" role="tab" aria-selected="true">決済 <span class="performance-record-tab-count">4件</span></button>
+            <button type="button" class="performance-record-tab ui-tab" role="tab" aria-selected="false">メール <span class="performance-record-tab-count">3件</span></button>
+          </div>
+        </section>
+
+        <section class="ui-section">
+          <span class="ui-section-kicker">WARNING</span>
+          <h2>有効メンバー一覧</h2>
+          <p class="preview-label">要確認は選択中の青と区別し、薄い赤で表示</p>
+          <a class="performance-member-list-row performance-member-card-link-warning" href="#states">
+            <div class="performance-member-list-cell performance-member-list-name">
+              <div class="performance-member-list-name-row">
+                <strong>メンバー見本</strong>
+                <span class="badge performance-warning-badge performance-member-list-badge">3稼働連続0件</span>
+              </div>
+            </div>
+            <div class="muted">0件 → 0件 → 0件</div>
+            <strong>今月累計 0円</strong>
+          </a>
+        </section>
+
+        <section class="ui-section preview-span dairymetrics-zero-payment-streak-page">
+          <span class="ui-section-kicker">MEMBER ENTRY WARNING</span>
+          <h2>メンバーの決済入力画面</h2>
+          <div class="dairymetrics-zero-payment-streak-alert" role="status">
+            <strong>3稼働連続で決済がありません</strong>
+            <span>今日の活動で流れを変えていきましょう。</span>
+          </div>
+        </section>
+
+        <section class="ui-section preview-span">
+          <span class="ui-section-kicker">PHASE 11-3</span>
+          <h2>閲覧・独立アプリの操作例</h2>
+          <p class="preview-label">投稿・ログイン、編集・コピー、選択、削除を同じ視覚階層で確認</p>
+          <div class="preview-row">
+            <button type="button" class="ui-button ui-button--primary">投稿する</button>
+            <button type="button" class="ui-button ui-button--primary">ログイン</button>
+            <button type="button" class="ui-button ui-button--secondary">日本語をコピー</button>
+            <button type="button" class="ui-choice-button" aria-pressed="false">お気に入り</button>
+            <button type="button" class="ui-icon-button" aria-label="編集" title="編集">✎</button>
+            <button type="button" class="ui-button ui-button--danger">完全削除</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.querySelectorAll("[data-preview-choice-group]").forEach(function (group) {
+      group.addEventListener("click", function (event) {
+        const target = event.target.closest(".ui-choice-button");
+        if (!target) return;
+        group.querySelectorAll(".ui-choice-button").forEach(function (button) {
+          const selected = button === target;
+          button.classList.toggle("is-active", selected);
+          button.setAttribute("aria-pressed", selected ? "true" : "false");
+        });
+      });
+    });
+
+    const loadingButton = document.getElementById("preview-loading-toggle");
+    const status = document.getElementById("preview-status");
+    loadingButton.addEventListener("click", function () {
+      loadingButton.classList.add("is-loading");
+      loadingButton.setAttribute("aria-busy", "true");
+      loadingButton.disabled = true;
+      loadingButton.textContent = "確認中…";
+      status.textContent = "処理中です。連続操作はできません。";
+      window.setTimeout(function () {
+        loadingButton.classList.remove("is-loading");
+        loadingButton.removeAttribute("aria-busy");
+        loadingButton.disabled = false;
+        loadingButton.textContent = "処理中を試す";
+        status.textContent = "処理が完了し、再び操作できる状態になりました。";
+      }, 3000);
+    });
+  </script>
+</body>
+</html>

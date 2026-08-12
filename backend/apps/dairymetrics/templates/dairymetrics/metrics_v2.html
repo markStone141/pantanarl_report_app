@@ -98,11 +98,11 @@
         <input id="metrics-v2-end-date" type="date" name="end_date" value="{{ end_date_value }}" aria-label="終了日">
       </div>
       <div>
-        <button type="submit">表示</button>
+        <button type="submit" class="ui-button ui-button--secondary">表示</button>
       </div>
     </form>
     <div class="mt-12">
-      <a class="btn-inline" href="{% url 'dairymetrics_metrics_report' %}?department={{ selected_department.code }}&scope={{ scope_value }}{% if scope.month_start %}&month={{ month_value }}{% endif %}{% if scope.period %}&period_id={{ scope.period.id }}{% endif %}">この条件で振り返りレポートを見る</a>
+      <a class="ui-button ui-button--secondary" href="{% url 'dairymetrics_metrics_report' %}?department={{ selected_department.code }}&scope={{ scope_value }}{% if scope.month_start %}&month={{ month_value }}{% endif %}{% if scope.period %}&period_id={{ scope.period.id }}{% endif %}">この条件で振り返りレポートを見る</a>
     </div>
   </section>
 
@@ -111,8 +111,8 @@
   <section class="mt-16">
     {% if metrics_v2_payload.personal_summary %}
     <div class="metrics-v2-summary-tabs" role="tablist" aria-label="指標の表示対象">
-      <button id="metrics-v2-summary-tab-personal" class="metrics-v2-summary-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="metrics-v2-summary-panel-personal" data-metrics-v2-summary-tab="personal">個人</button>
-      <button id="metrics-v2-summary-tab-overall" class="metrics-v2-summary-tab" type="button" role="tab" aria-selected="false" aria-controls="metrics-v2-summary-panel-overall" data-metrics-v2-summary-tab="overall" tabindex="-1">全体</button>
+      <button id="metrics-v2-summary-tab-personal" class="ui-choice-button metrics-v2-summary-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="metrics-v2-summary-panel-personal" data-metrics-v2-summary-tab="personal">個人</button>
+      <button id="metrics-v2-summary-tab-overall" class="ui-choice-button metrics-v2-summary-tab" type="button" role="tab" aria-selected="false" aria-controls="metrics-v2-summary-panel-overall" data-metrics-v2-summary-tab="overall" tabindex="-1">全体</button>
     </div>
     {% endif %}
     <div class="metrics-v2-summary-panels">

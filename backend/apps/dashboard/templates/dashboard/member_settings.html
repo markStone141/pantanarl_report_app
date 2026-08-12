@@ -22,17 +22,17 @@
           <input type="hidden" name="active_only" value="{% if active_only %}1{% else %}0{% endif %}" id="member-settings-active-only-input">
           <input type="hidden" name="missing_email" value="{% if missing_email_only %}1{% else %}0{% endif %}" id="member-settings-missing-email-input">
           <input type="hidden" name="missing_login" value="{% if missing_login_only %}1{% else %}0{% endif %}" id="member-settings-missing-login-input">
-          <button type="button" class="member-settings-toggle-btn{% if active_only %} is-active{% endif %}" id="member-settings-active-toggle-btn" aria-pressed="{% if active_only %}true{% else %}false{% endif %}">
+          <button type="button" class="ui-choice-button member-settings-toggle-btn{% if active_only %} is-active{% endif %}" id="member-settings-active-toggle-btn" aria-pressed="{% if active_only %}true{% else %}false{% endif %}">
             有効なメンバーのみ表示
           </button>
-          <button type="button" class="member-settings-toggle-btn{% if missing_email_only %} is-active{% endif %}" id="member-settings-missing-email-btn" aria-pressed="{% if missing_email_only %}true{% else %}false{% endif %}">
+          <button type="button" class="ui-choice-button member-settings-toggle-btn{% if missing_email_only %} is-active{% endif %}" id="member-settings-missing-email-btn" aria-pressed="{% if missing_email_only %}true{% else %}false{% endif %}">
             アドレス未登録
           </button>
-          <button type="button" class="member-settings-toggle-btn{% if missing_login_only %} is-active{% endif %}" id="member-settings-missing-login-btn" aria-pressed="{% if missing_login_only %}true{% else %}false{% endif %}">
+          <button type="button" class="ui-choice-button member-settings-toggle-btn{% if missing_login_only %} is-active{% endif %}" id="member-settings-missing-login-btn" aria-pressed="{% if missing_login_only %}true{% else %}false{% endif %}">
             ID未登録
           </button>
           {% if query or not active_only or missing_email_only or missing_login_only %}
-          <a href="{% url 'member_settings' %}" class="btn-inline">リセット</a>
+          <a href="{% url 'member_settings' %}" class="ui-button ui-button--quiet">リセット</a>
           {% endif %}
         </form>
       </div>

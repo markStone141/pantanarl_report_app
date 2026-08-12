@@ -44,14 +44,14 @@
 
   <section class="closeout-scope-bar">
     <nav class="closeout-scope-tabs" aria-label="表示期間">
-      <a href="?scope=today" data-closeout-scope="today" class="{% if notes_scope.key == 'today' %}is-active{% endif %}">今日</a>
-      <a href="?scope=yesterday" data-closeout-scope="yesterday" class="{% if notes_scope.key == 'yesterday' %}is-active{% endif %}">昨日</a>
-      <a href="?scope=period" data-closeout-scope="period" class="{% if notes_scope.key == 'period' %}is-active{% endif %}">現路程</a>
-      <a href="?scope=month" data-closeout-scope="month" class="{% if notes_scope.key == 'month' %}is-active{% endif %}">今月</a>
+      <a href="?scope=today" data-closeout-scope="today" class="ui-choice-button {% if notes_scope.key == 'today' %}is-active{% endif %}" {% if notes_scope.key == 'today' %}aria-current="page"{% endif %}>今日</a>
+      <a href="?scope=yesterday" data-closeout-scope="yesterday" class="ui-choice-button {% if notes_scope.key == 'yesterday' %}is-active{% endif %}" {% if notes_scope.key == 'yesterday' %}aria-current="page"{% endif %}>昨日</a>
+      <a href="?scope=period" data-closeout-scope="period" class="ui-choice-button {% if notes_scope.key == 'period' %}is-active{% endif %}" {% if notes_scope.key == 'period' %}aria-current="page"{% endif %}>現路程</a>
+      <a href="?scope=month" data-closeout-scope="month" class="ui-choice-button {% if notes_scope.key == 'month' %}is-active{% endif %}" {% if notes_scope.key == 'month' %}aria-current="page"{% endif %}>今月</a>
     </nav>
     <button
       type="button"
-      class="closeout-filter-trigger"
+      class="ui-button ui-button--secondary closeout-filter-trigger"
       data-closeout-filter-open
       aria-controls="closeout-filter-panel"
       aria-expanded="false"
@@ -67,7 +67,7 @@
         <span class="closeout-filter-eyebrow">FIND A CASE</span>
         <strong id="closeout-filter-title">{{ notes_scope.label }}</strong>
       </div>
-      <button type="button" class="closeout-filter-close" data-closeout-filter-close aria-label="検索条件を閉じる">
+      <button type="button" class="ui-icon-button closeout-filter-close" data-closeout-filter-close aria-label="検索条件を閉じる" title="閉じる">
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
       </button>
     </div>
@@ -105,7 +105,7 @@
       </div>
       <div><input type="date" name="date_from" value="{% if notes_scope.key == 'custom' %}{{ date_from|date:'Y-m-d' }}{% endif %}" aria-label="開始日"></div>
       <div><input type="date" name="date_to" value="{% if notes_scope.key == 'custom' %}{{ date_to|date:'Y-m-d' }}{% endif %}" aria-label="終了日"></div>
-      <div><button type="submit">ノートを開く</button></div>
+      <div><button type="submit" class="ui-button ui-button--primary">ノートを開く</button></div>
     </form>
   </section>
 

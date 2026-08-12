@@ -39,12 +39,12 @@
           <td>{{ tag.post_count }}</td>
           <td>
             <div class="tag-actions">
-              <a href="{% url 'talks_tag_manage' %}?edit={{ tag.id }}" class="btn-inline tag-mini-btn">編集</a>
+              <a href="{% url 'talks_tag_manage' %}?edit={{ tag.id }}" class="btn-inline tag-mini-btn ui-button ui-button--secondary">編集</a>
               <form method="post" action="{% url 'talks_tag_manage' %}" class="tag-form-inline">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="toggle">
                 <input type="hidden" name="tag_id" value="{{ tag.id }}">
-                <button type="submit" class="btn-inline tag-mini-btn tag-toggle-btn {% if tag.is_active %}is-disable{% else %}is-enable{% endif %}">
+                <button type="submit" class="btn-inline tag-mini-btn tag-toggle-btn ui-button ui-button--secondary {% if tag.is_active %}is-disable{% else %}is-enable{% endif %}">
                   {% if tag.is_active %}無効化{% else %}有効化{% endif %}
                 </button>
               </form>
@@ -53,7 +53,7 @@
                   {% csrf_token %}
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="tag_id" value="{{ tag.id }}">
-                  <button type="submit" class="btn-inline tag-mini-btn tag-delete-btn">
+                  <button type="submit" class="btn-inline tag-mini-btn tag-delete-btn ui-button ui-button--danger">
                     削除
                   </button>
                 </form>

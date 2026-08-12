@@ -15,8 +15,12 @@
       const tag = btn.getAttribute("data-tag") || "";
       if (selected.indexOf(tag) >= 0) {
         btn.classList.add("is-selected");
+        btn.classList.add("is-active");
+        btn.setAttribute("aria-pressed", "true");
       } else {
         btn.classList.remove("is-selected");
+        btn.classList.remove("is-active");
+        btn.setAttribute("aria-pressed", "false");
       }
     });
     selected.forEach(function (tag) {
