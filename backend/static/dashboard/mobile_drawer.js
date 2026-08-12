@@ -31,6 +31,17 @@
     toggle.focus();
   });
 
+  nav.addEventListener("click", function (event) {
+    const link = event.target.closest("a[href]");
+    if (!link || event.defaultPrevented) return;
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    event.preventDefault();
+    const destination = link.href;
+    setOpen(false);
+    window.location.assign(destination);
+  });
+
   document.addEventListener("pointerdown", function (event) {
     if (!topbar.classList.contains("drawer-open")) return;
     if (nav.contains(event.target) || toggle.contains(event.target)) return;
