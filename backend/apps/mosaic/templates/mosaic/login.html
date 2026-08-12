@@ -35,7 +35,7 @@
       {% if form.non_field_errors %}
       <div class="error-text auth-login-error-summary">{{ form.non_field_errors|join:", " }}</div>
       {% endif %}
-      <button type="submit">ログイン</button>
+      <button type="submit" class="ui-button ui-button--primary">ログイン</button>
       <p class="auth-login-status" role="status" aria-live="polite" data-auth-submit-status></p>
     </form>
   </section>

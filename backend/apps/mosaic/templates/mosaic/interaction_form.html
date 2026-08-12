@@ -9,7 +9,7 @@
       <h2>接客ログ入力</h2>
       <p class="muted">接客者とやりとりを記録します。戻り対応のときだけ実績扱いを別に選べます。</p>
     </div>
-    <a class="btn-inline" href="{% url 'mosaic_dashboard' %}">ダッシュボード</a>
+    <a class="btn-inline ui-button ui-button--secondary" href="{% url 'mosaic_dashboard' %}">ダッシュボード</a>
   </div>
   <form method="post" class="mosaic-entry-form" data-mosaic-interaction-form data-mosaic-submit-lock>
     {% csrf_token %}
@@ -115,7 +115,7 @@
       <p class="muted">試した順にタップしてください。選択順がそのまま流れとして保存されます。</p>
       <div class="mosaic-trial-flow" data-mosaic-trial-flow>
         {% for model in trial_models %}
-        <button type="button" class="mosaic-trial-chip" data-trial-model-id="{{ model.id }}" data-trial-model-name="{{ model.name }}">
+        <button type="button" class="mosaic-trial-chip ui-choice-button" aria-pressed="false" data-trial-model-id="{{ model.id }}" data-trial-model-name="{{ model.name }}">
           <span class="mosaic-trial-order" data-trial-order></span>
           <span>{{ model.name }}</span>
         </button>
@@ -151,7 +151,7 @@
     </section>
 
     <div class="mosaic-form-actions">
-      <button type="submit" class="mosaic-save-button">保存してダッシュボードへ</button>
+      <button type="submit" class="mosaic-save-button ui-button ui-button--primary">保存してダッシュボードへ</button>
       <span class="muted" data-submit-status role="status" aria-live="polite"></span>
     </div>
   </form>
@@ -198,6 +198,8 @@
         const id = button.dataset.trialModelId;
         const order = selectedTrialIds.indexOf(id) + 1;
         button.classList.toggle("is-selected", order > 0);
+        button.classList.toggle("is-active", order > 0);
+        button.setAttribute("aria-pressed", order > 0 ? "true" : "false");
         const orderNode = button.querySelector("[data-trial-order]");
         orderNode.textContent = order > 0 ? order : "";
       });

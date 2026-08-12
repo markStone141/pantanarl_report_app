@@ -9,7 +9,7 @@
       <h2>{{ master_label }}</h2>
       <p class="muted">入力画面で使う選択肢を整えます。</p>
     </div>
-    <a class="mosaic-master-back" href="{% url 'mosaic_master_index' %}">一覧へ戻る</a>
+    <a class="mosaic-master-back ui-button ui-button--secondary" href="{% url 'mosaic_master_index' %}">一覧へ戻る</a>
   </div>
   <form method="post" class="mosaic-entry-form mosaic-master-form" data-mosaic-submit-lock>
     {% csrf_token %}
@@ -54,7 +54,7 @@
       </div>
     </section>
     <div class="mosaic-form-actions">
-      <button type="submit" class="mosaic-save-button">保存</button>
+      <button type="submit" class="mosaic-save-button ui-button ui-button--primary">保存</button>
       <span class="muted" data-submit-status role="status" aria-live="polite"></span>
     </div>
   </form>

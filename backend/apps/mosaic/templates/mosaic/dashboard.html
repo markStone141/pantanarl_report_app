@@ -11,7 +11,7 @@
   </div>
   <form method="get" class="mosaic-date-form">
     <input type="date" name="date" value="{{ payload.target_date|date:'Y-m-d' }}">
-    <button type="submit" class="mosaic-date-submit">表示</button>
+    <button type="submit" class="mosaic-date-submit ui-button ui-button--secondary">表示</button>
   </form>
 </section>
 
@@ -66,7 +66,7 @@
 <section class="card mt-16">
   <div class="mosaic-section-head">
     <h3>直近の接客ログ</h3>
-    <a class="btn-inline" href="{% url 'mosaic_interaction_create' %}">接客ログを入力</a>
+    <a class="btn-inline ui-button ui-button--primary" href="{% url 'mosaic_interaction_create' %}">接客ログを入力</a>
   </div>
   <div class="mosaic-card-list">
     {% for item in payload.latest_interactions %}
