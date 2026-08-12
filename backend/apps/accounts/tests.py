@@ -143,6 +143,24 @@ class LoginFlowTests(TestCase):
         self.assertContains(response, reverse("performance_login"))
         self.assertNotContains(response, reverse("dairymetrics_login"))
 
+    def test_all_login_pages_use_shared_form_state_contract(self):
+        login_urls = (
+            "home",
+            "performance_login",
+            "dairymetrics_login",
+            "talks_login",
+            "testimony_login",
+            "mosaic_login",
+        )
+
+        for url_name in login_urls:
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, "data-auth-login-form", html=False)
+                self.assertContains(response, "data-auth-submit-status", html=False)
+                self.assertContains(response, "auth-login-card", html=False)
+
 
 class RoleGuardTests(TestCase):
     def test_dashboard_requires_admin(self):

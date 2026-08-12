@@ -25,29 +25,37 @@
 
 {% block content %}
 <main class="login-wrap">
-  <section class="card login-card">
+  <section class="card login-card auth-login-card">
     <div class="reportapp-login-brand">
       <img class="reportapp-logo-image" src="{% static 'img/reportapp_logo.png' %}?v=2" alt="Report App">
     </div>
 
-    <form method="post">
+    <div class="auth-login-heading">
+      <p class="auth-login-eyebrow">Report App</p>
+      <h1>ログイン</h1>
+      <p class="muted">利用するログイン種別を選び、パスワードを入力してください。</p>
+    </div>
+
+    <form method="post" class="auth-login-form" data-auth-login-form>
       {% csrf_token %}
 
-      <label for="id_login_id">{{ form.login_id.label }}</label>
-      {{ form.login_id }}
-      {% if form.login_id.errors %}
-      <div class="error-text">{{ form.login_id.errors|striptags }}</div>
-      {% endif %}
+      <div class="auth-login-field">
+        <label for="id_login_id">{{ form.login_id.label }}</label>
+        {{ form.login_id }}
+        {% if form.login_id.errors %}<div class="error-text">{{ form.login_id.errors|striptags }}</div>{% endif %}
+      </div>
 
-      <label for="id_password">{{ form.password.label }}</label>
-      {{ form.password }}
-      {% if form.password.errors %}
-      <div class="error-text">{{ form.password.errors|striptags }}</div>
-      {% endif %}
+      <div class="auth-login-field">
+        <label for="id_password">{{ form.password.label }}</label>
+        {{ form.password }}
+        {% if form.password.errors %}<div class="error-text">{{ form.password.errors|striptags }}</div>{% endif %}
+      </div>
 
-      <button type="submit" class="reportapp-submit-btn">Login</button>
+      <button type="submit" class="reportapp-submit-btn">ログイン</button>
+      <p class="auth-login-status" role="status" aria-live="polite" data-auth-submit-status></p>
     </form>
 
+    <p class="auth-login-divider">ほかの機能へ</p>
     <div class="reportapp-login-shortcuts">
       <a href="{% url 'performance_login' %}">
         <span class="reportapp-login-shortcuts-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>
