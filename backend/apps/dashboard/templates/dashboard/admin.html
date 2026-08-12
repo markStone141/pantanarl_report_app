@@ -8,7 +8,7 @@
   {% include "includes/app_navigation.html" with page_title="総合管理" page_subtitle="提出状況と各種設定をまとめて確認します。" %}
   <main class="container app-shell-content">
 
-  <section class="card mt-16">
+  <section class="card ui-section mt-16">
     <div class="inline-row">
       <a href="{% url 'dashboard_index' %}?mode=today" class="department-button" style="{% if selected_mode == 'today' %}{% else %}background:#fff; color:var(--brand); border:1px solid var(--brand);{% endif %}">本日表示</a>
       <a href="{% url 'dashboard_index' %}?mode=prev" class="department-button" style="{% if selected_mode == 'prev' %}{% else %}background:#fff; color:var(--brand); border:1px solid var(--brand);{% endif %}">前日表示</a>
@@ -16,8 +16,8 @@
     </div>
   </section>
 
-  <section class="card mt-16">
-    <h3>メール本文作成</h3>
+  <section class="card ui-section mt-16">
+    {% include "includes/ui_section_heading.html" with kicker="MAIL" title="メール本文作成" %}
     <div class="inline-row mt-8">
       <span class="badge" id="mail-source-date"></span>
     </div>
@@ -25,11 +25,8 @@
     <button type="button" id="build-mail" class="mt-10">テンプレート生成</button>
   </section>
 
-  <section class="card mt-16">
-    <div class="row">
-      <h3>提出状況一覧</h3>
-      <span class="badge">対象日: {{ today_str }}</span>
-    </div>
+  <section class="card ui-section mt-16">
+    {% include "includes/ui_section_heading.html" with kicker="REPORTS" title="提出状況一覧" meta=today_str meta_label="対象日:" %}
     <table class="mobile-card-table">
       <thead>
         <tr>
@@ -66,13 +63,11 @@
     </table>
   </section>
 
-  <section class="card mt-16">
-    <div class="row">
-      <h3>本日の部門別実績</h3>
-    </div>
-    <div class="grid grid-3 mt-12">
+  <section class="card ui-section mt-16">
+    {% include "includes/ui_section_heading.html" with kicker="TODAY" title="本日の部門別実績" %}
+    <div class="grid grid-3 ui-summary-grid mt-12">
       {% for card in kpi_cards %}
-      <article class="card">
+      <article class="card ui-summary-card">
         <h3>{{ card.title }}</h3>
         <div class="kpi">¥ {{ card.amount_text }}</div>
         {% if card.has_split_counts %}
@@ -108,8 +103,8 @@
   </section>
 
   <section class="section-stack">
-    <article class="card">
-      <h3>目標管理</h3>
+    <article class="card ui-section">
+      {% include "includes/ui_section_heading.html" with kicker="TARGETS" title="目標管理" %}
       <p class="muted">対象月: {{ target_month_summary }} [{{ target_month_status }}] / 現在路程: {{ target_period_summary }} [{{ target_period_status }}]</p>
 
       <details class="mobile-only-accordion mt-10">

@@ -312,5 +312,20 @@
     "action": "メール本文補正除外の対象テストを実行",
     "reason": "新規回帰テストのMemberDailyMetricEntry import漏れで1件がNameError",
     "next_action": "importを補い対象テストを再実行"
+  },
+  {
+    "timestamp": "2026-08-12T10:57:07+09:00",
+    "expires_at": "2026-11-10T10:57:07+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260812-ui-foundation",
+    "loop": 2,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "npm run lintはeslint不在で起動不可",
+    "reason": "既存の補助チェック環境を確認するため",
+    "next_action": "eslint依存が復元された環境で再実行"
   }
 ]
