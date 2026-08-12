@@ -281,15 +281,19 @@
       <span class="performance-dashboard-section-date">路程累計: {{ dashboard_snapshot.current_period_display }}</span>
     </div>
     {% if dashboard_snapshot.active_member_cards %}
+    <div class="performance-member-status-filters mt-12" data-member-status-filters aria-label="メンバー状態で絞り込み">
+      <button type="button" class="btn-inline is-active" data-member-status-filter="all">すべて <span data-member-status-count="all">0</span></button>
+      <button type="button" class="btn-inline" data-member-status-filter="warning">要確認 <span data-member-status-count="warning">0</span></button>
+      <button type="button" class="btn-inline" data-member-status-filter="positive">連続実績あり <span data-member-status-count="positive">0</span></button>
+    </div>
     <div class="performance-member-list mt-12">
       <div class="performance-member-list-head">
         <span>名前</span>
-        <span>今月累計</span>
-        <span>路程累計</span>
-        <span>直近の実績</span>
+        <span>直近の実績（3稼働・古い順）</span>
+        <span>累計</span>
       </div>
       {% for card in dashboard_snapshot.active_member_cards %}
-      <a class="performance-member-list-row{% if card.zero_streak_warning %} performance-member-card-link-warning{% elif card.active_streak_good %} performance-member-card-link-positive{% endif %}" href="{{ card.detail_url }}">
+      <a class="performance-member-list-row{% if card.zero_streak_warning %} performance-member-card-link-warning{% elif card.active_streak_good %} performance-member-card-link-positive{% endif %}" href="{{ card.detail_url }}" data-member-status="{{ card.streak_status }}">
         <div class="performance-member-list-cell performance-member-list-name">
           <div class="performance-member-list-name-row">
             <strong>{{ card.member_name }}</strong>
@@ -300,28 +304,28 @@
             {% endif %}
           </div>
         </div>
-        <div class="performance-member-list-cell">
-          <div class="muted performance-member-list-subtext">
+        <div class="performance-member-recent-activities" aria-label="{{ card.member_name }}の直近3稼働">
+          {% for activity in card.recent_activity_items %}
+          <div class="performance-member-activity{% if activity.has_result %} is-positive{% else %} is-zero{% endif %}">
+            <span class="performance-member-activity-date">{{ activity.date_text }}</span>
+            <strong>{{ activity.count_text }}</strong>
+            <span class="performance-member-activity-amount">{{ activity.amount_text }}</span>
+            {% if activity.count_subtext %}<span class="performance-member-activity-detail">{{ activity.count_subtext }}</span>{% endif %}
+          </div>
+          {% empty %}
+          <span class="performance-member-no-activity">活動終了済みの実績なし</span>
+          {% endfor %}
+        </div>
+        <div class="performance-member-totals">
+          <div>
+            <span>今月累計</span>
             <strong>{{ card.month_amount_text }}</strong>
-            <span>/</span>
-            <span>{{ card.month_count_text }}</span>
-            {% if card.month_count_subtext %}<span>{{ card.month_count_subtext }}</span>{% endif %}
+            <small>{{ card.month_count_text }}{% if card.month_count_subtext %} {{ card.month_count_subtext }}{% endif %}</small>
           </div>
-        </div>
-        <div class="performance-member-list-cell">
-          <div class="muted performance-member-list-subtext">
+          <div>
+            <span>路程累計</span>
             <strong>{{ card.period_amount_text }}</strong>
-            <span>/</span>
-            <span>{{ card.period_count_text }}</span>
-            {% if card.period_count_subtext %}<span>{{ card.period_count_subtext }}</span>{% endif %}
-          </div>
-        </div>
-        <div class="performance-member-list-cell">
-          <div class="muted performance-member-list-subtext">
-            <strong>{{ card.recent_amount_text }}</strong>
-            <span>/</span>
-            <span>{{ card.recent_date_text }} / {{ card.recent_count_text }}</span>
-            {% if card.recent_count_subtext %}<span>{{ card.recent_count_subtext }}</span>{% endif %}
+            <small>{{ card.period_count_text }}{% if card.period_count_subtext %} {{ card.period_count_subtext }}{% endif %}</small>
           </div>
         </div>
       </a>
@@ -334,6 +338,6 @@
 
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'performance/member_dashboard.js' %}?v=8"></script>
+<script src="{% static 'performance/member_dashboard.js' %}?v=9"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
 {% endblock %}
