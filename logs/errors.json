@@ -327,5 +327,20 @@
     "action": "npm run lintはeslint不在で起動不可",
     "reason": "既存の補助チェック環境を確認するため",
     "next_action": "eslint依存が復元された環境で再実行"
+  },
+  {
+    "timestamp": "2026-08-12T11:02:25+09:00",
+    "expires_at": "2026-11-10T11:02:25+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260812-stage5-dashboard",
+    "loop": 1,
+    "role": "observer",
+    "event": "result_observed",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "初回テストで仮想環境のPythonリンク欠損を確認",
+    "reason": ".venv/bin/python3が欠けていたため",
+    "next_action": "作成元Python 3.12へのリンクを復旧済み"
   }
 ]

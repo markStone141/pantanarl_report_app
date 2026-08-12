@@ -748,6 +748,35 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertNotContains(response, 'href="/metrics/"', html=False)
         self.assertContains(response, 'aria-current="page"', html=False)
 
+    def test_management_settings_pages_use_shared_navigation_and_foundation(self):
+        page_names = (
+            "member_settings",
+            "member_create",
+            "member_auth_bulk_settings",
+            "department_settings",
+        )
+
+        for page_name in page_names:
+            with self.subTest(page_name=page_name):
+                response = self.client.get(reverse(page_name))
+
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'class="app-side-nav dashboard-drawer-nav"', html=False)
+                self.assertContains(
+                    response,
+                    f'href="{reverse("member_settings")}" class="is-current" aria-current="page"',
+                    html=False,
+                )
+                self.assertContains(response, "ui-section")
+                self.assertContains(response, "管理・設定")
+
+    def test_member_settings_exposes_ajax_error_feedback(self):
+        response = self.client.get(reverse("member_settings"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="member-settings-feedback"', html=False)
+        self.assertContains(response, "一覧を更新できませんでした。")
+
     def test_performance_index_uses_same_grouped_navigation(self):
         response = self.client.get(reverse("performance_index"))
 
