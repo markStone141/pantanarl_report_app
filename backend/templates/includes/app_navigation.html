@@ -20,7 +20,9 @@
     <span class="app-nav-group-label">日々の活動</span>
     <a href="{% url 'report_index' %}"{% if current == 'report_index' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i><span>報告入力</span></a>
     <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}"{% if current == 'dairymetrics_entry_v2_transaction_demo' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-credit-card" aria-hidden="true"></i><span>決済入力</span></a>
-    <a href="{% if performance_dashboard_url %}{{ performance_dashboard_url }}{% else %}{% url 'performance_index' %}{% endif %}"{% if current == 'performance_index' or current == 'performance_member_dashboard' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span>実績管理</span></a>
+    {% if performance_dashboard_url or request.user.is_staff or request.user.is_superuser or request.session.role == 'admin' or request.session.talks_member_id %}
+    <a href="{% if performance_dashboard_url %}{{ performance_dashboard_url }}{% elif request.user.is_staff or request.user.is_superuser or request.session.role == 'admin' %}{% url 'performance_index' %}{% else %}{% url 'performance_member_dashboard' %}{% endif %}"{% if current == 'performance_index' or current == 'performance_member_dashboard' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span>実績管理</span></a>
+    {% endif %}
     <a href="{% url 'performance_closeout_notes' %}"{% if current == 'performance_closeout_notes' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-note-sticky" aria-hidden="true"></i><span>今日のあと一歩ノート</span></a>
   </div>
 
@@ -33,7 +35,7 @@
 
   <div class="app-nav-group">
     <span class="app-nav-group-label">情報共有</span>
-    <a href="{% url 'talks_index' %}"{% if current == 'talks_index' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-bell" aria-hidden="true"></i><span>お知らせ</span></a>
+    <a href="{% url 'talks_index' %}"{% if current == 'talks_index' or current == 'talks_detail' or current == 'talks_post_edit' or current == 'talks_comment_edit' or current == 'talks_tag_manage' or current == 'talks_deleted_posts_manage' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-bell" aria-hidden="true"></i><span>お知らせ</span></a>
     <a href="{% url 'testimony_article_list' %}"{% if current == 'testimony_article_list' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-bookmark" aria-hidden="true"></i><span>証を見る</span></a>
   </div>
 
@@ -48,6 +50,8 @@
     <a href="{% url 'performance_admin_entries' %}"{% if current == 'performance_admin_entries' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-list-check" aria-hidden="true"></i><span>全体エントリー管理</span></a>
     <a href="{% url 'performance_past_entry_create' %}"{% if current == 'performance_past_entry_create' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-calendar-plus" aria-hidden="true"></i><span>過去実績入力</span></a>
     <a href="{% url 'performance_adjustments' %}"{% if current == 'performance_adjustments' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i><span>戻り・増額登録</span></a>
+    <a href="{% url 'talks_tag_manage' %}"{% if current == 'talks_tag_manage' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-tags" aria-hidden="true"></i><span>お知らせタグ管理</span></a>
+    <a href="{% url 'talks_deleted_posts_manage' %}"{% if current == 'talks_deleted_posts_manage' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-trash-can-arrow-up" aria-hidden="true"></i><span>削除トーク管理</span></a>
   </div>
   <div class="app-nav-group">
     <span class="app-nav-group-label">個別業務</span>

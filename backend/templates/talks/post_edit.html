@@ -5,12 +5,12 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'talks/post_edit.css' %}?v=1">
-<link rel="stylesheet" href="{% static 'talks/mobile_drawer.css' %}?v=2">
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="app-shell">
   {% include "talks/_app_header.html" %}
+  <main class="container app-shell-content">
 
   <section class="card">
     <h2 class="post-edit-title">投稿を編集</h2>
@@ -50,8 +50,9 @@
       </div>
     </form>
   </section>
+  </main>
 </div>
 {{ selected_tag_names|json_script:"post-edit-selected-tags-data" }}
 <script src="{% static 'talks/post_edit.js' %}?v=1" defer></script>
-<script src="{% static 'talks/mobile_drawer.js' %}?v=5" defer></script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

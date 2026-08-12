@@ -4,12 +4,12 @@
 {% block title %}削除トーク管理 | Report App{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'talks/mobile_drawer.css' %}?v=2">
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="app-shell">
   {% include "talks/_app_header.html" %}
+  <main class="container app-shell-content">
 
   {% if messages %}
     <section class="card talks-message-card">
@@ -76,6 +76,7 @@
       </table>
     </div>
   </section>
+  </main>
 </div>
-<script src="{% static 'talks/mobile_drawer.js' %}?v=5" defer></script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

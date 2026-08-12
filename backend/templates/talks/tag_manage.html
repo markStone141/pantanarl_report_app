@@ -5,12 +5,12 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'talks/tag_manage.css' %}?v=1">
-<link rel="stylesheet" href="{% static 'talks/mobile_drawer.css' %}?v=2">
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="app-shell">
   {% include "talks/_app_header.html" %}
+  <main class="container app-shell-content">
 
   {% if messages %}
     <section class="card talks-message-card">
@@ -76,8 +76,9 @@
       {% include "talks/_tag_manage_results.html" %}
     </div>
   </section>
+  </main>
 </div>
 <script id="tag-manage-base-url" type="application/json">"{% url 'talks_tag_manage' %}"</script>
 <script src="{% static 'talks/tag_manage.js' %}?v=1" defer></script>
-<script src="{% static 'talks/mobile_drawer.js' %}?v=5" defer></script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

@@ -521,3 +521,16 @@
         display: none;
       }
     }
+.knowledge-app-identity {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  margin-bottom: 12px;
+}
+
+.knowledge-app-identity img {
+  display: block;
+  width: auto;
+  max-width: min(210px, 60vw);
+  max-height: 40px;
+}
