@@ -5,7 +5,7 @@
 
 {% block testimony_content %}
 <div class="testimony-detail-back">
-  <a class="testimony-react-btn" href="{% url 'testimony_article_list' %}">
+  <a class="testimony-react-btn ui-button ui-button--secondary" href="{% url 'testimony_article_list' %}">
     <i class="fa-solid fa-list" aria-hidden="true"></i>
     <span>記事一覧へ戻る</span>
   </a>
@@ -34,23 +34,23 @@
   <div class="testimony-actions">
     <form method="post" action="{% url 'testimony_article_favorite' article.id %}" class="js-testimony-toggle" data-kind="favorite">{% csrf_token %}
       <input type="hidden" name="next" value="{{ request.path }}" />
-      <button id="favorite-button" type="submit" class="testimony-react-btn testimony-favorite-btn{% if is_favorited %} is-active{% endif %}">
+      <button id="favorite-button" type="submit" class="testimony-react-btn testimony-favorite-btn ui-choice-button{% if is_favorited %} is-active{% endif %}" aria-pressed="{% if is_favorited %}true{% else %}false{% endif %}">
         <i id="favorite-icon" class="fa-{% if is_favorited %}solid{% else %}regular{% endif %} fa-star" style="color:{% if is_favorited %}#d89b12{% else %}#6b7f8a{% endif %};" aria-hidden="true"></i>
         <span id="favorite-label">お気に入り</span>
       </button>
     </form>
     <form method="post" action="{% url 'testimony_article_like' article.id %}" class="js-testimony-toggle" data-kind="like">{% csrf_token %}
       <input type="hidden" name="next" value="{{ request.path }}" />
-      <button id="like-button" type="submit" class="testimony-react-btn testimony-like-btn{% if is_liked %} is-active{% endif %}">
+      <button id="like-button" type="submit" class="testimony-react-btn testimony-like-btn ui-choice-button{% if is_liked %} is-active{% endif %}" aria-pressed="{% if is_liked %}true{% else %}false{% endif %}">
         <i id="like-icon" class="fa-solid fa-thumbs-up" style="color:{% if is_liked %}#1e7c4d{% else %}#6b7f8a{% endif %};" aria-hidden="true"></i>
         <span id="like-label">いいね</span>
       </button>
     </form>
     {% if request.user.is_staff or request.user.is_superuser or article.created_by_id == request.user.id %}
-      <a class="btn-inline" href="{% url 'testimony_article_edit' article.id %}">
+      <a class="btn-inline ui-button ui-button--secondary" href="{% url 'testimony_article_edit' article.id %}">
         <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> 編集
       </a>
-      <a class="btn-inline" href="{% url 'testimony_article_delete' article.id %}">
+      <a class="btn-inline ui-button ui-button--danger" href="{% url 'testimony_article_delete' article.id %}">
         <i class="fa-solid fa-trash" aria-hidden="true"></i> 削除
       </a>
     {% endif %}
@@ -83,12 +83,14 @@
       }
       if (favoriteButton) {
         favoriteButton.classList.toggle("is-active", !!payload.is_favorited);
+        favoriteButton.setAttribute("aria-pressed", payload.is_favorited ? "true" : "false");
       }
       if (likeIcon) {
         likeIcon.style.color = payload.is_liked ? "#1e7c4d" : "#6b7f8a";
       }
       if (likeButton) {
         likeButton.classList.toggle("is-active", !!payload.is_liked);
+        likeButton.setAttribute("aria-pressed", payload.is_liked ? "true" : "false");
       }
       if (favoriteLabel) {
         favoriteLabel.textContent = "お気に入り";
