@@ -15,17 +15,6 @@ from .models import MailDepartmentRouting, MailIntegrationSetting, MailRecipient
 from .services import active_group_members, send_test_mail
 
 
-def _mail_nav_items():
-    return [
-        ("member_settings", "メンバー管理"),
-        ("department_settings", "部署管理"),
-        ("performance_index", "実績管理"),
-        ("mail_group_settings", "メール"),
-        ("target_index", "目標設定"),
-        ("report_history", "保存報告一覧"),
-    ]
-
-
 def _routing_departments():
     return {
         department.code: department
@@ -240,7 +229,6 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
     )[:10]
 
     context = {
-        "nav_items": _mail_nav_items(),
         "form": form,
         "routing_form": routing_form,
         "settings_form": settings_form,
@@ -298,7 +286,6 @@ def mail_history(request: HttpRequest) -> HttpResponse:
     paginator = Paginator(histories, 20)
     page_obj = paginator.get_page(request.GET.get("page") or 1)
     context = {
-        "nav_items": _mail_nav_items(),
         "page_obj": page_obj,
         "paginator": paginator,
         "histories": page_obj.object_list,

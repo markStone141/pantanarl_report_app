@@ -9,7 +9,10 @@ class MailIntegrationSettingForm(forms.ModelForm):
     client_id = forms.CharField(
         label="Client ID",
         required=False,
-        widget=forms.TextInput(attrs={"placeholder": "再設定する場合のみ入力"}),
+        widget=forms.PasswordInput(
+            attrs={"placeholder": "再設定する場合のみ入力"},
+            render_value=False,
+        ),
     )
     client_secret = forms.CharField(
         label="Client Secret",

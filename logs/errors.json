@@ -357,5 +357,35 @@
     "action": "targets共通UI表示契約テストを実行",
     "reason": "HTML断片を完全HTMLとして比較したためテストヘルパーが解析不能",
     "next_action": "文字列契約として比較し対象テストを再実行"
+  },
+  {
+    "timestamp": "2026-08-12T11:15:26+09:00",
+    "expires_at": "2026-11-10T11:15:26+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260812-mail-ui",
+    "loop": 1,
+    "role": "test_agent",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "mail UI対象テストを実行",
+    "reason": "共通NAV表示契約テストがリンク先と現在位置を混同",
+    "next_action": "表示契約を修正して再実行"
+  },
+  {
+    "timestamp": "2026-08-12T11:17:47+09:00",
+    "expires_at": "2026-11-10T11:17:47+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260812-mail-ui",
+    "loop": 2,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "npm run lintはeslint不在で起動不可",
+    "reason": "既存の補助チェック環境を確認",
+    "next_action": "eslint依存が復元された環境で再実行"
   }
 ]
