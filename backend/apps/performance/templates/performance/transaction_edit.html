@@ -85,15 +85,15 @@
         {% if form.comment.errors %}<div class="error-text">{{ form.comment.errors|striptags }}</div>{% endif %}
       </div>
       <div class="dairymetrics-field-full dairymetrics-form-actions">
-        <button type="submit">保存する</button>
-        <a class="btn-inline" href="{{ back_url }}">一覧へ戻る</a>
+        <button type="submit" class="ui-button ui-button--primary">保存する</button>
+        <a class="ui-button ui-button--quiet" href="{{ back_url }}">一覧へ戻る</a>
       </div>
     </form>
     {% if is_admin %}
     <form method="post" action="{{ delete_url }}" class="mt-12" onsubmit="return confirm('この決済明細を取り消します。日次実績と部署サマリからも差し引かれます。よろしいですか？');">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ back_url }}">
-      <button type="submit" class="icon-btn icon-btn-danger" aria-label="決済明細を取り消す">
+      <button type="submit" class="ui-button ui-button--danger" aria-label="決済明細を取り消す">決済明細を取り消す</button>
         <i class="fa-solid fa-trash"></i>
       </button>
       <span class="muted">この決済明細を取り消す</span>

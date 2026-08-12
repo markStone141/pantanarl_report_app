@@ -45,11 +45,11 @@
 {% if page_obj.paginator.num_pages > 1 %}
 <nav class="pagination mt-16">
   {% if page_obj.has_previous %}
-  <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}">前へ</a>
+  <a class="ui-button ui-button--secondary" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}">前へ</a>
   {% endif %}
   <span class="muted">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
   {% if page_obj.has_next %}
-  <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}">次へ</a>
+  <a class="ui-button ui-button--secondary" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}">次へ</a>
   {% endif %}
 </nav>
 {% endif %}

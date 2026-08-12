@@ -12,11 +12,11 @@
         <div class="muted">{{ detail_description }}</div>
       </div>
       {% if show_reset_detail %}
-      <a class="btn-inline" href="{{ detail_reset_url }}">直近30日に戻す</a>
+      <a class="ui-button ui-button--quiet" href="{{ detail_reset_url }}">直近30日に戻す</a>
       {% elif recent_detail_selected_date %}
-      <a class="btn-inline" href="{{ recent_detail_reset_url }}">直近30日に戻す</a>
+      <a class="ui-button ui-button--quiet" href="{{ recent_detail_reset_url }}">直近30日に戻す</a>
       {% else %}
-      <a class="btn-inline" href="{{ detail_history_url }}">過去の実績を見る</a>
+      <a class="ui-button ui-button--secondary" href="{{ detail_history_url }}">過去の実績を見る</a>
       {% endif %}
     </div>
     {% if not show_reset_detail %}
@@ -55,13 +55,13 @@
               {% if show_reset_detail %}
               {% if can_edit %}
               <div class="row">
-                <a class="icon-btn" href="{{ row.edit_url }}" aria-label="過去の実績を修正">
+                <a class="ui-icon-button icon-btn" href="{{ row.edit_url }}" aria-label="過去の実績を修正" title="修正">
                   <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                 </a>
                 <form method="post" action="{{ row.delete_url }}" style="display:inline;" onsubmit="return confirm('この日次実績を削除します。よろしいですか？');">
                   {% csrf_token %}
                   <input type="hidden" name="next" value="{{ recent_detail_reset_url }}">
-                  <button type="submit" class="icon-btn icon-btn-danger" aria-label="日次実績を削除">
+                  <button type="submit" class="ui-icon-button ui-icon-button--danger icon-btn icon-btn-danger" aria-label="日次実績を削除" title="削除">
                     <i class="fa-solid fa-trash" aria-hidden="true"></i>
                   </button>
                 </form>
@@ -81,7 +81,7 @@
                       <div class="row">
                         <span class="muted">{{ tx.location|default:"場所未設定" }}</span>
                         {% if can_edit and tx.edit_url %}
-                        <a class="btn-inline" href="{{ tx.edit_url }}" aria-label="決済を修正">
+                        <a class="ui-icon-button" href="{{ tx.edit_url }}" aria-label="決済を修正" title="修正">
                           <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                         </a>
                         {% endif %}
@@ -160,7 +160,7 @@
     {% endif %}
     {% if not show_reset_detail and recent_detail_has_more %}
     <div class="mt-12">
-      <button type="button" class="btn-inline" data-performance-recent-load-more>さらに5件表示</button>
+      <button type="button" class="ui-button ui-button--secondary" data-performance-recent-load-more>さらに5件表示</button>
     </div>
     {% endif %}
   </section>

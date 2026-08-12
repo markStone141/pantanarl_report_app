@@ -2990,5 +2990,20 @@
     "action": "mailとreportsの共通ボタンUI移行後に対象50テストと必須検査を実行",
     "reason": "工程11-2の第2単位の回帰確認",
     "next_action": "差分をコミットしてperformanceとdairymetricsへ進む"
+  },
+  {
+    "timestamp": "2026-08-12T13:05:36+09:00",
+    "expires_at": "2026-09-11T13:05:36+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260812-stage11-2",
+    "loop": 3,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "performanceの日常操作ボタン移行後に対象98テストと必須検査を実行",
+    "reason": "保存・編集・削除・追加読込・検索操作の回帰確認",
+    "next_action": "performance表示切替とdairymetrics入力画面を移行"
   }
 ]
