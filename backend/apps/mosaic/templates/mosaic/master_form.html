@@ -11,7 +11,7 @@
     </div>
     <a class="mosaic-master-back" href="{% url 'mosaic_master_index' %}">一覧へ戻る</a>
   </div>
-  <form method="post" class="mosaic-entry-form mosaic-master-form">
+  <form method="post" class="mosaic-entry-form mosaic-master-form" data-mosaic-submit-lock>
     {% csrf_token %}
     <section class="mosaic-input-section">
       <div class="mosaic-input-section-head">
@@ -55,6 +55,7 @@
     </section>
     <div class="mosaic-form-actions">
       <button type="submit" class="mosaic-save-button">保存</button>
+      <span class="muted" data-submit-status role="status" aria-live="polite"></span>
     </div>
   </form>
 </section>

@@ -11,7 +11,7 @@
     </div>
     <a class="btn-inline" href="{% url 'mosaic_dashboard' %}">ダッシュボード</a>
   </div>
-  <form method="post" class="mosaic-entry-form" data-mosaic-interaction-form>
+  <form method="post" class="mosaic-entry-form" data-mosaic-interaction-form data-mosaic-submit-lock>
     {% csrf_token %}
     <section class="mosaic-input-section">
       <div class="mosaic-input-section-head">
@@ -152,6 +152,7 @@
 
     <div class="mosaic-form-actions">
       <button type="submit" class="mosaic-save-button">保存してダッシュボードへ</button>
+      <span class="muted" data-submit-status role="status" aria-live="polite"></span>
     </div>
   </form>
 </section>

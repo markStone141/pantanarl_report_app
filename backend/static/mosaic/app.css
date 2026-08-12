@@ -5,9 +5,19 @@
   --mosaic-accent: #2f7d5c;
 }
 
-.mosaic-page .topbar {
-  background: linear-gradient(135deg, #24533e, #2f7d5c 62%, #9ccf74);
-  color: #fff;
+.mosaic-page .app-page-header {
+  border: 1px solid var(--mosaic-line);
+  background: linear-gradient(135deg, #f8fcf9, #eef7f0);
+  color: var(--mosaic-ink);
+  box-shadow: 0 12px 28px rgba(35, 79, 58, 0.08);
+}
+
+.mosaic-page .app-page-header .muted {
+  color: #60746b;
+}
+
+.mosaic-nav-mark {
+  background: linear-gradient(135deg, #24533e, #2f7d5c 68%, #78b85d);
 }
 
 .mosaic-hero,
@@ -100,7 +110,16 @@
 
 .mosaic-form-actions {
   display: flex;
+  align-items: center;
+  gap: 12px;
   justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.mosaic-save-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+  transform: none;
 }
 
 .mosaic-save-button {
