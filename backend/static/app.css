@@ -1389,6 +1389,53 @@ th {
   font-weight: 700;
 }
 
+.error-page-card {
+  text-align: left;
+}
+
+.error-page-code {
+  margin: 0 0 8px;
+  color: var(--brand-deep);
+  font-size: clamp(2.5rem, 10vw, 4.5rem);
+  font-weight: 850;
+  line-height: 1;
+}
+
+.error-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.error-page-actions > * {
+  flex: 1 1 170px;
+}
+
+.error-page-actions .button-link,
+.error-page-actions button {
+  min-height: 44px;
+  padding: 11px 13px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  text-align: center;
+}
+
+.error-page-actions .button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-deep);
+  color: #fff;
+}
+
+.error-page-actions button.secondary {
+  background: #fff;
+  border-color: var(--line);
+  box-shadow: none;
+  color: var(--ink);
+}
+
 .login-card h2 {
   margin: 0 0 6px;
   font-size: 1.35rem;
