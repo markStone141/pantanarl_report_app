@@ -32,19 +32,19 @@
         </td>
         <td data-label="メイン部署">{% if member.default_department %}{{ member.default_department.name }}{% else %}-{% endif %}</td>
         <td data-label="操作">
-          <a class="icon-btn" href="{% url 'member_edit' member.id %}" aria-label="{{ member.name }}を編集">
+          <a class="ui-icon-button icon-btn" href="{% url 'member_edit' member.id %}" aria-label="{{ member.name }}を編集" title="編集">
             <i class="fa-solid fa-pen"></i>
           </a>
           <form method="post" action="{% url 'member_delete' member.id %}" style="display:inline;" onsubmit="return confirm('{% if member.is_active %}このメンバーを無効化します。よろしいですか？{% else %}このメンバーを再有効化します。よろしいですか？{% endif %}');">
             {% csrf_token %}
-            <button class="icon-btn{% if member.is_active %} icon-btn-danger{% endif %}" type="submit" aria-label="{% if member.is_active %}{{ member.name }}を無効化{% else %}{{ member.name }}を再有効化{% endif %}">
+            <button class="ui-icon-button{% if member.is_active %} ui-icon-button--danger{% endif %} icon-btn{% if member.is_active %} icon-btn-danger{% endif %}" type="submit" aria-label="{% if member.is_active %}{{ member.name }}を無効化{% else %}{{ member.name }}を再有効化{% endif %}" title="{% if member.is_active %}無効化{% else %}再有効化{% endif %}">
               <i class="fa-solid {% if member.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
             </button>
           </form>
           {% if not member.is_active %}
           <form method="post" action="{% url 'member_purge' member.id %}" style="display:inline;" onsubmit="return confirm('このメンバーを完全に削除します。元に戻せません。よろしいですか？');">
             {% csrf_token %}
-            <button class="icon-btn icon-btn-danger" type="submit" aria-label="{{ member.name }}を完全削除">
+            <button class="ui-icon-button ui-icon-button--danger icon-btn icon-btn-danger" type="submit" aria-label="{{ member.name }}を完全削除" title="完全削除">
               <i class="fa-solid fa-trash"></i>
             </button>
           </form>
@@ -57,7 +57,7 @@
 </div>
 {% if page_obj.has_next %}
 <div class="inline-row mt-12">
-  <button type="button" class="btn-inline" id="member-settings-load-more-btn" data-next-page="{{ page_obj.next_page_number }}">さらに20件表示</button>
+  <button type="button" class="ui-button ui-button--secondary" id="member-settings-load-more-btn" data-next-page="{{ page_obj.next_page_number }}">さらに20件表示</button>
 </div>
 {% endif %}
 {% else %}

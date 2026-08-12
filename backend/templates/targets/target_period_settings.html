@@ -82,7 +82,7 @@
       </div>
       {% endfor %}
 
-      <div style="margin-top: 12px;"><button type="submit">路程と目標を保存</button></div>
+      <div style="margin-top: 12px;"><button type="submit" class="ui-button ui-button--primary">路程と目標を保存</button></div>
     </form>
   </section>
 
@@ -106,7 +106,7 @@
           </div>
           <div class="target-history-actions target-history-actions-inline">
             <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
-            <a class="icon-btn" href="{% url 'target_period_settings' %}?period={{ row.id }}" aria-label="路程を編集" title="編集">
+            <a class="ui-icon-button icon-btn" href="{% url 'target_period_settings' %}?period={{ row.id }}" aria-label="路程を編集" title="編集">
               <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
             </a>
             <form method="post" class="target-delete-form target-inline-action-form" onsubmit="return confirm('この路程を削除します。よろしいですか？');">
@@ -114,7 +114,7 @@
               <input type="hidden" name="action" value="delete_period" />
               <input type="hidden" name="delete_period_id" value="{{ row.id }}" />
               <input type="hidden" name="history_page" value="{{ history_page.number }}" />
-              <button type="submit" class="icon-btn icon-btn-danger" aria-label="路程を削除" title="削除">
+              <button type="submit" class="ui-icon-button ui-icon-button--danger icon-btn icon-btn-danger" aria-label="路程を削除" title="削除">
                 <i class="fa-solid fa-trash" aria-hidden="true"></i>
               </button>
             </form>

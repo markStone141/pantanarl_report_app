@@ -51,7 +51,7 @@
         <div class="error-text">{{ form.show_in_dashboard_progress.errors|striptags }}</div>
         {% endif %}
 
-        <button type="submit" class="mt-12">
+        <button type="submit" class="ui-button ui-button--primary mt-12">
           {% if edit_department %}部署を更新{% else %}部署を追加{% endif %}
         </button>
         {% if edit_department %}
@@ -76,11 +76,11 @@
             <td>{% if department.show_in_dashboard_submission %}表示{% else %}非表示{% endif %}</td>
             <td>{% if department.show_in_dashboard_progress %}表示{% else %}非表示{% endif %}</td>
             <td>
-              <a class="btn-inline" href="{% url 'department_settings' %}?edit={{ department.id }}">編集</a>
-              <a class="btn-inline" href="{% url 'department_settings' %}?metric_department={{ department.id }}">指標</a>
+              <a class="ui-button ui-button--secondary" href="{% url 'department_settings' %}?edit={{ department.id }}">編集</a>
+              <a class="ui-button ui-button--secondary" href="{% url 'department_settings' %}?metric_department={{ department.id }}">指標</a>
               <form method="post" action="{% url 'department_delete' department.id %}" style="display:inline;" onsubmit="return confirm('この部署を削除します。よろしいですか？');">
                 {% csrf_token %}
-                <button class="btn-inline btn-danger" type="submit">削除</button>
+                <button class="ui-button ui-button--danger" type="submit">削除</button>
               </form>
             </td>
           </tr>
@@ -151,7 +151,7 @@
         <div class="error-text">{{ metric_form.non_field_errors|striptags }}</div>
         {% endif %}
 
-        <button type="submit" class="mt-12">
+        <button type="submit" class="ui-button ui-button--primary mt-12">
           {% if edit_metric %}指標を更新{% else %}指標を追加{% endif %}
         </button>
         {% if edit_metric %}
@@ -180,12 +180,12 @@
             <td>{{ metric.display_order }}</td>
             <td>{% if metric.is_active %}有効{% else %}無効{% endif %}</td>
             <td>
-              <a class="btn-inline" href="{% url 'department_settings' %}?metric_department={{ selected_metric_department.id }}&edit_metric={{ metric.id }}">編集</a>
+              <a class="ui-button ui-button--secondary" href="{% url 'department_settings' %}?metric_department={{ selected_metric_department.id }}&edit_metric={{ metric.id }}">編集</a>
               <form method="post" style="display:inline;">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="toggle_metric" />
                 <input type="hidden" name="metric_id" value="{{ metric.id }}" />
-                <button class="btn-inline" type="submit">{% if metric.is_active %}無効化{% else %}有効化{% endif %}</button>
+                <button class="ui-button {% if metric.is_active %}ui-button--danger{% else %}ui-button--secondary{% endif %}" type="submit">{% if metric.is_active %}無効化{% else %}有効化{% endif %}</button>
               </form>
             </td>
           </tr>
