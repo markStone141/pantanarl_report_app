@@ -5,27 +5,17 @@
 
 {% block content %}
 <div class="container">
-  <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
-    <div>
-      <strong>メンバー管理</strong>
-      <div class="muted topbar-muted">名前・所属部署・ログイン情報を管理します。</div>
-    </div>
-    <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
-      <i class="fa-solid fa-bars" aria-hidden="true"></i>
-    </button>
-    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
-      <a href="{% url 'dashboard_index' %}">ダッシュボード</a>
-      <a href="{% url 'member_create' %}">新規メンバー追加</a>
-      <a href="{% url 'member_auth_bulk_settings' %}">ID/PW一括管理</a>
-      <a href="{% url 'department_settings' %}">部署管理</a>
-      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
-    </nav>
-  </header>
-  <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+  {% include "includes/app_navigation.html" with page_title="メンバー管理" page_subtitle="名前・所属部署・ログイン情報を管理します。" %}
 
   <section class="mt-16">
-    <article class="card">
-      <h3>メンバー一覧</h3>
+    <article class="card ui-section">
+      {% include "includes/ui_section_heading.html" with kicker="MEMBERS" title="メンバー一覧" description="検索や登録状況で絞り込み、必要な設定へ進めます。" %}
+      <div class="ui-tabs mb-10" aria-label="メンバー管理メニュー">
+        <a class="ui-tab is-active" aria-current="page" href="{% url 'member_settings' %}">一覧</a>
+        <a class="ui-tab" href="{% url 'member_create' %}">新規メンバー追加</a>
+        <a class="ui-tab" href="{% url 'member_auth_bulk_settings' %}">ID・パスワード一括管理</a>
+        <a class="ui-tab" href="{% url 'department_settings' %}">部署管理</a>
+      </div>
       <div class="dashboard-toolbar mt-12">
         <form method="get" class="member-settings-filter-form" id="member-settings-filter-form" action="{% url 'member_settings' %}">
           <input type="search" name="q" value="{{ query }}" placeholder="名前・メール・部署で検索">
@@ -47,10 +37,11 @@
         </form>
       </div>
       {% if status_message %}
-      <div class="note" style="margin-bottom: 10px;">
+      <div class="ui-feedback ui-feedback--success mb-10" role="status">
         {{ status_message }}
       </div>
       {% endif %}
+      <div id="member-settings-feedback" class="ui-feedback ui-feedback--error mb-10" role="alert" hidden></div>
 
       <div id="member-settings-list">
         {% include "dashboard/partials/member_settings_list.html" %}
@@ -58,11 +49,12 @@
     </article>
   </section>
 </div>
-<script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 <script>
   (function () {
     const form = document.getElementById("member-settings-filter-form");
     const listContainer = document.getElementById("member-settings-list");
+    const feedback = document.getElementById("member-settings-feedback");
     if (!form || !listContainer) {
       return;
     }
@@ -90,17 +82,29 @@
     }
 
     async function fetchMembers(page, append) {
+      if (feedback) {
+        feedback.hidden = true;
+      }
       const params = new URLSearchParams(new FormData(form));
       if (page) {
         params.set("page", String(page));
       }
-      const response = await fetch(`${form.action}?${params.toString()}`, {
-        headers: { "X-Requested-With": "XMLHttpRequest" },
-      });
-      if (!response.ok) {
+      let payload;
+      try {
+        const response = await fetch(`${form.action}?${params.toString()}`, {
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        if (!response.ok) {
+          throw new Error("member search failed");
+        }
+        payload = await response.json();
+      } catch (error) {
+        if (feedback) {
+          feedback.textContent = "一覧を更新できませんでした。通信状況を確認して、もう一度お試しください。";
+          feedback.hidden = false;
+        }
         return;
       }
-      const payload = await response.json();
       if (append) {
         const nextDoc = document.createElement("div");
         nextDoc.innerHTML = payload.list_html || "";

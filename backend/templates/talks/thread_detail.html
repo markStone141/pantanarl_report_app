@@ -5,12 +5,12 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'talks/thread_detail.css' %}?v=2">
-<link rel="stylesheet" href="{% static 'talks/mobile_drawer.css' %}?v=2">
 {% endblock %}
 
 {% block content %}
-<div class="container knowledge-detail-page">
+<div class="app-shell">
   {% include "talks/_app_header.html" %}
+  <main class="container app-shell-content knowledge-detail-page">
 
   <div class="knowledge-detail-back">
     <a class="btn-inline" href="{% url 'talks_index' %}">
@@ -163,6 +163,7 @@
       <p class="muted">コメントはまだありません。</p>
     {% endif %}
   </section>
+  </main>
 </div>
 <button id="knowledge-open-comment" class="knowledge-fab" type="button" aria-label="コメントを追加">+</button>
 
@@ -203,5 +204,5 @@
   </section>
 </div>
 <script src="{% static 'talks/thread_detail.js' %}?v=1" defer></script>
-<script src="{% static 'talks/mobile_drawer.js' %}?v=5" defer></script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

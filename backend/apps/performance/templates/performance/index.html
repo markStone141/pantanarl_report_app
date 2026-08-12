@@ -4,32 +4,17 @@
 {% block title %}実績管理 | Report App{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="app-shell">
+  {% include "includes/app_navigation.html" with page_title="実績管理" page_subtitle="最終実績の確認と日次実績の編集を行います。" %}
+  <main class="container app-shell-content">
   {% if status_message %}
-  <div class="note">{{ status_message }}</div>
+  <div class="ui-feedback ui-feedback--success" role="status">{{ status_message }}</div>
   {% endif %}
-  <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
-    <div>
-      <strong>実績管理</strong>
-      <div class="muted topbar-muted">最終実績の確認と日次実績の編集を行います。</div>
-    </div>
-    <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
-      <i class="fa-solid fa-bars" aria-hidden="true"></i>
-    </button>
-    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
-      {% for url_name, label in nav_items %}
-      <a href="{% url url_name %}">{{ label }}</a>
-      {% endfor %}
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
-      <a href="{% url 'dairymetrics_metrics_report' %}">振り返りレポート</a>
-      <a href="{% url 'performance_logout' %}" class="logout-link">ログアウト</a>
-    </nav>
-  </header>
-  <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
-  <section class="card mt-16">
-    <form method="get" class="grid performance-dashboard-filter-grid">
-      <div>
+  <section class="card ui-section mt-16">
+    <form method="get" class="grid ui-form-grid performance-dashboard-filter-grid">
+      <div class="ui-field">
+        <label for="performance-dashboard-department">表示する部署</label>
         <select id="performance-dashboard-department" name="dashboard_department" aria-label="部署">
           {% for department_option in dashboard_departments %}
           <option value="{{ department_option.id }}"{% if dashboard_department and department_option.id == dashboard_department.id %} selected{% endif %}>{{ department_option.code }}{% if department_option.name and department_option.name != department_option.code %} ({{ department_option.name }}){% endif %}</option>
@@ -42,29 +27,23 @@
     </form>
   </section>
 
-  <section class="card mt-16 performance-dashboard-section">
-    <div class="performance-dashboard-section-heading">
-      <div>
-        <span class="performance-dashboard-section-kicker">TODAY</span>
-        <h3>本日の活動状況</h3>
-      </div>
-      <span class="performance-dashboard-section-date">{{ today_detail_date|date:"Y/m/d" }}</span>
-    </div>
-    <div class="performance-today-summary-grid mt-12">
-      <article class="metric-card performance-today-total-card performance-today-total-card-primary">
+  <section class="card ui-section mt-16 performance-dashboard-section">
+    {% include "includes/ui_section_heading.html" with kicker="TODAY" title="本日の活動状況" meta=today_detail_date|date:"Y/m/d" heading_class="performance-dashboard-section-heading" kicker_class="performance-dashboard-section-kicker" meta_class="performance-dashboard-section-date" %}
+    <div class="performance-today-summary-grid ui-summary-grid mt-12">
+      <article class="metric-card ui-summary-card performance-today-total-card performance-today-total-card-primary">
         <span class="muted">今日の合計件数</span>
         <strong class="mt-6">{{ dashboard_snapshot.today_total_count_text }}</strong>
         {% if dashboard_snapshot.today_total_count_subtext %}<div class="muted mt-4">{{ dashboard_snapshot.today_total_count_subtext }}</div>{% endif %}
       </article>
-      <article class="metric-card performance-today-total-card">
+      <article class="metric-card ui-summary-card performance-today-total-card">
         <span class="muted">今日の合計金額</span>
         <strong class="mt-6">{{ dashboard_snapshot.today_total_amount_text }}</strong>
       </article>
-      <article class="metric-card performance-today-total-card">
+      <article class="metric-card ui-summary-card performance-today-total-card">
         <span class="muted">今日の目標</span>
         <strong class="mt-6 performance-today-inline-value">{{ dashboard_snapshot.today_target_text }}</strong>
       </article>
-      <article class="metric-card performance-today-total-card">
+      <article class="metric-card ui-summary-card performance-today-total-card">
         <span class="muted">今日の達成率</span>
         <strong class="mt-6 performance-today-inline-value">{{ dashboard_snapshot.today_rate_text }}</strong>
       </article>
@@ -127,13 +106,8 @@
 
   {% include "performance/partials/department_today_detail_cards.html" with today_detail_tabbed=True %}
 
-  <section class="card mt-16 performance-dashboard-section">
-    <div class="performance-dashboard-section-heading">
-      <div>
-        <span class="performance-dashboard-section-kicker">PROGRESS</span>
-        <h3>目標達成率</h3>
-      </div>
-    </div>
+  <section class="card ui-section mt-16 performance-dashboard-section">
+    {% include "includes/ui_section_heading.html" with kicker="PROGRESS" title="目標達成率" heading_class="performance-dashboard-section-heading" kicker_class="performance-dashboard-section-kicker" %}
     <div class="grid grid-2 mt-12">
       {% for card in dashboard_snapshot.month_progress_cards %}
       <article class="card performance-progress-card performance-dashboard-inner-card">
@@ -233,13 +207,8 @@
     </div>
   </section>
 
-  <section class="card mt-16 performance-dashboard-section">
-    <div class="performance-dashboard-section-heading">
-      <div>
-        <span class="performance-dashboard-section-kicker">TREND</span>
-        <h3>直近稼働の全体実績推移</h3>
-      </div>
-    </div>
+  <section class="card ui-section mt-16 performance-dashboard-section">
+    {% include "includes/ui_section_heading.html" with kicker="TREND" title="直近稼働の全体実績推移" heading_class="performance-dashboard-section-heading" kicker_class="performance-dashboard-section-kicker" %}
     <p id="performance-trend-description" class="muted">1稼働 = 実績が登録された1日です。金額は棒、{{ dashboard_snapshot.overall_activity_trend.count_label }}は折れ線で表示します。</p>
     {% if dashboard_snapshot.overall_activity_trend.has_data %}
     {{ dashboard_snapshot.overall_activity_trend|json_script:"performance-activity-trend-data" }}
@@ -268,28 +237,26 @@
       <canvas id="performance-activity-trend-chart" aria-label="直近稼働の全体実績推移"></canvas>
     </div>
     {% else %}
-    <p class="muted mt-12">表示できる稼働実績はまだありません。</p>
+    <div class="ui-state mt-12"><strong>実績データがありません</strong><span>表示できる稼働実績が登録されると、ここに推移が表示されます。</span></div>
     {% endif %}
   </section>
 
-  <section class="card mt-16 performance-dashboard-section">
-    <div class="performance-dashboard-section-heading">
-      <div>
-        <span class="performance-dashboard-section-kicker">MEMBERS</span>
-        <h3>有効メンバー一覧</h3>
-      </div>
-      <span class="performance-dashboard-section-date">路程累計: {{ dashboard_snapshot.current_period_display }}</span>
-    </div>
+  <section class="card ui-section mt-16 performance-dashboard-section">
+    {% include "includes/ui_section_heading.html" with kicker="MEMBERS" title="有効メンバー一覧" meta=dashboard_snapshot.current_period_display meta_label="路程累計:" heading_class="performance-dashboard-section-heading" kicker_class="performance-dashboard-section-kicker" meta_class="performance-dashboard-section-date" %}
     {% if dashboard_snapshot.active_member_cards %}
+    <div class="performance-member-status-filters ui-tabs mt-12" data-member-status-filters aria-label="メンバー状態で絞り込み">
+      <button type="button" class="btn-inline ui-tab is-active" data-member-status-filter="all">すべて <span data-member-status-count="all">0</span></button>
+      <button type="button" class="btn-inline ui-tab" data-member-status-filter="warning">要確認 <span data-member-status-count="warning">0</span></button>
+      <button type="button" class="btn-inline ui-tab" data-member-status-filter="positive">連続実績あり <span data-member-status-count="positive">0</span></button>
+    </div>
     <div class="performance-member-list mt-12">
       <div class="performance-member-list-head">
         <span>名前</span>
-        <span>今月累計</span>
-        <span>路程累計</span>
-        <span>直近の実績</span>
+        <span>直近の実績（3稼働・古い順）</span>
+        <span>累計</span>
       </div>
       {% for card in dashboard_snapshot.active_member_cards %}
-      <a class="performance-member-list-row{% if card.zero_streak_warning %} performance-member-card-link-warning{% elif card.active_streak_good %} performance-member-card-link-positive{% endif %}" href="{{ card.detail_url }}">
+      <a class="performance-member-list-row{% if card.zero_streak_warning %} performance-member-card-link-warning{% elif card.active_streak_good %} performance-member-card-link-positive{% endif %}" href="{{ card.detail_url }}" data-member-status="{{ card.streak_status }}">
         <div class="performance-member-list-cell performance-member-list-name">
           <div class="performance-member-list-name-row">
             <strong>{{ card.member_name }}</strong>
@@ -300,40 +267,41 @@
             {% endif %}
           </div>
         </div>
-        <div class="performance-member-list-cell">
-          <div class="muted performance-member-list-subtext">
+        <div class="performance-member-recent-activities" aria-label="{{ card.member_name }}の直近3稼働">
+          {% for activity in card.recent_activity_items %}
+          <div class="performance-member-activity{% if activity.has_result %} is-positive{% else %} is-zero{% endif %}">
+            <span class="performance-member-activity-date">{{ activity.date_text }}</span>
+            <strong>{{ activity.count_text }}</strong>
+            <span class="performance-member-activity-amount">{{ activity.amount_text }}</span>
+            {% if activity.count_subtext %}<span class="performance-member-activity-detail">{{ activity.count_subtext }}</span>{% endif %}
+          </div>
+          {% empty %}
+          <span class="performance-member-no-activity">活動終了済みの実績なし</span>
+          {% endfor %}
+        </div>
+        <div class="performance-member-totals">
+          <div>
+            <span>今月累計</span>
             <strong>{{ card.month_amount_text }}</strong>
-            <span>/</span>
-            <span>{{ card.month_count_text }}</span>
-            {% if card.month_count_subtext %}<span>{{ card.month_count_subtext }}</span>{% endif %}
+            <small>{{ card.month_count_text }}{% if card.month_count_subtext %} {{ card.month_count_subtext }}{% endif %}</small>
           </div>
-        </div>
-        <div class="performance-member-list-cell">
-          <div class="muted performance-member-list-subtext">
+          <div>
+            <span>路程累計</span>
             <strong>{{ card.period_amount_text }}</strong>
-            <span>/</span>
-            <span>{{ card.period_count_text }}</span>
-            {% if card.period_count_subtext %}<span>{{ card.period_count_subtext }}</span>{% endif %}
-          </div>
-        </div>
-        <div class="performance-member-list-cell">
-          <div class="muted performance-member-list-subtext">
-            <strong>{{ card.recent_amount_text }}</strong>
-            <span>/</span>
-            <span>{{ card.recent_date_text }} / {{ card.recent_count_text }}</span>
-            {% if card.recent_count_subtext %}<span>{{ card.recent_count_subtext }}</span>{% endif %}
+            <small>{{ card.period_count_text }}{% if card.period_count_subtext %} {{ card.period_count_subtext }}{% endif %}</small>
           </div>
         </div>
       </a>
       {% endfor %}
     </div>
     {% else %}
-    <p class="muted">有効なメンバーはいません。</p>
+    <div class="ui-state"><strong>有効なメンバーはいません</strong><span>メンバーが有効になると、直近の稼働状況がここに表示されます。</span></div>
     {% endif %}
   </section>
 
+  </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'performance/member_dashboard.js' %}?v=8"></script>
-<script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+<script src="{% static 'performance/member_dashboard.js' %}?v=9"></script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

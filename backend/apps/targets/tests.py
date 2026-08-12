@@ -24,6 +24,25 @@ class TargetsFlowTests(TestCase):
         Department.objects.create(name="Style1", code="STYLE1")
         Department.objects.create(name="Style2", code="STYLE2")
 
+    def test_target_pages_use_shared_navigation_and_local_tabs(self):
+        pages = (
+            ("target_index", "概要"),
+            ("target_month_settings", "月目標"),
+            ("target_period_settings", "路程目標"),
+        )
+
+        for url_name, active_tab in pages:
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+                self.assertContains(response, 'class="app-shell"')
+                self.assertContains(response, 'id="dashboard-drawer-nav"')
+                self.assertContains(response, 'aria-label="目標設定メニュー"')
+                self.assertContains(
+                    response,
+                    f'class="ui-tab is-active" aria-current="page" href="{reverse(url_name)}">{active_tab}</a>',
+                )
+                self.assertContains(response, ">目標設定</span>", html=False)
+
     def test_month_targets_save_with_auto_status(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)

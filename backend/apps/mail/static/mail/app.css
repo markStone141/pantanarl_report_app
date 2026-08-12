@@ -1,0 +1,29 @@
+.mail-history-filter {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3);
+}
+
+.mail-history-filter label {
+  margin: 0;
+}
+
+.mail-group-member-state {
+  grid-column: 1 / -1;
+}
+
+.mail-group-member-grid[aria-busy="true"] {
+  opacity: 0.68;
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .mail-history-filter > * {
+    width: 100%;
+  }
+
+  .mail-history-filter button {
+    justify-content: center;
+  }
+}

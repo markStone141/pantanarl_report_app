@@ -1,0 +1,68 @@
+{% with current=request.resolver_match.url_name %}
+<header id="dashboard-topbar" class="app-page-header dashboard-drawer-topbar">
+  <div>
+    <span class="app-page-eyebrow">REPORT APP</span>
+    <strong>{{ page_title }}</strong>
+    {% if page_subtitle %}<div class="muted">{{ page_subtitle }}</div>{% endif %}
+  </div>
+  <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="メニューを開く" aria-expanded="false" aria-controls="dashboard-drawer-nav">
+    <i class="fa-solid fa-bars" aria-hidden="true"></i>
+  </button>
+</header>
+
+<nav id="dashboard-drawer-nav" class="app-side-nav dashboard-drawer-nav" aria-label="メインメニュー">
+  <div class="app-side-nav-brand">
+    <span class="app-side-nav-mark" aria-hidden="true">R</span>
+    <span><strong>Report App</strong><small>活動・実績管理</small></span>
+  </div>
+
+  <div class="app-nav-group">
+    <span class="app-nav-group-label">日々の活動</span>
+    <a href="{% url 'report_index' %}"{% if current == 'report_index' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i><span>報告入力</span></a>
+    <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}"{% if current == 'dairymetrics_entry_v2_transaction_demo' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-credit-card" aria-hidden="true"></i><span>決済入力</span></a>
+    {% if performance_dashboard_url or request.user.is_staff or request.user.is_superuser or request.session.role == 'admin' or request.session.talks_member_id %}
+    <a href="{% if performance_dashboard_url %}{{ performance_dashboard_url }}{% elif request.user.is_staff or request.user.is_superuser or request.session.role == 'admin' %}{% url 'performance_index' %}{% else %}{% url 'performance_member_dashboard' %}{% endif %}"{% if current == 'performance_index' or current == 'performance_member_dashboard' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span>実績管理</span></a>
+    {% endif %}
+    <a href="{% url 'performance_closeout_notes' %}"{% if current == 'performance_closeout_notes' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-note-sticky" aria-hidden="true"></i><span>今日のあと一歩ノート</span></a>
+  </div>
+
+  <div class="app-nav-group">
+    <span class="app-nav-group-label">集計・振り返り</span>
+    <a href="{% url 'dairymetrics_metrics_v2_demo' %}"{% if current == 'dairymetrics_metrics_v2_demo' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-pie" aria-hidden="true"></i><span>分析する</span></a>
+    <a href="{% url 'dairymetrics_metrics_report' %}"{% if current == 'dairymetrics_metrics_report' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-file-lines" aria-hidden="true"></i><span>振り返りレポート</span></a>
+    <a href="{% url 'report_history' %}"{% if current == 'report_history' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i><span>保存報告一覧</span></a>
+  </div>
+
+  <div class="app-nav-group">
+    <span class="app-nav-group-label">情報共有</span>
+    <a href="{% url 'talks_index' %}"{% if current == 'talks_index' or current == 'talks_detail' or current == 'talks_post_edit' or current == 'talks_comment_edit' or current == 'talks_tag_manage' or current == 'talks_deleted_posts_manage' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-bell" aria-hidden="true"></i><span>お知らせ</span></a>
+    <a href="{% url 'testimony_article_list' %}"{% if current == 'testimony_article_list' or current == 'testimony_article_detail' or current == 'testimony_article_create' or current == 'testimony_article_edit' or current == 'testimony_article_delete' or current == 'testimony_product_list' or current == 'testimony_product_create' or current == 'testimony_product_edit' or current == 'testimony_product_delete' or current == 'testimony_mypage_favorites' or current == 'testimony_mypage_history' or current == 'testimony_admin_import' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-bookmark" aria-hidden="true"></i><span>証を見る</span></a>
+  </div>
+
+  {% if request.user.is_staff or request.user.is_superuser or request.session.role == 'admin' %}
+  <div class="app-nav-group">
+    <span class="app-nav-group-label">管理・設定</span>
+    <a href="{% url 'dashboard_index' %}"{% if current == 'dashboard_index' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-sliders" aria-hidden="true"></i><span>総合管理</span></a>
+    <a href="{% url 'member_settings' %}"{% if current == 'member_settings' or current == 'member_create' or current == 'member_edit' or current == 'member_auth_bulk_settings' or current == 'department_settings' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-users" aria-hidden="true"></i><span>メンバー管理</span></a>
+    <a href="{% url 'target_index' %}"{% if current == 'target_index' or current == 'target_month_settings' or current == 'target_period_settings' or current == 'target_month_history_detail' or current == 'target_period_history_detail' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-bullseye" aria-hidden="true"></i><span>目標設定</span></a>
+    <a href="{% url 'mail_group_settings' %}"{% if current == 'mail_group_settings' or current == 'mail_integration_settings' or current == 'mail_history' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-envelope" aria-hidden="true"></i><span>メール設定</span></a>
+    <a href="{% url 'performance_history' %}"{% if current == 'performance_history' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-column" aria-hidden="true"></i><span>過去の実績</span></a>
+    <a href="{% url 'performance_admin_entries' %}"{% if current == 'performance_admin_entries' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-list-check" aria-hidden="true"></i><span>全体エントリー管理</span></a>
+    <a href="{% url 'performance_past_entry_create' %}"{% if current == 'performance_past_entry_create' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-calendar-plus" aria-hidden="true"></i><span>過去実績入力</span></a>
+    <a href="{% url 'performance_adjustments' %}"{% if current == 'performance_adjustments' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i><span>戻り・増額登録</span></a>
+    <a href="{% url 'talks_tag_manage' %}"{% if current == 'talks_tag_manage' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-tags" aria-hidden="true"></i><span>お知らせタグ管理</span></a>
+    <a href="{% url 'talks_deleted_posts_manage' %}"{% if current == 'talks_deleted_posts_manage' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-trash-can-arrow-up" aria-hidden="true"></i><span>削除トーク管理</span></a>
+  </div>
+  <div class="app-nav-group">
+    <span class="app-nav-group-label">個別業務</span>
+    <a href="{% url 'mosaic_dashboard' %}"{% if current == 'mosaic_dashboard' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-store" aria-hidden="true"></i><span>モザイクモール港北</span></a>
+  </div>
+  {% endif %}
+
+  <div class="app-nav-account">
+    <a href="{% url 'home' %}"><i class="fa-solid fa-house" aria-hidden="true"></i><span>ReportApp</span></a>
+    <a href="{% url 'logout' %}" class="app-nav-logout"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i><span>ログアウト</span></a>
+  </div>
+</nav>
+<div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+{% endwith %}

@@ -1,0 +1,8 @@
+<div class="ui-section-heading{% if heading_class %} {{ heading_class }}{% endif %}">
+  <div>
+    {% if kicker %}<span class="ui-section-kicker{% if kicker_class %} {{ kicker_class }}{% endif %}">{{ kicker }}</span>{% endif %}
+    <{{ heading_level|default:"h3" }}>{{ title }}</{{ heading_level|default:"h3" }}>
+    {% if description %}<p class="muted mt-6">{{ description }}</p>{% endif %}
+  </div>
+  {% if meta %}<span class="ui-section-meta{% if meta_class %} {{ meta_class }}{% endif %}">{% if meta_label %}{{ meta_label }} {% endif %}{{ meta }}</span>{% endif %}
+</div>

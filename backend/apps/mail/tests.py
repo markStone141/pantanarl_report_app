@@ -63,6 +63,9 @@ class MailManagementTests(AppTestMixin, TestCase):
             },
         )
         self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "client-id")
+        self.assertNotContains(response, "client-secret")
+        self.assertNotContains(response, "refresh-token")
         setting.refresh_from_db()
         self.assertEqual(setting.sender_email, "after@example.com")
         self.assertEqual(setting.client_id, "client-id")
@@ -174,9 +177,25 @@ class MailManagementTests(AppTestMixin, TestCase):
     def test_mail_group_settings_renders_integrated_mail_sections(self):
         response = self.client.get(reverse("mail_group_settings"))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="app-shell"')
+        self.assertContains(response, 'aria-label="メインメニュー"')
+        self.assertContains(response, 'aria-label="メール設定メニュー"')
+        self.assertContains(response, 'class="ui-tab is-active" aria-current="page"', html=False)
+        self.assertContains(response, 'href="/mail/groups/" class="is-current" aria-current="page"', html=False)
         self.assertContains(response, "メールグループ一覧")
         self.assertContains(response, "Gmail連携設定")
         self.assertContains(response, "決済報告用メールグループ設定")
+
+    def test_mail_history_uses_shared_navigation_and_history_tab(self):
+        response = self.client.get(reverse("mail_history"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="app-shell"')
+        self.assertContains(response, 'aria-label="メインメニュー"')
+        self.assertContains(response, 'aria-label="メール設定メニュー"')
+        self.assertContains(response, 'href="/mail/groups/" class="is-current" aria-current="page"', html=False)
+        self.assertContains(response, 'class="ui-tab is-active" aria-current="page" href="/mail/history/"', html=False)
+        self.assertContains(response, "まだ送信履歴はありません。")
 
     @patch("apps.mail.services._send_via_gmail", return_value="gmail-message-1")
     def test_mail_settings_test_send_creates_sent_history(self, mocked_send):

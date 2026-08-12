@@ -4,7 +4,7 @@
 {% block title %}{% block testimony_title %}Testimony{% endblock %}{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="app-shell">
   <style>
     .testimony-section {
       margin-top: 16px;
@@ -493,74 +493,36 @@
       }
     }
   </style>
-  <header id="testimony-topbar" class="topbar topbar-nav-always testimony-topbar">
-    <div>
-      <a href="{% url 'testimony_article_list' %}" aria-label="Testimonyホームへ" class="testimony-home-link">
-        <img src="{% static 'img/testimony_logo.png' %}?v=1" alt="Testimony" class="testimony-logo">
-      </a>
+  {% with current=request.resolver_match.url_name %}
+    {% if current == "testimony_article_list" %}
+      {% include "includes/app_navigation.html" with page_title="証を見る" page_subtitle="記事を検索・絞り込みして確認します。" %}
+    {% elif current == "testimony_mypage_favorites" %}
+      {% include "includes/app_navigation.html" with page_title="お気に入り" page_subtitle="保存した証の記事を確認します。" %}
+    {% elif current == "testimony_mypage_history" %}
+      {% include "includes/app_navigation.html" with page_title="閲覧履歴" page_subtitle="これまでに開いた証の記事を確認します。" %}
+    {% elif current == "testimony_product_list" or current == "testimony_product_create" or current == "testimony_product_edit" or current == "testimony_product_delete" %}
+      {% include "includes/app_navigation.html" with page_title="商材管理" page_subtitle="証の記事で使用する商材を管理します。" %}
+    {% elif current == "testimony_article_create" or current == "testimony_article_edit" or current == "testimony_article_delete" %}
+      {% include "includes/app_navigation.html" with page_title="証の記事管理" page_subtitle="記事内容を入力・確認します。" %}
+    {% else %}
+      {% include "includes/app_navigation.html" with page_title="証の詳細" page_subtitle="記事の内容と反応を確認します。" %}
+    {% endif %}
+  {% endwith %}
+  <main class="container app-shell-content">
+    <div class="testimony-home-link mt-16" aria-label="Testimony">
+      <img src="{% static 'img/testimony_logo.png' %}?v=1" alt="Testimony" class="testimony-logo">
     </div>
-    <button id="testimony-menu-toggle" type="button" class="btn-inline testimony-menu-toggle" aria-label="Open menu" aria-expanded="false">
-      <i class="fa-solid fa-bars" aria-hidden="true"></i>
-    </button>
-    <nav id="testimony-nav" class="testimony-nav">
-      {% if request.user.is_authenticated %}
-      <div class="testimony-drawer-greeting">
-        {% if request.user.member_profile %}
-          {{ request.user.member_profile.name }}
-        {% else %}
-          {{ request.user.username }}
-        {% endif %}
-        さん、お疲れ様です
-      </div>
-      {% endif %}
-      <a class="btn-inline" href="{% url 'testimony_article_list' %}">記事一覧</a>
-      <a class="btn-inline" href="{% url 'performance_member_dashboard' %}">実績管理</a>
+    <nav class="ui-tabs mt-16" aria-label="証メニュー">
+      <a class="ui-tab{% if request.resolver_match.url_name == 'testimony_article_list' or request.resolver_match.url_name == 'testimony_article_detail' %} is-active{% endif %}" href="{% url 'testimony_article_list' %}">記事一覧</a>
+      <a class="ui-tab{% if request.resolver_match.url_name == 'testimony_mypage_favorites' %} is-active{% endif %}" href="{% url 'testimony_mypage_favorites' %}">お気に入り</a>
+      <a class="ui-tab{% if request.resolver_match.url_name == 'testimony_mypage_history' %} is-active{% endif %}" href="{% url 'testimony_mypage_history' %}">閲覧履歴</a>
       {% if request.user.is_staff or request.user.is_superuser or request.user.username == "admin" %}
-      <a class="btn-inline" href="{% url 'home' %}">総合管理ページ</a>
-      <a class="btn-inline" href="{% url 'testimony_article_create' %}">新規投稿</a>
-      <a class="btn-inline" href="{% url 'testimony_product_list' %}">商材管理</a>
+      <a class="ui-tab{% if request.resolver_match.url_name == 'testimony_article_create' or request.resolver_match.url_name == 'testimony_article_edit' or request.resolver_match.url_name == 'testimony_article_delete' %} is-active{% endif %}" href="{% url 'testimony_article_create' %}">新規投稿</a>
+      <a class="ui-tab{% if request.resolver_match.url_name == 'testimony_product_list' or request.resolver_match.url_name == 'testimony_product_create' or request.resolver_match.url_name == 'testimony_product_edit' or request.resolver_match.url_name == 'testimony_product_delete' %} is-active{% endif %}" href="{% url 'testimony_product_list' %}">商材管理</a>
       {% endif %}
-      <a class="btn-inline" href="{% url 'testimony_mypage_favorites' %}">お気に入り</a>
-      <a class="btn-inline" href="{% url 'testimony_mypage_history' %}">閲覧履歴</a>
-      <a class="btn-inline logout-link" href="{% url 'testimony_logout' %}">ログアウト</a>
     </nav>
-  </header>
-  <div id="testimony-menu-backdrop" class="testimony-menu-backdrop" hidden></div>
-
-  {% block testimony_content %}{% endblock %}
+    {% block testimony_content %}{% endblock %}
+  </main>
 </div>
-<script>
-  (function () {
-    const topbar = document.getElementById("testimony-topbar");
-    const toggle = document.getElementById("testimony-menu-toggle");
-    const nav = document.getElementById("testimony-nav");
-    const backdrop = document.getElementById("testimony-menu-backdrop");
-    if (!topbar || !toggle || !nav || !backdrop) return;
-
-    function setOpen(isOpen) {
-      topbar.classList.toggle("drawer-open", isOpen);
-      toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
-      toggle.setAttribute("aria-label", isOpen ? "Close menu" : "Open menu");
-      toggle.innerHTML = isOpen
-        ? '<i class="fa-solid fa-xmark" aria-hidden="true"></i>'
-        : '<i class="fa-solid fa-bars" aria-hidden="true"></i>';
-      backdrop.hidden = !isOpen;
-    }
-
-    toggle.addEventListener("click", function () {
-      setOpen(!topbar.classList.contains("drawer-open"));
-    });
-    backdrop.addEventListener("click", function () {
-      setOpen(false);
-    });
-    nav.addEventListener("click", function (e) {
-      if (e.target && e.target.tagName === "A") {
-        setOpen(false);
-      }
-    });
-    window.addEventListener("resize", function () {
-      if (window.innerWidth > 768) setOpen(false);
-    });
-  })();
-</script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

@@ -126,6 +126,8 @@ class TestimonyCreatePermissionTests(TestCase):
         self.client.force_login(admin_user)
         response = self.client.get(reverse("testimony_article_create"))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="app-shell"', html=False)
+        self.assertContains(response, reverse("testimony_product_list"))
 
 
 class TestimonyArticleListTests(TestCase):
@@ -178,6 +180,18 @@ class TestimonyArticleListTests(TestCase):
         self.assertNotContains(response, "Beta story")
         self.assertContains(response, "すべての商材")
         self.assertContains(response, "お気に入りが多い順")
+
+    def test_article_list_uses_shared_navigation_and_member_tabs(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("testimony_article_list"))
+
+        self.assertContains(response, 'class="app-shell"', html=False)
+        self.assertContains(response, 'href="/testimony/" class="is-current" aria-current="page"', html=False)
+        self.assertContains(response, reverse("testimony_mypage_favorites"))
+        self.assertContains(response, reverse("testimony_mypage_history"))
+        self.assertNotContains(response, reverse("testimony_article_create"))
+        self.assertNotContains(response, reverse("testimony_product_list"))
         self.assertNotContains(response, "適用")
 
     def test_article_list_ajax_returns_results_html(self):

@@ -1,6 +1,7 @@
 from datetime import date
 
 from django.db.models import Sum
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Department
@@ -183,6 +184,7 @@ def build_entry_v2_base_context(*, member, selected_department, entry_date, age_
         "gender_bands": gender_bands,
         "nationality_bands": nationality_bands,
         "is_admin": False,
+        "performance_dashboard_url": reverse("performance_member_dashboard"),
     }
 
 

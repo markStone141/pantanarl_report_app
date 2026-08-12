@@ -45,6 +45,39 @@
 
   initTodayRecordTabs();
 
+  function initMemberStatusFilters() {
+    const root = document.querySelector("[data-member-status-filters]");
+    if (!root) {
+      return;
+    }
+    const buttons = Array.from(root.querySelectorAll("[data-member-status-filter]"));
+    const rows = Array.from(document.querySelectorAll("[data-member-status]"));
+    ["all", "warning", "positive"].forEach(function (status) {
+      const countNode = root.querySelector('[data-member-status-count="' + status + '"]');
+      if (countNode) {
+        countNode.textContent = status === "all"
+          ? rows.length
+          : rows.filter(function (row) { return row.dataset.memberStatus === status; }).length;
+      }
+    });
+    buttons.forEach(function (button) {
+      button.setAttribute("aria-pressed", button.classList.contains("is-active") ? "true" : "false");
+      button.addEventListener("click", function () {
+        const status = button.dataset.memberStatusFilter;
+        buttons.forEach(function (item) {
+          const isActive = item === button;
+          item.classList.toggle("is-active", isActive);
+          item.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+        rows.forEach(function (row) {
+          row.hidden = status !== "all" && row.dataset.memberStatus !== status;
+        });
+      });
+    });
+  }
+
+  initMemberStatusFilters();
+
   function initProgressDonuts() {
     if (typeof window.Chart === "undefined") {
       return;

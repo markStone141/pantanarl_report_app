@@ -39,29 +39,36 @@
 
 {% block content %}
 <div class="login-wrap">
-  <section class="card login-card">
+  <section class="card login-card auth-login-card">
     <div class="talks-login-brand">
       <img class="talks-login-logo" src="{% static 'img/notice_logo.svg' %}?v=1" alt="お知らせ">
     </div>
-    <form method="post" class="grid talks-login-form">
+    <div class="auth-login-heading">
+      <p class="auth-login-eyebrow">Notice</p>
+      <h1>お知らせへログイン</h1>
+      <p class="muted">メンバーIDとパスワードを入力してください。</p>
+    </div>
+    <form method="post" class="auth-login-form talks-login-form" data-auth-login-form>
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ next }}" />
-      <div>
+      <div class="auth-login-field">
         <label for="{{ form.login_id.id_for_label }}">ID</label>
         {{ form.login_id }}
       </div>
-      <div>
+      <div class="auth-login-field">
         <label for="{{ form.password.id_for_label }}">パスワード</label>
         {{ form.password }}
       </div>
       {% if form.non_field_errors %}
-        <div class="error-text">{{ form.non_field_errors|join:", " }}</div>
+        <div class="error-text auth-login-error-summary">{{ form.non_field_errors|join:", " }}</div>
       {% endif %}
       {% if form.password.errors %}
         <div class="error-text">{{ form.password.errors|join:", " }}</div>
       {% endif %}
       <button type="submit">ログイン</button>
+      <p class="auth-login-status" role="status" aria-live="polite" data-auth-submit-status></p>
     </form>
+    <p class="auth-login-divider">ほかの機能へ</p>
     <div class="reportapp-login-shortcuts">
       <a href="{% url 'performance_login' %}">
         <span class="reportapp-login-shortcuts-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>

@@ -200,3 +200,26 @@ class MosaicAppTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "成約として扱う")
         self.assertContains(response, "mosaic-save-button")
+
+    def test_mosaic_pages_use_shared_navigation_and_preserve_business_links(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("mosaic_master_create", args=["result-type"]))
+
+        self.assertContains(response, 'class="app-page-header dashboard-drawer-topbar"', html=False)
+        self.assertContains(response, 'class="app-side-nav dashboard-drawer-nav"', html=False)
+        self.assertContains(response, reverse("mosaic_dashboard"))
+        self.assertContains(response, reverse("mosaic_interaction_create"))
+        self.assertContains(response, reverse("mosaic_interaction_list"))
+        self.assertContains(response, reverse("mosaic_master_index"))
+        self.assertContains(response, reverse("mosaic_logout"))
+        self.assertContains(response, 'aria-current="page"', html=False)
+
+    def test_mosaic_save_forms_have_submit_lock_and_status(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("mosaic_interaction_create"))
+
+        self.assertContains(response, "data-mosaic-submit-lock", html=False)
+        self.assertContains(response, "data-submit-status", html=False)
+        self.assertContains(response, 'role="status"', html=False)

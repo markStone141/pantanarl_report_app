@@ -5,12 +5,15 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'talks/thread_index.css' %}?v=2">
-<link rel="stylesheet" href="{% static 'talks/mobile_drawer.css' %}?v=2">
 {% endblock %}
 
 {% block content %}
-<div class="container knowledge-page" data-favorite-only="{{ selected_favorite_only|yesno:"1,0" }}">
+<div class="app-shell">
   {% include "talks/_app_header.html" %}
+  <main class="container app-shell-content knowledge-page" data-favorite-only="{{ selected_favorite_only|yesno:"1,0" }}">
+  <div class="knowledge-app-identity" aria-label="お知らせ">
+    <img src="{% static 'img/notice_logo.svg' %}?v=1" alt="お知らせ">
+  </div>
   {% if messages %}
     <section class="card talks-message-card">
       {% for message in messages %}
@@ -331,7 +334,8 @@
       </form>
     </section>
   </div>
+  </main>
 </div>
 <script src="{% static 'talks/thread_index.js' %}?v=2" defer></script>
-<script src="{% static 'talks/mobile_drawer.js' %}?v=5" defer></script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

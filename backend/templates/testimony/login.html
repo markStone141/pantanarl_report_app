@@ -42,29 +42,36 @@
 
 {% block content %}
 <main class="login-wrap">
-  <section class="card login-card testimony-login-card">
+  <section class="card login-card auth-login-card testimony-login-card">
     <div class="testimony-login-header">
       <img class="testimony-login-logo" src="{% static 'img/testimony_logo.png' %}?v=1" alt="Testimony">
     </div>
-    <form method="post" class="grid testimony-login-form">
+    <div class="auth-login-heading testimony-login-form">
+      <p class="auth-login-eyebrow">Testimony</p>
+      <h1>証を見る</h1>
+      <p class="muted">メンバーIDとパスワードを入力してください。</p>
+    </div>
+    <form method="post" class="auth-login-form testimony-login-form" data-auth-login-form>
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ next }}" />
-      <div>
+      <div class="auth-login-field">
         <label for="{{ form.login_id.id_for_label }}">ID</label>
         {{ form.login_id }}
       </div>
-      <div>
+      <div class="auth-login-field">
         <label for="{{ form.password.id_for_label }}">パスワード</label>
         {{ form.password }}
       </div>
       {% if form.non_field_errors %}
-      <div class="error-text">{{ form.non_field_errors|join:", " }}</div>
+      <div class="error-text auth-login-error-summary">{{ form.non_field_errors|join:", " }}</div>
       {% endif %}
       {% if form.password.errors %}
       <div class="error-text">{{ form.password.errors|join:", " }}</div>
       {% endif %}
       <button type="submit">ログイン</button>
+      <p class="auth-login-status" role="status" aria-live="polite" data-auth-submit-status></p>
     </form>
+    <p class="auth-login-divider testimony-login-form">ほかの機能へ</p>
     <div class="reportapp-login-shortcuts">
       <a href="{% url 'home' %}">
         <span class="reportapp-login-shortcuts-icon"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span>

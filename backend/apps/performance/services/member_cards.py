@@ -84,12 +84,31 @@ def _collect_member_latest_entries_by_department(*, member_department_pairs, sta
 def _build_member_recent_metrics(*, entries, adjustment_totals_map, department_code):
     latest_final_counts = []
     closed_entries = [entry for entry in entries if entry.activity_closed][:3]
+    recent_activity_items = []
     for latest_entry in closed_entries:
         latest_totals = adjustment_totals_map.get(
             (latest_entry.member_id, latest_entry.department_id, latest_entry.entry_date),
             EMPTY_ADJUSTMENT_TOTALS,
         )
-        latest_final_counts.append(entry_final_count_value(entry=latest_entry, adjustment_totals=latest_totals))
+        final_count = entry_final_count_value(entry=latest_entry, adjustment_totals=latest_totals)
+        latest_final_counts.append(final_count)
+        recent_activity_items.append(
+            {
+                "date_text": latest_entry.entry_date.strftime("%-m/%-d"),
+                "amount_text": _amount_text(latest_entry, latest_totals),
+                "count_text": _count_text(latest_entry, latest_totals),
+                "count_subtext": (
+                    _wv_count_detail_text(
+                        cs_count=int(latest_entry.cs_count or 0) + int(latest_totals["cs_count"]),
+                        refugee_count=int(latest_entry.refugee_count or 0) + int(latest_totals["refugee_count"]),
+                    )
+                    if department_code == "WV"
+                    else ""
+                ),
+                "has_result": final_count >= 1,
+            }
+        )
+    recent_activity_items.reverse()
 
     zero_streak_warning = len(latest_final_counts) == 3 and all(count == 0 for count in latest_final_counts)
     active_streak_good = len(latest_final_counts) == 3 and all(count >= 1 for count in latest_final_counts)
@@ -105,6 +124,8 @@ def _build_member_recent_metrics(*, entries, adjustment_totals_map, department_c
             "zero_streak_text": "3稼働連続0件" if zero_streak_warning else "",
             "active_streak_good": active_streak_good,
             "active_streak_text": "3稼働連続1件以上" if active_streak_good else "",
+            "recent_activity_items": recent_activity_items,
+            "streak_status": "other",
         }
 
     latest_entry = entries[0]
@@ -130,6 +151,8 @@ def _build_member_recent_metrics(*, entries, adjustment_totals_map, department_c
         "zero_streak_text": "3稼働連続0件" if zero_streak_warning else "",
         "active_streak_good": active_streak_good,
         "active_streak_text": "3稼働連続1件以上" if active_streak_good else "",
+        "recent_activity_items": recent_activity_items,
+        "streak_status": "warning" if zero_streak_warning else "positive" if active_streak_good else "other",
     }
 
 
@@ -182,6 +205,8 @@ def build_scoped_member_cards(*, members, selected_department, scope):
                 "zero_streak_text": recent_metrics["zero_streak_text"],
                 "active_streak_good": recent_metrics["active_streak_good"],
                 "active_streak_text": recent_metrics["active_streak_text"],
+                "recent_activity_items": recent_metrics["recent_activity_items"],
+                "streak_status": recent_metrics["streak_status"],
                 "detail_url": reverse("performance_member_insight", args=[member.id, department.id]),
             }
         )
@@ -309,6 +334,8 @@ def build_active_member_cards(
                 "zero_streak_text": recent_metrics["zero_streak_text"],
                 "active_streak_good": recent_metrics["active_streak_good"],
                 "active_streak_text": recent_metrics["active_streak_text"],
+                "recent_activity_items": recent_metrics["recent_activity_items"],
+                "streak_status": recent_metrics["streak_status"],
                 "detail_url": reverse("performance_member_insight", args=[member.id, department.id]),
             }
         )

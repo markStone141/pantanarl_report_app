@@ -1,15 +1,27 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex">
-  <title>ユニセフ・マンスリーガイド</title>
-  <link rel="stylesheet" href="{% static 'monthly_guide/app.css' %}?v=2" />
-</head>
-<body class="monthly-guide-body">
+
+{% block title %}ユニセフ・マンスリーガイド{% endblock %}
+
+{% block extra_head %}
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="{% static 'monthly_guide/app.css' %}?v=3" />
+{% endblock %}
+
+{% block content %}
+<div class="monthly-guide-body">
   <main class="monthly-guide-shell">
+    <header class="app-page-header monthly-guide-header">
+      <div>
+        <span class="app-page-eyebrow">UNICEF MONTHLY GUIDE</span>
+        <strong>説明・翻訳ガイド</strong>
+        <div class="muted">言語を選び、日本語と見比べながら案内できます。</div>
+      </div>
+      <a class="btn-inline monthly-guide-home-link" href="{% url 'home' %}">
+        <i class="fa-solid fa-house" aria-hidden="true"></i><span>ReportApp</span>
+      </a>
+    </header>
+
     <section class="monthly-guide-hero">
       <p class="monthly-guide-kicker">UNICEF Monthly Guide</p>
       <h1>ユニセフ・マンスリーガイド</h1>
@@ -23,6 +35,7 @@
           <option value="{{ language.code }}" {% if language.code == default_language %}selected{% endif %}>{{ language.label }}</option>
           {% endfor %}
         </select>
+        <p id="monthly-guide-language-status" class="monthly-guide-language-status" aria-live="polite">{{ default_language_label }}を表示中</p>
       </div>
     </section>
 
@@ -49,12 +62,16 @@
     </section>
   </main>
 
+  <div id="monthly-guide-copy-status" class="monthly-guide-sr-status" role="status" aria-live="polite"></div>
+
   {{ guide_payload|json_script:"monthly-guide-data" }}
   <script>
     (function () {
       const languageSelect = document.getElementById("monthly-guide-language");
       const sectionsRoot = document.getElementById("monthly-guide-sections");
       const payloadNode = document.getElementById("monthly-guide-data");
+      const languageStatus = document.getElementById("monthly-guide-language-status");
+      const copyStatus = document.getElementById("monthly-guide-copy-status");
       if (!languageSelect || !sectionsRoot || !payloadNode) return;
 
       const payload = JSON.parse(payloadNode.textContent);
@@ -82,6 +99,7 @@
           const originalLabel = trigger.dataset.originalLabel || trigger.textContent;
           trigger.dataset.originalLabel = originalLabel;
           trigger.textContent = "コピーしました";
+          if (copyStatus) copyStatus.textContent = "日本語をコピーしました。";
           window.setTimeout(function () {
             trigger.textContent = originalLabel;
           }, 1400);
@@ -89,6 +107,7 @@
           const originalLabel = trigger.dataset.originalLabel || trigger.textContent;
           trigger.dataset.originalLabel = originalLabel;
           trigger.textContent = "コピー失敗";
+          if (copyStatus) copyStatus.textContent = "コピーできませんでした。もう一度お試しください。";
           window.setTimeout(function () {
             trigger.textContent = originalLabel;
           }, 1600);
@@ -100,6 +119,7 @@
           return language.code === languageCode;
         });
         const selectedLanguageLabel = selectedLanguage ? selectedLanguage.label : languageCode;
+        if (languageStatus) languageStatus.textContent = selectedLanguageLabel + "を表示中";
 
         sectionsRoot.innerHTML = payload.topics
           .slice()
@@ -172,5 +192,5 @@
       });
     })();
   </script>
-</body>
-</html>
+</div>
+{% endblock %}

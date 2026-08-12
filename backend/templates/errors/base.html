@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}{{ error_status }} {{ error_title }} | Report App{% endblock %}
+
+{% block content %}
+<main class="login-wrap error-page-wrap">
+  <section class="card login-card error-page-card" aria-labelledby="error-page-title">
+    <p class="error-page-code">{{ error_status }}</p>
+    <div class="auth-login-heading">
+      <p class="auth-login-eyebrow">Report App</p>
+      <h1 id="error-page-title">{{ error_title }}</h1>
+      <p>{{ error_message }}</p>
+    </div>
+    <p class="muted">{{ error_guidance }}</p>
+    <div class="error-page-actions">
+      <button type="button" class="secondary" onclick="history.back()">前の画面へ戻る</button>
+      <a class="button-link" href="{% url 'home' %}">トップ画面へ</a>
+    </div>
+  </section>
+</main>
+{% endblock %}

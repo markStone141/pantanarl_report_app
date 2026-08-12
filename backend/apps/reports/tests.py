@@ -141,6 +141,33 @@ class ReportMemberFilteringTests(TestCase):
         content = response.content.decode("utf-8")
         self.assertLess(content.index("<th>件数</th>"), content.index("<th>金額(円)</th>"))
 
+    def test_report_pages_use_shared_navigation_and_local_tabs(self):
+        Department.objects.create(name="ユニセフ", code="UN")
+
+        page_contracts = (
+            ("report_index", "報告入力"),
+            ("report_un", "報告入力"),
+            ("report_history", "保存報告一覧"),
+        )
+        for url_name, active_tab in page_contracts:
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'class="app-side-nav dashboard-drawer-nav"')
+                self.assertContains(response, 'aria-label="報告メニュー"')
+                self.assertContains(response, f'aria-current="page" href="{reverse(url_name if url_name != "report_un" else "report_index")}">{active_tab}</a>')
+
+    def test_report_form_exposes_submit_lock_status(self):
+        Department.objects.create(name="ユニセフ", code="UN")
+
+        response = self.client.get(reverse("report_un"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "data-submit-lock")
+        self.assertContains(response, "data-submit-button")
+        self.assertContains(response, 'aria-live="polite"')
+        self.assertContains(response, "送信中…")
+
 
 class ReportSubmitFlowTests(TestCase):
     def setUp(self):

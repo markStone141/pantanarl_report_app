@@ -5,12 +5,12 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'talks/comment_edit.css' %}?v=1">
-<link rel="stylesheet" href="{% static 'talks/mobile_drawer.css' %}?v=2">
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="app-shell">
   {% include "talks/_app_header.html" %}
+  <main class="container app-shell-content">
 
   <section class="card">
     <h2 class="comment-edit-title">コメントを編集</h2>
@@ -29,6 +29,7 @@
       </div>
     </form>
   </section>
+  </main>
 </div>
-<script src="{% static 'talks/mobile_drawer.js' %}?v=5" defer></script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

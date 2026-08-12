@@ -279,12 +279,14 @@ class DashboardTests(PerformanceTestBase):
         self.assertContains(index_response, 'role="tablist"')
         self.assertContains(index_response, 'data-performance-record-panel="transactions"')
         self.assertContains(index_response, 'data-performance-record-panel="mails"')
-        self.assertContains(index_response, 'class="card mt-16 performance-dashboard-section"')
-        self.assertContains(index_response, 'class="performance-dashboard-section-kicker">TODAY</span>')
-        self.assertContains(index_response, 'class="performance-dashboard-section-kicker">RECORDS</span>')
-        self.assertContains(index_response, 'class="performance-dashboard-section-kicker">PROGRESS</span>')
-        self.assertContains(index_response, 'class="performance-dashboard-section-kicker">TREND</span>')
-        self.assertContains(index_response, 'class="performance-dashboard-section-kicker">MEMBERS</span>')
+        self.assertContains(index_response, 'class="card ui-section mt-16 performance-dashboard-section"')
+        self.assertContains(index_response, 'class="ui-section-kicker performance-dashboard-section-kicker">TODAY</span>')
+        self.assertContains(index_response, 'class="ui-section-kicker performance-dashboard-section-kicker">RECORDS</span>')
+        self.assertContains(index_response, 'class="ui-section-kicker performance-dashboard-section-kicker">PROGRESS</span>')
+        self.assertContains(index_response, 'class="ui-section-kicker performance-dashboard-section-kicker">TREND</span>')
+        self.assertContains(index_response, 'class="ui-section-kicker performance-dashboard-section-kicker">MEMBERS</span>')
+        self.assertContains(index_response, 'class="grid ui-form-grid performance-dashboard-filter-grid"')
+        self.assertContains(index_response, 'class="performance-member-status-filters ui-tabs mt-12"')
         self.assertContains(index_response, 'class="card performance-progress-card performance-dashboard-inner-card"')
         self.assertContains(index_response, 'class="performance-chart-card performance-dashboard-inner-card mt-12"')
         self.assertContains(index_response, 'class="performance-activity-grid mt-12"')
@@ -389,6 +391,9 @@ class DashboardTests(PerformanceTestBase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "3稼働連続0件")
+        self.assertContains(response, 'data-member-status="warning"')
+        for offset in (2, 1, 0):
+            self.assertContains(response, (today - timedelta(days=offset)).strftime("%-m/%-d"))
 
 
     def test_performance_index_does_not_mark_zero_streak_until_third_entry_is_closed(self):
@@ -433,3 +438,5 @@ class DashboardTests(PerformanceTestBase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "3稼働連続1件以上")
+        self.assertContains(response, 'data-member-status="positive"')
+        self.assertContains(response, "直近の実績（3稼働・古い順）")

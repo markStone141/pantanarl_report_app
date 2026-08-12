@@ -1,16 +1,10 @@
 {% if today_detail_tabbed %}
-<section class="card mt-16 performance-today-records performance-dashboard-section" data-performance-record-tabs>
-  <div class="performance-dashboard-section-heading">
-    <div>
-      <span class="performance-dashboard-section-kicker">RECORDS</span>
-      <h3>本日の記録</h3>
-    </div>
-    <div class="muted">{{ today_detail_date|date:"Y/m/d" }} の選択部署の決済・送信メールです。</div>
-  </div>
-  <div class="performance-record-tabs mt-12" role="tablist" aria-label="本日の記録">
+<section class="card ui-section mt-16 performance-today-records performance-dashboard-section" data-performance-record-tabs>
+  {% include "includes/ui_section_heading.html" with kicker="RECORDS" title="本日の記録" description="選択部署の決済・送信メールです。" heading_class="performance-dashboard-section-heading" kicker_class="performance-dashboard-section-kicker" %}
+  <div class="performance-record-tabs ui-tabs mt-12" role="tablist" aria-label="本日の記録">
     <button
       type="button"
-      class="performance-record-tab"
+      class="performance-record-tab ui-tab"
       id="performance-record-tab-transactions"
       role="tab"
       aria-selected="true"
@@ -19,7 +13,7 @@
     >決済 <span class="performance-record-tab-count">{{ today_transaction_rows|length }}件</span></button>
     <button
       type="button"
-      class="performance-record-tab"
+      class="performance-record-tab ui-tab"
       id="performance-record-tab-mails"
       role="tab"
       aria-selected="false"
