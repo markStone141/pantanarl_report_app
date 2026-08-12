@@ -20,7 +20,7 @@
     <span class="app-nav-group-label">日々の活動</span>
     <a href="{% url 'report_index' %}"{% if current == 'report_index' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i><span>報告入力</span></a>
     <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}"{% if current == 'dairymetrics_entry_v2_transaction_demo' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-credit-card" aria-hidden="true"></i><span>決済入力</span></a>
-    <a href="{% url 'performance_index' %}"{% if current == 'performance_index' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span>実績管理</span></a>
+    <a href="{% if performance_dashboard_url %}{{ performance_dashboard_url }}{% else %}{% url 'performance_index' %}{% endif %}"{% if current == 'performance_index' or current == 'performance_member_dashboard' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span>実績管理</span></a>
     <a href="{% url 'performance_closeout_notes' %}"{% if current == 'performance_closeout_notes' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-note-sticky" aria-hidden="true"></i><span>今日のあと一歩ノート</span></a>
   </div>
 
