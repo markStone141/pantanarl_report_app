@@ -4,11 +4,58 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>共通ボタンUI テスト画面</title>
-  <link rel="stylesheet" href="../backend/static/app.css" />
-  <link rel="stylesheet" href="../backend/static/ui_foundation.css" />
-  <link rel="stylesheet" href="../backend/static/dashboard/mobile_drawer.css" />
-  <link rel="stylesheet" href="../backend/static/dairymetrics/app.css" />
   <style>
+    :root { --ui-surface:#fff; --ui-surface-subtle:#f8fafc; --ui-surface-accent:#f1f7fe; --ui-text:#1b2430; --ui-text-muted:#69788c; --ui-border:#dfe7f0; --ui-focus:rgba(10,132,255,.3); --ui-danger:#b42318; --ui-danger-soft:#fff2f0; --ui-radius-md:14px; --ui-radius-lg:20px; --ui-button-height:40px; --ui-button-radius:10px; --ui-button-shadow:0 4px 12px rgba(18,59,109,.12); }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ui-text); background: #f4f7fb; font-family: Inter, "Noto Sans JP", system-ui, sans-serif; }
+    h1 { margin: 5px 0 8px; color: #102a49; font-size: clamp(1.65rem,3vw,2.25rem); }
+    h2 { margin: 5px 0 16px; color: #183654; font-size: 1.1rem; }
+    a { text-decoration: none; }
+    .muted { color: var(--ui-text-muted); }
+    :where(a,button):focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 2px; }
+    .app-shell { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0,1fr); }
+    .app-side-nav { padding: 22px 14px 18px; background: #123b6d; color: #fff; }
+    .app-side-nav-brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 20px; border-bottom: 1px solid rgba(255,255,255,.14); }
+    .app-side-nav-brand strong,.app-side-nav-brand small { display: block; }
+    .app-side-nav-brand small { margin-top: 1px; color: rgba(235,244,255,.68); font-size: .7rem; }
+    .app-side-nav-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; color: #123b6d; background: #fff; font-weight: 900; }
+    .app-nav-group { display: grid; gap: 3px; padding: 13px 0 2px; }
+    .app-nav-group-label { padding: 0 10px 5px; color: rgba(218,233,250,.64); font-size: .68rem; font-weight: 800; letter-spacing: .08em; }
+    .app-side-nav a { min-height: 38px; display: flex; align-items: center; padding: 8px 10px; border-radius: 9px; color: rgba(245,249,255,.88); font-size: .84rem; font-weight: 650; }
+    .app-side-nav a:hover,.app-side-nav a:focus-visible { color: #fff; background: rgba(255,255,255,.11); }
+    .app-side-nav a.is-current { color: #123b6d; background: #fff; box-shadow: 0 5px 14px rgba(4,23,45,.18); }
+    .ui-button,.ui-icon-button,.ui-choice-button { appearance: none; border: 1px solid transparent; font: inherit; font-weight: 750; cursor: pointer; transition: background-color .16s,border-color .16s,color .16s,transform .16s; }
+    .ui-button { min-height: var(--ui-button-height); display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 15px; border-radius: var(--ui-button-radius); font-size: .9rem; }
+    .ui-button:hover,.ui-icon-button:hover,.ui-choice-button:hover { transform: translateY(-1px); }
+    .ui-button--primary { border-color:#123b6d; background:#123b6d; color:#fff; box-shadow:var(--ui-button-shadow); }
+    .ui-button--primary:hover { background:#0d315d; }
+    .ui-button--secondary { border-color:#b9c9dc; background:#fff; color:#123b6d; }
+    .ui-button--secondary:hover { border-color:#8fa9c6; background:var(--ui-surface-accent); }
+    .ui-button--quiet { background:transparent; color:#365571; }
+    .ui-button--quiet:hover { border-color:var(--ui-border); background:var(--ui-surface-subtle); }
+    .ui-button--danger { border-color:#e2aaa5; background:#fff; color:var(--ui-danger); }
+    .ui-button--danger:hover { border-color:#cf7e77; background:var(--ui-danger-soft); }
+    .ui-icon-button { width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-color:#b9c9dc; border-radius:10px; background:#fff; color:#123b6d; }
+    .ui-icon-button--danger { border-color:#e2aaa5; color:var(--ui-danger); }
+    .ui-choice-button { min-height:38px; padding:7px 13px; border-color:var(--ui-border); border-radius:999px; background:#fff; color:var(--ui-text-muted); }
+    .ui-choice-button.is-active,.ui-choice-button[aria-pressed="true"] { border-color:#123b6d; background:#123b6d; color:#fff; }
+    .ui-button:disabled { opacity:.52; cursor:not-allowed; transform:none; }
+    .ui-button.is-loading { pointer-events:none; }
+    .ui-button.is-loading::before { width:14px; height:14px; content:""; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:ui-spin .75s linear infinite; }
+    @keyframes ui-spin { to { transform:rotate(360deg); } }
+    .ui-section { padding:20px; border:1px solid var(--ui-border); border-radius:var(--ui-radius-lg); background:#fff; box-shadow:0 6px 18px rgba(15,39,68,.055); }
+    .ui-section-kicker { color:#315b86; font-size:.68rem; font-weight:850; letter-spacing:.12em; }
+    .btn-inline { min-height:36px; padding:7px 12px; border:1px solid #aeb8c3; border-radius:4px; background:#eee; color:#222; font:inherit; }
+    .performance-record-tabs { display:flex; gap:6px; padding:4px; border-radius:10px; background:#eef4fb; }
+    .performance-record-tab { flex:1 1 0; min-width:0; min-height:44px; padding:9px 14px; border:1px solid transparent; border-radius:8px; background:transparent; color:#69788c; font-weight:700; }
+    .performance-record-tab[aria-selected="true"] { border-color:#d5e3f2; background:#fff; color:#0f2744; box-shadow:0 1px 3px rgba(15,39,68,.08); }
+    .performance-member-list-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:12px; padding:14px; border:1px solid #efc8c8; border-left:4px solid #dc5b5b; border-radius:12px; color:inherit; background:linear-gradient(180deg,rgba(254,226,226,.98),rgba(255,245,245,.98)); }
+    .performance-member-list-name-row { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; }
+    .performance-warning-badge { padding:3px 7px; border-radius:999px; background:#ffe0e0; color:#9b2828; font-size:.75rem; }
+    .dairymetrics-zero-payment-streak-page { border-color:#f2c1c1; background:linear-gradient(180deg,rgba(255,241,241,.86),rgba(255,248,248,.7)); }
+    .dairymetrics-zero-payment-streak-alert { display:flex; align-items:center; gap:8px 14px; flex-wrap:wrap; padding:12px 14px; border:1px solid #e9a9a9; border-radius:12px; background:#fff1f1; color:#8f1d1d; }
+    .dairymetrics-zero-payment-streak-alert span { color:#7b3434; font-size:.88rem; }
     .preview-shell { min-height: 100vh; }
     .preview-nav { position: static; height: auto; min-height: 100vh; }
     .preview-main { min-width: 0; padding: 24px 32px 48px; }
@@ -30,6 +77,8 @@
       .preview-main { padding: 18px 12px 36px; }
       .preview-grid, .preview-compare { grid-template-columns: 1fr; }
       .preview-span { grid-column: auto; }
+      .performance-member-list-row { grid-template-columns: 1fr; }
+      .performance-record-tab { width: 50%; padding-inline: 8px; }
     }
   </style>
 </head>
@@ -50,7 +99,7 @@
 
     <main class="preview-main">
       <header class="preview-heading">
-        <span class="ui-section-kicker">PHASE 11-2 PREVIEW</span>
+        <span class="ui-section-kicker">PHASE 11-4 PREVIEW</span>
         <h1>メニューと親和性を合わせたボタン</h1>
         <p class="muted">PUSH前の確認専用画面です。リンクやボタンは外部送信せず、状態表示だけを切り替えます。画面幅を狭めるとモバイル時の折返しも確認できます。</p>
       </header>
