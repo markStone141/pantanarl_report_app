@@ -68,6 +68,7 @@
           const isActive = item === button;
           item.classList.toggle("is-active", isActive);
           item.setAttribute("aria-pressed", isActive ? "true" : "false");
+          item.setAttribute("aria-pressed", isActive ? "true" : "false");
         });
         rows.forEach(function (row) {
           row.hidden = status !== "all" && row.dataset.memberStatus !== status;
@@ -407,15 +408,19 @@
   function updateLegend() {
     if (modeAmountButton) {
       modeAmountButton.classList.toggle("is-active", currentMode === "amount");
+      modeAmountButton.setAttribute("aria-pressed", currentMode === "amount" ? "true" : "false");
     }
     if (modeRateButton) {
       modeRateButton.classList.toggle("is-active", currentMode === "rate");
+      modeRateButton.setAttribute("aria-pressed", currentMode === "rate" ? "true" : "false");
     }
     if (modeActivityButton) {
       modeActivityButton.classList.toggle("is-active", currentMode === "activity");
+      modeActivityButton.setAttribute("aria-pressed", currentMode === "activity" ? "true" : "false");
     }
     if (modeWvButton) {
       modeWvButton.classList.toggle("is-active", currentMode === "wv");
+      modeWvButton.setAttribute("aria-pressed", currentMode === "wv" ? "true" : "false");
     }
     if (currentMode === "amount") {
       if (descriptionNode) {

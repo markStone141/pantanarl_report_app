@@ -3020,5 +3020,20 @@
     "action": "dairymetrics入力・メール・活動終了ボタン移行後に対象55テストと必須検査を実行",
     "reason": "決済入力操作と連続決済なし警告の回帰確認",
     "next_action": "performance表示切替をChoiceへ移行して全体回帰を行う"
+  },
+  {
+    "timestamp": "2026-08-12T13:09:29+09:00",
+    "expires_at": "2026-09-11T13:09:29+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260812-stage11-2",
+    "loop": 5,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "performanceのグラフ・状態フィルタをChoiceへ移行し対象98テストとJavaScript構文を確認",
+    "reason": "表示切替の選択状態とaria-pressed同期の回帰確認",
+    "next_action": "第5単位をコミットして工程11-2全体回帰と記録更新を行う"
   }
 ]
