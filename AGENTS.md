@@ -96,6 +96,14 @@ git diff
 - コミット前に、重複ロジック・不要な分岐・肥大化した処理など、リファクタリングできる箇所がないかを確認する
 - 明らかに整理できる箇所がある場合は、関連差分の範囲で先にリファクタリングしてからコミットする
 
+### GitHubへ直接PUSHできない場合
+
+- 監査済み作業ブランチをGit bundleへ収録し、利用者のPCからPUSHする
+- bundle作成後は `git bundle verify` と `git bundle list-heads` を必ず実行する
+- bundleから復元したPCでは `origin` をGitHub URLへ差し替え、作業ブランチをPUSHする
+- `main` へ直接PUSHせず、Pull Request経由で反映する
+- 詳細は `backend/docs/GIT_BUNDLE_PUSH_WORKFLOW.md` を参照する
+
 ## 7. 実装方針（保守性）
 
 - なるべく1ファイルの行数を増やしすぎない

@@ -4,7 +4,7 @@
 
 ## 現在のフェーズ
 
-- 全アプリUI展開・工程10完了: PUSH・公開環境確認待ち
+- 全アプリUI展開・工程10完了: Git bundle引き渡し・PUSH・公開環境確認待ち
 
 ## プロジェクト全体の目標
 
@@ -78,6 +78,7 @@
 - 工程9「認証・全体横断画面」を完了し、6つのログイン画面と403／404／500画面を共通規則へ統一した。
 - 工程10「全体統合監査」を完了し、アプリURL 108件、全394テスト、権限・操作・状態・CSS／JavaScriptを横断確認した。
 - 共通NAV移行後に未参照となった `talks` 専用ドロワーCSS／JavaScriptを削除した。
+- GitHubへ直接PUSHできない場合の標準工程を `backend/docs/GIT_BUNDLE_PUSH_WORKFLOW.md` に明文化した。
 - `reports` の報告フォームに送信中表示と連続送信防止を追加し、入力と保存報告一覧を画面内タブで接続した。
 - `dairymetrics` の決済入力に活動準備・決済入力・活動終了の段階表示を追加し、非同期差し替え後のフォームにも連続送信防止を適用した。
 
@@ -180,7 +181,8 @@
 
 ## 次に行う作業
 
-- ユーザーの指示後、監査済みブランチをGitHubへPUSHする。
+- 作成済みGit bundleを利用者のPCで復元し、監査済み作業ブランチをGitHubへPUSHする。
+- GitHub上でPull Requestを作成し、レビュー後に `main` へマージする。
 - デプロイ後、公開環境のPC／モバイル主要導線を確認して公開判定を確定する。
 
 ## 参照
@@ -190,4 +192,5 @@
 - `backend/docs/PERFORMANCE_RELEASE_AUDIT_2026-08-12.md`
 - `backend/docs/UI_ROLLOUT_PLAN.md`
 - `backend/docs/UI_SCREEN_INVENTORY.md`
+- `backend/docs/GIT_BUNDLE_PUSH_WORKFLOW.md`
 - `logs/latest-summary.md`

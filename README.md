@@ -118,6 +118,7 @@ python scripts/check_no_bom.py
 - 運用マニュアル: `backend/docs/OPERATION_MANUAL.md`
 - 報告者ガイド: `backend/docs/REPORT_GUIDE.md`
 - 管理者ガイド: `backend/docs/ADMIN_GUIDE.md`
+- Git bundleによるPUSH引き渡し: `backend/docs/GIT_BUNDLE_PUSH_WORKFLOW.md`
 - Cloud Run デプロイ: `backend/DEPLOY_CLOUD_RUN.md`
 
 本番は Cloud Run と PostgreSQL を想定しています。通常運用ではマイグレーションを Cloud Run Job または GitHub Actions で実行します。
