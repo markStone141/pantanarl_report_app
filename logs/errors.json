@@ -492,5 +492,20 @@
     "action": "独立アプリ対象テストを実行",
     "reason": "存在しないTalksLoginTestsクラスを指定した補助コマンドエラー",
     "next_action": "正しいテストモジュール指定で再実行"
+  },
+  {
+    "timestamp": "2026-08-12T14:30:48+09:00",
+    "expires_at": "2026-11-10T14:30:48+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260812-button-preview-image",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "PlaywrightでPC・モバイル確認画像を生成",
+    "reason": "PlaywrightのChromium実行本体が環境に未配置",
+    "next_action": "利用可能なHTML/PDFレンダラーで代替生成"
   }
 ]
