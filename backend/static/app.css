@@ -325,6 +325,15 @@ a {
 }
 
 .performance-member-list-row.performance-member-card-link-warning {
+  background: linear-gradient(180deg, rgba(254, 226, 226, 0.98), rgba(255, 245, 245, 0.98));
+}
+
+.performance-member-list-row.performance-member-card-link-warning:hover,
+.performance-member-list-row.performance-member-card-link-warning:focus-visible {
+  background: linear-gradient(180deg, rgba(254, 215, 215, 0.98), rgba(255, 240, 240, 0.98));
+}
+
+.performance-member-list-row.performance-member-card-link-warning {
   border-left: 4px solid #dc5b5b;
 }
 
@@ -712,12 +721,14 @@ a {
   display: flex;
   gap: 6px;
   padding: 4px;
+  overflow-x: visible;
   border-radius: 10px;
   background: #eef4fb;
 }
 
-.performance-record-tab {
+.performance-record-tabs .performance-record-tab {
   flex: 1 1 0;
+  min-width: 0;
   min-height: 44px;
   padding: 9px 14px;
   border: 1px solid transparent;
@@ -728,18 +739,18 @@ a {
   box-shadow: none;
 }
 
-.performance-record-tab:hover {
+.performance-record-tabs .performance-record-tab:hover {
   background: rgba(255, 255, 255, 0.7);
 }
 
-.performance-record-tab[aria-selected="true"] {
+.performance-record-tabs .performance-record-tab[aria-selected="true"] {
   border-color: #d5e3f2;
   background: #fff;
   color: #0f2744;
   box-shadow: 0 1px 3px rgba(15, 39, 68, 0.08);
 }
 
-.performance-record-tab:focus-visible {
+.performance-record-tabs .performance-record-tab:focus-visible {
   outline: 3px solid rgba(10, 132, 255, 0.28);
   outline-offset: 2px;
 }
@@ -766,6 +777,16 @@ a {
 }
 
 @media (max-width: 520px) {
+  .performance-record-tabs {
+    width: 100%;
+  }
+
+  .performance-record-tabs .performance-record-tab {
+    width: 50%;
+    padding-inline: 8px;
+    white-space: normal;
+  }
+
   .performance-dashboard-section-heading {
     align-items: flex-start;
     flex-direction: column;
