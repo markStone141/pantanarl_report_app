@@ -43,3 +43,12 @@ class MonthlyGuideTests(TestCase):
         self.assertContains(response, "日本語")
         self.assertContains(response, "英語")
         self.assertContains(response, "What is UNICEF Monthly Support?")
+
+    def test_monthly_guide_uses_shared_header_without_changing_long_form_layout(self):
+        response = self.client.get(reverse("monthly_guide_index"))
+
+        self.assertContains(response, 'class="app-page-header monthly-guide-header"', html=False)
+        self.assertContains(response, reverse("home"))
+        self.assertContains(response, 'class="monthly-guide-compare-grid"', html=False)
+        self.assertContains(response, 'id="monthly-guide-language-status"', html=False)
+        self.assertContains(response, 'id="monthly-guide-copy-status"', html=False)
