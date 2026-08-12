@@ -507,5 +507,20 @@
     "action": "PlaywrightでPC・モバイル確認画像を生成",
     "reason": "PlaywrightのChromium実行本体が環境に未配置",
     "next_action": "利用可能なHTML/PDFレンダラーで代替生成"
+  },
+  {
+    "timestamp": "2026-08-12T14:37:20+09:00",
+    "expires_at": "2026-11-10T14:37:20+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260812-phase12",
+    "loop": 1,
+    "role": "observer",
+    "event": "result_observed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "工程12完了ログを記録",
+    "reason": "リポジトリ直下にscriptsがある前提で誤ったパスを指定",
+    "next_action": "backend/scriptsの正しいパスで再実行"
   }
 ]
