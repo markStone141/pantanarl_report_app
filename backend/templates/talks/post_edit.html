@@ -33,7 +33,8 @@
           {% for tag_name in available_tag_names %}
             <button
               type="button"
-              class="post-edit-tag-btn"
+              class="post-edit-tag-btn ui-choice-button"
+              aria-pressed="false"
               data-tag="{{ tag_name }}"
             >{{ tag_name }}</button>
           {% endfor %}

@@ -84,7 +84,10 @@
       if (!code) return;
       if (reactionCode) reactionCode.value = code;
       reactionButtons.forEach(function (other) {
-        other.classList.toggle("is-selected", other === btn);
+        const isSelected = other === btn;
+        other.classList.toggle("is-selected", isSelected);
+        other.classList.toggle("is-active", isSelected);
+        other.setAttribute("aria-pressed", isSelected ? "true" : "false");
       });
     });
   });

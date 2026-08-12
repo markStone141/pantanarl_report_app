@@ -105,6 +105,12 @@
 
     function renderCreateSelectedTags() {
       if (!createSelectedTags || !createSelectedHidden) return;
+      createTagOptions.forEach(function (button) {
+        const tag = button.getAttribute("data-create-tag-option");
+        const isSelected = selectedCreateTags.indexOf(tag) >= 0;
+        button.classList.toggle("is-active", isSelected);
+        button.setAttribute("aria-pressed", isSelected ? "true" : "false");
+      });
       createSelectedTags.innerHTML = "";
       createSelectedHidden.innerHTML = "";
       selectedCreateTags.forEach(function (tag) {

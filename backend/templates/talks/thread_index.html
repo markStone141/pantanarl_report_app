@@ -311,7 +311,8 @@
             {% for tag in available_tags %}
               <button
                 type="button"
-                class="knowledge-create-tag-btn {% if forloop.counter > 10 %}is-hidden-default{% endif %}"
+                class="knowledge-create-tag-btn ui-choice-button {% if forloop.counter > 10 %}is-hidden-default{% endif %}"
+                aria-pressed="false"
                 data-create-tag-option="{{ tag }}"
                 {% if forloop.counter > 10 %}style="display:none;"{% endif %}
               >{{ tag }}</button>

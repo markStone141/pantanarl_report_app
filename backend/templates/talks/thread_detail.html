@@ -125,7 +125,7 @@
                 <div class="knowledge-followup-actions is-tight">
                   <button
                     type="button"
-                    class="knowledge-comment-reply-btn"
+                    class="knowledge-comment-reply-btn ui-button ui-button--secondary"
                     data-reply-target="{{ comment.id }}"
                     data-reply-author="{{ comment.author }}"
                   >このコメントに返信</button>
@@ -186,7 +186,8 @@
           {% for reaction in reaction_types %}
             <button
               type="button"
-              class="knowledge-reaction-option {% if forloop.first %}is-selected{% endif %}"
+              class="knowledge-reaction-option ui-choice-button {% if forloop.first %}is-selected is-active{% endif %}"
+              aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}"
               data-reaction-code="{{ reaction.code }}"
             >
               <i class="{{ reaction.icon_class }}" style="color:{{ reaction.color }};"></i>{{ reaction.label }}
