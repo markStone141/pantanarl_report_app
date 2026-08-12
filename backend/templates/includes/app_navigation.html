@@ -36,7 +36,7 @@
   <div class="app-nav-group">
     <span class="app-nav-group-label">情報共有</span>
     <a href="{% url 'talks_index' %}"{% if current == 'talks_index' or current == 'talks_detail' or current == 'talks_post_edit' or current == 'talks_comment_edit' or current == 'talks_tag_manage' or current == 'talks_deleted_posts_manage' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-bell" aria-hidden="true"></i><span>お知らせ</span></a>
-    <a href="{% url 'testimony_article_list' %}"{% if current == 'testimony_article_list' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-bookmark" aria-hidden="true"></i><span>証を見る</span></a>
+    <a href="{% url 'testimony_article_list' %}"{% if current == 'testimony_article_list' or current == 'testimony_article_detail' or current == 'testimony_article_create' or current == 'testimony_article_edit' or current == 'testimony_article_delete' or current == 'testimony_product_list' or current == 'testimony_product_create' or current == 'testimony_product_edit' or current == 'testimony_product_delete' or current == 'testimony_mypage_favorites' or current == 'testimony_mypage_history' or current == 'testimony_admin_import' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-bookmark" aria-hidden="true"></i><span>証を見る</span></a>
   </div>
 
   {% if request.user.is_staff or request.user.is_superuser or request.session.role == 'admin' %}
