@@ -5,33 +5,28 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=2" />
+<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=4" />
 {% endblock %}
 
 {% block content %}
-<div class="container">
-  <header class="topbar topbar-desktop-expanded">
-    <div>
-      <strong>目標ダッシュボード</strong>
-      <div class="muted" style="color: #e1f1f5;">現在適用中の月目標・路程目標を確認できます。</div>
-    </div>
-    <nav>
-      <a href="{% url 'dashboard_index' %}">管理者ページ</a>
-      <a href="{% url 'target_month_settings' %}">月目標設定</a>
-      <a href="{% url 'target_period_settings' %}">路程設定</a>
-      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
-    </nav>
-  </header>
+<div class="app-shell">
+  {% include "includes/app_navigation.html" with page_title="目標設定" page_subtitle="月目標と路程目標の現在値・履歴をまとめて確認します。" %}
+  <main class="container app-shell-content">
+  <nav class="ui-tabs mt-16" aria-label="目標設定メニュー">
+    <a class="ui-tab is-active" aria-current="page" href="{% url 'target_index' %}">概要</a>
+    <a class="ui-tab" href="{% url 'target_month_settings' %}">月目標</a>
+    <a class="ui-tab" href="{% url 'target_period_settings' %}">路程目標</a>
+  </nav>
 
-  <section class="card" style="margin-top: 16px;">
+  <section class="card ui-section mt-16">
     <div class="row">
       <h3>現在の月目標</h3>
       <span class="badge">{{ current_month_label }} / {{ current_month_status }}</span>
     </div>
     {% for row in month_rows %}
-    <div style="margin-top: 10px; padding: 10px; border: 1px solid #d4e2ea; border-radius: 8px;">
+    <div class="target-metric-group">
       <strong>{{ row.label }}</strong>
-      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
+      <div class="target-metric-values">
         {% for metric in row.metrics %}
         <span class="badge">{{ metric.label }}: {{ metric.value_text }}{{ metric.unit }}</span>
         {% endfor %}
@@ -40,7 +35,7 @@
     {% endfor %}
   </section>
 
-  <section class="card" style="margin-top: 16px;">
+  <section class="card ui-section mt-16">
     <h3>作成済み月目標</h3>
     {% if month_history_rows %}
     <form method="get" class="target-history-controls">
@@ -116,15 +111,15 @@
     {% endif %}
   </section>
 
-  <section class="card" style="margin-top: 16px;">
+  <section class="card ui-section mt-16">
     <div class="row">
       <h3>現在の路程目標</h3>
       <span class="badge">{{ current_period_label }} / {{ current_period_status }}</span>
     </div>
     {% for row in period_rows %}
-    <div style="margin-top: 10px; padding: 10px; border: 1px solid #d4e2ea; border-radius: 8px;">
+    <div class="target-metric-group">
       <strong>{{ row.label }}</strong>
-      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
+      <div class="target-metric-values">
         {% for metric in row.metrics %}
         <span class="badge">{{ metric.label }}: {{ metric.value_text }}{{ metric.unit }}</span>
         {% endfor %}
@@ -133,7 +128,7 @@
     {% endfor %}
   </section>
 
-  <section class="card" style="margin-top: 16px;">
+  <section class="card ui-section mt-16">
     <h3>作成済み路程目標</h3>
     {% if period_history_rows %}
     <form method="get" class="target-history-controls">
@@ -209,7 +204,9 @@
     <p class="muted">路程目標はまだありません。</p>
     {% endif %}
   </section>
+  </main>
 </div>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 <script>
   (function () {
     async function loadDetail(details) {
