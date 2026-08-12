@@ -58,13 +58,13 @@
                     {% csrf_token %}
                     <input type="hidden" name="action" value="restore">
                     <input type="hidden" name="post_id" value="{{ post.id }}">
-                    <button type="submit" class="btn-inline talks-mini-btn">復元</button>
+                    <button type="submit" class="btn-inline talks-mini-btn ui-button ui-button--secondary">復元</button>
                   </form>
                   <form method="post" action="{% url 'talks_deleted_posts_manage' %}" class="talks-form-inline" onsubmit="return confirm('この投稿をDBから完全削除しますか？この操作は取り消せません。');">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="hard_delete">
                     <input type="hidden" name="post_id" value="{{ post.id }}">
-                    <button type="submit" class="btn-inline talks-mini-btn talks-danger-btn">完全削除</button>
+                    <button type="submit" class="btn-inline talks-mini-btn talks-danger-btn ui-button ui-button--danger">完全削除</button>
                   </form>
                 </div>
               </td>

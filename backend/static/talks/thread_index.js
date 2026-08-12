@@ -260,11 +260,15 @@
               const icon = form.querySelector(".js-favorite-icon");
               if (!button || !icon) return;
               if (data.is_favorite) {
+                button.classList.add("is-active");
+                button.setAttribute("aria-pressed", "true");
                 button.setAttribute("title", "お気に入り解除");
                 button.setAttribute("aria-label", "お気に入り解除");
                 icon.className = "fa-solid fa-star js-favorite-icon";
                 icon.style.color = "#d89b12";
               } else {
+                button.classList.remove("is-active");
+                button.setAttribute("aria-pressed", "false");
                 button.setAttribute("title", "お気に入り");
                 button.setAttribute("aria-label", "お気に入り");
                 icon.className = "fa-regular fa-star js-favorite-icon";
