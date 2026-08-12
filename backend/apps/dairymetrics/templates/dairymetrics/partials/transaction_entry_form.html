@@ -6,7 +6,7 @@
     <p class="muted">目標入力済みなら、ここから1件ずつ登録します。</p>
   </div>
   <div class="dairymetrics-v2-transaction-actions">
-    <button type="button" class="btn-inline dairymetrics-save-btn" data-open-entry-panel>決済を入力する</button>
+    <button type="button" class="ui-button ui-button--primary dairymetrics-save-btn" data-open-entry-panel>決済を入力する</button>
   </div>
   <section class="dairymetrics-v2-entry-panel" id="dairymetrics-v2-entry-panel" {% if not open_entry_panel %}hidden{% endif %}>
     <form method="post" data-submit-lock data-submit-label="登録中…">
@@ -106,9 +106,9 @@
       </div>
 
       <div class="dairymetrics-v2-transaction-actions">
-        <button type="submit" name="action" value="save_transaction_preview" class="btn-inline dairymetrics-save-btn" id="v2-transaction-preview-button">登録してメール送信</button>
-        <button type="submit" name="action" value="save_transaction" class="btn-inline" id="v2-transaction-save-button">登録して閉じる</button>
-        <button type="button" class="btn-inline dairymetrics-secondary-btn" data-close-entry-panel>閉じる</button>
+        <button type="submit" name="action" value="save_transaction_preview" class="ui-button ui-button--primary dairymetrics-save-btn" id="v2-transaction-preview-button">登録してメール送信</button>
+        <button type="submit" name="action" value="save_transaction" class="ui-button ui-button--secondary" id="v2-transaction-save-button">登録して閉じる</button>
+        <button type="button" class="ui-button ui-button--quiet dairymetrics-secondary-btn" data-close-entry-panel>閉じる</button>
       </div>
       <span class="muted" data-submit-status role="status" aria-live="polite"></span>
     </form>

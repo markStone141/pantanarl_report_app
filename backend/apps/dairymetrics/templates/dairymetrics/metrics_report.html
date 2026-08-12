@@ -70,12 +70,12 @@
         </select>
       </div>
       <div>
-        <button type="submit">表示</button>
+        <button type="submit" class="ui-button ui-button--secondary">表示</button>
       </div>
     </form>
     <div class="inline-row mt-12">
-      <a class="btn-inline" href="{% url 'dairymetrics_metrics_report_export' %}?{{ report_export_query }}&format=txt">AI用テキスト</a>
-      <a class="btn-inline" href="{% url 'dairymetrics_metrics_report_export' %}?{{ report_export_query }}&format=json">JSON</a>
+      <a class="ui-button ui-button--secondary" href="{% url 'dairymetrics_metrics_report_export' %}?{{ report_export_query }}&format=txt">AI用テキスト</a>
+      <a class="ui-button ui-button--secondary" href="{% url 'dairymetrics_metrics_report_export' %}?{{ report_export_query }}&format=json">JSON</a>
     </div>
   </section>
 

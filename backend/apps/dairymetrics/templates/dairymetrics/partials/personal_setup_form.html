@@ -76,9 +76,9 @@
     </div>
   </div>
   <div class="dairymetrics-v2-transaction-actions">
-    <button type="submit" class="btn-inline dairymetrics-save-btn">{{ submit_label }}</button>
+    <button type="submit" class="ui-button ui-button--primary dairymetrics-save-btn">{{ submit_label }}</button>
     {% if close_button_label %}
-    <button type="button" class="btn-inline dairymetrics-secondary-btn" {{ close_button_attr|safe }}>{{ close_button_label }}</button>
+    <button type="button" class="ui-button ui-button--quiet dairymetrics-secondary-btn" {{ close_button_attr|safe }}>{{ close_button_label }}</button>
     {% endif %}
   </div>
   <span class="muted" data-submit-status role="status" aria-live="polite"></span>
