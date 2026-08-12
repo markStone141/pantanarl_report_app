@@ -522,5 +522,20 @@
     "action": "工程12完了ログを記録",
     "reason": "リポジトリ直下にscriptsがある前提で誤ったパスを指定",
     "next_action": "backend/scriptsの正しいパスで再実行"
+  },
+  {
+    "timestamp": "2026-08-12T15:50:58+09:00",
+    "expires_at": "2026-11-10T15:50:58+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260812-member-shell-fix",
+    "loop": 1,
+    "role": "test_agent",
+    "event": "validation_completed",
+    "status": "blocked",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "dashboard対象テストとDjango checkを実行",
+    "reason": "Django依存関係が未導入で、依存関係取得も実行環境のネットワーク制約により停止",
+    "next_action": "静的検査結果を記録し、CIまたは依存環境で再実行"
   }
 ]

@@ -3245,5 +3245,35 @@
     "action": "工程13-0完了状態をGit bundleでPUSH引き渡し準備",
     "reason": "ユーザーの明示的なPUSH準備依頼",
     "next_action": "最終コミットを作成しbundle完全性を検証"
+  },
+  {
+    "timestamp": "2026-08-12T15:50:58+09:00",
+    "expires_at": "2026-09-11T15:50:58+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260812-member-shell-fix",
+    "loop": 1,
+    "role": "implementer",
+    "event": "action_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "メンバー管理系4画面へ共通app-shell構造を適用",
+    "reason": "PC画面でナビゲーションが全面展開され本文を下へ押し出していたため",
+    "next_action": "構造検査と回帰テスト契約を確認"
+  },
+  {
+    "timestamp": "2026-08-12T15:50:58+09:00",
+    "expires_at": "2026-09-11T15:50:58+09:00",
+    "retention_days": 30,
+    "run_id": "run-20260812-member-shell-fix",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "4テンプレートのapp-shell構造、BOM、EOF、Git差分を検査",
+    "reason": "共通サイドナビのPCグリッド配置とファイル整合性を確認するため",
+    "next_action": "関連差分のみコミット"
   }
 ]

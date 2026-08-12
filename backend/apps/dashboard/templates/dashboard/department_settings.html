@@ -4,9 +4,10 @@
 {% block title %}部署管理 | 管理者ページ{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="app-shell">
   {% include "includes/app_navigation.html" with page_title="部署管理" page_subtitle="部署設定と、部署ごとの目標指標を管理します。" %}
 
+  <main class="container app-shell-content">
   {% if status_message %}
   <div class="ui-feedback ui-feedback--success mt-12" role="status">{{ status_message }}</div>
   {% endif %}
@@ -198,6 +199,7 @@
       {% endif %}
     </article>
   </section>
+  </main>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=7"></script>
 {% endblock %}
