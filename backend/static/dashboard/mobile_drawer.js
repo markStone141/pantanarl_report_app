@@ -7,12 +7,17 @@
 
   function setOpen(isOpen) {
     topbar.classList.toggle("drawer-open", isOpen);
+    document.body.classList.toggle("app-nav-open", isOpen);
     toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
-    toggle.setAttribute("aria-label", isOpen ? "Close menu" : "Open menu");
+    toggle.setAttribute("aria-label", isOpen ? "メニューを閉じる" : "メニューを開く");
     toggle.innerHTML = isOpen
       ? '<i class="fa-solid fa-xmark" aria-hidden="true"></i>'
       : '<i class="fa-solid fa-bars" aria-hidden="true"></i>';
     backdrop.hidden = !isOpen;
+    if (isOpen) {
+      const currentLink = nav.querySelector("[aria-current='page']") || nav.querySelector("a");
+      if (currentLink) currentLink.focus();
+    }
   }
 
   setOpen(false);
@@ -23,6 +28,7 @@
 
   backdrop.addEventListener("click", function () {
     setOpen(false);
+    toggle.focus();
   });
 
   document.addEventListener("pointerdown", function (event) {
@@ -32,6 +38,18 @@
   });
 
   document.addEventListener("keydown", function (event) {
+    if (event.key === "Tab" && topbar.classList.contains("drawer-open")) {
+      const focusable = Array.from(nav.querySelectorAll("a[href]"));
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
     if (event.key === "Escape" && topbar.classList.contains("drawer-open")) {
       setOpen(false);
       toggle.focus();

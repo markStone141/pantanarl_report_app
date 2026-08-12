@@ -721,7 +721,7 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f'href="{reverse("report_index")}"', html=False)
-        self.assertContains(response, "報告画面")
+        self.assertContains(response, "報告入力")
 
     def test_dashboard_nav_links_to_testimony(self):
         response = self.client.get(reverse("dashboard_index"))
@@ -730,17 +730,36 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertContains(response, f'href="{reverse("testimony_article_list")}"', html=False)
         self.assertContains(response, "証を見る")
 
-    def test_dashboard_nav_links_to_performance_analysis_and_talks_without_payment(self):
+    def test_dashboard_uses_grouped_shared_navigation(self):
         response = self.client.get(reverse("dashboard_index"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "日々の活動")
+        self.assertContains(response, "集計・振り返り")
+        self.assertContains(response, "情報共有")
+        self.assertContains(response, "管理・設定")
+        self.assertContains(response, "個別業務")
         self.assertContains(response, reverse("performance_index"))
         self.assertContains(response, reverse("performance_closeout_notes"))
         self.assertContains(response, reverse("dairymetrics_metrics_v2_demo"))
+        self.assertContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
         self.assertContains(response, reverse("talks_index"))
         self.assertContains(response, reverse("mosaic_dashboard"))
-        self.assertNotContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
         self.assertNotContains(response, 'href="/metrics/"', html=False)
+        self.assertContains(response, 'aria-current="page"', html=False)
+
+    def test_performance_index_uses_same_grouped_navigation(self):
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "日々の活動")
+        self.assertContains(response, "集計・振り返り")
+        self.assertContains(response, "管理・設定")
+        self.assertContains(
+            response,
+            f'href="{reverse("performance_index")}" class="is-current" aria-current="page"',
+            html=False,
+        )
 
     def test_dashboard_target_progress_reflects_saved_targets_and_actuals(self):
         today = timezone.localdate()

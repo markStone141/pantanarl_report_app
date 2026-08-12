@@ -1,25 +1,25 @@
 # Latest AI Work Summary
 
-- Timestamp: `2026-08-12T10:38:44+09:00`
-- Run ID: `run-20260812-ui-inventory`
+- Timestamp: `2026-08-12T10:48:11+09:00`
+- Run ID: `run-20260812-shared-navigation`
 - Loop: `1`
-- Role: `ui_designer`
-- Event: `review_completed`
+- Role: `project_manager`
+- Event: `stopped`
 - Status: `success`
 - Event Retention: `30 days`
-- Event Expires At: `2026-09-11T10:38:44+09:00`
+- Event Expires At: `2026-09-11T10:48:11+09:00`
 - Summary Retention: `365 days`
-- Summary Expires At: `2027-08-12T10:38:44+09:00`
+- Summary Expires At: `2027-08-12T10:48:11+09:00`
 - Sensitivity: `normal`
 
 ## Action
 
-11アプリ78テンプレートのUI構造と優先順位を台帳化
+dashboardとperformanceへPCサイドNAVとスマホ共通ドロワーを試験実装し全380テストを確認
 
 ## Reason
 
-PCサイドNAVとスマホドロワーの共通設計へ引き渡すため
+工程3の完了条件を満たして工程4の共通UI基盤へ進むため
 
 ## Next Action
 
-dashboardとperformanceで試験実装
+工程4の共通UIトークンと部品範囲を固定
