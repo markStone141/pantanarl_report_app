@@ -18,7 +18,7 @@
       <h3>部門別報告フォーム</h3>
       <div style="display: grid; gap: 12px; margin-top: 10px;">
         {% for button in department_buttons %}
-        <a href="{% url button.url_name %}" class="department-button">{{ button.name }} 報告へ</a>
+        <a href="{% url button.url_name %}" class="ui-button ui-button--primary department-button">{{ button.name }} 報告へ</a>
         {% empty %}
         <p class="muted">表示できる報告部署がありません。</p>
         {% endfor %}

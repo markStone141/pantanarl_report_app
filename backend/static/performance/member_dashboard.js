@@ -555,7 +555,7 @@
     visibleDates.forEach(function (value, index) {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "performance-trend-date-link";
+      button.className = "ui-button ui-button--secondary performance-trend-date-link";
       button.dataset.date = value;
       button.textContent = visibleLabels[index] || value;
       dateLinksNode.appendChild(button);

@@ -462,5 +462,20 @@
     "action": "追加した表示契約テストを実行",
     "reason": "条件付き表示を常時表示と仮定したテストと既存テストへの差し込み位置不備で2回停止",
     "next_action": "テスト前提と配置を修正して再実行"
+  },
+  {
+    "timestamp": "2026-08-12T13:12:45+09:00",
+    "expires_at": "2026-11-10T13:12:45+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260812-stage11-2",
+    "loop": 6,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "npm lintとpre-commitを実行",
+    "reason": "eslintとpre-commitが環境に未導入",
+    "next_action": "実装回帰と分離し既存環境課題として記録"
   }
 ]

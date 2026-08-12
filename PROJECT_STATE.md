@@ -185,7 +185,7 @@
 
 ## 次に行う作業
 
-- 工程11-2として管理・設定・日常入力系へ共通ボタン体系を段階展開する。
+- 工程11-3として閲覧・検索・独立アプリ系へ共通ボタン体系を段階展開する。
 - PUSH前の見た目確認には `docs/button-ui-preview.html` を使用し、変更前後、6分類、モバイルタブ、注意状態を確認する。
 - 工程11完了後、新しいGit bundleを作成し、GitHubへPUSHする。
 
@@ -197,6 +197,15 @@
 - プレビュー: 認証・DB・PUSH不要の `docs/button-ui-preview.html` を追加した。
 - 検証: 対象62テスト、全398テスト、Django check、migration、BOM、HTML、JavaScript、CSS、差分検査が成功した。
 - 環境課題: `pre-commit` は未導入のため実行不可。EOFは `git diff --check` で確認した。
+- PUSH／公開: 未実施。
+
+## 工程11-2の終了判定
+
+- 実装: `dashboard`、`performance`、`targets`、`mail`、`reports`、`dairymetrics` の保存・登録・送信をPrimary、編集・詳細をSecondary、閉じる・戻るをQuiet、削除・無効化・活動終了をDanger、表示切替をChoiceへ整理した。
+- 操作: 既存のフォームID、URL、権限、確認処理、二重送信防止を維持し、報告送信中は共通ローディング状態、表示切替は `aria-pressed` と見た目を同期した。
+- 維持事項: 「本日の記録」のモバイル2分割タブ、3稼働連続0件の薄い赤表示、決済入力の「N稼働連続で決済がありません」を維持した。
+- 固有操作: ページ番号リンク、NAVトグル、グラフ内の日付操作、フローティング検索ボタンは配置依存のため工程11-4で競合を最終監査する。
+- 検証: 全398テスト、Django check、migration、BOM、JavaScript構文、EOF、差分検査が成功した。npm lintは `eslint` 未配置、pre-commitはコマンド未導入のため実行不可。
 - PUSH／公開: 未実施。
 
 ## 参照

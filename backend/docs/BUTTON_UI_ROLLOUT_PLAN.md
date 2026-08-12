@@ -77,6 +77,8 @@
 - 削除、無効化、活動終了をDangerとして区別する。
 - 既存の送信中表示と二重送信防止を維持する。
 
+状態: 2026-08-12 完了。`dashboard`、`performance`、`targets`、`mail`、`reports`、`dairymetrics` の主要操作、補助操作、危険操作、表示切替へ共通体系を適用した。ページ番号リンク、NAVトグル、グラフ内の日付操作、フローティング検索ボタンなど固有配置に依存する操作は、工程11-4で競合を監査する。
+
 ### 11-3: 閲覧・検索・独立アプリ系
 
 対象: `talks`、`testimony`、`monthly_guide`、`mosaic`、`accounts`

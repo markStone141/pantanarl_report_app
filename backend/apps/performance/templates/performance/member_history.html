@@ -205,7 +205,7 @@
       {% if detail_filter_mode == "buttons" %}
       <div class="performance-trend-date-links" data-performance-history-date-links>
         {% for item in detail_filter_dates %}
-        <button type="button" class="performance-trend-date-link" data-history-date="{{ item.date }}">{{ item.label }}</button>
+        <button type="button" class="ui-button ui-button--secondary performance-trend-date-link" data-history-date="{{ item.date }}">{{ item.label }}</button>
         {% endfor %}
       </div>
       {% else %}
