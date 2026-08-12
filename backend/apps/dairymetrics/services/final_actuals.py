@@ -97,6 +97,57 @@ def collect_member_final_actual_totals(member, department, start_date, end_date,
     return merge_final_actual_totals(entry_totals, adjustment_totals, cancellation_totals)
 
 
+def consecutive_closed_activities_without_payments(*, member, department, through_date):
+    """Return the latest closed-activity streak whose final payment count is zero."""
+    entry_rows = list(
+        MemberDailyMetricEntry.objects.filter(
+            member=member,
+            department=department,
+            entry_date__lte=through_date,
+            activity_closed=True,
+        )
+        .order_by("-entry_date", "-id")
+        .values("entry_date", "result_count")
+    )
+    if not entry_rows:
+        return 0
+
+    activity_dates = [row["entry_date"] for row in entry_rows]
+    adjustment_rows = (
+        MetricAdjustment.objects.filter(
+            member=member,
+            department=department,
+            target_date__in=activity_dates,
+        )
+        .values("target_date")
+        .annotate(total=Sum("result_count"))
+    )
+    cancellation_rows = (
+        WVMetricCancellation.objects.filter(
+            member=member,
+            department=department,
+            target_date__in=activity_dates,
+        )
+        .values("target_date")
+        .annotate(total=Sum("result_count"))
+    )
+    adjustments_by_date = {row["target_date"]: int(row["total"] or 0) for row in adjustment_rows}
+    cancellations_by_date = {row["target_date"]: int(row["total"] or 0) for row in cancellation_rows}
+
+    streak = 0
+    for row in entry_rows:
+        activity_date = row["entry_date"]
+        final_count = (
+            int(row["result_count"] or 0)
+            + adjustments_by_date.get(activity_date, 0)
+            - cancellations_by_date.get(activity_date, 0)
+        )
+        if final_count > 0:
+            break
+        streak += 1
+    return streak
+
+
 def collect_department_final_actual_totals(department, start_date, end_date, *, include_adjustments=True):
     entries = MemberDailyMetricEntry.objects.filter(
         department=department,

@@ -4,13 +4,20 @@
 {% block title %}決済登録 | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=25" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=26" />
 {% endblock %}
 
 {% block content %}
 <div class="app-shell" data-personal-setup-fields-url="{% url 'dairymetrics_entry_v2_personal_setup_fields' %}">
   {% include "includes/app_navigation.html" with page_title="決済入力" page_subtitle=member.name|add:"さんでログイン中" %}
-  <main class="container app-shell-content">
+  <main class="container app-shell-content{% if show_zero_payment_streak_warning %} dairymetrics-zero-payment-streak-page{% endif %}">
+
+  {% if show_zero_payment_streak_warning %}
+  <div class="dairymetrics-zero-payment-streak-alert" role="status">
+    <strong>{{ zero_payment_streak }}稼働連続で決済がありません</strong>
+    <span>今日の活動で流れを変えていきましょう。</span>
+  </div>
+  {% endif %}
 
   <nav class="ui-tabs mt-16" aria-label="決済入力の流れ">
     <span class="ui-tab{% if not has_personal_target or not has_department_target %} is-active{% endif %}">1. 活動準備</span>
