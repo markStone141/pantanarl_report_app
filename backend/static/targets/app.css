@@ -70,6 +70,16 @@
   font-size: 1.03rem;
 }
 
+.target-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .target-status-badge.is-active {
   background: #e7f7ee;
   color: #18794e;
@@ -204,6 +214,145 @@
 }
 
 .target-settings-form { margin-top: 12px; }
+
+.target-current-overview { overflow: hidden; }
+
+.target-current-overview-head {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(420px, 1.2fr);
+  gap: 20px;
+  align-items: end;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e0e9ee;
+}
+
+.target-current-overview-head h3 {
+  margin: 3px 0 0;
+  color: #173f58;
+}
+
+.target-current-overview-head p {
+  margin: 7px 0 0;
+  color: #71828d;
+  font-size: 0.8rem;
+}
+
+.target-current-period-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #d8e4eb;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #f8fbfd 0%, #f1f7fa 100%);
+}
+
+.target-current-period-panel > div { min-width: 0; }
+
+.target-current-period-panel > div > span {
+  display: block;
+  color: #758691;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.target-current-period-panel > div > strong {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: #214b64;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.target-current-period-panel .ui-button {
+  min-height: 36px;
+  padding: 7px 11px;
+  font-size: 0.76rem;
+}
+
+.target-current-department-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.target-current-department-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dbe5eb;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.target-current-department-card > header {
+  padding: 10px 13px;
+  border-bottom: 1px solid #e5ecef;
+  background: #f7fafb;
+}
+
+.target-current-department-card > header span,
+.target-current-metric > span {
+  display: block;
+  color: #7a8993;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.target-current-department-card > header h4 {
+  margin: 2px 0 0;
+  color: #173f58;
+  font-size: 0.96rem;
+}
+
+.target-current-metric-list {
+  display: grid;
+  gap: 0;
+  padding: 3px 13px;
+}
+
+.target-current-metric {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid #e8eef1;
+}
+
+.target-current-metric:last-child { border-bottom: 0; }
+
+.target-current-metric > strong {
+  color: #173f58;
+  font-size: 1.05rem;
+  text-align: right;
+}
+
+.target-current-metric > strong small {
+  margin-left: 4px;
+  color: #71818b;
+  font-size: 0.68rem;
+}
+
+.target-current-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 18px;
+  border: 1px dashed #cedae1;
+  border-radius: 12px;
+  background: #f8fafb;
+  color: #6f818c;
+}
+
+.target-current-empty > i { color: #5590ae; font-size: 1.2rem; }
+.target-current-empty strong { color: #34576a; }
+.target-current-empty p { margin: 3px 0 0; font-size: 0.76rem; }
 
 .target-settings-config-panel {
   display: grid;
@@ -393,11 +542,24 @@
 }
 
 @media (max-width: 768px) {
+  .target-current-overview-head,
+  .target-current-department-grid,
   .target-month-config-panel,
   .target-period-config-panel,
   .target-settings-department-grid,
   .target-settings-metric-grid {
     grid-template-columns: 1fr;
+  }
+
+  .target-current-overview-head { gap: 12px; }
+
+  .target-current-period-panel {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .target-current-period-panel .ui-button {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .target-settings-config-panel { padding: 12px; }

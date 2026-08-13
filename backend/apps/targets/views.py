@@ -586,14 +586,21 @@ def target_index(request: HttpRequest) -> HttpResponse:
         sort_value=period_sort,
         page_number=request.GET.get("period_page") or 1,
     )
+    current_month_status = _month_status(current_month)
+    current_period_status = _stored_period_status(current_period)
     return render(
         request,
         "targets/target_dashboard.html",
         {
             "current_month_label": f"{current_month.year}年{current_month.month}月",
-            "current_month_status": _month_status(current_month),
+            "current_month_status": current_month_status,
+            "current_month_status_label": STATUS_LABELS.get(current_month_status, current_month_status),
+            "current_month_status_class": f"is-{current_month_status}",
             "current_period_label": _period_label(current_period),
-            "current_period_status": _stored_period_status(current_period),
+            "current_period_status": current_period_status,
+            "current_period_status_label": STATUS_LABELS.get(current_period_status, current_period_status),
+            "current_period_status_class": f"is-{current_period_status}",
+            "has_current_period": current_period is not None,
             "month_rows": _build_month_rows(target_month=current_month, configs=configs),
             "period_rows": _build_period_rows(period=current_period, configs=configs),
             "month_history_rows": month_history_rows,

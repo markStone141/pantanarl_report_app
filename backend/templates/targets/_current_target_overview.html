@@ -1,0 +1,45 @@
+<section class="card ui-section mt-16 target-current-overview">
+  <div class="target-current-overview-head">
+    <div>
+      <span class="ui-section-kicker">{{ kicker }}</span>
+      <h3>{{ title }}</h3>
+      <p>{{ description }}</p>
+    </div>
+    <div class="target-current-period-panel">
+      <div>
+        <span>{{ period_caption }}</span>
+        <strong>{{ period_label }}</strong>
+      </div>
+      <span class="target-status-badge {{ status_class }}">{{ status_label }}</span>
+      <a class="ui-button ui-button--secondary" href="{{ edit_url }}">設定を編集</a>
+    </div>
+  </div>
+
+  {% if show_values %}
+  <div class="target-current-department-grid">
+    {% for row in rows %}
+    <article class="target-current-department-card">
+      <header>
+        <span>部署</span>
+        <h4>{{ row.label }}</h4>
+      </header>
+      <div class="target-current-metric-list">
+        {% for metric in row.metrics %}
+        <div class="target-current-metric">
+          <span>{{ metric.label }}</span>
+          <strong>{{ metric.value_text }}<small>{{ metric.unit }}</small></strong>
+        </div>
+        {% empty %}
+        <p class="muted">表示できる目標項目がありません。</p>
+        {% endfor %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="target-current-empty">
+    <i class="fa-solid fa-route" aria-hidden="true"></i>
+    <div><strong>現在の路程は未設定です</strong><p>路程期間を作成すると、ここに部署別目標が表示されます。</p></div>
+  </div>
+  {% endif %}
+</section>

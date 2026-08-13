@@ -8,81 +8,111 @@
   {% include "includes/app_navigation.html" with page_title=page_title page_subtitle=page_subtitle %}
 
   <main class="container app-shell-content">
-  <section class="mt-16">
-    <article class="card ui-section">
-      {% include "includes/ui_section_heading.html" with kicker="MEMBER" title=page_title description="基本情報、所属部署、ログイン情報を設定します。" %}
+    <nav class="ui-tabs mt-16" aria-label="メンバー管理メニュー">
+      <a class="ui-tab" href="{% url 'member_settings' %}">一覧</a>
+      <a class="ui-tab is-active" aria-current="page" href="{% if edit_member %}{% url 'member_edit' edit_member.id %}{% else %}{% url 'member_create' %}{% endif %}">{% if edit_member %}メンバー編集{% else %}新規メンバー追加{% endif %}</a>
+      <a class="ui-tab" href="{% url 'member_auth_bulk_settings' %}">ID・パスワード一括管理</a>
+      <a class="ui-tab" href="{% url 'department_settings' %}">部署管理</a>
+    </nav>
+
+    <section class="card ui-section mt-16 member-editor-section">
+      {% include "includes/ui_section_heading.html" with kicker="MEMBER" title=page_title description="基本情報、所属部署、ログイン情報を順に設定します。" %}
+      {% if edit_member %}
+      <div class="member-editor-context">
+        <div><span>編集中のメンバー</span><strong>{{ edit_member.name }}</strong></div>
+        <span class="member-status-badge{% if edit_member.is_active %} is-active{% else %} is-inactive{% endif %}">{% if edit_member.is_active %}有効{% else %}無効{% endif %}</span>
+      </div>
+      {% endif %}
       {% if status_message %}
       <div class="ui-feedback ui-feedback--success mb-10" role="status">{{ status_message }}</div>
       {% endif %}
-      <form method="post">
+
+      <form method="post" class="member-editor-form">
         {% csrf_token %}
 
-        <label for="id_name">{{ form.name.label }}</label>
-        {{ form.name }}
-        {% if form.name.errors %}
-        <div class="error-text">{{ form.name.errors|striptags }}</div>
-        {% endif %}
-
-        <label for="id_un_activity_code">{{ form.un_activity_code.label }}</label>
-        {{ form.un_activity_code }}
-        {% if form.un_activity_code.errors %}
-        <div class="error-text">{{ form.un_activity_code.errors|striptags }}</div>
-        {% endif %}
-
-        <label>{{ form.departments.label }}</label>
-        <div id="department_choices" class="selection-card-grid">
-          {% for department in department_choices %}
-            <label class="selection-card" for="dept_choice_{{ department.id }}">
-              <input
-                class="selection-card__input"
-                type="checkbox"
-                name="departments"
-                value="{{ department.id }}"
-                id="dept_choice_{{ department.id }}"
-                {% if department.id|stringformat:"s" in selected_department_ids %}checked{% endif %}
-              />
-              <span class="selection-card__title">{{ department.name }}</span>
-              <span class="selection-card__meta">{{ department.code }}</span>
+        <section class="member-editor-card">
+          <header>
+            <span>PROFILE</span>
+            <div><h3>基本情報</h3><p>表示名と業務で使用する連絡情報です。</p></div>
+          </header>
+          <div class="member-editor-fields member-editor-fields--two-column">
+            <label class="member-editor-field" for="id_name">
+              <span>{{ form.name.label }} <small>必須</small></span>
+              {{ form.name }}
+              {% if form.name.errors %}<span class="error-text">{{ form.name.errors|striptags }}</span>{% endif %}
             </label>
-          {% empty %}
-          <div class="muted">有効な部署がありません。</div>
-          {% endfor %}
-        </div>
-        {% if form.departments.errors %}
-        <div class="error-text">{{ form.departments.errors|striptags }}</div>
-        {% endif %}
+            <label class="member-editor-field" for="id_un_activity_code">
+              <span>{{ form.un_activity_code.label }}</span>
+              {{ form.un_activity_code }}
+              <small class="member-editor-help">UN所属者のみ、必要に応じて5桁で設定します。</small>
+              {% if form.un_activity_code.errors %}<span class="error-text">{{ form.un_activity_code.errors|striptags }}</span>{% endif %}
+            </label>
+            <label class="member-editor-field member-editor-field--wide" for="id_email">
+              <span>{{ form.email.label }}</span>
+              {{ form.email }}
+              <small class="member-editor-help">獲得メールの送信先として使用します。</small>
+              {% if form.email.errors %}<span class="error-text">{{ form.email.errors|striptags }}</span>{% endif %}
+            </label>
+          </div>
+        </section>
 
-        <label for="id_default_department">{{ form.default_department.label }}</label>
-        {{ form.default_department }}
-        {% if form.default_department.errors %}
-        <div class="error-text">{{ form.default_department.errors|striptags }}</div>
-        {% endif %}
+        <section class="member-editor-card">
+          <header>
+            <span>DEPARTMENTS</span>
+            <div><h3>所属部署</h3><p>複数部署に所属できます。主に使用する部署をメインに設定してください。</p></div>
+          </header>
+          <div class="member-editor-fields">
+            <div class="member-editor-field">
+              <span>{{ form.departments.label }}</span>
+              <div id="department_choices" class="selection-card-grid member-department-selection-grid">
+                {% for department in department_choices %}
+                <label class="selection-card" for="dept_choice_{{ department.id }}">
+                  <input class="selection-card__input" type="checkbox" name="departments" value="{{ department.id }}" id="dept_choice_{{ department.id }}" {% if department.id|stringformat:"s" in selected_department_ids %}checked{% endif %} />
+                  <span class="selection-card__check"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+                  <span class="selection-card__title">{{ department.name }}</span>
+                  <span class="selection-card__meta">{{ department.code }}</span>
+                </label>
+                {% empty %}
+                <div class="muted">有効な部署がありません。</div>
+                {% endfor %}
+              </div>
+              {% if form.departments.errors %}<span class="error-text">{{ form.departments.errors|striptags }}</span>{% endif %}
+            </div>
+            <label class="member-editor-field" for="id_default_department">
+              <span>{{ form.default_department.label }}</span>
+              {{ form.default_department }}
+              <small class="member-editor-help">上で選択した所属部署から指定します。</small>
+              {% if form.default_department.errors %}<span class="error-text">{{ form.default_department.errors|striptags }}</span>{% endif %}
+            </label>
+          </div>
+        </section>
 
-        <label for="id_auth_login_id">{{ form.auth_login_id.label }}</label>
-        {{ form.auth_login_id }}
-        {% if form.auth_login_id.errors %}
-        <div class="error-text">{{ form.auth_login_id.errors|striptags }}</div>
-        {% endif %}
+        <section class="member-editor-card">
+          <header>
+            <span>ACCOUNT</span>
+            <div><h3>ログイン情報</h3><p>ナレッジ共有など、個人ログインが必要な機能で使用します。</p></div>
+          </header>
+          <div class="member-editor-fields member-editor-fields--two-column">
+            <label class="member-editor-field" for="id_auth_login_id">
+              <span>{{ form.auth_login_id.label }}</span>
+              {{ form.auth_login_id }}
+              {% if form.auth_login_id.errors %}<span class="error-text">{{ form.auth_login_id.errors|striptags }}</span>{% endif %}
+            </label>
+            <label class="member-editor-field" for="id_auth_password">
+              <span>{{ form.auth_password.label }}</span>
+              {{ form.auth_password }}
+              <small class="member-editor-help">{% if edit_member %}変更しない場合は空欄のままにします。{% else %}ログインIDを設定する場合は必須です。{% endif %}</small>
+              {% if form.auth_password.errors %}<span class="error-text">{{ form.auth_password.errors|striptags }}</span>{% endif %}
+            </label>
+          </div>
+        </section>
 
-        <label for="id_auth_password">{{ form.auth_password.label }}</label>
-        {{ form.auth_password }}
-        {% if form.auth_password.errors %}
-        <div class="error-text">{{ form.auth_password.errors|striptags }}</div>
-        {% endif %}
-
-        <label for="id_email">{{ form.email.label }}</label>
-        {{ form.email }}
-        {% if form.email.errors %}
-        <div class="error-text">{{ form.email.errors|striptags }}</div>
-        {% endif %}
-
-        <div class="inline-row mt-12">
-          <button type="submit" class="ui-button ui-button--primary">{{ submit_label }}</button>
+        <div class="member-editor-actions">
           <a href="{% url 'member_settings' %}" class="ui-button ui-button--quiet">一覧へ戻る</a>
+          <button type="submit" class="ui-button ui-button--primary">{{ submit_label }}</button>
         </div>
       </form>
-    </article>
-  </section>
+    </section>
   </main>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=7"></script>

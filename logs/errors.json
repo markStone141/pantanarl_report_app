@@ -822,5 +822,20 @@
     "action": "一時検証DBへの表示データ投入でMemberの部署フィールド指定を誤った",
     "reason": "Memberはdepartmentではなくdefault_departmentを使用するモデルだったため",
     "next_action": "一時DBのみを正しいフィールドで再投入して表示検証する"
+  },
+  {
+    "timestamp": "2026-08-13T18:34:19+09:00",
+    "expires_at": "2026-11-11T18:34:19+09:00",
+    "retention_days": 90,
+    "run_id": "target-member-ui-20260813",
+    "loop": 1,
+    "role": "project_manager",
+    "event": "stopped",
+    "status": "blocked",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "目標概要とメンバー管理UIの実装・主要検証を完了し、大規模変更基準に従って最終監査前に区切った",
+    "reason": "変更が10ファイルおよび500行を超え、リポジトリのHandoff必須条件に達したため",
+    "next_action": "HANDOFF.mdに従ってCSS監査、状態完了化、最終コミット確認を行う"
   }
 ]

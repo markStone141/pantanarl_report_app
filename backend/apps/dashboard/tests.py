@@ -248,6 +248,9 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "ID未登録")
         self.assertContains(response, "アドレス未登録")
+        self.assertContains(response, 'class="member-settings-card"')
+        self.assertContains(response, 'data-member-settings-items')
+        self.assertNotContains(response, 'class="mobile-card-table"')
 
     def test_member_create_page_renders(self):
         response = self.client.get(reverse("member_create"))
@@ -255,6 +258,22 @@ class MemberSettingsViewTests(TestCase):
         self.assertContains(response, "新規メンバー追加")
         self.assertContains(response, "UN活動コード")
         self.assertContains(response, "メールアドレス")
+        self.assertContains(response, 'class="member-editor-form"')
+        self.assertContains(response, 'class="member-editor-card"', count=3)
+        self.assertContains(response, "基本情報")
+        self.assertContains(response, "所属部署")
+        self.assertContains(response, "ログイン情報")
+
+    def test_member_edit_page_uses_editor_context(self):
+        member = Member.objects.create(name="UI Edit Member", is_active=True)
+
+        response = self.client.get(reverse("member_edit", args=[member.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="member-editor-context"')
+        self.assertContains(response, "編集中のメンバー")
+        self.assertContains(response, "UI Edit Member")
+        self.assertContains(response, ">メンバー編集</a>", html=False)
 
     def test_member_settings_filters_by_query(self):
         Member.objects.create(name="Alpha User", email="alpha@example.com")

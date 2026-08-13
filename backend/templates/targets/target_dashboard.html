@@ -5,7 +5,7 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=5" />
+<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=7" />
 {% endblock %}
 
 {% block content %}
@@ -18,22 +18,8 @@
     <a class="ui-tab" href="{% url 'target_period_settings' %}">路程目標</a>
   </nav>
 
-  <section class="card ui-section mt-16">
-    <div class="row">
-      <h3>現在の月目標</h3>
-      <span class="badge">{{ current_month_label }} / {{ current_month_status }}</span>
-    </div>
-    {% for row in month_rows %}
-    <div class="target-metric-group">
-      <strong>{{ row.label }}</strong>
-      <div class="target-metric-values">
-        {% for metric in row.metrics %}
-        <span class="badge">{{ metric.label }}: {{ metric.value_text }}{{ metric.unit }}</span>
-        {% endfor %}
-      </div>
-    </div>
-    {% endfor %}
-  </section>
+  {% url 'target_month_settings' as month_settings_url %}
+  {% include "targets/_current_target_overview.html" with kicker="MONTH" title="現在の月目標" description="今月の部署別目標を確認できます。" period_caption="対象月" period_label=current_month_label status_label=current_month_status_label status_class=current_month_status_class edit_url=month_settings_url rows=month_rows show_values=True %}
 
   <section class="card ui-section mt-16">
     <h3>作成済み月目標</h3>
@@ -112,22 +98,8 @@
     {% endif %}
   </section>
 
-  <section class="card ui-section mt-16">
-    <div class="row">
-      <h3>現在の路程目標</h3>
-      <span class="badge">{{ current_period_label }} / {{ current_period_status }}</span>
-    </div>
-    {% for row in period_rows %}
-    <div class="target-metric-group">
-      <strong>{{ row.label }}</strong>
-      <div class="target-metric-values">
-        {% for metric in row.metrics %}
-        <span class="badge">{{ metric.label }}: {{ metric.value_text }}{{ metric.unit }}</span>
-        {% endfor %}
-      </div>
-    </div>
-    {% endfor %}
-  </section>
+  {% url 'target_period_settings' as period_settings_url %}
+  {% include "targets/_current_target_overview.html" with kicker="PERIOD" title="現在の路程目標" description="進行中の路程と部署別目標を確認できます。" period_caption="対象路程" period_label=current_period_label status_label=current_period_status_label status_class=current_period_status_class edit_url=period_settings_url rows=period_rows show_values=has_current_period %}
 
   <section class="card ui-section mt-16">
     <h3>作成済み路程目標</h3>

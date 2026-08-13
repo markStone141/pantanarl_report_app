@@ -110,10 +110,10 @@
       if (append) {
         const nextDoc = document.createElement("div");
         nextDoc.innerHTML = payload.list_html || "";
-        const currentBody = listContainer.querySelector("tbody");
-        const nextRows = nextDoc.querySelectorAll("tbody tr");
-        nextRows.forEach(function (row) {
-          currentBody.appendChild(row);
+        const currentItems = listContainer.querySelector("[data-member-settings-items]");
+        const nextCards = nextDoc.querySelectorAll(".member-settings-card");
+        nextCards.forEach(function (card) {
+          currentItems.appendChild(card);
         });
         const currentButton = listContainer.querySelector("#member-settings-load-more-btn");
         if (currentButton) {
@@ -121,8 +121,8 @@
         }
         const nextButton = nextDoc.querySelector("#member-settings-load-more-btn");
         if (nextButton) {
-          const tableWrap = listContainer.querySelector(".table-scroll");
-          tableWrap.insertAdjacentElement("afterend", nextButton.parentElement);
+          const cardGrid = listContainer.querySelector("[data-member-settings-items]");
+          cardGrid.insertAdjacentElement("afterend", nextButton.parentElement);
         }
       } else {
         listContainer.innerHTML = payload.list_html || "";
