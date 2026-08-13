@@ -1,6 +1,6 @@
 # Project State
 
-最終更新日: 2026-08-12
+最終更新日: 2026-08-13
 
 ## 現在のフェーズ
 
@@ -8,7 +8,7 @@
 - 工程11-4「ボタンUI横断監査と公開前確認」を完了。工程11はローカル完了。
 - ボタンUIのチャット確認用SVGは利用者の見た目確認済み。
 - 工程12「PUSH引き渡し準備」のローカル検証を完了。工程11のPUSH・公開は未実施。
-- 工程13「新UI全画面適用の再監査・完成」を進行中。工程13-2の管理者CRUDと個人実績・履歴を完了し、残る移行単位はあと一歩ノート。
+- 工程13「新UI全画面適用の再監査・完成」を進行中。工程13-2のPerformance全画面移行を完了し、次は工程13-3のDairyMetrics・Mail移行。
 
 ## プロジェクト全体の目標
 
@@ -89,9 +89,11 @@
 ## 進行中の作業
 
 - 工程13-0の共通ドロワー明示遷移と、工程13-1のメンバー管理4画面の共通シェル移行は完了済み。
-- 工程13-2の第1単位「管理者CRUD」と第2単位「個人実績・履歴」を共通シェルへ移行した。
+- 工程13-2の「管理者CRUD」「個人実績・履歴」「あと一歩ノート」を共通シェルへ移行し、Performance全画面移行を完了した。
 - 個人画面は管理者、本人、閲覧専用の各リンクと分析対象の部署・メンバー引き継ぎを維持した。
-- 次は工程13-2の第3単位「あと一歩ノート」を進める。
+- 共通NAVのモバイルハンバーガーを旧 `.btn-inline` から新 `ui-icon-button` へ移行し、旧ヘッダーに残る同操作も工程13-3／13-4で統一する。
+- 次は工程13-3「DairyMetrics・Mail移行」を進める。
+- 工程13完了後の工程14として、総合管理の目標管理を基準に主要テーブルと「未提出」等の状態バッジを新UIへ再設計する。
 - 詳細は `backend/docs/UI_COMPLETION_ROLLOUT_PLAN.md` を参照する。
 - PUSH・PR・公開環境確認は工程13のローカル実装と分離して管理する。
 
@@ -189,8 +191,8 @@
 
 ## 次に行う作業
 
-- 工程13-2の第3単位として、あと一歩ノートの旧ヘッダー／旧NAVを共通 `app_navigation.html` へ移行する。
-- 工程13-2完了後は、工程13-3のDairyMetrics・Mail移行へ進む。
+- 工程13-3として、DairyMetricsの分析・振り返りとMailのGmail連携設定を共通シェルへ移行する。
+- 対象画面に残る旧モバイルハンバーガーを共通 `ui-icon-button` へ統一する。
 
 ## 工程12の開始判定
 
@@ -253,6 +255,7 @@
 - `backend/docs/PERFORMANCE_RELEASE_AUDIT_2026-08-12.md`
 - `backend/docs/UI_ROLLOUT_PLAN.md`
 - `backend/docs/UI_SCREEN_INVENTORY.md`
+- `backend/docs/TABLE_UI_ROLLOUT_PLAN.md`
 - `backend/docs/BUTTON_UI_ROLLOUT_PLAN.md`
 - `backend/docs/BUTTON_UI_INVENTORY.md`
 - `backend/docs/GIT_BUNDLE_PUSH_WORKFLOW.md`

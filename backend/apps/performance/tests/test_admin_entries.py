@@ -9,6 +9,33 @@ from .base import PerformanceTestBase
 
 
 class AdminEntriesTests(PerformanceTestBase):
+    def test_closeout_notes_uses_shared_app_shell_and_current_navigation(self):
+        response = self.client.get(reverse("performance_closeout_notes"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<div class="app-shell">', html=False)
+        self.assertContains(
+            response,
+            '<main class="container app-shell-content closeout-notebook">',
+            html=False,
+        )
+        self.assertContains(response, 'class="app-side-nav dashboard-drawer-nav"', html=False)
+        self.assertContains(
+            response,
+            'class="ui-icon-button dashboard-drawer-toggle"',
+            html=False,
+        )
+        self.assertNotContains(
+            response,
+            'class="btn-inline dashboard-drawer-toggle"',
+            html=False,
+        )
+        self.assertContains(
+            response,
+            f'href="{reverse("performance_closeout_notes")}" class="is-current" aria-current="page"',
+            html=False,
+        )
+
     def test_performance_admin_crud_pages_use_shared_app_shell(self):
         entry = MemberDailyMetricEntry.objects.create(
             member=self.member,

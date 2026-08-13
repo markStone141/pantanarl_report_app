@@ -552,5 +552,35 @@
     "action": "Performance全101テストを実行し2件のNAV表示回帰を検出",
     "reason": "共通NAV移行で実績管理ダッシュボードの表示名と本人用全体実績リンクが欠落したため",
     "next_action": "表示項目を復元して対象テストと全Performanceテストを再実行"
+  },
+  {
+    "timestamp": "2026-08-13T14:05:45+09:00",
+    "expires_at": "2026-11-11T14:05:45+09:00",
+    "retention_days": 90,
+    "run_id": "ui-phase-13-2-closeout",
+    "loop": 1,
+    "role": "test_agent",
+    "event": "targeted-test-command",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "対象テストのクラス名指定が実ファイルと一致せず、テスト読込前に停止した。",
+    "reason": "旧クラス名を指定したため。正しい AdminEntriesTests を確認した。",
+    "next_action": "正しいクラス名で対象5テストを再実行する。"
+  },
+  {
+    "timestamp": "2026-08-13T14:05:46+09:00",
+    "expires_at": "2026-11-11T14:05:46+09:00",
+    "retention_days": 90,
+    "run_id": "ui-phase-13-2-closeout",
+    "loop": 2,
+    "role": "validator",
+    "event": "bom-full-scan",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "OneDrive上のBOM全体検査を55秒の上限で停止した。",
+    "reason": "既知の全体走査遅延により応答時間の上限へ達した。",
+    "next_action": "今回の変更6ファイルを先頭バイトと末尾改行で直接検査する。"
   }
 ]
