@@ -72,48 +72,12 @@
 
     <details class="report-details report-details-spaced">
       <summary class="target-progress-summary">月目標の進捗を見る</summary>
-      <div class="table-scroll mt-8">
-      <table class="mt-8 mobile-card-table target-progress-table">
-        <thead>
-          <tr><th>部署</th><th>月目標</th><th>月累計実績</th><th>達成率</th></tr>
-        </thead>
-        <tbody>
-          {% for row in target_progress_rows %}
-          <tr>
-            <td data-label="部署">{{ row.label }}</td>
-            <td data-label="月目標">{{ row.month_target }}</td>
-            <td data-label="月累計実績">{{ row.month_actual }}</td>
-            <td data-label="達成率">{{ row.month_rate }}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="4">目標データがありません。</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      </div>
+      {% include "includes/target_progress_cards.html" with scope="month" %}
     </details>
 
     <details class="report-details report-details-spaced">
       <summary class="target-progress-summary">路程目標の進捗を見る</summary>
-      <div class="table-scroll mt-8">
-      <table class="mt-8 mobile-card-table target-progress-table">
-        <thead>
-          <tr><th>部署</th><th>路程目標</th><th>路程累計実績</th><th>達成率</th></tr>
-        </thead>
-        <tbody>
-          {% for row in target_progress_rows %}
-          <tr>
-            <td data-label="部署">{{ row.label }}</td>
-            <td data-label="路程目標">{{ row.period_target }}</td>
-            <td data-label="路程累計実績">{{ row.period_actual }}</td>
-            <td data-label="達成率">{{ row.period_rate }}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="4">目標データがありません。</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      </div>
+      {% include "includes/target_progress_cards.html" with scope="period" %}
     </details>
   </section>
   </main>

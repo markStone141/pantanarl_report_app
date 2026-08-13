@@ -1,0 +1,31 @@
+<h4 class="target-progress-scope-title">{% if scope == "month" %}月目標の進捗{% else %}路程目標の進捗{% endif %}</h4>
+<div class="target-progress-grid">
+  {% for row in target_progress_rows %}
+  <article class="target-progress-card">
+    <header class="target-progress-card__header">
+      <span class="target-progress-card__eyebrow">部署</span>
+      <h4>{{ row.label }}</h4>
+    </header>
+
+    <div class="target-progress-metrics">
+      {% if scope == "month" %}
+        {% for metric in row.month_metrics %}
+          {% include "includes/target_progress_metric.html" %}
+        {% empty %}
+          <p class="target-progress-empty">目標データがありません。</p>
+        {% endfor %}
+        {% if row.month_adjustment_note %}<p class="target-progress-note">{{ row.month_adjustment_note }}込み</p>{% endif %}
+      {% else %}
+        {% for metric in row.period_metrics %}
+          {% include "includes/target_progress_metric.html" %}
+        {% empty %}
+          <p class="target-progress-empty">目標データがありません。</p>
+        {% endfor %}
+        {% if row.period_adjustment_note %}<p class="target-progress-note">{{ row.period_adjustment_note }}込み</p>{% endif %}
+      {% endif %}
+    </div>
+  </article>
+  {% empty %}
+  <p class="target-progress-empty">目標データがありません。</p>
+  {% endfor %}
+</div>

@@ -778,7 +778,9 @@ class ReportTargetMonthSelectionTests(TestCase):
         self.assertContains(response, 'class="target-scope-overview"')
         self.assertContains(response, "現在路程")
         self.assertContains(response, "進行中")
-        self.assertContains(response, 'class="mt-8 mobile-card-table target-progress-table"')
+        self.assertContains(response, 'class="target-progress-grid"')
+        self.assertContains(response, 'class="target-progress-value target-progress-value--actual"')
+        self.assertContains(response, "7,777")
         period.refresh_from_db()
         self.assertEqual(period.status, "active")
 
