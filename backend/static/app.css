@@ -1555,6 +1555,149 @@ th {
   cursor: pointer;
 }
 
+.target-scope-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 16px;
+}
+
+.target-scope-panel {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  padding: 16px 18px;
+  border: 1px solid #d8e5ee;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f9fcfe 0%, #eef7fb 100%);
+}
+
+.target-scope-panel::after {
+  position: absolute;
+  top: -34px;
+  right: -28px;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  background: rgba(41, 142, 170, 0.08);
+  content: "";
+  pointer-events: none;
+}
+
+.target-scope-panel--period {
+  border-color: #d9dff0;
+  background: linear-gradient(145deg, #fbfcff 0%, #f1f3fb 100%);
+}
+
+.target-scope-panel--period::after {
+  background: rgba(78, 91, 159, 0.08);
+}
+
+.target-scope-panel__head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.target-scope-panel__icon {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  place-items: center;
+  border-radius: 9px;
+  background: #dff1f6;
+  color: #17677e;
+  font-size: 0.82rem;
+}
+
+.target-scope-panel--period .target-scope-panel__icon {
+  background: #e6e9f7;
+  color: #49558e;
+}
+
+.target-scope-panel__label {
+  color: #526472;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.target-scope-status {
+  margin-left: auto;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.target-scope-status.is-active {
+  border-color: #b7e1ca;
+  background: #e7f7ee;
+  color: #18794e;
+}
+
+.target-scope-status.is-planned {
+  border-color: #cbdcf7;
+  background: #edf4ff;
+  color: #285ea8;
+}
+
+.target-scope-status.is-finished {
+  border-color: #d9dfe5;
+  background: #f2f4f6;
+  color: #5f6d79;
+}
+
+.target-scope-status.is-unset {
+  border-color: #ead7ac;
+  background: #fff8e8;
+  color: #8a6116;
+}
+
+.target-scope-panel__value {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin-top: 12px;
+  overflow: hidden;
+  color: #16364b;
+  font-size: clamp(1.28rem, 2.2vw, 1.7rem);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.target-scope-panel__caption {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin-top: 5px;
+  color: #687985;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.target-progress-summary {
+  padding: 10px 12px;
+  border: 1px solid #dce5eb;
+  border-radius: 10px;
+  background: #f8fafb;
+  color: #20415d;
+  font-weight: 750;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.target-progress-summary:hover {
+  border-color: #b9d0dc;
+  background: #f1f7fa;
+}
+
 .report-member-input-label {
   margin-top: 12px;
 }
@@ -1971,6 +2114,29 @@ th {
 }
 
 @media (max-width: 768px) {
+  .target-scope-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .target-scope-panel {
+    padding: 14px;
+  }
+
+  .table-scroll > .target-progress-table {
+    min-width: 0;
+  }
+
+  .target-progress-table td {
+    overflow-wrap: anywhere;
+  }
+
+  .target-progress-table td:first-child {
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--line);
+    color: #173f58;
+    font-weight: 800;
+  }
+
   .grid-2 {
     grid-template-columns: 1fr;
   }

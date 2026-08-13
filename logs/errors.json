@@ -777,5 +777,20 @@
     "action": "ハッシャー比較コマンドでbackend内から誤った仮想環境パスを指定し、正しい相対パスで再実行した。",
     "reason": "作業ディレクトリと実行パスの基準が一致していなかったため。",
     "next_action": "コマンド実行前に現在位置を確認する。"
+  },
+  {
+    "timestamp": "2026-08-13T16:17:23+09:00",
+    "expires_at": "2026-11-11T16:17:23+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260813-1618-ui-target-header",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "npm lintと全体BOMスクリプトを実行",
+    "reason": "ESLint実行ファイルが環境になくlintは起動不可。全体BOMスクリプトは無出力で長時間完了せず停止し、変更ファイル限定BOM検査で代替成功した",
+    "next_action": "環境制約を残リスクとして報告する"
   }
 ]

@@ -1,0 +1,22 @@
+<form method="get" class="metrics-header-filter" aria-label="振り返りレポートの出力条件">
+  <select name="department" aria-label="部署">
+    {% for department in departments %}
+    <option value="{{ department.code }}" {% if department.code == selected_department.code %}selected{% endif %}>{{ department.name }}</option>
+    {% endfor %}
+  </select>
+  <select name="scope" data-metrics-report-scope aria-label="集計単位">
+    <option value="month" {% if scope_value == "month" %}selected{% endif %}>月</option>
+    <option value="period" {% if scope_value == "period" %}selected{% endif %}>路程</option>
+  </select>
+  <span data-metrics-report-field="month">
+    <input type="month" name="month" value="{{ month_value }}" aria-label="対象月">
+  </span>
+  <span class="metrics-header-filter-wide" data-metrics-report-field="period">
+    <select name="period_id" aria-label="対象路程">
+      {% for period in period_options %}
+      <option value="{{ period.id }}" {% if period.id == selected_period_id %}selected{% endif %}>{{ period.name }}（{{ period.start_date|date:"Y/m/d" }} - {{ period.end_date|date:"Y/m/d" }}）</option>
+      {% endfor %}
+    </select>
+  </span>
+  <button type="submit" class="ui-button ui-button--secondary">表示</button>
+</form>

@@ -4,65 +4,17 @@
 {% block title %}分析する | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=26" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=27" />
 {% endblock %}
 
 {% block content %}
 <div class="app-shell">
-  {% include "includes/app_navigation.html" with page_title="分析する" page_subtitle=metrics_page_subtitle %}
+  {% include "includes/app_navigation.html" with page_title="分析する" page_subtitle=metrics_page_subtitle header_controls_template="dairymetrics/partials/metrics_v2_header_controls.html" %}
   <main class="container app-shell-content">
 
-  <section class="card mt-16">
-    <div class="row">
-      <div>
-        <h2>集計条件</h2>
-        <div class="muted">月・路程・期間を切り替えて振り返りできます。</div>
-      </div>
-    </div>
-    <form method="get" class="grid mt-12 metrics-v2-filter-grid">
-      <div>
-        <select id="metrics-v2-department" name="department" aria-label="部署">
-          {% for department in departments %}
-          <option value="{{ department.code }}" {% if department.code == selected_department.code %}selected{% endif %}>{{ department.name }}</option>
-          {% endfor %}
-        </select>
-        {% if is_admin and selected_member %}
-        <input type="hidden" name="member" value="{{ selected_member.id }}">
-        {% endif %}
-      </div>
-      <div>
-        <select id="metrics-v2-scope" name="scope" data-metrics-v2-scope aria-label="集計期間">
-          <option value="recent" {% if scope_value == "recent" %}selected{% endif %}>過去30日間</option>
-          <option value="month" {% if scope_value == "month" %}selected{% endif %}>月</option>
-          <option value="period" {% if scope_value == "period" %}selected{% endif %}>路程</option>
-          <option value="custom" {% if scope_value == "custom" %}selected{% endif %}>期間指定</option>
-        </select>
-      </div>
-      <div data-metrics-v2-scope-field="month">
-        <input id="metrics-v2-month" type="month" name="month" value="{{ month_value }}" aria-label="対象月">
-      </div>
-      <div data-metrics-v2-scope-field="period">
-        <select id="metrics-v2-period" name="period_id" aria-label="対象路程">
-          <option value="">選択してください</option>
-          {% for period in period_options %}
-          <option value="{{ period.id }}" {% if period.id == selected_period_id %}selected{% endif %}>{{ period.name }}（{{ period.start_date|date:"Y/m/d" }} - {{ period.end_date|date:"Y/m/d" }}）</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div data-metrics-v2-scope-field="custom">
-        <input id="metrics-v2-start-date" type="date" name="start_date" value="{{ start_date_value }}" aria-label="開始日">
-      </div>
-      <div data-metrics-v2-scope-field="custom">
-        <input id="metrics-v2-end-date" type="date" name="end_date" value="{{ end_date_value }}" aria-label="終了日">
-      </div>
-      <div>
-        <button type="submit" class="ui-button ui-button--secondary">表示</button>
-      </div>
-    </form>
-    <div class="mt-12">
-      <a class="ui-button ui-button--secondary" href="{% url 'dairymetrics_metrics_report' %}?department={{ selected_department.code }}&scope={{ scope_value }}{% if scope.month_start %}&month={{ month_value }}{% endif %}{% if scope.period %}&period_id={{ scope.period.id }}{% endif %}">この条件で振り返りレポートを見る</a>
-    </div>
-  </section>
+  <div class="metrics-page-actions mt-16">
+    <a class="ui-button ui-button--secondary" href="{% url 'dairymetrics_metrics_report' %}?department={{ selected_department.code }}&scope={{ scope_value }}{% if scope.month_start %}&month={{ month_value }}{% endif %}{% if scope.period %}&period_id={{ scope.period.id }}{% endif %}">この条件で振り返りレポートを見る</a>
+  </div>
 
   {{ metrics_v2_payload_json|json_script:"metrics-v2-dashboard-data" }}
 

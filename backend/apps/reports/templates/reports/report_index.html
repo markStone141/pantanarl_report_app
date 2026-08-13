@@ -66,50 +66,54 @@
     </div>
   </section>
 
-  <section class="card mt-16">
-    <h3>目標管理</h3>
-    <p class="muted">対象月: {{ target_month_summary }} [{{ target_month_status }}] / 現在路程: {{ target_period_summary }} [{{ target_period_status }}]</p>
+  <section class="card ui-section mt-16 target-management-section">
+    {% include "includes/ui_section_heading.html" with kicker="TARGETS" title="目標管理" description="現在の対象期間と、部署ごとの進捗を確認できます。" %}
+    {% include "includes/target_scope_overview.html" %}
 
     <details class="report-details report-details-spaced">
-      <summary>月目標（詳細）</summary>
-      <table class="mt-8">
+      <summary class="target-progress-summary">月目標の進捗を見る</summary>
+      <div class="table-scroll mt-8">
+      <table class="mt-8 mobile-card-table target-progress-table">
         <thead>
           <tr><th>部署</th><th>月目標</th><th>月累計実績</th><th>達成率</th></tr>
         </thead>
         <tbody>
           {% for row in target_progress_rows %}
           <tr>
-            <td>{{ row.label }}</td>
-            <td>{{ row.month_target }}</td>
-            <td>{{ row.month_actual }}</td>
-            <td>{{ row.month_rate }}</td>
+            <td data-label="部署">{{ row.label }}</td>
+            <td data-label="月目標">{{ row.month_target }}</td>
+            <td data-label="月累計実績">{{ row.month_actual }}</td>
+            <td data-label="達成率">{{ row.month_rate }}</td>
           </tr>
           {% empty %}
           <tr><td colspan="4">目標データがありません。</td></tr>
           {% endfor %}
         </tbody>
       </table>
+      </div>
     </details>
 
     <details class="report-details report-details-spaced">
-      <summary>路程目標（詳細）</summary>
-      <table class="mt-8">
+      <summary class="target-progress-summary">路程目標の進捗を見る</summary>
+      <div class="table-scroll mt-8">
+      <table class="mt-8 mobile-card-table target-progress-table">
         <thead>
           <tr><th>部署</th><th>路程目標</th><th>路程累計実績</th><th>達成率</th></tr>
         </thead>
         <tbody>
           {% for row in target_progress_rows %}
           <tr>
-            <td>{{ row.label }}</td>
-            <td>{{ row.period_target }}</td>
-            <td>{{ row.period_actual }}</td>
-            <td>{{ row.period_rate }}</td>
+            <td data-label="部署">{{ row.label }}</td>
+            <td data-label="路程目標">{{ row.period_target }}</td>
+            <td data-label="路程累計実績">{{ row.period_actual }}</td>
+            <td data-label="達成率">{{ row.period_rate }}</td>
           </tr>
           {% empty %}
           <tr><td colspan="4">目標データがありません。</td></tr>
           {% endfor %}
         </tbody>
       </table>
+      </div>
     </details>
   </section>
   </main>
