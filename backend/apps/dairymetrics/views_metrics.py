@@ -16,6 +16,27 @@ from .services.reports import build_metrics_scope_report
 from .view_helpers import login_redirect_url, member_directory_queryset, requested_or_current_period
 
 
+def _shared_navigation_context(*, request, viewer_member, selected_department, selected_member=None):
+    is_admin = request.user.is_staff
+    navigation_member = selected_member if is_admin else viewer_member
+    readonly_member_view = bool(is_admin and selected_member)
+    performance_dashboard_url = ""
+    if readonly_member_view:
+        performance_dashboard_url = reverse(
+            "performance_member_insight",
+            args=[navigation_member.id, selected_department.id],
+        )
+    elif not is_admin:
+        performance_dashboard_url = reverse("performance_member_dashboard")
+    return {
+        "navigation_department": selected_department,
+        "navigation_member": navigation_member,
+        "is_admin_view": is_admin,
+        "readonly_member_view": readonly_member_view,
+        "performance_dashboard_url": performance_dashboard_url,
+    }
+
+
 @require_dairymetrics_member
 def metrics_v2(request: HttpRequest) -> HttpResponse:
     viewer_member = get_member_profile(request.user)
@@ -67,6 +88,14 @@ def metrics_v2(request: HttpRequest) -> HttpResponse:
             detail_urls.append(detail_url)
         metric_payload["detail_urls"] = detail_urls
     payload_json = {**payload, "scope": {"scope": scope.scope, "label": scope.label}}
+    if request.user.is_staff:
+        metrics_page_subtitle = (
+            f"{selected_member.name}さん / {selected_department.name} の分析"
+            if selected_member
+            else f"{selected_department.name} の全体分析"
+        )
+    else:
+        metrics_page_subtitle = f"{viewer_member.name}さん / {selected_department.name} の分析"
     context = {
         "is_admin": request.user.is_staff,
         "member": viewer_member,
@@ -82,6 +111,13 @@ def metrics_v2(request: HttpRequest) -> HttpResponse:
         "selected_period_id": scope.period.id if scope.period else "",
         "metrics_v2_payload": payload,
         "metrics_v2_payload_json": payload_json,
+        "metrics_page_subtitle": metrics_page_subtitle,
+        **_shared_navigation_context(
+            request=request,
+            viewer_member=viewer_member,
+            selected_department=selected_department,
+            selected_member=selected_member,
+        ),
     }
     return render(request, "dairymetrics/metrics_v2.html", context)
 
@@ -132,6 +168,12 @@ def metrics_report_data(request):
         "selected_period_id": scope.period.id if scope.period else "",
         "report": report,
         "report_export_query": export_query,
+        "metrics_report_page_subtitle": f"{selected_department.name} / {scope.label}",
+        **_shared_navigation_context(
+            request=request,
+            viewer_member=viewer_member,
+            selected_department=selected_department,
+        ),
     }
 
 

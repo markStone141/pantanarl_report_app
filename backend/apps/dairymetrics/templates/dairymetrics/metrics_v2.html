@@ -8,51 +8,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
-  <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
-    <div>
-      <strong>分析する</strong>
-      <div class="topbar-muted">
-        {% if is_admin %}
-        {% if selected_member %}
-        {{ selected_member.name }}さん / {{ selected_department.name }} の分析
-        {% else %}
-        {{ selected_department.name }} の全体分析
-        {% endif %}
-        {% else %}
-        {{ member.name }}さん / {{ selected_department.name }} の分析
-        {% endif %}
-      </div>
-    </div>
-    <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="Open menu">
-      <i class="fa-solid fa-bars" aria-hidden="true"></i>
-    </button>
-    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
-      {% if is_admin %}
-      <a href="{% url 'performance_index' %}">管理者用ダッシュボード</a>
-      {% if selected_member %}
-      <a href="{% url 'performance_member_insight' selected_member.id selected_department.id %}">実績管理ダッシュボード</a>
-      <a href="{% url 'performance_member_history_insight' selected_member.id selected_department.id %}">過去の実績を見る</a>
-      {% else %}
-      <a href="{% url 'performance_history' %}">過去の実績を見る</a>
-      {% endif %}
-      <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
-      <a href="{% url 'dairymetrics_metrics_report' %}">振り返りレポート</a>
-      <a href="{% url 'dashboard_index' %}">総合管理者画面</a>
-      <a href="{% url 'talks_index' %}">お知らせ</a>
-      {% else %}
-      <a href="{% url 'performance_member_dashboard' %}">実績管理ダッシュボード</a>
-      <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
-      <a href="{% url 'performance_member_history' %}">過去の実績を見る</a>
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
-      <a href="{% url 'dairymetrics_metrics_report' %}">振り返りレポート</a>
-      <a href="{% url 'talks_index' %}">お知らせ</a>
-      {% endif %}
-      <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
-    </nav>
-    <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
-  </header>
+<div class="app-shell">
+  {% include "includes/app_navigation.html" with page_title="分析する" page_subtitle=metrics_page_subtitle %}
+  <main class="container app-shell-content">
 
   <section class="card mt-16">
     <div class="row">
@@ -276,8 +234,9 @@
       <canvas id="metrics-v2-average-amount-chart" class="metrics-v2-history-chart" aria-label="属性別の平均金額"></canvas>
     </div>
   </section>
+  </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="{% static 'dairymetrics/metrics_v2.js' %}?v=8"></script>
-<script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

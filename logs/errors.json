@@ -582,5 +582,50 @@
     "action": "OneDrive上のBOM全体検査を55秒の上限で停止した。",
     "reason": "既知の全体走査遅延により応答時間の上限へ達した。",
     "next_action": "今回の変更6ファイルを先頭バイトと末尾改行で直接検査する。"
+  },
+  {
+    "timestamp": "2026-08-13T14:30:48+09:00",
+    "expires_at": "2026-11-11T14:30:48+09:00",
+    "retention_days": 90,
+    "run_id": "ui-phase-13-3",
+    "loop": 1,
+    "role": "test_agent",
+    "event": "targeted-test-command",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "DairyMetrics対象テストで実在しないクラス名を指定し、読込前に停止した。",
+    "reason": "実ファイルのクラス名確認が不足していたため。",
+    "next_action": "DairyMetricsV2DemoTestsを指定して再実行する。"
+  },
+  {
+    "timestamp": "2026-08-13T14:30:48+09:00",
+    "expires_at": "2026-11-11T14:30:48+09:00",
+    "retention_days": 90,
+    "run_id": "ui-phase-13-3",
+    "loop": 2,
+    "role": "validator",
+    "event": "regression-contracts",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "共通NAV移行と部署フィルター移設により旧文言・旧フィルターを期待するテスト2件を検出した。",
+    "reason": "画面契約が新しい共通NAVとヘッダー操作へ変わったため。",
+    "next_action": "必要な部署補足文を復元し、テストを新UI契約へ更新する。"
+  },
+  {
+    "timestamp": "2026-08-13T14:30:49+09:00",
+    "expires_at": "2026-11-11T14:30:49+09:00",
+    "retention_days": 90,
+    "run_id": "ui-phase-13-3",
+    "loop": 3,
+    "role": "validator",
+    "event": "static-check-path",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "backendディレクトリからルート相対パスを指定し、JavaScript検査対象を見つけられなかった。",
+    "reason": "静的検査コマンドの作業場所とパスが一致していなかったため。",
+    "next_action": "リポジトリルートから正しいパスで再実行する。"
   }
 ]
