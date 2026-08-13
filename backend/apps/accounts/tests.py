@@ -9,49 +9,44 @@ class LoginFlowTests(TestCase):
         user_model.objects.create_user(username="admin", password="admin-pass", is_staff=True)
         user_model.objects.create_user(username="report", password="report-pass", is_staff=False)
 
-    def test_admin_login_redirects_dashboard(self):
-        response = self.client.post(
-            reverse("home"),
-            {
-                "login_id": "admin",
-                "password": "admin-pass",
-            },
+    def test_login_credentials_set_session_and_redirect_by_role(self):
+        cases = (
+            ("admin", "admin-pass", "dashboard_index", "admin"),
+            ("report", "report-pass", "report_index", "report"),
+            ("report", "0823", "report_index", "report"),
         )
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("dashboard_index"))
-        self.assertEqual(self.client.session.get("role"), "admin")
 
-    def test_report_login_redirects_report_index(self):
-        response = self.client.post(
-            reverse("home"),
-            {
-                "login_id": "report",
-                "password": "report-pass",
-            },
+        for login_id, password, redirect_name, expected_role in cases:
+            with self.subTest(login_id=login_id, password_kind="fixed" if password == "0823" else "user"):
+                self.client.logout()
+                response = self.client.post(
+                    reverse("home"),
+                    {"login_id": login_id, "password": password},
+                )
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.url, reverse(redirect_name))
+                self.assertEqual(self.client.session.get("role"), expected_role)
+                self.assertIn("_auth_user_id", self.client.session)
+
+    def test_authenticated_users_open_report_home_without_reentering_password(self):
+        report_user = get_user_model().objects.create_user(
+            username="member_report_shortcut",
+            password="x",
+            is_staff=False,
         )
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("report_index"))
-        self.assertEqual(self.client.session.get("role"), "report")
+        cases = (
+            (get_user_model().objects.get(username="admin"), "dashboard_index", "admin"),
+            (report_user, "report_index", "report"),
+        )
 
-    def test_authenticated_staff_can_open_report_home_without_reentering_password(self):
-        admin_user = get_user_model().objects.get(username="admin")
-        self.client.force_login(admin_user)
-
-        response = self.client.get(reverse("home"))
-
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("dashboard_index"))
-        self.assertEqual(self.client.session.get("role"), "admin")
-
-    def test_authenticated_member_can_open_report_home_without_reentering_password(self):
-        report_user = get_user_model().objects.create_user(username="member_report_shortcut", password="x", is_staff=False)
-        self.client.force_login(report_user)
-
-        response = self.client.get(reverse("home"))
-
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("report_index"))
-        self.assertEqual(self.client.session.get("role"), "report")
+        for user, redirect_name, expected_role in cases:
+            with self.subTest(username=user.username):
+                self.client.logout()
+                self.client.force_login(user)
+                response = self.client.get(reverse("home"))
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.url, reverse(redirect_name))
+                self.assertEqual(self.client.session.get("role"), expected_role)
 
     def test_wrong_password_shows_error(self):
         response = self.client.post(
@@ -63,45 +58,6 @@ class LoginFlowTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "管理者パスワードが正しくありません。")
-
-    def test_admin_login_uses_django_user_password(self):
-        response = self.client.post(
-            reverse("home"),
-            {
-                "login_id": "admin",
-                "password": "admin-pass",
-            },
-        )
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("dashboard_index"))
-        self.assertEqual(self.client.session.get("role"), "admin")
-        self.assertIn("_auth_user_id", self.client.session)
-
-    def test_report_login_uses_django_user_password(self):
-        response = self.client.post(
-            reverse("home"),
-            {
-                "login_id": "report",
-                "password": "report-pass",
-            },
-        )
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("report_index"))
-        self.assertEqual(self.client.session.get("role"), "report")
-        self.assertIn("_auth_user_id", self.client.session)
-
-    def test_report_login_accepts_fixed_password(self):
-        response = self.client.post(
-            reverse("home"),
-            {
-                "login_id": "report",
-                "password": "0823",
-            },
-        )
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("report_index"))
-        self.assertEqual(self.client.session.get("role"), "report")
-        self.assertIn("_auth_user_id", self.client.session)
 
     def test_report_login_accepts_fixed_password_without_existing_report_user(self):
         get_user_model().objects.filter(username="report").delete()
@@ -170,15 +126,12 @@ class LoginFlowTests(TestCase):
 
 
 class RoleGuardTests(TestCase):
-    def test_dashboard_requires_admin(self):
-        response = self.client.get(reverse("dashboard_index"))
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("home"))
-
-    def test_report_form_requires_login(self):
-        response = self.client.get(reverse("report_un"))
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("home"))
+    def test_protected_pages_redirect_anonymous_users_to_home(self):
+        for url_name in ("dashboard_index", "report_un"):
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.url, reverse("home"))
 
     def test_dashboard_allows_staff_user_without_session_role(self):
         user_model = get_user_model()

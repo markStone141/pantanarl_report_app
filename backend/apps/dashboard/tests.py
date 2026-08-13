@@ -725,19 +725,18 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         session["role"] = "admin"
         session.save()
 
-    def test_dashboard_nav_links_to_report_index(self):
+    def test_dashboard_navigation_links_to_daily_and_shared_content(self):
         response = self.client.get(reverse("dashboard_index"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, f'href="{reverse("report_index")}"', html=False)
-        self.assertContains(response, "報告入力")
-
-    def test_dashboard_nav_links_to_testimony(self):
-        response = self.client.get(reverse("dashboard_index"))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, f'href="{reverse("testimony_article_list")}"', html=False)
-        self.assertContains(response, "証を見る")
+        cases = (
+            ("report_index", "報告入力"),
+            ("testimony_article_list", "証を見る"),
+        )
+        for url_name, label in cases:
+            with self.subTest(url_name=url_name):
+                self.assertContains(response, f'href="{reverse(url_name)}"', html=False)
+                self.assertContains(response, label)
 
     def test_dashboard_uses_grouped_shared_navigation(self):
         response = self.client.get(reverse("dashboard_index"))
