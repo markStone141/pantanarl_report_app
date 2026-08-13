@@ -31,10 +31,22 @@
 }
 
 .target-history-card {
-  border: 1px solid #d4e2ea;
-  border-radius: 12px;
-  background: #fbfdff;
-  padding: 14px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #d9e4eb;
+  border-radius: 14px;
+  background: #fff;
+  padding: 15px 16px;
+}
+
+.target-history-card::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: #4b91b6;
+  content: "";
 }
 
 .target-history-card-head {
@@ -42,6 +54,20 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+}
+
+.target-history-card-label {
+  display: block;
+  margin-bottom: 3px;
+  color: #758692;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.target-history-card-label + strong {
+  color: #173f58;
+  font-size: 1.03rem;
 }
 
 .target-status-badge.is-active {
@@ -88,15 +114,24 @@
 }
 
 .target-history-details summary {
+  padding: 9px 11px;
   cursor: pointer;
+  border: 1px solid #dce5eb;
+  border-radius: 9px;
+  background: #f7fafb;
   font-weight: 700;
   color: #20415d;
 }
 
 .target-history-details-body {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
   margin-top: 12px;
+}
+
+.target-history-progress-card {
+  height: 100%;
 }
 
 .target-history-department {
@@ -109,24 +144,6 @@
 .target-history-department h4 {
   margin: 0 0 8px;
   font-size: 0.98rem;
-}
-
-.target-history-metric-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.target-history-metric-table th,
-.target-history-metric-table td {
-  padding: 8px 10px;
-  border-bottom: 1px solid #e7edf3;
-  text-align: left;
-  font-size: 0.9rem;
-}
-
-.target-history-metric-table th {
-  background: #f6f9fc;
-  white-space: nowrap;
 }
 
 .target-history-pagination {
@@ -147,10 +164,6 @@
     justify-content: flex-start;
   }
 
-  .target-history-metric-table {
-    display: block;
-    overflow-x: auto;
-  }
 }
 .target-metric-group {
   min-width: 0;
@@ -188,4 +201,212 @@
 
 .target-form-actions {
   margin-top: 12px;
+}
+
+.target-settings-form { margin-top: 12px; }
+
+.target-settings-config-panel {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid #d9e5ec;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f9fcfe 0%, #f1f7fa 100%);
+}
+
+.target-month-config-panel { grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1.2fr); }
+.target-period-config-panel { grid-template-columns: repeat(4, minmax(150px, 1fr)); }
+
+.target-settings-config-field,
+.target-settings-metric-field {
+  display: block;
+  min-width: 0;
+}
+
+.target-settings-config-field > span,
+.target-settings-status-field > span,
+.target-settings-selected-period > span,
+.target-settings-metric-field > span:first-child {
+  display: block;
+  margin-bottom: 6px;
+  color: #526672;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.target-settings-config-field > span i {
+  width: 16px;
+  color: #4385a7;
+  text-align: center;
+}
+
+.target-settings-config-field input,
+.target-settings-config-field select {
+  margin: 0;
+  border-color: #cad9e2;
+  background: #fff;
+}
+
+.target-settings-status-field,
+.target-settings-selected-period {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #dbe5eb;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.target-settings-status-field > strong { display: inline-flex; }
+
+.target-settings-status-field > small {
+  display: block;
+  margin-top: 7px;
+  color: #748590;
+  font-size: 0.72rem;
+}
+
+.target-settings-selected-period > strong {
+  display: block;
+  overflow: hidden;
+  color: #173f58;
+  font-size: 0.92rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.target-settings-subheading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 20px 0 10px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #e1e9ee;
+}
+
+.target-settings-subheading span {
+  color: #26789e;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.target-settings-subheading h4 {
+  margin: 2px 0 0;
+  color: #173f58;
+  font-size: 1rem;
+}
+
+.target-settings-subheading p {
+  margin: 0;
+  color: #748590;
+  font-size: 0.76rem;
+}
+
+.target-settings-department-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.target-settings-department-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dce5eb;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.target-settings-department-card > header {
+  padding: 10px 13px;
+  border-bottom: 1px solid #e5ecef;
+  background: #f7fafb;
+}
+
+.target-settings-department-card > header span {
+  display: block;
+  color: #7a8993;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.target-settings-department-card > header h4 {
+  margin: 2px 0 0;
+  color: #173f58;
+  font-size: 0.98rem;
+}
+
+.target-settings-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  padding: 13px;
+}
+
+.target-settings-input-shell {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #cbd9e2;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.target-settings-input-shell:focus-within {
+  border-color: #4188ad;
+  box-shadow: 0 0 0 3px rgba(65, 136, 173, 0.14);
+}
+
+.target-settings-input-shell input {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #163f58;
+  font-size: 1.04rem;
+  font-weight: 750;
+  text-align: right;
+}
+
+.target-settings-input-shell input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.target-settings-input-shell small {
+  padding: 0 11px 0 7px;
+  color: #6f808a;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.target-settings-form .target-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e1e9ee;
+}
+
+@media (max-width: 768px) {
+  .target-month-config-panel,
+  .target-period-config-panel,
+  .target-settings-department-grid,
+  .target-settings-metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .target-settings-config-panel { padding: 12px; }
+
+  .target-settings-subheading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .target-settings-form .target-form-actions .ui-button { width: 100%; }
 }

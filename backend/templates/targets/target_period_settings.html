@@ -5,7 +5,7 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=4" />
+<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=6" />
 {% endblock %}
 
 {% block content %}
@@ -18,8 +18,8 @@
     <a class="ui-tab is-active" aria-current="page" href="{% url 'target_period_settings' %}">路程目標</a>
   </nav>
 
-  <section class="card ui-section mt-16">
-    <h3>路程期間・目標設定</h3>
+  <section class="card ui-section mt-16 target-settings-create-section">
+    {% include "includes/ui_section_heading.html" with kicker="PERIOD" title="路程目標を作成" description="路程の期間と回次を設定し、部署ごとの目標値を入力します。" %}
     {% if form_error %}
     <div class="error-text target-feedback">{{ form_error }}</div>
     {% endif %}
@@ -29,58 +29,48 @@
     {% if target_saved %}
     <div class="notice target-feedback">路程目標を保存しました。</div>
     {% endif %}
-    <form method="post">
+    <form method="post" class="target-settings-form">
       {% csrf_token %}
       <input type="hidden" name="action" value="save_period" />
       <input type="hidden" name="edit_period_id" value="{{ form_edit_period_id }}" />
       <input type="hidden" name="force_overwrite" value="0" />
       <input type="hidden" name="overwrite_period_id" value="" />
-      <div class="grid grid-2">
-        <div>
-          <label>対象年月</label>
+      <div class="target-settings-config-panel target-period-config-panel">
+        <label class="target-settings-config-field">
+          <span><i class="fa-regular fa-calendar" aria-hidden="true"></i> 対象年月</span>
           <input type="month" name="period_month" value="{{ form_month }}" required />
-        </div>
-        <div>
-          <label>路程回次</label>
+        </label>
+        <label class="target-settings-config-field">
+          <span><i class="fa-solid fa-route" aria-hidden="true"></i> 路程回次</span>
           <select name="period_sequence" required>
             {% for value in period_sequence_options %}
             <option value="{{ value }}" {% if form_sequence == value %}selected{% endif %}>第{{ value }}次</option>
             {% endfor %}
           </select>
-        </div>
-        <div>
-          <label>状態（自動）</label>
-          <div class="badge target-current-badge">{{ form_status }}</div>
-        </div>
-        <div>
-          <label>対象路程</label>
-          <div class="badge target-current-badge">{{ selected_period_label }}</div>
-        </div>
-      </div>
-      <div class="grid grid-2">
-        <div>
-          <label>開始日</label>
+        </label>
+        <label class="target-settings-config-field">
+          <span>開始日</span>
           <input type="date" name="start_date" value="{{ form_start_date }}" required />
-        </div>
-        <div>
-          <label>終了日</label>
+        </label>
+        <label class="target-settings-config-field">
+          <span>終了日</span>
           <input type="date" name="end_date" value="{{ form_end_date }}" required />
+        </label>
+        <div class="target-settings-status-field">
+          <span>状態（自動）</span>
+          <strong class="target-status-badge {{ form_status_class }}">{{ form_status_label }}</strong>
+          <small>開始日と終了日から自動判定します</small>
+        </div>
+        <div class="target-settings-selected-period">
+          <span>編集中の路程</span>
+          <strong>{{ selected_period_label }}</strong>
         </div>
       </div>
-      {% for row in rows %}
-      <div class="target-metric-group">
-        <strong>{{ row.label }}</strong>
-        <div class="grid grid-2 target-metric-input-grid">
-          {% for metric in row.metrics %}
-          <div>
-            <label>{{ metric.label }}</label>
-            <input type="text" inputmode="numeric" name="{{ metric.input_name }}" value="{{ metric.value }}" />
-            <div class="muted">{{ metric.unit }}</div>
-          </div>
-          {% endfor %}
-        </div>
+      <div class="target-settings-subheading">
+        <div><span>DEPARTMENTS</span><h4>部署別目標</h4></div>
+        <p>路程期間中に達成する目標を部署ごとに設定します。</p>
       </div>
-      {% endfor %}
+      {% include "targets/_target_input_cards.html" %}
 
       <div class="target-form-actions"><button type="submit" class="ui-button ui-button--primary">路程と目標を保存</button></div>
     </form>
@@ -101,6 +91,7 @@
       <article class="target-history-card">
         <div class="target-history-card-head">
           <div>
+            <span class="target-history-card-label">路程</span>
             <strong>{{ row.name }}</strong>
             <div class="muted">{{ row.range_label }}</div>
           </div>
@@ -188,7 +179,8 @@
     }
 
     document.querySelectorAll("form").forEach(function (form) {
-      if (form.querySelector("input[name='action'][value='save_period_targets']")) {
+      if (form.querySelector("input[name='action'][value='save_period_targets']") ||
+          form.querySelector("input[name='action'][value='save_period']")) {
         bindForm(form);
       }
     });

@@ -544,6 +544,8 @@ def _period_form_values(selected_period: Period | None, *, include_edit_id: bool
         "form_month": _month_value_from_date(selected_month),
         "form_sequence": selected_sequence,
         "form_status": selected_status,
+        "form_status_label": STATUS_LABELS.get(selected_status, selected_status),
+        "form_status_class": f"is-{selected_status}",
         "form_start_date": selected_start,
         "form_end_date": selected_end,
         "form_edit_period_id": selected_id,
@@ -645,13 +647,16 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
             month_deleted = True
 
     history_rows = _month_history_rows()
+    selected_status = _month_status(selected_month)
     return render(
         request,
         "targets/target_month_settings.html",
         {
             "selected_month": _month_value_from_date(selected_month),
             "selected_month_label": f"{selected_month.year}年{selected_month.month}月",
-            "selected_status": _month_status(selected_month),
+            "selected_status": selected_status,
+            "selected_status_label": STATUS_LABELS.get(selected_status, selected_status),
+            "selected_status_class": f"is-{selected_status}",
             "status_options": STATUS_OPTIONS,
             "rows": _build_month_rows(target_month=selected_month, configs=configs),
             "history_rows": history_rows,

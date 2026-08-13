@@ -1,41 +1,53 @@
-<div class="row">
+<div class="performance-record-panel-heading">
   <div>
     {% if today_detail_tabbed %}<h4 class="performance-record-panel-title">本日の送信メール詳細</h4>{% else %}<h3>本日の送信メール詳細</h3>{% endif %}
     {% if not today_detail_tabbed %}<div class="muted">{{ today_detail_date|date:"Y/m/d" }} の選択部署送信メールです。</div>{% endif %}
   </div>
+  <span class="performance-record-panel-count">{{ today_mail_rows|length }}件</span>
 </div>
 {% if today_mail_rows %}
-<div class="mt-12">
-  <table class="mobile-card-table performance-recent-detail-table">
-    <thead>
-      <tr>
-        <th>メンバー</th>
-        <th>件名</th>
-        <th>状態</th>
-        <th>送信時刻</th>
-        <th>詳細</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in today_mail_rows %}
-      <tr>
-        <td data-label="メンバー">{{ row.member_name }}</td>
-        <td data-label="件名">{{ row.subject }}</td>
-        <td data-label="状態">{{ row.status_text }}</td>
-        <td data-label="送信時刻">{{ row.sent_at_text }}</td>
-        <td data-label="詳細">
-          <details>
-            <summary>内容</summary>
-            <div class="mt-10 muted">送信先: {{ row.recipient_text }}</div>
-            <div class="mt-8">{{ row.body_text|linebreaksbr }}</div>
-            {% if row.error_text %}<div class="mt-8 muted">エラー: {{ row.error_text }}</div>{% endif %}
-          </details>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="performance-record-list mt-12">
+  {% for row in today_mail_rows %}
+  <article class="performance-record-card performance-mail-record-card">
+    <div class="performance-record-card-head">
+      <div class="performance-record-person">
+        <span>メンバー</span>
+        <strong>{{ row.member_name }}</strong>
+      </div>
+      <span class="performance-mail-status is-{{ row.status_value }}">{{ row.status_text }}</span>
+    </div>
+    <div class="performance-record-card-main performance-mail-record-main">
+      <div class="performance-record-subject">
+        <span>件名</span>
+        <strong>{{ row.subject }}</strong>
+      </div>
+      <div class="performance-record-sent-at">
+        <span><i class="fa-regular fa-clock" aria-hidden="true"></i> 送信時刻</span>
+        <strong>{{ row.sent_at_text }}</strong>
+      </div>
+    </div>
+    <details class="performance-record-details">
+      <summary><span>メール内容を見る</span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary>
+      <div class="performance-record-detail-body">
+        <div>
+          <span>送信先</span>
+          <strong>{{ row.recipient_text }}</strong>
+        </div>
+        <div>
+          <span>本文</span>
+          <p>{{ row.body_text|linebreaksbr }}</p>
+        </div>
+        {% if row.error_text %}
+        <div class="performance-record-error">
+          <span>エラー</span>
+          <p>{{ row.error_text }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </details>
+  </article>
+  {% endfor %}
 </div>
 {% else %}
-<p class="muted mt-12">当日の送信メールはありません。</p>
+<div class="performance-record-empty mt-12"><i class="fa-regular fa-envelope" aria-hidden="true"></i><p>当日の送信メールはありません。</p></div>
 {% endif %}

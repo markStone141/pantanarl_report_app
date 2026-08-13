@@ -51,102 +51,11 @@
   <section class="mt-16">
     <div class="grid grid-2">
       {% for card in department_progress_cards %}
-      <article class="card performance-progress-card">
-        <div class="row">
-          <strong>{{ card.label }}</strong>
-          <span class="badge">{{ card.rate_text }}</span>
-        </div>
-        <div class="muted mt-6">{{ card.summary_text }}</div>
-        <div class="muted performance-progress-target-line mt-6">目標 {{ card.target_amount_text }} / 達成率 {{ card.rate_text }}</div>
-        <div class="performance-progress-visual mt-12">
-          <div class="performance-progress-donut">
-            <canvas
-              class="performance-progress-donut-chart"
-              aria-label="{{ card.label }}"
-              data-rate="{{ card.rate|default:'' }}"
-              data-rate-text="{{ card.rate_text }}"
-              data-chart-values="{{ card.chart_values|join:',' }}"
-              width="132"
-              height="132"
-              style="width: 132px; height: 132px; display: block;"
-            ></canvas>
-            <div class="performance-progress-donut-value">{{ card.rate_text }}</div>
-          </div>
-        </div>
-        <div class="performance-progress-legend mt-12">
-          <span class="performance-progress-legend-item">
-            <span class="performance-progress-legend-swatch performance-progress-legend-swatch-base"></span>
-            通常実績
-          </span>
-          <span class="performance-progress-legend-item">
-            <span class="performance-progress-legend-swatch performance-progress-legend-swatch-adjustment"></span>
-            補正実績
-          </span>
-          <span class="performance-progress-legend-item">
-            <span class="performance-progress-legend-swatch performance-progress-legend-swatch-remaining"></span>
-            残り
-          </span>
-        </div>
-        <div class="performance-progress-stats mt-12">
-          <div>実績 {{ card.actual_amount_text }}</div>
-          <div class="muted">通常 {{ card.base_actual_amount_text }}</div>
-          <div class="muted">補正 {{ card.adjustment_amount_text }}</div>
-        </div>
-        {% if card.contribution %}
-        <div class="metric-card mt-12">
-          <div class="row">
-            <strong>{{ member.name }}さんの割合</strong>
-            <span class="badge">{{ card.contribution.rate_text }}</span>
-          </div>
-          <div class="muted mt-8">{{ card.contribution.detail_text }}</div>
-        </div>
-        {% endif %}
-      </article>
+      {% include "performance/partials/progress_value_card.html" %}
       {% endfor %}
 
       {% for card in member_progress_cards %}
-      <article class="card performance-progress-card">
-        <div class="row">
-          <strong>{{ card.label }}</strong>
-          <span class="badge">{{ card.rate_text }}</span>
-        </div>
-        <div class="muted mt-6">{{ card.summary_text }}</div>
-        <div class="muted performance-progress-target-line mt-6">目標 {{ card.target_amount_text }} / 達成率 {{ card.rate_text }}</div>
-        <div class="performance-progress-visual mt-12">
-          <div class="performance-progress-donut">
-            <canvas
-              class="performance-progress-donut-chart"
-              aria-label="{{ card.label }}"
-              data-rate="{{ card.rate|default:'' }}"
-              data-rate-text="{{ card.rate_text }}"
-              data-chart-values="{{ card.chart_values|join:',' }}"
-              width="132"
-              height="132"
-              style="width: 132px; height: 132px; display: block;"
-            ></canvas>
-            <div class="performance-progress-donut-value">{{ card.rate_text }}</div>
-          </div>
-        </div>
-        <div class="performance-progress-legend mt-12">
-          <span class="performance-progress-legend-item">
-            <span class="performance-progress-legend-swatch performance-progress-legend-swatch-base"></span>
-            通常実績
-          </span>
-          <span class="performance-progress-legend-item">
-            <span class="performance-progress-legend-swatch performance-progress-legend-swatch-adjustment"></span>
-            補正実績
-          </span>
-          <span class="performance-progress-legend-item">
-            <span class="performance-progress-legend-swatch performance-progress-legend-swatch-remaining"></span>
-            残り
-          </span>
-        </div>
-        <div class="performance-progress-stats mt-12">
-          <div>実績 {{ card.actual_amount_text }}</div>
-          <div class="muted">通常 {{ card.base_actual_amount_text }}</div>
-          <div class="muted">補正 {{ card.adjustment_amount_text }}</div>
-        </div>
-      </article>
+      {% include "performance/partials/progress_value_card.html" %}
       {% endfor %}
     </div>
   </section>

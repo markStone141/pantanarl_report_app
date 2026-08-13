@@ -5,7 +5,7 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=4" />
+<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=6" />
 {% endblock %}
 
 {% block content %}
@@ -18,38 +18,30 @@
     <a class="ui-tab" href="{% url 'target_period_settings' %}">路程目標</a>
   </nav>
 
-  <section class="card ui-section mt-16">
-    <h3>月目標入力</h3>
+  <section class="card ui-section mt-16 target-settings-create-section">
+    {% include "includes/ui_section_heading.html" with kicker="MONTH" title="月目標を作成" description="対象月を選び、部署ごとの目標値を入力します。" %}
     {% if saved %}
     <div class="notice target-feedback">月目標を保存しました。</div>
     {% endif %}
-    <form method="post">
+    <form method="post" class="target-settings-form">
       {% csrf_token %}
       <input type="hidden" name="action" value="save_month_targets" />
-      <div class="grid grid-2">
-        <div>
-          <label>対象月</label>
+      <div class="target-settings-config-panel target-month-config-panel">
+        <label class="target-settings-config-field">
+          <span><i class="fa-regular fa-calendar" aria-hidden="true"></i> 対象月</span>
           <input name="month" type="month" value="{{ selected_month }}" />
-        </div>
-        <div>
-          <label>状態（自動）</label>
-          <div class="badge target-current-badge">{{ selected_status }}</div>
-        </div>
-      </div>
-      {% for row in rows %}
-      <div class="target-metric-group">
-        <strong>{{ row.label }}</strong>
-        <div class="grid grid-2 target-metric-input-grid">
-          {% for metric in row.metrics %}
-          <div>
-            <label>{{ metric.label }}</label>
-            <input type="text" inputmode="numeric" name="{{ metric.input_name }}" value="{{ metric.value }}" />
-            <div class="muted">{{ metric.unit }}</div>
-          </div>
-          {% endfor %}
+        </label>
+        <div class="target-settings-status-field">
+          <span>状態（自動）</span>
+          <strong class="target-status-badge {{ selected_status_class }}">{{ selected_status_label }}</strong>
+          <small>{{ selected_month_label }}の期間から自動判定します</small>
         </div>
       </div>
-      {% endfor %}
+      <div class="target-settings-subheading">
+        <div><span>DEPARTMENTS</span><h4>部署別目標</h4></div>
+        <p>金額・件数など、部署ごとに必要な項目だけ表示しています。</p>
+      </div>
+      {% include "targets/_target_input_cards.html" %}
       <div class="target-form-actions"><button type="submit" class="ui-button ui-button--primary">月目標を保存</button></div>
     </form>
   </section>
@@ -64,7 +56,10 @@
       {% for row in history_rows %}
       <article class="target-history-card">
         <div class="target-history-card-head">
-          <div><strong>{{ row.month_label }}</strong></div>
+          <div>
+            <span class="target-history-card-label">対象月</span>
+            <strong>{{ row.month_label }}</strong>
+          </div>
           <div class="target-history-actions target-history-actions-inline">
             <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
             <a class="ui-button ui-button--secondary" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">編集</a>

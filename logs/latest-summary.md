@@ -1,25 +1,25 @@
 # Latest AI Work Summary
 
-- Timestamp: `2026-08-13T17:01:49+09:00`
-- Run ID: `run-20260813-1701-target-progress-ui`
-- Loop: `1`
-- Role: `reporter`
-- Event: `stopped`
+- Timestamp: `2026-08-13T18:06:44+09:00`
+- Run ID: `performance-today-records-ui-20260813`
+- Loop: `2`
+- Role: `reviewer`
+- Event: `review_completed`
 - Status: `success`
 - Event Retention: `30 days`
-- Event Expires At: `2026-09-12T17:01:49+09:00`
+- Event Expires At: `2026-09-12T18:06:44+09:00`
 - Summary Retention: `365 days`
-- Summary Expires At: `2027-08-13T17:01:49+09:00`
+- Summary Expires At: `2027-08-13T18:06:44+09:00`
 - Sensitivity: `normal`
 
 ## Action
 
-目標進捗の数字表示再設計を完了
+決済とメールでカード構造を共通化し、状態値をモデル定義のdraft sent failedへ限定した
 
 ## Reason
 
-実画面と機械検証が成功し、利用者要望の対象へ修正範囲を絞り直した
+重複スタイルと未使用状態を避け、既存操作を保持するため
 
 ## Next Action
 
-コミット後に結果を報告する
+コミットして完了報告する

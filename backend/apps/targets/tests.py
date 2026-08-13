@@ -43,6 +43,28 @@ class TargetsFlowTests(TestCase):
                 )
                 self.assertContains(response, ">目標設定</span>", html=False)
 
+    def test_target_creation_forms_use_card_ui_and_keep_input_contracts(self):
+        month_response = self.client.get(reverse("target_month_settings"))
+        self.assertContains(month_response, "月目標を作成")
+        self.assertContains(
+            month_response,
+            'class="target-settings-config-panel target-month-config-panel"',
+        )
+        self.assertContains(month_response, 'class="target-settings-department-card"')
+        self.assertContains(month_response, 'name="action" value="save_month_targets"')
+        self.assertContains(month_response, 'name="month" type="month"')
+
+        period_response = self.client.get(reverse("target_period_settings"))
+        self.assertContains(period_response, "路程目標を作成")
+        self.assertContains(
+            period_response,
+            'class="target-settings-config-panel target-period-config-panel"',
+        )
+        self.assertContains(period_response, 'class="target-settings-department-card"')
+        self.assertContains(period_response, 'name="action" value="save_period"')
+        self.assertContains(period_response, 'name="period_month"')
+        self.assertContains(period_response, 'name="period_sequence"')
+
     def test_month_targets_save_with_auto_status(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)
@@ -420,10 +442,11 @@ class TargetsFlowTests(TestCase):
 
         detail_response = self.client.get(reverse("target_period_history_detail", args=[period.id]))
         self.assertEqual(detail_response.status_code, 200)
-        self.assertContains(detail_response, "<td>件数</td>", html=False)
-        self.assertContains(detail_response, "<td>10件</td>", html=False)
-        self.assertContains(detail_response, "<td>5件</td>", html=False)
-        self.assertContains(detail_response, "<td>50.0%</td>", html=False)
+        self.assertContains(detail_response, 'class="target-progress-card target-history-progress-card"')
+        self.assertContains(detail_response, "件数")
+        self.assertContains(detail_response, "10<small>件</small>", html=False)
+        self.assertContains(detail_response, "5<small>件</small>", html=False)
+        self.assertContains(detail_response, "50.0%")
 
     def test_target_period_settings_history_shows_actuals_accordion(self):
         today = timezone.localdate()
@@ -525,10 +548,11 @@ class TargetsFlowTests(TestCase):
 
         detail_response = self.client.get(reverse("target_month_history_detail"), {"month": current_month.strftime("%Y-%m")})
         self.assertEqual(detail_response.status_code, 200)
-        self.assertContains(detail_response, "<td>金額</td>", html=False)
-        self.assertContains(detail_response, "<td>10,000円</td>", html=False)
-        self.assertContains(detail_response, "<td>2,500円</td>", html=False)
-        self.assertContains(detail_response, "<td>25.0%</td>", html=False)
+        self.assertContains(detail_response, 'class="target-progress-card target-history-progress-card"')
+        self.assertContains(detail_response, "金額")
+        self.assertContains(detail_response, "10,000<small>円</small>", html=False)
+        self.assertContains(detail_response, "2,500<small>円</small>", html=False)
+        self.assertContains(detail_response, "25.0%")
 
     def test_target_dashboard_shows_edit_links_for_month_and_period_history(self):
         today = timezone.localdate()
