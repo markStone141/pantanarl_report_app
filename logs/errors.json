@@ -792,5 +792,20 @@
     "action": "npm lintと全体BOMスクリプトを実行",
     "reason": "ESLint実行ファイルが環境になくlintは起動不可。全体BOMスクリプトは無出力で長時間完了せず停止し、変更ファイル限定BOM検査で代替成功した",
     "next_action": "環境制約を残リスクとして報告する"
+  },
+  {
+    "timestamp": "2026-08-13T17:42:04+09:00",
+    "expires_at": "2026-11-11T17:42:04+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260813-1743-dashboard-summary-ui",
+    "loop": 2,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "frontend_interaction観点の作業ログ記録を試行",
+    "reason": "ログスクリプトのrole選択肢にfrontend_interactionがなく記録コマンドが失敗した",
+    "next_action": "reviewerロールで同じ操作確認結果を記録する"
   }
 ]

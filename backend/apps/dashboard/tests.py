@@ -1318,6 +1318,19 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertContains(response, "進行中")
         self.assertContains(response, 'class="target-progress-grid"')
         self.assertContains(response, 'class="target-progress-value target-progress-value--actual"')
+        content = response.content.decode()
+        self.assertLess(content.index("提出状況一覧"), content.index("本日の部門別実績"))
+        self.assertLess(content.index("本日の部門別実績"), content.index("メール本文作成"))
+        submission_markup = content.split('class="dashboard-submission-table"', 1)[1].split(
+            'class="card ui-section mt-16 dashboard-department-section"', 1
+        )[0]
+        self.assertIn("<th>部署</th>", submission_markup)
+        self.assertIn("<th>ステータス</th>", submission_markup)
+        self.assertNotIn("<th>件数</th>", submission_markup)
+        self.assertIn("実績詳細を見る", submission_markup)
+        self.assertContains(response, 'class="dashboard-submission-status is-pending"')
+        self.assertContains(response, 'class="dashboard-department-card"')
+        self.assertContains(response, "個人成績を見る")
         row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
         self.assertIn("9999", row["period_target"])
         period.refresh_from_db()
