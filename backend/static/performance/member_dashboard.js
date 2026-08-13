@@ -1,4 +1,5 @@
 (function () {
+  function initPerformanceDashboard() {
   function initTodayRecordTabs() {
     document.querySelectorAll("[data-performance-record-tabs]").forEach(function (tabRoot) {
       const tabs = Array.from(tabRoot.querySelectorAll("[data-performance-record-tab]"));
@@ -865,4 +866,8 @@
 
   updateLegend();
   syncControls();
+  }
+
+  window.initPerformanceDashboard = initPerformanceDashboard;
+  initPerformanceDashboard();
 })();

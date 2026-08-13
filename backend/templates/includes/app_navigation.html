@@ -5,6 +5,22 @@
     <strong>{{ page_title }}</strong>
     {% if page_subtitle %}<div class="muted">{{ page_subtitle }}</div>{% endif %}
   </div>
+  {% if header_department_options %}
+  <div class="app-header-department-switch" data-performance-department-switch-root>
+    <label for="performance-dashboard-department">表示する部署</label>
+    <select
+      id="performance-dashboard-department"
+      aria-label="表示する部署"
+      data-performance-department-switch
+      data-switch-url="{% url 'performance_index' %}"
+    >
+      {% for department_option in header_department_options %}
+      <option value="{{ department_option.id }}"{% if header_selected_department and department_option.id == header_selected_department.id %} selected{% endif %}>{{ department_option.code }}{% if department_option.name and department_option.name != department_option.code %} ({{ department_option.name }}){% endif %}</option>
+      {% endfor %}
+    </select>
+    <span class="app-header-department-status" data-performance-department-status role="status" aria-live="polite"></span>
+  </div>
+  {% endif %}
   <button id="dashboard-drawer-toggle" type="button" class="ui-icon-button dashboard-drawer-toggle" aria-label="メニューを開く" aria-expanded="false" aria-controls="dashboard-drawer-nav">
     <i class="fa-solid fa-bars" aria-hidden="true"></i>
   </button>

@@ -139,6 +139,23 @@ class DashboardTests(PerformanceTestBase):
             html=True,
         )
 
+    def test_performance_index_places_ajax_department_switch_in_header(self):
+        other_department = Department.objects.create(code="WV", name="West View", is_active=True)
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "data-performance-department-switch-root", html=False)
+        self.assertContains(response, "data-performance-department-switch", html=False)
+        self.assertContains(response, 'data-switch-url="/performance/"', html=False)
+        self.assertContains(response, 'data-performance-dashboard-content', html=False)
+        self.assertContains(response, "performance/department_switch.js", html=False)
+        self.assertNotContains(response, ">表示</button>", html=False)
+        header_html = response.content.decode("utf-8").split("</header>", 1)[0]
+        self.assertLess(header_html.index("実績管理"), header_html.index("performance-dashboard-department"))
+        self.assertLess(header_html.index("performance-dashboard-department"), header_html.index("dashboard-drawer-toggle"))
+        self.assertIn(f'<option value="{other_department.id}">WV (West View)</option>', header_html)
+
 
     def test_performance_index_auto_closes_stale_open_entries(self):
         stale_entry = MemberDailyMetricEntry.objects.create(
@@ -285,7 +302,8 @@ class DashboardTests(PerformanceTestBase):
         self.assertContains(index_response, 'class="ui-section-kicker performance-dashboard-section-kicker">PROGRESS</span>')
         self.assertContains(index_response, 'class="ui-section-kicker performance-dashboard-section-kicker">TREND</span>')
         self.assertContains(index_response, 'class="ui-section-kicker performance-dashboard-section-kicker">MEMBERS</span>')
-        self.assertContains(index_response, 'class="grid ui-form-grid performance-dashboard-filter-grid"')
+        self.assertContains(index_response, 'class="app-header-department-switch"')
+        self.assertContains(index_response, 'data-performance-department-switch')
         self.assertContains(index_response, 'class="performance-member-status-filters ui-tabs mt-12"')
         self.assertContains(index_response, 'class="card performance-progress-card performance-dashboard-inner-card"')
         self.assertContains(index_response, 'class="performance-chart-card performance-dashboard-inner-card mt-12"')
