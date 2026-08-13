@@ -9,6 +9,7 @@ from apps.common.report_metrics import (
     SPLIT_COUNT_CODES,
     collect_actual_totals,
     format_metric_triples,
+    metric_detail_rows,
 )
 from apps.dairymetrics.models import MemberDailyMetricEntry
 from apps.targets.models import MonthTargetMetricValue, PeriodTargetMetricValue, TargetMetric
@@ -137,9 +138,19 @@ def build_report_dashboard_cards_context():
                 "month_target": month_target_text,
                 "month_actual": month_actual_text,
                 "month_rate": month_rate_text,
+                "month_metrics": metric_detail_rows(
+                    metrics=metrics_by_code[code],
+                    target_values=month_target_values_by_code.get(code, {}),
+                    actual_totals=month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+                ),
                 "period_target": period_target_text,
                 "period_actual": period_actual_text,
                 "period_rate": period_rate_text,
+                "period_metrics": metric_detail_rows(
+                    metrics=metrics_by_code[code],
+                    target_values=period_target_values_by_code.get(code, {}),
+                    actual_totals=period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+                ),
             }
         )
 
