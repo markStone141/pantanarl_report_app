@@ -672,6 +672,8 @@ class AdjustmentsTests(PerformanceTestBase):
         self.assertContains(response, "集計条件")
         self.assertContains(response, "全体の月目標")
         self.assertContains(response, "個人の月目標")
+        self.assertContains(response, 'class="card performance-history-value-card"', count=2)
+        self.assertContains(response, 'class="performance-history-breakdown"', count=2)
         self.assertContains(response, "日次実績")
         self.assertContains(response, "補正実績")
         self.assertContains(response, entry_today.entry_date.strftime("%Y/%m/%d"))

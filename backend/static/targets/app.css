@@ -31,10 +31,22 @@
 }
 
 .target-history-card {
-  border: 1px solid #d4e2ea;
-  border-radius: 12px;
-  background: #fbfdff;
-  padding: 14px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #d9e4eb;
+  border-radius: 14px;
+  background: #fff;
+  padding: 15px 16px;
+}
+
+.target-history-card::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: #4b91b6;
+  content: "";
 }
 
 .target-history-card-head {
@@ -42,6 +54,20 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+}
+
+.target-history-card-label {
+  display: block;
+  margin-bottom: 3px;
+  color: #758692;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.target-history-card-label + strong {
+  color: #173f58;
+  font-size: 1.03rem;
 }
 
 .target-status-badge.is-active {
@@ -88,15 +114,24 @@
 }
 
 .target-history-details summary {
+  padding: 9px 11px;
   cursor: pointer;
+  border: 1px solid #dce5eb;
+  border-radius: 9px;
+  background: #f7fafb;
   font-weight: 700;
   color: #20415d;
 }
 
 .target-history-details-body {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
   margin-top: 12px;
+}
+
+.target-history-progress-card {
+  height: 100%;
 }
 
 .target-history-department {
@@ -109,24 +144,6 @@
 .target-history-department h4 {
   margin: 0 0 8px;
   font-size: 0.98rem;
-}
-
-.target-history-metric-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.target-history-metric-table th,
-.target-history-metric-table td {
-  padding: 8px 10px;
-  border-bottom: 1px solid #e7edf3;
-  text-align: left;
-  font-size: 0.9rem;
-}
-
-.target-history-metric-table th {
-  background: #f6f9fc;
-  white-space: nowrap;
 }
 
 .target-history-pagination {
@@ -147,10 +164,6 @@
     justify-content: flex-start;
   }
 
-  .target-history-metric-table {
-    display: block;
-    overflow-x: auto;
-  }
 }
 .target-metric-group {
   min-width: 0;

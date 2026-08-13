@@ -5,7 +5,7 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=4" />
+<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=5" />
 {% endblock %}
 
 {% block content %}
@@ -101,6 +101,7 @@
       <article class="target-history-card">
         <div class="target-history-card-head">
           <div>
+            <span class="target-history-card-label">路程</span>
             <strong>{{ row.name }}</strong>
             <div class="muted">{{ row.range_label }}</div>
           </div>

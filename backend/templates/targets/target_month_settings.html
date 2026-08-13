@@ -5,7 +5,7 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=4" />
+<link rel="stylesheet" href="{% static 'targets/app.css' %}?v=5" />
 {% endblock %}
 
 {% block content %}
@@ -64,7 +64,10 @@
       {% for row in history_rows %}
       <article class="target-history-card">
         <div class="target-history-card-head">
-          <div><strong>{{ row.month_label }}</strong></div>
+          <div>
+            <span class="target-history-card-label">対象月</span>
+            <strong>{{ row.month_label }}</strong>
+          </div>
           <div class="target-history-actions target-history-actions-inline">
             <span class="badge target-status-badge {{ row.status_class }}">{{ row.status_label }}</span>
             <a class="ui-button ui-button--secondary" href="{% url 'target_month_settings' %}?month={{ row.month_param }}">編集</a>

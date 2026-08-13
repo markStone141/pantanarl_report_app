@@ -420,10 +420,11 @@ class TargetsFlowTests(TestCase):
 
         detail_response = self.client.get(reverse("target_period_history_detail", args=[period.id]))
         self.assertEqual(detail_response.status_code, 200)
-        self.assertContains(detail_response, "<td>件数</td>", html=False)
-        self.assertContains(detail_response, "<td>10件</td>", html=False)
-        self.assertContains(detail_response, "<td>5件</td>", html=False)
-        self.assertContains(detail_response, "<td>50.0%</td>", html=False)
+        self.assertContains(detail_response, 'class="target-progress-card target-history-progress-card"')
+        self.assertContains(detail_response, "件数")
+        self.assertContains(detail_response, "10<small>件</small>", html=False)
+        self.assertContains(detail_response, "5<small>件</small>", html=False)
+        self.assertContains(detail_response, "50.0%")
 
     def test_target_period_settings_history_shows_actuals_accordion(self):
         today = timezone.localdate()
@@ -525,10 +526,11 @@ class TargetsFlowTests(TestCase):
 
         detail_response = self.client.get(reverse("target_month_history_detail"), {"month": current_month.strftime("%Y-%m")})
         self.assertEqual(detail_response.status_code, 200)
-        self.assertContains(detail_response, "<td>金額</td>", html=False)
-        self.assertContains(detail_response, "<td>10,000円</td>", html=False)
-        self.assertContains(detail_response, "<td>2,500円</td>", html=False)
-        self.assertContains(detail_response, "<td>25.0%</td>", html=False)
+        self.assertContains(detail_response, 'class="target-progress-card target-history-progress-card"')
+        self.assertContains(detail_response, "金額")
+        self.assertContains(detail_response, "10,000<small>円</small>", html=False)
+        self.assertContains(detail_response, "2,500<small>円</small>", html=False)
+        self.assertContains(detail_response, "25.0%")
 
     def test_target_dashboard_shows_edit_links_for_month_and_period_history(self):
         today = timezone.localdate()

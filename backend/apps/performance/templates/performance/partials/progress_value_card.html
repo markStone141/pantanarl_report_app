@@ -1,0 +1,40 @@
+<article class="card performance-history-value-card">
+  <header class="performance-history-value-card__head">
+    <div>
+      <span class="performance-history-value-card__eyebrow">{{ card.summary_text }}</span>
+      <strong>{{ card.label }}</strong>
+    </div>
+    <span class="performance-history-rate is-{{ card.rate_status }}">{{ card.rate_text }}</span>
+  </header>
+
+  <div class="performance-history-values">
+    <div class="performance-history-value performance-history-value--actual">
+      <span>実績</span>
+      <strong>{{ card.actual_amount_text }}</strong>
+    </div>
+    <span class="performance-history-values__separator" aria-hidden="true">/</span>
+    <div class="performance-history-value">
+      <span>目標</span>
+      <strong>{{ card.target_amount_text }}</strong>
+    </div>
+  </div>
+
+  {% if card.rate is not None %}
+  <div class="performance-history-track" role="progressbar" aria-label="{{ card.label }}の達成率" aria-valuenow="{{ card.rate_width|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
+    <span class="is-{{ card.rate_status }}" style="width: {{ card.rate_width }}%"></span>
+  </div>
+  {% endif %}
+
+  <div class="performance-history-breakdown">
+    <span>通常実績 <strong>{{ card.base_actual_amount_text }}</strong></span>
+    <span>補正実績 <strong>{{ card.adjustment_amount_text }}</strong></span>
+  </div>
+
+  {% if card.contribution %}
+  <div class="performance-history-contribution">
+    <span>{{ member.name }}さんの割合</span>
+    <strong>{{ card.contribution.rate_text }}</strong>
+    <small>{{ card.contribution.detail_text }}</small>
+  </div>
+  {% endif %}
+</article>

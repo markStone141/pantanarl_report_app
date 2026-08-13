@@ -2727,6 +2727,155 @@ th {
   gap: 0;
 }
 
+.performance-history-value-card {
+  min-width: 0;
+  padding: 17px 18px;
+  border-color: #dce5eb;
+  background: #fff;
+  box-shadow: none;
+}
+
+.performance-history-value-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.performance-history-value-card__eyebrow {
+  display: block;
+  margin-bottom: 3px;
+  color: #71828e;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.performance-history-value-card__head strong {
+  color: #173f58;
+  font-size: 1.02rem;
+}
+
+.performance-history-rate {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #edf2f5;
+  color: #647581;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.performance-history-rate.is-progress {
+  background: #e9f3fb;
+  color: #216b9a;
+}
+
+.performance-history-rate.is-complete {
+  background: #e7f7ee;
+  color: #18794e;
+}
+
+.performance-history-values {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 0.72fr);
+  gap: 12px;
+  align-items: end;
+  margin-top: 16px;
+}
+
+.performance-history-value > span {
+  display: block;
+  color: #7a8993;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.performance-history-value > strong {
+  display: block;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+  color: #405562;
+  font-size: 1.04rem;
+}
+
+.performance-history-value--actual > strong {
+  color: #143c55;
+  font-size: clamp(1.35rem, 3vw, 1.7rem);
+}
+
+.performance-history-values__separator {
+  padding-bottom: 2px;
+  color: #b1bdc5;
+  font-weight: 700;
+}
+
+.performance-history-track {
+  height: 6px;
+  margin-top: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8eef2;
+}
+
+.performance-history-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #5b9fc5;
+}
+
+.performance-history-track > span.is-complete {
+  background: #35a66f;
+}
+
+.performance-history-breakdown {
+  display: flex;
+  gap: 8px 18px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #edf1f3;
+  color: #71818c;
+  font-size: 0.75rem;
+}
+
+.performance-history-breakdown strong {
+  margin-left: 3px;
+  color: #4a5e6a;
+}
+
+.performance-history-contribution {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f3f7fa;
+  color: #536875;
+  font-size: 0.78rem;
+}
+
+.performance-history-contribution > strong {
+  color: #204f6c;
+}
+
+.performance-history-contribution > small {
+  grid-column: 1 / -1;
+  color: #71818c;
+}
+
+@media (max-width: 768px) {
+  .performance-history-value-card {
+    padding: 14px 12px;
+  }
+
+  .performance-history-values {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 0.78fr);
+    gap: 8px;
+  }
+}
+
 .performance-progress-visual {
   display: flex;
   justify-content: center;

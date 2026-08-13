@@ -246,6 +246,8 @@ class DashboardTests(PerformanceTestBase):
         self.assertContains(response, f"{selected_period.start_date:%Y/%m/%d} - {selected_period.end_date:%Y/%m/%d}")
         self.assertContains(response, "4,500円")
         self.assertContains(response, "16.1%")
+        self.assertContains(response, 'class="card performance-history-value-card"')
+        self.assertContains(response, 'class="performance-history-track"')
         self.assertContains(response, "過去の実績を見る")
 
 
