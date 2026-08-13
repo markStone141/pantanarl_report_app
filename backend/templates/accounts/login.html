@@ -5,22 +5,7 @@
 {% block title %}Login | Report App{% endblock %}
 
 {% block extra_head %}
-<style>
-  .reportapp-login-brand {
-    display: block;
-    width: 100%;
-    margin-bottom: 14px;
-  }
-  .reportapp-logo-image {
-    width: 100%;
-    height: auto;
-    display: block;
-    filter: drop-shadow(0 10px 22px rgba(27, 103, 184, 0.22));
-  }
-  .reportapp-submit-btn {
-    margin-top: 14px;
-  }
-</style>
+<link rel="stylesheet" href="{% static 'accounts/login.css' %}?v=1" />
 {% endblock %}
 
 {% block content %}

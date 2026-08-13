@@ -172,3 +172,20 @@
   flex-wrap: wrap;
   margin-top: 8px;
 }
+
+.target-feedback {
+  margin: 10px 0;
+}
+
+.target-current-badge {
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.target-metric-input-grid {
+  margin-top: 8px;
+}
+
+.target-form-actions {
+  margin-top: 12px;
+}

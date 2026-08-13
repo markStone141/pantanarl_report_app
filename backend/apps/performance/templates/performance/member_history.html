@@ -4,28 +4,11 @@
 {% block title %}過去の実績を見る | 実績管理{% endblock %}
 
 {% block content %}
-<div class="container">
-  <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
-    <div>
-      <strong>{{ member.name }} の過去の実績</strong>
-      <div class="muted topbar-muted">{{ department.code }} / 月・路程・期間ごとの実績確認</div>
-    </div>
-    <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
-      <i class="fa-solid fa-bars" aria-hidden="true"></i>
-    </button>
-    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
-      {% for item in nav_items %}
-      <a href="{{ item.href }}">{{ item.label }}</a>
-      {% endfor %}
-      {% if not is_admin_view %}
-      <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
-      {% endif %}
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}?department={{ department.code }}{% if readonly_member_view %}&member={{ member.id }}{% endif %}">分析する</a>
-      <a href="{% url 'report_index' %}">Report App</a>
-      <a href="{% url 'performance_logout' %}" class="logout-link">ログアウト</a>
-    </nav>
-  </header>
-  <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+<div class="app-shell">
+  {% with page_heading=member.name|add:" の過去の実績" %}
+    {% include "includes/app_navigation.html" with page_title=page_heading page_subtitle="月・路程・期間ごとの個人実績を確認します。" navigation_department=department navigation_member=member %}
+  {% endwith %}
+  <main class="container app-shell-content">
 
   <section class="card mt-16">
     <div class="row">
@@ -222,6 +205,7 @@
   <div>
     {% include "performance/partials/member_history_day_detail_cards.html" with detail_heading=history_scope.label|add:" の日次実績" detail_adjustment_heading=history_scope.label|add:" の補正実績" detail_description="対象期間の日次実績と補正実績です。" show_reset_detail=False %}
   </div>
+  </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="{% static 'performance/member_dashboard.js' %}?v=17"></script>

@@ -21,13 +21,13 @@
   <section class="card ui-section mt-16">
     <h3>路程期間・目標設定</h3>
     {% if form_error %}
-    <div class="error-text" style="margin: 10px 0;">{{ form_error }}</div>
+    <div class="error-text target-feedback">{{ form_error }}</div>
     {% endif %}
     {% if period_saved %}
-    <div class="notice" style="margin: 10px 0;">路程を保存しました。</div>
+    <div class="notice target-feedback">路程を保存しました。</div>
     {% endif %}
     {% if target_saved %}
-    <div class="notice" style="margin: 10px 0;">路程目標を保存しました。</div>
+    <div class="notice target-feedback">路程目標を保存しました。</div>
     {% endif %}
     <form method="post">
       {% csrf_token %}
@@ -50,11 +50,11 @@
         </div>
         <div>
           <label>状態（自動）</label>
-          <div class="badge" style="margin-top: 8px; display: inline-block;">{{ form_status }}</div>
+          <div class="badge target-current-badge">{{ form_status }}</div>
         </div>
         <div>
           <label>対象路程</label>
-          <div class="badge" style="margin-top: 8px; display: inline-block;">{{ selected_period_label }}</div>
+          <div class="badge target-current-badge">{{ selected_period_label }}</div>
         </div>
       </div>
       <div class="grid grid-2">
@@ -68,9 +68,9 @@
         </div>
       </div>
       {% for row in rows %}
-      <div style="margin-top: 12px; padding: 10px; border: 1px solid #d4e2ea; border-radius: 8px;">
+      <div class="target-metric-group">
         <strong>{{ row.label }}</strong>
-        <div class="grid grid-2" style="margin-top: 8px;">
+        <div class="grid grid-2 target-metric-input-grid">
           {% for metric in row.metrics %}
           <div>
             <label>{{ metric.label }}</label>
@@ -82,14 +82,14 @@
       </div>
       {% endfor %}
 
-      <div style="margin-top: 12px;"><button type="submit" class="ui-button ui-button--primary">路程と目標を保存</button></div>
+      <div class="target-form-actions"><button type="submit" class="ui-button ui-button--primary">路程と目標を保存</button></div>
     </form>
   </section>
 
   <section class="card ui-section mt-16">
     <h3>作成済み路程目標一覧</h3>
     {% if period_deleted %}
-    <div class="note" style="margin: 10px 0;">路程を削除しました。</div>
+    <div class="note target-feedback">路程を削除しました。</div>
     {% endif %}
     {% if history_rows %}
     <div class="target-history-headline">

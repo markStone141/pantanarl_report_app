@@ -5,27 +5,11 @@
 
 {% block content %}
 <div class="app-shell">
-  {% include "includes/app_navigation.html" with page_title="実績管理" page_subtitle="最終実績の確認と日次実績の編集を行います。" %}
-  <main class="container app-shell-content">
+  {% include "includes/app_navigation.html" with page_title="実績管理" page_subtitle="最終実績の確認と日次実績の編集を行います。" header_department_options=dashboard_departments header_selected_department=dashboard_department %}
+  <main id="performance-dashboard-content" class="container app-shell-content" data-performance-dashboard-content aria-busy="false">
   {% if status_message %}
   <div class="ui-feedback ui-feedback--success" role="status">{{ status_message }}</div>
   {% endif %}
-
-  <section class="card ui-section mt-16">
-    <form method="get" class="grid ui-form-grid performance-dashboard-filter-grid">
-      <div class="ui-field">
-        <label for="performance-dashboard-department">表示する部署</label>
-        <select id="performance-dashboard-department" name="dashboard_department" aria-label="部署">
-          {% for department_option in dashboard_departments %}
-          <option value="{{ department_option.id }}"{% if dashboard_department and department_option.id == dashboard_department.id %} selected{% endif %}>{{ department_option.code }}{% if department_option.name and department_option.name != department_option.code %} ({{ department_option.name }}){% endif %}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <button type="submit" class="ui-button ui-button--secondary">表示</button>
-      </div>
-    </form>
-  </section>
 
   <section class="card ui-section mt-16 performance-dashboard-section">
     {% include "includes/ui_section_heading.html" with kicker="TODAY" title="本日の活動状況" meta=today_detail_date|date:"Y/m/d" heading_class="performance-dashboard-section-heading" kicker_class="performance-dashboard-section-kicker" meta_class="performance-dashboard-section-date" %}
@@ -302,6 +286,7 @@
   </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'performance/member_dashboard.js' %}?v=9"></script>
+<script src="{% static 'performance/member_dashboard.js' %}?v=10"></script>
+<script src="{% static 'performance/department_switch.js' %}?v=1"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

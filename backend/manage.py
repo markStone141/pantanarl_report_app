@@ -4,7 +4,12 @@ import sys
 
 
 def main() -> None:
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
+    default_settings = (
+        "config.settings.test"
+        if len(sys.argv) > 1 and sys.argv[1] == "test"
+        else "config.settings.local"
+    )
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", default_settings)
     from django.core.management import execute_from_command_line
 
     execute_from_command_line(sys.argv)

@@ -21,7 +21,7 @@
   <section class="card ui-section mt-16">
     <h3>月目標入力</h3>
     {% if saved %}
-    <div class="notice" style="margin: 10px 0;">月目標を保存しました。</div>
+    <div class="notice target-feedback">月目標を保存しました。</div>
     {% endif %}
     <form method="post">
       {% csrf_token %}
@@ -33,13 +33,13 @@
         </div>
         <div>
           <label>状態（自動）</label>
-          <div class="badge" style="margin-top: 8px; display: inline-block;">{{ selected_status }}</div>
+          <div class="badge target-current-badge">{{ selected_status }}</div>
         </div>
       </div>
       {% for row in rows %}
-      <div style="margin-top: 12px; padding: 10px; border: 1px solid #d4e2ea; border-radius: 8px;">
+      <div class="target-metric-group">
         <strong>{{ row.label }}</strong>
-        <div class="grid grid-2" style="margin-top: 8px;">
+        <div class="grid grid-2 target-metric-input-grid">
           {% for metric in row.metrics %}
           <div>
             <label>{{ metric.label }}</label>
@@ -50,14 +50,14 @@
         </div>
       </div>
       {% endfor %}
-      <div style="margin-top: 12px;"><button type="submit" class="ui-button ui-button--primary">月目標を保存</button></div>
+      <div class="target-form-actions"><button type="submit" class="ui-button ui-button--primary">月目標を保存</button></div>
     </form>
   </section>
 
   <section class="card ui-section mt-16">
     <h3>作成済み月目標一覧</h3>
     {% if month_deleted %}
-    <div class="note" style="margin: 10px 0;">月目標を削除しました。</div>
+    <div class="note target-feedback">月目標を削除しました。</div>
     {% endif %}
     {% if history_rows %}
     <div class="target-history-list">
