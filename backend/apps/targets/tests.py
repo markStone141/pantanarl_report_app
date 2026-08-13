@@ -43,6 +43,28 @@ class TargetsFlowTests(TestCase):
                 )
                 self.assertContains(response, ">目標設定</span>", html=False)
 
+    def test_target_creation_forms_use_card_ui_and_keep_input_contracts(self):
+        month_response = self.client.get(reverse("target_month_settings"))
+        self.assertContains(month_response, "月目標を作成")
+        self.assertContains(
+            month_response,
+            'class="target-settings-config-panel target-month-config-panel"',
+        )
+        self.assertContains(month_response, 'class="target-settings-department-card"')
+        self.assertContains(month_response, 'name="action" value="save_month_targets"')
+        self.assertContains(month_response, 'name="month" type="month"')
+
+        period_response = self.client.get(reverse("target_period_settings"))
+        self.assertContains(period_response, "路程目標を作成")
+        self.assertContains(
+            period_response,
+            'class="target-settings-config-panel target-period-config-panel"',
+        )
+        self.assertContains(period_response, 'class="target-settings-department-card"')
+        self.assertContains(period_response, 'name="action" value="save_period"')
+        self.assertContains(period_response, 'name="period_month"')
+        self.assertContains(period_response, 'name="period_sequence"')
+
     def test_month_targets_save_with_auto_status(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)
