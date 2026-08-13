@@ -161,6 +161,13 @@ class LoginFlowTests(TestCase):
                 self.assertContains(response, "data-auth-submit-status", html=False)
                 self.assertContains(response, "auth-login-card", html=False)
 
+    def test_base_does_not_build_legacy_topbar_menu(self):
+        response = self.client.get(reverse("home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "topbar-menu-toggle", html=False)
+        self.assertNotContains(response, "menu-collapsible", html=False)
+
 
 class RoleGuardTests(TestCase):
     def test_dashboard_requires_admin(self):

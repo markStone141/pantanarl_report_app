@@ -266,7 +266,6 @@
     display: inline-flex;
   }
 
-  .dashboard-drawer-topbar .topbar-menu-toggle,
   .dashboard-drawer-topbar .topbar-mobile-logout {
     display: none !important;
   }

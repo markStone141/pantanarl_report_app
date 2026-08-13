@@ -133,45 +133,6 @@ a {
   display: none;
 }
 
-.topbar-menu-toggle {
-  width: auto !important;
-  min-width: 42px;
-  height: 38px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  font-weight: 700;
-  font-size: 1.05rem;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  margin-left: auto;
-  transition: background-color .2s ease, transform .2s ease;
-}
-
-.topbar-menu-toggle:hover {
-  background: rgba(255, 255, 255, 0.28);
-}
-
-.topbar.menu-open .topbar-menu-toggle {
-  background: rgba(255, 255, 255, 0.32);
-  transform: scale(1.02);
-}
-
-.topbar nav.menu-collapsible {
-  display: none;
-  width: 100%;
-  margin-top: 6px;
-}
-
-.topbar.menu-open nav.menu-collapsible {
-  display: flex;
-}
-
 .topbar nav a {
   color: #fff;
   background: rgba(255, 255, 255, 0.16);
@@ -2093,14 +2054,6 @@ th {
     white-space: nowrap;
   }
 
-  .topbar-menu-toggle {
-    display: none;
-  }
-
-  .topbar.topbar-desktop-expanded .topbar-menu-toggle {
-    display: inline-flex;
-  }
-
   .dashboard-drawer-topbar {
     --dashboard-drawer-width: min(84vw, 320px);
     backdrop-filter: none;
@@ -2111,7 +2064,6 @@ th {
     display: inline-flex;
   }
 
-  .dashboard-drawer-topbar .topbar-menu-toggle,
   .dashboard-drawer-topbar .topbar-mobile-logout {
     display: none !important;
   }
