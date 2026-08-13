@@ -688,6 +688,10 @@ a {
 }
 
 .performance-record-tabs .performance-record-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   flex: 1 1 0;
   min-width: 0;
   min-height: 44px;
@@ -717,15 +721,267 @@ a {
 }
 
 .performance-record-tab-count {
-  margin-left: 4px;
+  min-width: 34px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(76, 112, 139, 0.1);
   color: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 .performance-record-panel-title {
   margin: 0;
 }
+
+.performance-record-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.performance-record-panel-count {
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #edf4f8;
+  color: #476779;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.performance-record-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  gap: 12px;
+}
+
+.performance-record-card {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dce6ec;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.performance-record-card::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: #4e9bc0;
+  content: "";
+}
+
+.performance-mail-record-card::before { background: #7697c9; }
+
+.performance-record-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px 10px 16px;
+  border-bottom: 1px solid #e6edf1;
+  background: #f7fafb;
+}
+
+.performance-record-person > span,
+.performance-record-primary-value > span,
+.performance-record-location > span,
+.performance-record-subject > span,
+.performance-record-sent-at > span,
+.performance-record-detail-body > div > span {
+  display: block;
+  color: #788892;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.performance-record-person > strong {
+  display: block;
+  margin-top: 2px;
+  color: #173f58;
+  font-size: 0.94rem;
+}
+
+.performance-record-type-badge,
+.performance-mail-status {
+  display: inline-flex;
+  align-items: center;
+  max-width: 58%;
+  padding: 4px 9px;
+  overflow: hidden;
+  border: 1px solid #cddde7;
+  border-radius: 999px;
+  background: #edf5f9;
+  color: #37657e;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.performance-mail-status::before {
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.performance-mail-status.is-sent {
+  border-color: #b7e1ca;
+  background: #e7f7ee;
+  color: #18794e;
+}
+
+.performance-mail-status.is-failed {
+  border-color: #efc5c1;
+  background: #fff0ef;
+  color: #b23a32;
+}
+
+.performance-mail-status.is-draft {
+  border-color: #ecd5aa;
+  background: #fff7e7;
+  color: #8a6116;
+}
+
+.performance-record-card-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, 0.8fr);
+  gap: 14px;
+  align-items: end;
+  padding: 14px 14px 14px 16px;
+}
+
+.performance-record-primary-value > strong {
+  display: block;
+  margin-top: 3px;
+  color: #153f5a;
+  font-size: 1.28rem;
+  letter-spacing: 0.01em;
+}
+
+.performance-record-location,
+.performance-record-sent-at {
+  min-width: 0;
+  padding-left: 13px;
+  border-left: 1px solid #e2e9ed;
+}
+
+.performance-record-location > span i,
+.performance-record-sent-at > span i { color: #4d91b4; }
+
+.performance-record-location > strong,
+.performance-record-sent-at > strong {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  color: #345466;
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.performance-mail-record-main { align-items: start; }
+
+.performance-record-subject { min-width: 0; }
+
+.performance-record-subject > strong {
+  display: -webkit-box;
+  margin-top: 3px;
+  overflow: hidden;
+  color: #173f58;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.performance-record-details {
+  margin: 0 14px 12px 16px;
+  border: 1px solid #dce6ec;
+  border-radius: 10px;
+  background: #f7fafb;
+}
+
+.performance-record-details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 11px;
+  cursor: pointer;
+  color: #315c74;
+  font-size: 0.76rem;
+  font-weight: 800;
+  list-style: none;
+}
+
+.performance-record-details > summary::-webkit-details-marker { display: none; }
+
+.performance-record-details > summary i {
+  transition: transform 0.18s ease;
+}
+
+.performance-record-details[open] > summary i { transform: rotate(180deg); }
+
+.performance-record-detail-body {
+  display: grid;
+  gap: 10px;
+  padding: 11px;
+  border-top: 1px solid #dfe8ed;
+  background: #fff;
+}
+
+.performance-record-detail-body > div > strong,
+.performance-record-detail-body > div > p {
+  display: block;
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+  color: #405b69;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.performance-record-error {
+  padding: 9px;
+  border-radius: 8px;
+  background: #fff0ef;
+}
+
+.performance-record-error > span,
+.performance-record-error > p { color: #a33a34 !important; }
+
+.performance-record-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  padding: 0 14px 12px 16px;
+}
+
+.performance-record-delete-form { display: inline-flex; }
+
+.performance-record-empty {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 116px;
+  padding: 20px;
+  border: 1px dashed #cfdae1;
+  border-radius: 12px;
+  background: #f8fafb;
+  color: #7a8993;
+  text-align: center;
+}
+
+.performance-record-empty i { font-size: 1.3rem; }
+.performance-record-empty p { margin: 0; font-size: 0.82rem; }
 
 @media (max-width: 900px) {
   .performance-today-summary-grid {
@@ -747,6 +1003,24 @@ a {
     padding-inline: 8px;
     white-space: normal;
   }
+
+  .performance-record-list { grid-template-columns: minmax(0, 1fr); }
+
+  .performance-record-card-main {
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+
+  .performance-record-location,
+  .performance-record-sent-at {
+    padding-top: 10px;
+    padding-left: 0;
+    border-top: 1px solid #e2e9ed;
+    border-left: 0;
+  }
+
+  .performance-record-location > strong,
+  .performance-record-sent-at > strong { white-space: normal; }
 
   .performance-dashboard-section-heading {
     align-items: flex-start;

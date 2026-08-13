@@ -807,5 +807,20 @@
     "action": "frontend_interaction観点の作業ログ記録を試行",
     "reason": "ログスクリプトのrole選択肢にfrontend_interactionがなく記録コマンドが失敗した",
     "next_action": "reviewerロールで同じ操作確認結果を記録する"
+  },
+  {
+    "timestamp": "2026-08-13T18:06:43+09:00",
+    "expires_at": "2026-11-11T18:06:43+09:00",
+    "retention_days": 90,
+    "run_id": "performance-today-records-ui-20260813",
+    "loop": 1,
+    "role": "observer",
+    "event": "result_observed",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "一時検証DBへの表示データ投入でMemberの部署フィールド指定を誤った",
+    "reason": "Memberはdepartmentではなくdefault_departmentを使用するモデルだったため",
+    "next_action": "一時DBのみを正しいフィールドで再投入して表示検証する"
   }
 ]
