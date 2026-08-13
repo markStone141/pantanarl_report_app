@@ -391,9 +391,9 @@ class AdjustmentsTests(PerformanceTestBase):
         payload = response.json()
         self.assertIn("list_html", payload)
         self.assertIn("Bob", payload["list_html"])
-        self.assertIn("WV", payload["list_html"])
+        self.assertIn('data-label="部署">WV</td>', payload["list_html"])
         self.assertNotIn("Alice", payload["list_html"])
-        self.assertNotIn("UN", payload["list_html"])
+        self.assertNotIn('data-label="部署">UN</td>', payload["list_html"])
 
 
     def test_performance_adjustments_ajax_searches_source_type_display_label(self):
