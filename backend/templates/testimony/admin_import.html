@@ -8,14 +8,14 @@
   <p class="muted">products.csv と articles.csv を同時に取り込みます。</p>
 
   {% if messages %}
-  <div style="margin: 10px 0;">
+  <div class="testimony-import-messages">
     {% for message in messages %}
-    <p style="margin: 6px 0;">{{ message }}</p>
+    <p class="testimony-import-message">{{ message }}</p>
     {% endfor %}
   </div>
   {% endif %}
 
-  <form method="post" enctype="multipart/form-data" style="display: grid; gap: 10px; margin-top: 10px;">
+  <form method="post" enctype="multipart/form-data" class="testimony-import-form">
     {% csrf_token %}
     <label>
       products.csv
