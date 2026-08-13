@@ -4,54 +4,18 @@
 {% block title %}振り返りレポート | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=26" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=27" />
 {% endblock %}
 
 {% block content %}
 <div class="app-shell metrics-report-page">
-  {% include "includes/app_navigation.html" with page_title="振り返りレポート" page_subtitle=metrics_report_page_subtitle %}
+  {% include "includes/app_navigation.html" with page_title="振り返りレポート" page_subtitle=metrics_report_page_subtitle header_controls_template="dairymetrics/partials/metrics_report_header_controls.html" %}
   <main class="container app-shell-content">
 
-  <section class="card mt-16 no-print">
-    <div class="row">
-      <div>
-        <h2>出力条件</h2>
-        <div class="muted">月または路程ごとの振り返り資料として表示します。</div>
-      </div>
-    </div>
-    <form method="get" class="grid mt-12 metrics-v2-filter-grid">
-      <div>
-        <select name="department" aria-label="部署">
-          {% for department in departments %}
-          <option value="{{ department.code }}" {% if department.code == selected_department.code %}selected{% endif %}>{{ department.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <select name="scope" data-metrics-report-scope aria-label="集計単位">
-          <option value="month" {% if scope_value == "month" %}selected{% endif %}>月</option>
-          <option value="period" {% if scope_value == "period" %}selected{% endif %}>路程</option>
-        </select>
-      </div>
-      <div data-metrics-report-field="month">
-        <input type="month" name="month" value="{{ month_value }}" aria-label="対象月">
-      </div>
-      <div data-metrics-report-field="period">
-        <select name="period_id" aria-label="対象路程">
-          {% for period in period_options %}
-          <option value="{{ period.id }}" {% if period.id == selected_period_id %}selected{% endif %}>{{ period.name }}（{{ period.start_date|date:"Y/m/d" }} - {{ period.end_date|date:"Y/m/d" }}）</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <button type="submit" class="ui-button ui-button--secondary">表示</button>
-      </div>
-    </form>
-    <div class="inline-row mt-12">
-      <a class="ui-button ui-button--secondary" href="{% url 'dairymetrics_metrics_report_export' %}?{{ report_export_query }}&format=txt">AI用テキスト</a>
-      <a class="ui-button ui-button--secondary" href="{% url 'dairymetrics_metrics_report_export' %}?{{ report_export_query }}&format=json">JSON</a>
-    </div>
-  </section>
+  <div class="inline-row metrics-page-actions mt-16 no-print">
+    <a class="ui-button ui-button--secondary" href="{% url 'dairymetrics_metrics_report_export' %}?{{ report_export_query }}&format=txt">AI用テキスト</a>
+    <a class="ui-button ui-button--secondary" href="{% url 'dairymetrics_metrics_report_export' %}?{{ report_export_query }}&format=json">JSON</a>
+  </div>
 
   <section class="card mt-16 metrics-report-hero">
     <div>

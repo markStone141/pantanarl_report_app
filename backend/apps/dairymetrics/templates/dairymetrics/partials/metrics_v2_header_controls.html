@@ -1,0 +1,34 @@
+<form method="get" class="metrics-header-filter" aria-label="分析の集計条件">
+  <select id="metrics-v2-department" name="department" aria-label="部署">
+    {% for department in departments %}
+    <option value="{{ department.code }}" {% if department.code == selected_department.code %}selected{% endif %}>{{ department.name }}</option>
+    {% endfor %}
+  </select>
+  {% if is_admin and selected_member %}
+  <input type="hidden" name="member" value="{{ selected_member.id }}">
+  {% endif %}
+  <select id="metrics-v2-scope" name="scope" data-metrics-v2-scope aria-label="集計期間">
+    <option value="recent" {% if scope_value == "recent" %}selected{% endif %}>過去30日間</option>
+    <option value="month" {% if scope_value == "month" %}selected{% endif %}>月</option>
+    <option value="period" {% if scope_value == "period" %}selected{% endif %}>路程</option>
+    <option value="custom" {% if scope_value == "custom" %}selected{% endif %}>期間指定</option>
+  </select>
+  <span data-metrics-v2-scope-field="month">
+    <input id="metrics-v2-month" type="month" name="month" value="{{ month_value }}" aria-label="対象月">
+  </span>
+  <span class="metrics-header-filter-wide" data-metrics-v2-scope-field="period">
+    <select id="metrics-v2-period" name="period_id" aria-label="対象路程">
+      <option value="">選択してください</option>
+      {% for period in period_options %}
+      <option value="{{ period.id }}" {% if period.id == selected_period_id %}selected{% endif %}>{{ period.name }}（{{ period.start_date|date:"Y/m/d" }} - {{ period.end_date|date:"Y/m/d" }}）</option>
+      {% endfor %}
+    </select>
+  </span>
+  <span data-metrics-v2-scope-field="custom">
+    <input id="metrics-v2-start-date" type="date" name="start_date" value="{{ start_date_value }}" aria-label="開始日">
+  </span>
+  <span data-metrics-v2-scope-field="custom">
+    <input id="metrics-v2-end-date" type="date" name="end_date" value="{{ end_date_value }}" aria-label="終了日">
+  </span>
+  <button type="submit" class="ui-button ui-button--secondary">表示</button>
+</form>

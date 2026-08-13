@@ -21,6 +21,11 @@
     <span class="app-header-department-status" data-performance-department-status role="status" aria-live="polite"></span>
   </div>
   {% endif %}
+  {% if header_controls_template %}
+  <div class="app-header-controls">
+    {% include header_controls_template %}
+  </div>
+  {% endif %}
   <button id="dashboard-drawer-toggle" type="button" class="ui-icon-button dashboard-drawer-toggle" aria-label="メニューを開く" aria-expanded="false" aria-controls="dashboard-drawer-nav">
     <i class="fa-solid fa-bars" aria-hidden="true"></i>
   </button>

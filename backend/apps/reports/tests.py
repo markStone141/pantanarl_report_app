@@ -771,6 +771,14 @@ class ReportTargetMonthSelectionTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["target_period_summary"], period.name)
         self.assertEqual(response.context["target_period_status"], "active")
+        self.assertEqual(
+            response.context["target_period_range"],
+            f"{period.start_date.month}/{period.start_date.day}～{period.end_date.month}/{period.end_date.day}",
+        )
+        self.assertContains(response, 'class="target-scope-overview"')
+        self.assertContains(response, "現在路程")
+        self.assertContains(response, "進行中")
+        self.assertContains(response, 'class="mt-8 mobile-card-table target-progress-table"')
         period.refresh_from_db()
         self.assertEqual(period.status, "active")
 

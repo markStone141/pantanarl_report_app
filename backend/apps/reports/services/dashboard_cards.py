@@ -77,12 +77,14 @@ def build_report_dashboard_cards_context():
         period_start = current_period.start_date
         period_end = current_period.end_date
         current_period_label = current_period.name
+        current_period_range = f"{period_start.month}/{period_start.day}～{period_end.month}/{period_end.day}"
     else:
         period_target_values_by_code = {code: {} for code in target_codes}
         period_status = "-"
         period_start = None
         period_end = None
         current_period_label = "-"
+        current_period_range = "-"
 
     month_start = current_month
     if current_month.month == 12:
@@ -168,5 +170,6 @@ def build_report_dashboard_cards_context():
         "target_month_status": month_status,
         "target_period_summary": current_period_label,
         "target_period_status": period_status,
+        "target_period_range": current_period_range,
         "target_progress_rows": target_progress_rows,
     }
