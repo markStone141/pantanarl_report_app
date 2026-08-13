@@ -17,21 +17,21 @@
     <h3>{% if is_edit %}報告修正{% else %}報告入力{% endif %} ({{ dept_name }})</h3>
 
     {% if submitted %}
-    <div class="note" style="margin-top: 10px;">報告を送信しました。</div>
+    <div class="note mt-10">報告を送信しました。</div>
     {% endif %}
 
     {% if is_edit %}
-    <div class="note" style="margin-top: 10px;">この画面は過去データの修正モードです。変更後に保存してください。</div>
+    <div class="note mt-10">この画面は過去データの修正モードです。変更後に保存してください。</div>
     {% endif %}
 
     {% if row_errors %}
-    <div class="note" style="margin-top: 10px;">
+    <div class="note mt-10">
       {% for e in row_errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
     </div>
     {% endif %}
 
     {% if dairymetrics_closed_entries or dairymetrics_active_entries %}
-    <div class="note" style="margin-top: 10px;">
+    <div class="note mt-10">
       {% if dairymetrics_closed_entries %}
       <div><strong>活動終了</strong>: {% for entry in dairymetrics_closed_entries %}{{ entry.member.name }}{% if not forloop.last %} / {% endif %}{% endfor %}</div>
       {% endif %}
@@ -72,7 +72,7 @@
         </div>
       </div>
 
-      <label style="margin-top: 12px;">メンバー別入力</label>
+      <label class="report-member-input-label">メンバー別入力</label>
       <table class="stacked-card-table">
         <thead>
           <tr>
@@ -115,17 +115,17 @@
         </tbody>
       </table>
 
-      <div style="margin-top: 10px;">
+      <div class="mt-10">
         <button type="button" id="add-row" class="ui-button ui-button--secondary">メンバーを追加</button>
       </div>
 
       {% if not members %}
-      <div class="note" style="margin-top: 10px;">
+      <div class="note mt-10">
         この部署に所属するメンバーが未登録です。管理者ページのメンバー設定から所属メンバーを追加してください。
       </div>
       {% endif %}
 
-      <div style="margin-top: 14px;">
+      <div class="report-submit-actions">
         <button type="submit" class="ui-button ui-button--primary" data-submit-button>{% if is_edit %}変更を保存{% else %}報告を送信{% endif %}</button>
         <span class="muted" data-submit-status role="status" aria-live="polite"></span>
       </div>
@@ -137,7 +137,7 @@
       <h3>送信履歴（{{ recent_reports_date }}）</h3>
       <span class="badge">{{ dept_name }} / {% if selected_mode == "prev" %}前日分{% else %}本日分{% endif %}</span>
     </div>
-    <table class="stacked-card-table" style="margin-top: 8px;">
+    <table class="stacked-card-table mt-8">
       <thead>
         <tr>
           <th>報告日</th>
@@ -167,7 +167,7 @@
           <td data-label="金額合計(円)">{{ report.followup_count_text }}</td>
           <td data-label="メモ">{{ report.memo|default:"-" }}</td>
           <td data-label="メンバー別実績">
-            <div style="margin-bottom: 8px; display: grid; gap: 4px;">
+            <div class="report-line-list">
               {% for line in report.lines.all %}
                 {% if split_counts %}
                 <div>{{ line.member.name }} CS{{ line.cs_count }}件 難民{{ line.refugee_count }}件 {{ line.amount_text }}円</div>
@@ -179,7 +179,7 @@
               {% endfor %}
             </div>
             <a href="{% url 'report_edit' report.id %}?next={{ current_view_name }}" class="ui-button ui-button--secondary">修正</a>
-            <form method="post" action="{% url 'report_delete' dept_code report.id %}" style="display:inline;" onsubmit="return confirm('この報告を削除します。よろしいですか？');">
+            <form method="post" action="{% url 'report_delete' dept_code report.id %}" class="report-inline-form" onsubmit="return confirm('この報告を削除します。よろしいですか？');">
               {% csrf_token %}
               <button type="submit" class="ui-button ui-button--danger">削除</button>
             </form>

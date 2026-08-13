@@ -1551,6 +1551,59 @@ th {
 
 .report-filter-row {
   position: relative;
+  gap: 8px;
+  align-items: center;
+}
+
+.report-filter-panel {
+  gap: 6px;
+}
+
+.report-bulk-actions {
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.report-history-detail-cell {
+  background: #fafcfd;
+}
+
+.report-department-links,
+.report-line-list {
+  display: grid;
+}
+
+.report-department-links {
+  gap: 12px;
+}
+
+.report-line-list {
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.report-details {
+  margin-top: 8px;
+}
+
+.report-details-spaced {
+  margin-top: 10px;
+}
+
+.report-details summary {
+  cursor: pointer;
+}
+
+.report-member-input-label {
+  margin-top: 12px;
+}
+
+.report-submit-actions {
+  margin-top: 14px;
+}
+
+.report-inline-form {
+  display: inline;
 }
 
 .report-filter-fab {

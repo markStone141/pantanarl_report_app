@@ -13,10 +13,10 @@
     <a class="ui-tab" href="{% url 'report_history' %}">保存報告一覧</a>
   </nav>
 
-  <section style="margin-top: 16px;">
+  <section class="mt-16">
     <article class="card">
       <h3>部門別報告フォーム</h3>
-      <div style="display: grid; gap: 12px; margin-top: 10px;">
+      <div class="report-department-links mt-10">
         {% for button in department_buttons %}
         <a href="{% url button.url_name %}" class="ui-button ui-button--primary department-button">{{ button.name }} 報告へ</a>
         {% empty %}
@@ -26,9 +26,9 @@
     </article>
   </section>
 
-  <section class="card" style="margin-top: 16px;">
+  <section class="card mt-16">
     <h3>本日の部門別実績</h3>
-    <div class="grid grid-3" style="margin-top: 12px;">
+    <div class="grid grid-3 mt-12">
       {% for card in kpi_cards %}
       <article class="card">
         <h3>{{ card.title }}</h3>
@@ -39,9 +39,9 @@
         <p class="muted">件数: {{ card.count }}</p>
         {% endif %}
 
-        <details style="margin-top: 8px;">
-          <summary style="cursor: pointer;">個人成績を表示</summary>
-          <table class="compact-member-table" style="margin-top: 8px;">
+        <details class="report-details">
+          <summary>個人成績を表示</summary>
+          <table class="compact-member-table mt-8">
             <thead>
               <tr><th>メンバー</th><th>件数/金額</th></tr>
             </thead>
@@ -66,13 +66,13 @@
     </div>
   </section>
 
-  <section class="card" style="margin-top: 16px;">
+  <section class="card mt-16">
     <h3>目標管理</h3>
     <p class="muted">対象月: {{ target_month_summary }} [{{ target_month_status }}] / 現在路程: {{ target_period_summary }} [{{ target_period_status }}]</p>
 
-    <details style="margin-top: 10px;">
-      <summary style="cursor: pointer;">月目標（詳細）</summary>
-      <table style="margin-top: 8px;">
+    <details class="report-details report-details-spaced">
+      <summary>月目標（詳細）</summary>
+      <table class="mt-8">
         <thead>
           <tr><th>部署</th><th>月目標</th><th>月累計実績</th><th>達成率</th></tr>
         </thead>
@@ -91,9 +91,9 @@
       </table>
     </details>
 
-    <details style="margin-top: 10px;">
-      <summary style="cursor: pointer;">路程目標（詳細）</summary>
-      <table style="margin-top: 8px;">
+    <details class="report-details report-details-spaced">
+      <summary>路程目標（詳細）</summary>
+      <table class="mt-8">
         <thead>
           <tr><th>部署</th><th>路程目標</th><th>路程累計実績</th><th>達成率</th></tr>
         </thead>
