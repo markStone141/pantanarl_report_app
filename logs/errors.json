@@ -762,5 +762,20 @@
     "action": "部署絞り込みテストがランダムなCSRF文字列中の部署コードに一致して失敗した。",
     "reason": "部署セルではなくHTML全体に対して短い文字列の不在を確認していたため。",
     "next_action": "部署セルの完全なHTML断片を検証するよう修正して全体テストを再実行する。"
+  },
+  {
+    "timestamp": "2026-08-13T15:49:12+09:00",
+    "expires_at": "2026-11-11T15:49:12+09:00",
+    "retention_days": 90,
+    "run_id": "test-suite-optimization",
+    "loop": 1,
+    "role": "validator",
+    "event": "benchmark-command-path",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "ハッシャー比較コマンドでbackend内から誤った仮想環境パスを指定し、正しい相対パスで再実行した。",
+    "reason": "作業ディレクトリと実行パスの基準が一致していなかったため。",
+    "next_action": "コマンド実行前に現在位置を確認する。"
   }
 ]
