@@ -21,15 +21,32 @@
     <a href="{% url 'report_index' %}"{% if current == 'report_index' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i><span>報告入力</span></a>
     <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}"{% if current == 'dairymetrics_entry_v2_transaction_demo' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-credit-card" aria-hidden="true"></i><span>決済入力</span></a>
     {% if performance_dashboard_url or request.user.is_staff or request.user.is_superuser or request.session.role == 'admin' or request.session.talks_member_id %}
-    <a href="{% if performance_dashboard_url %}{{ performance_dashboard_url }}{% elif request.user.is_staff or request.user.is_superuser or request.session.role == 'admin' %}{% url 'performance_index' %}{% else %}{% url 'performance_member_dashboard' %}{% endif %}"{% if current == 'performance_index' or current == 'performance_member_dashboard' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span>実績管理</span></a>
+    <a href="{% if performance_dashboard_url %}{{ performance_dashboard_url }}{% elif request.user.is_staff or request.user.is_superuser or request.session.role == 'admin' %}{% url 'performance_index' %}{% else %}{% url 'performance_member_dashboard' %}{% endif %}"{% if current == 'performance_index' or current == 'performance_member_dashboard' and not navigation_member %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span>実績管理</span></a>
     {% endif %}
     <a href="{% url 'performance_closeout_notes' %}"{% if current == 'performance_closeout_notes' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-note-sticky" aria-hidden="true"></i><span>今日のあと一歩ノート</span></a>
   </div>
 
+  {% if navigation_member and navigation_department %}
+  <div class="app-nav-group">
+    <span class="app-nav-group-label">表示中のメンバー</span>
+    {% if readonly_member_view %}
+    <a href="{% url 'performance_member_insight' navigation_member.id navigation_department.id %}"{% if current == 'performance_member_insight' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span>実績管理ダッシュボード</span></a>
+    <a href="{% url 'performance_member_history_insight' navigation_member.id navigation_department.id %}"{% if current == 'performance_member_history_insight' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i><span>過去の実績を見る</span></a>
+    {% elif is_admin_view %}
+    <a href="{% url 'performance_member_detail' navigation_member.id navigation_department.id %}"{% if current == 'performance_member_detail' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span>実績管理ダッシュボード</span></a>
+    <a href="{% url 'performance_member_history_detail' navigation_member.id navigation_department.id %}"{% if current == 'performance_member_history_detail' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i><span>過去の実績を見る</span></a>
+    {% else %}
+    <a href="{% url 'performance_member_dashboard' %}"{% if current == 'performance_member_dashboard' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span>実績管理ダッシュボード</span></a>
+    <a href="{% url 'performance_index' %}"><i class="fa-solid fa-chart-column" aria-hidden="true"></i><span>全体実績</span></a>
+    <a href="{% url 'performance_member_history' %}"{% if current == 'performance_member_history' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i><span>過去の実績を見る</span></a>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <div class="app-nav-group">
     <span class="app-nav-group-label">集計・振り返り</span>
-    <a href="{% url 'dairymetrics_metrics_v2_demo' %}"{% if current == 'dairymetrics_metrics_v2_demo' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-pie" aria-hidden="true"></i><span>分析する</span></a>
-    <a href="{% url 'dairymetrics_metrics_report' %}"{% if current == 'dairymetrics_metrics_report' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-file-lines" aria-hidden="true"></i><span>振り返りレポート</span></a>
+    <a href="{% url 'dairymetrics_metrics_v2_demo' %}{% if navigation_department %}?department={{ navigation_department.code }}{% if readonly_member_view %}&member={{ navigation_member.id }}{% endif %}{% endif %}"{% if current == 'dairymetrics_metrics_v2_demo' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-chart-pie" aria-hidden="true"></i><span>分析する</span></a>
+    <a href="{% url 'dairymetrics_metrics_report' %}{% if navigation_department %}?department={{ navigation_department.code }}{% endif %}"{% if current == 'dairymetrics_metrics_report' %} class="is-current" aria-current="page"{% endif %}><i class="fa-regular fa-file-lines" aria-hidden="true"></i><span>振り返りレポート</span></a>
     <a href="{% url 'report_history' %}"{% if current == 'report_history' %} class="is-current" aria-current="page"{% endif %}><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i><span>保存報告一覧</span></a>
   </div>
 

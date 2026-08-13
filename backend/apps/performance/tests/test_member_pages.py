@@ -14,6 +14,60 @@ User = get_user_model()
 
 
 class MemberPagesTests(PerformanceTestBase):
+    def test_performance_history_and_admin_member_pages_use_shared_app_shell(self):
+        pages = (
+            (reverse("performance_history"), reverse("performance_history")),
+            (
+                reverse("performance_member_detail", args=[self.member.id, self.department.id]),
+                reverse("performance_member_detail", args=[self.member.id, self.department.id]),
+            ),
+            (
+                reverse("performance_member_history_detail", args=[self.member.id, self.department.id]),
+                reverse("performance_member_history_detail", args=[self.member.id, self.department.id]),
+            ),
+        )
+
+        for page_url, current_url in pages:
+            with self.subTest(page_url=page_url):
+                response = self.client.get(page_url)
+
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, '<div class="app-shell">', html=False)
+                self.assertContains(response, '<main class="container app-shell-content">', html=False)
+                self.assertContains(response, 'class="app-side-nav dashboard-drawer-nav"', html=False)
+                self.assertContains(
+                    response,
+                    f'href="{current_url}" class="is-current" aria-current="page"',
+                    html=False,
+                )
+                self.assertEqual(response.content.count(b'aria-current="page"'), 1)
+
+    def test_member_dashboard_and_history_use_shared_context_navigation(self):
+        self.client.logout()
+        member_user = User.objects.create_user(username="perf-member-shell", password="pass1234", is_staff=False)
+        self.member.user = member_user
+        self.member.save(update_fields=["user"])
+        self.client.force_login(member_user)
+
+        pages = (
+            (reverse("performance_member_dashboard"), reverse("performance_member_dashboard")),
+            (reverse("performance_member_history"), reverse("performance_member_history")),
+        )
+
+        for page_url, current_url in pages:
+            with self.subTest(page_url=page_url):
+                response = self.client.get(page_url)
+
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, '<div class="app-shell">', html=False)
+                self.assertContains(response, "表示中のメンバー")
+                self.assertContains(
+                    response,
+                    f'href="{current_url}" class="is-current" aria-current="page"',
+                    html=False,
+                )
+                self.assertEqual(response.content.count(b'aria-current="page"'), 1)
+
     def test_member_dashboard_entry_rows_prefetch_transactions_in_fixed_query_count(self):
         entries = [
             MemberDailyMetricEntry.objects.create(

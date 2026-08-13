@@ -537,5 +537,20 @@
     "action": "dashboard対象テストとDjango checkを実行",
     "reason": "Django依存関係が未導入で、依存関係取得も実行環境のネットワーク制約により停止",
     "next_action": "静的検査結果を記録し、CIまたは依存環境で再実行"
+  },
+  {
+    "timestamp": "2026-08-13T13:37:01+09:00",
+    "expires_at": "2026-11-11T13:37:01+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260813-performance-member-shell",
+    "loop": 1,
+    "role": "test_agent",
+    "event": "regression_failed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "Performance全101テストを実行し2件のNAV表示回帰を検出",
+    "reason": "共通NAV移行で実績管理ダッシュボードの表示名と本人用全体実績リンクが欠落したため",
+    "next_action": "表示項目を復元して対象テストと全Performanceテストを再実行"
   }
 ]
