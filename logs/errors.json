@@ -717,5 +717,50 @@
     "action": "リポジトリ直下からDjango検査を呼ぶ仮想環境パスを修正して再実行した。",
     "reason": "backend階層を含まない相対パスを指定したため。",
     "next_action": "再実行結果を完了判定へ反映する。"
+  },
+  {
+    "timestamp": "2026-08-13T15:34:11+09:00",
+    "expires_at": "2026-11-11T15:34:11+09:00",
+    "retention_days": 90,
+    "run_id": "ui-phase-13-5",
+    "loop": 1,
+    "role": "validator",
+    "event": "targeted-test-command",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "対象テストで実在しないテスト名を指定し、正しいアプリ単位指定で再実行した。",
+    "reason": "テストクラスとメソッド名の確認が不足していたため。",
+    "next_action": "定義名を検索してから対象テストを実行する。"
+  },
+  {
+    "timestamp": "2026-08-13T15:34:11+09:00",
+    "expires_at": "2026-11-11T15:34:11+09:00",
+    "retention_days": 90,
+    "run_id": "ui-phase-13-5",
+    "loop": 1,
+    "role": "observer",
+    "event": "browser-capture-environment",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "実ブラウザ確認でNode版、選択欄操作、未更新ローカルDBを検出し、付属Nodeと専用一時DBへ切り替えた。",
+    "reason": "画像取得環境を事前に固定していなかったため。",
+    "next_action": "一時DBへ全migrationを適用し、PCとモバイル画像を再取得する。"
+  },
+  {
+    "timestamp": "2026-08-13T15:34:11+09:00",
+    "expires_at": "2026-11-11T15:34:11+09:00",
+    "retention_days": 90,
+    "run_id": "ui-phase-13-5",
+    "loop": 1,
+    "role": "test_auditor",
+    "event": "flaky-assertion-detected",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "部署絞り込みテストがランダムなCSRF文字列中の部署コードに一致して失敗した。",
+    "reason": "部署セルではなくHTML全体に対して短い文字列の不在を確認していたため。",
+    "next_action": "部署セルの完全なHTML断片を検証するよう修正して全体テストを再実行する。"
   }
 ]
