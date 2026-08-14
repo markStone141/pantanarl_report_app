@@ -10,9 +10,10 @@
   {% endwith %}
   <main class="container app-shell-content">
 
-  <section class="card mt-16">
-    <h3>直近稼働の実績推移</h3>
-    <p id="performance-trend-description" class="muted">1稼働 = 実績が登録された1日です。金額は棒、{{ activity_trend.count_label }}は折れ線で表示します。</p>
+  <section class="card ui-chart-card performance-trend-card mt-16">
+    <span class="ui-chart-card__kicker">Personal trend</span>
+    <h2 class="ui-chart-card__title">直近稼働の実績推移</h2>
+    <p id="performance-trend-description" class="ui-chart-card__description">1稼働 = 実績が登録された1日です。金額は棒、{{ activity_trend.count_label }}は折れ線で表示します。</p>
     <div class="grid grid-3 mt-12">
       {% for item in recent_summary_items %}
       <div class="metric-card" data-performance-summary-card="{{ item.key }}">
@@ -24,7 +25,7 @@
     </div>
     {% if activity_trend.has_data %}
     {{ activity_trend|json_script:"performance-activity-trend-data" }}
-    <div class="performance-trend-legend mt-12">
+    <div class="performance-trend-legend ui-chart-legend mt-12">
       <span id="performance-trend-primary-legend" class="performance-trend-legend-item">
         <span id="performance-trend-primary-swatch" class="performance-trend-legend-swatch performance-trend-legend-swatch-bar"></span>
         <span id="performance-trend-primary-label">金額</span>
@@ -34,28 +35,28 @@
         <span id="performance-trend-line-label">{{ activity_trend.count_label }}</span>
       </span>
     </div>
-    <div class="performance-trend-controls mt-12">
+    <div class="performance-trend-controls ui-chart-card__controls mt-12">
       <button type="button" id="performance-trend-decrease" class="ui-button ui-button--secondary">-10</button>
       <span id="performance-trend-visible-count" class="muted"></span>
       <button type="button" id="performance-trend-increase" class="ui-button ui-button--secondary">+10</button>
     </div>
-    <div class="performance-trend-mode-switch mt-12">
+    <div class="performance-trend-mode-switch ui-chart-card__controls mt-12">
       <button type="button" id="performance-trend-mode-amount" class="ui-choice-button is-active" aria-pressed="true">金額/件数</button>
       <button type="button" id="performance-trend-mode-rate" class="ui-choice-button" aria-pressed="false">日目達成率</button>
       <button type="button" id="performance-trend-mode-activity" class="ui-choice-button" aria-pressed="false">AP/CM</button>
       {% if activity_trend.is_wv %}<button type="button" id="performance-trend-mode-wv" class="ui-choice-button" aria-pressed="false">CS/難民</button>{% endif %}
     </div>
-    <div class="performance-chart-card mt-12">
+    <div class="performance-chart-card ui-chart-frame mt-12">
       <canvas id="performance-activity-trend-chart" aria-label="直近稼働の実績推移"></canvas>
     </div>
     {% else %}
-    <p class="muted mt-12">表示できる稼働実績はまだありません。</p>
+    <div class="ui-chart-empty mt-12">表示できる稼働実績はまだありません。</div>
     {% endif %}
   </section>
 
   <section class="mt-16">
     <div class="grid grid-2">
-      <article class="card performance-progress-card">
+      <article class="card ui-chart-card performance-progress-card performance-progress-chart-card">
         <div class="row">
           <strong>{{ department_month_progress.label }}</strong>
           <span class="badge">{{ department_month_progress.rate_text }}</span>
@@ -91,7 +92,7 @@
           <div class="muted mt-8">{{ department_month_progress.contribution.detail_text }}</div>
         </div>
       </article>
-      <article class="card performance-progress-card">
+      <article class="card ui-chart-card performance-progress-card performance-progress-chart-card">
         <div class="row">
           <strong>{{ department_period_progress.label }}</strong>
           <span class="badge">{{ department_period_progress.rate_text }}</span>
@@ -127,7 +128,7 @@
           <div class="muted mt-8">{{ department_period_progress.contribution.detail_text }}</div>
         </div>
       </article>
-      <article class="card performance-progress-card">
+      <article class="card ui-chart-card performance-progress-card performance-progress-chart-card">
         <div class="row">
           <strong>{{ member_month_progress.label }}</strong>
           <span class="badge">{{ member_month_progress.rate_text }}</span>
@@ -200,7 +201,7 @@
         </form>
         {% endif %}
       </article>
-      <article class="card performance-progress-card">
+      <article class="card ui-chart-card performance-progress-card performance-progress-chart-card">
         <div class="row">
           <strong>{{ member_period_progress.label }}</strong>
           <span class="badge">{{ member_period_progress.rate_text }}</span>

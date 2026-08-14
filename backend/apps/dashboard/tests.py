@@ -39,6 +39,52 @@ class MemberSettingsViewTests(TestCase):
         self.assertIn('event.target.closest("a[href]")', drawer_script)
         self.assertIn("window.location.assign(destination)", drawer_script)
 
+    def test_shared_mobile_drawer_stays_above_header_controls(self):
+        drawer_css = (Path(settings.BASE_DIR) / "static/dashboard/mobile_drawer.css").read_text(encoding="utf-8")
+
+        self.assertIn(".dashboard-drawer-topbar {\n    position: relative;\n    z-index: 250;", drawer_css)
+        self.assertIn(".dashboard-drawer-nav {", drawer_css)
+        self.assertIn("z-index: 280;", drawer_css)
+
+    def test_shared_chart_card_foundation_is_loaded(self):
+        base_template = (Path(settings.BASE_DIR) / "templates/base.html").read_text(encoding="utf-8")
+        chart_css = (Path(settings.BASE_DIR) / "static/chart_cards.css").read_text(encoding="utf-8")
+
+        self.assertIn("{% static 'chart_cards.css' %}?v=3", base_template)
+        for selector in (
+            ".ui-chart-card {",
+            ".ui-chart-card__header {",
+            ".ui-chart-card__body {",
+            ".ui-chart-frame {",
+            ".ui-chart-empty {",
+        ):
+            self.assertIn(selector, chart_css)
+        self.assertIn("max-width: 100%;", chart_css)
+
+    def test_all_canvas_templates_use_the_shared_chart_card_contract(self):
+        apps_root = Path(settings.BASE_DIR) / "apps"
+        canvas_templates = {}
+        for template in apps_root.rglob("*.html"):
+            content = template.read_text(encoding="utf-8")
+            canvas_count = content.count("<canvas")
+            if canvas_count:
+                canvas_templates[template.relative_to(apps_root).as_posix()] = (content, canvas_count)
+
+        self.assertEqual(
+            set(canvas_templates),
+            {
+                "dairymetrics/templates/dairymetrics/metrics_report.html",
+                "dairymetrics/templates/dairymetrics/metrics_v2.html",
+                "performance/templates/performance/history.html",
+                "performance/templates/performance/index.html",
+                "performance/templates/performance/member_detail.html",
+                "performance/templates/performance/member_history.html",
+            },
+        )
+        self.assertEqual(sum(count for _content, count in canvas_templates.values()), 19)
+        for content, _count in canvas_templates.values():
+            self.assertIn("ui-chart-card", content)
+
     def test_register_member_creates_record(self):
         response = self.client.post(
             reverse("member_create"),
@@ -248,6 +294,9 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "ID未登録")
         self.assertContains(response, "アドレス未登録")
+        self.assertContains(response, 'class="member-settings-card"')
+        self.assertContains(response, 'data-member-settings-items')
+        self.assertNotContains(response, 'class="mobile-card-table"')
 
     def test_member_create_page_renders(self):
         response = self.client.get(reverse("member_create"))
@@ -255,6 +304,22 @@ class MemberSettingsViewTests(TestCase):
         self.assertContains(response, "新規メンバー追加")
         self.assertContains(response, "UN活動コード")
         self.assertContains(response, "メールアドレス")
+        self.assertContains(response, 'class="member-editor-form"')
+        self.assertContains(response, 'class="member-editor-card"', count=3)
+        self.assertContains(response, "基本情報")
+        self.assertContains(response, "所属部署")
+        self.assertContains(response, "ログイン情報")
+
+    def test_member_edit_page_uses_editor_context(self):
+        member = Member.objects.create(name="UI Edit Member", is_active=True)
+
+        response = self.client.get(reverse("member_edit", args=[member.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="member-editor-context"')
+        self.assertContains(response, "編集中のメンバー")
+        self.assertContains(response, "UI Edit Member")
+        self.assertContains(response, ">メンバー編集</a>", html=False)
 
     def test_member_settings_filters_by_query(self):
         Member.objects.create(name="Alpha User", email="alpha@example.com")

@@ -1,65 +1,79 @@
 {% if members %}
-<div class="table-scroll">
-  <table class="mobile-card-table">
-    <thead>
-      <tr><th>名前</th><th>所属部署</th><th>メイン部署</th><th>操作</th></tr>
-    </thead>
-    <tbody>
-      {% for member in members %}
-      <tr>
-        <td data-label="名前">
-          <div class="member-list-name-cell">
-            <span class="member-list-name">{{ member.name }}</span>
-            <div class="member-list-badges">
-              {% if not member.email %}
-              <span class="member-list-badge">アドレス未登録</span>
-              {% endif %}
-              {% if not member.user %}
-              <span class="member-list-badge">ID未登録</span>
-              {% endif %}
-              {% if not member.is_active %}
-              <span class="member-list-badge member-list-badge--inactive">非アクティブ</span>
-              {% endif %}
-            </div>
-          </div>
-        </td>
-        <td data-label="所属部署">
+<div class="member-settings-grid" data-member-settings-items>
+  {% for member in members %}
+  <article class="member-settings-card{% if not member.is_active %} is-inactive{% endif %}">
+    <header class="member-settings-card-head">
+      <div>
+        <span>メンバー</span>
+        <h3>{{ member.name }}</h3>
+      </div>
+      <span class="member-status-badge{% if member.is_active %} is-active{% else %} is-inactive{% endif %}">
+        {% if member.is_active %}有効{% else %}無効{% endif %}
+      </span>
+    </header>
+
+    <div class="member-settings-card-body">
+      <div class="member-settings-departments">
+        <span class="member-settings-meta-label">所属部署</span>
+        <div class="member-settings-department-chips">
           {% for link in member.department_links.all %}
-            {{ link.department.name }}{% if not forloop.last %}, {% endif %}
+          <span class="member-department-chip{% if member.default_department_id == link.department_id %} is-primary{% endif %}">
+            {{ link.department.name }}{% if member.default_department_id == link.department_id %}<small>メイン</small>{% endif %}
+          </span>
           {% empty %}
-            -
+          <span class="member-department-chip is-empty">未所属</span>
           {% endfor %}
-        </td>
-        <td data-label="メイン部署">{% if member.default_department %}{{ member.default_department.name }}{% else %}-{% endif %}</td>
-        <td data-label="操作">
-          <a class="ui-icon-button icon-btn" href="{% url 'member_edit' member.id %}" aria-label="{{ member.name }}を編集" title="編集">
-            <i class="fa-solid fa-pen"></i>
-          </a>
-          <form method="post" action="{% url 'member_delete' member.id %}" style="display:inline;" onsubmit="return confirm('{% if member.is_active %}このメンバーを無効化します。よろしいですか？{% else %}このメンバーを再有効化します。よろしいですか？{% endif %}');">
-            {% csrf_token %}
-            <button class="ui-icon-button{% if member.is_active %} ui-icon-button--danger{% endif %} icon-btn{% if member.is_active %} icon-btn-danger{% endif %}" type="submit" aria-label="{% if member.is_active %}{{ member.name }}を無効化{% else %}{{ member.name }}を再有効化{% endif %}" title="{% if member.is_active %}無効化{% else %}再有効化{% endif %}">
-              <i class="fa-solid {% if member.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
-            </button>
-          </form>
-          {% if not member.is_active %}
-          <form method="post" action="{% url 'member_purge' member.id %}" style="display:inline;" onsubmit="return confirm('このメンバーを完全に削除します。元に戻せません。よろしいですか？');">
-            {% csrf_token %}
-            <button class="ui-icon-button ui-icon-button--danger icon-btn icon-btn-danger" type="submit" aria-label="{{ member.name }}を完全削除" title="完全削除">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </form>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        </div>
+      </div>
+
+      <div class="member-settings-account-grid">
+        <div>
+          <span>メール</span>
+          {% if member.email %}<strong>{{ member.email }}</strong>{% else %}<strong class="is-missing">未登録</strong>{% endif %}
+        </div>
+        <div>
+          <span>ログインID</span>
+          {% if member.user %}<strong>{{ member.user.username }}</strong>{% else %}<strong class="is-missing">未登録</strong>{% endif %}
+        </div>
+      </div>
+
+      {% if not member.email or not member.user %}
+      <div class="member-list-badges">
+        {% if not member.email %}<span class="member-list-badge">アドレス未登録</span>{% endif %}
+        {% if not member.user %}<span class="member-list-badge">ID未登録</span>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <footer class="member-settings-card-actions">
+      <a class="ui-button ui-button--secondary" href="{% url 'member_edit' member.id %}"><i class="fa-solid fa-pen" aria-hidden="true"></i> 編集</a>
+      <form method="post" action="{% url 'member_delete' member.id %}" class="member-settings-action-form" onsubmit="return confirm('{% if member.is_active %}このメンバーを無効化します。よろしいですか？{% else %}このメンバーを再有効化します。よろしいですか？{% endif %}');">
+        {% csrf_token %}
+        <button class="ui-icon-button{% if member.is_active %} ui-icon-button--danger{% endif %}" type="submit" aria-label="{% if member.is_active %}{{ member.name }}を無効化{% else %}{{ member.name }}を再有効化{% endif %}" title="{% if member.is_active %}無効化{% else %}再有効化{% endif %}">
+          <i class="fa-solid {% if member.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}" aria-hidden="true"></i>
+        </button>
+      </form>
+      {% if not member.is_active %}
+      <form method="post" action="{% url 'member_purge' member.id %}" class="member-settings-action-form" onsubmit="return confirm('このメンバーを完全に削除します。元に戻せません。よろしいですか？');">
+        {% csrf_token %}
+        <button class="ui-icon-button ui-icon-button--danger" type="submit" aria-label="{{ member.name }}を完全削除" title="完全削除">
+          <i class="fa-solid fa-trash" aria-hidden="true"></i>
+        </button>
+      </form>
+      {% endif %}
+    </footer>
+  </article>
+  {% endfor %}
 </div>
 {% if page_obj.has_next %}
-<div class="inline-row mt-12">
+<div class="inline-row mt-12 member-settings-load-more">
   <button type="button" class="ui-button ui-button--secondary" id="member-settings-load-more-btn" data-next-page="{{ page_obj.next_page_number }}">さらに20件表示</button>
 </div>
 {% endif %}
 {% else %}
-<p class="muted">条件に一致するメンバーがいません。</p>
+<div class="member-settings-empty">
+  <i class="fa-solid fa-user-group" aria-hidden="true"></i>
+  <strong>条件に一致するメンバーがいません</strong>
+  <p>検索条件を変更するか、リセットしてください。</p>
+</div>
 {% endif %}

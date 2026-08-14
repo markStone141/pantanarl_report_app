@@ -494,69 +494,6 @@
   color: #8a6f76;
 }
 
-.dairymetrics-mini-chart {
-  padding: 14px;
-  border-radius: 14px;
-  border: 1px solid #d3e0eb;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #f6faff 100%);
-}
-
-.dairymetrics-mini-chart h3 {
-  margin: 0 0 4px;
-}
-
-.dairymetrics-chart-grid {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
-  align-items: end;
-}
-
-.dairymetrics-chart-col {
-  display: grid;
-  gap: 6px;
-  justify-items: center;
-}
-
-.dairymetrics-chart-bars {
-  width: 100%;
-  min-height: 92px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  align-items: end;
-}
-
-.dairymetrics-chart-bar {
-  width: 100%;
-  border-radius: 999px 999px 6px 6px;
-  min-height: 10px;
-}
-
-.dairymetrics-chart-bar.is-count {
-  background: linear-gradient(180deg, #3d8cff 0%, #1b67b8 100%);
-}
-
-.dairymetrics-chart-bar.is-amount {
-  background: linear-gradient(180deg, #89b9ff 0%, #4f87d8 100%);
-}
-
-.dairymetrics-chart-values {
-  display: grid;
-  gap: 2px;
-  justify-items: center;
-  font-size: 0.76rem;
-}
-
-.dairymetrics-chart-values strong {
-  font-size: 0.9rem;
-}
-
-.dairymetrics-chart-label {
-  font-size: 0.76rem;
-}
-
 .dairymetrics-status-badge {
   border: 1px solid transparent;
 }
@@ -1788,14 +1725,6 @@
     gap: 8px;
   }
 
-  .dairymetrics-chart-grid {
-    gap: 6px;
-  }
-
-  .dairymetrics-chart-bars {
-    min-height: 74px;
-  }
-
   .dairymetrics-month-filter {
     display: grid;
     grid-template-columns: 1fr;
@@ -2678,10 +2607,48 @@
   gap: 8px;
 }
 
+.metrics-v2-summary-card > .ui-chart-card__body {
+  padding-top: 8px;
+}
+
+.metrics-v2-stat-card {
+  min-width: 0;
+  border-color: #e2eaf3;
+  border-radius: 16px;
+  background: #fbfcfe;
+  box-shadow: none;
+}
+
+.metrics-v2-stat-label {
+  display: block;
+  color: #64758a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+}
+
+.metrics-v2-stat-value {
+  display: block;
+  margin-top: 8px;
+  color: #1b2a3a;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.metrics-v2-average-card {
+  padding: 16px;
+}
+
 .metrics-v2-rate-card {
   display: grid;
   gap: 10px;
   text-align: center;
+}
+
+.metrics-v2-rate-card .metrics-v2-stat-label {
+  text-align: left;
 }
 
 .metrics-v2-rate-card .row {
@@ -2722,6 +2689,10 @@
   height: 320px;
 }
 
+.metrics-v2-chart-frame.ui-chart-frame {
+  height: 320px;
+}
+
 .metrics-v2-chart-frame canvas {
   width: 100% !important;
   height: 100% !important;
@@ -2733,6 +2704,10 @@
 }
 
 .metrics-v2-chart-frame-ranking {
+  height: 420px;
+}
+
+.metrics-v2-chart-frame-ranking.ui-chart-frame {
   height: 420px;
 }
 
@@ -2755,6 +2730,10 @@
   height: 300px;
 }
 
+.metrics-v2-chart-frame-distribution.ui-chart-frame {
+  height: 300px;
+}
+
 .metrics-v2-distribution-list {
   display: grid;
   gap: 8px;
@@ -2765,6 +2744,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.metrics-v2-distribution-list.ui-chart-legend {
+  display: grid;
+  margin-top: 12px;
+}
+
+.metrics-v2-distribution-list.ui-chart-legend:empty {
+  display: none;
+}
+
+.metrics-v2-chart-frame > .ui-chart-empty {
+  height: 100%;
+  min-height: 0;
 }
 
 .metrics-v2-distribution-label {
@@ -3185,6 +3178,12 @@
     height: 260px;
   }
 
+  .metrics-v2-chart-frame.ui-chart-frame,
+  .metrics-v2-chart-frame-ranking.ui-chart-frame,
+  .metrics-v2-chart-frame-distribution.ui-chart-frame {
+    height: 260px;
+  }
+
   .metrics-v2-distribution-row {
     align-items: flex-start;
     flex-direction: column;
@@ -3205,6 +3204,19 @@
 
   .metrics-v2-distribution-grid {
     grid-template-columns: 1fr;
+  }
+
+  .metrics-v2-summary-tabs {
+    width: 100%;
+  }
+
+  .metrics-v2-summary-tab {
+    min-width: 0;
+    flex: 1 1 0;
+  }
+
+  .metrics-v2-stat-card {
+    padding: 14px;
   }
 
   .metrics-report-ranking-grid,

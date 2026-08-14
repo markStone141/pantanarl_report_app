@@ -4,7 +4,7 @@
 {% block title %}分析する | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=27" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=28" />
 {% endblock %}
 
 {% block content %}
@@ -26,17 +26,20 @@
     </div>
     {% endif %}
     <div class="metrics-v2-summary-panels">
-      <article id="metrics-v2-summary-panel-overall" class="card metrics-v2-summary-card" {% if metrics_v2_payload.personal_summary %}role="tabpanel" aria-labelledby="metrics-v2-summary-tab-overall" data-metrics-v2-summary-panel="overall" hidden{% endif %}>
-        <div class="row">
-          <strong>全体の指標</strong>
-          <span class="badge">{{ metrics_v2_payload.scope.label }}</span>
-        </div>
+      <article id="metrics-v2-summary-panel-overall" class="card metrics-v2-summary-card ui-chart-card" {% if metrics_v2_payload.personal_summary %}role="tabpanel" aria-labelledby="metrics-v2-summary-tab-overall" data-metrics-v2-summary-panel="overall" hidden{% endif %}>
+        <header class="ui-chart-card__header">
+          <div class="ui-chart-card__identity">
+            <span class="ui-chart-card__kicker">Overall performance</span>
+            <h2 class="ui-chart-card__title">全体の指標</h2>
+            <p class="ui-chart-card__description">対象部署の達成率と平均値をまとめて確認できます。</p>
+          </div>
+          <span class="ui-chart-card__meta">{{ metrics_v2_payload.scope.label }}</span>
+        </header>
+        <div class="ui-chart-card__body">
         <div class="grid grid-2 mt-12">
           {% for rate in metrics_v2_payload.overall_summary.rates %}
-          <div class="metric-card metrics-v2-rate-card">
-            <div class="row">
-              <strong>{{ rate.label }}</strong>
-            </div>
+          <div class="metric-card metrics-v2-rate-card metrics-v2-stat-card">
+            <span class="metrics-v2-stat-label">{{ rate.label }}</span>
             <div class="metrics-v2-mini-donut">
               <canvas class="metrics-v2-donut-chart" data-chart-values="{{ rate.chart_data|join:',' }}" width="132" height="132"></canvas>
               <div class="metrics-v2-mini-donut-value">{{ rate.value }}</div>
@@ -47,29 +50,33 @@
         </div>
         <div class="grid grid-2 mt-12">
           {% for item in metrics_v2_payload.overall_summary.averages %}
-          <div class="metric-card">
-            <div class="muted">{{ item.label }}</div>
-            <strong>{{ item.value }}</strong>
+          <div class="metric-card metrics-v2-stat-card metrics-v2-average-card">
+            <span class="metrics-v2-stat-label">{{ item.label }}</span>
+            <strong class="metrics-v2-stat-value">{{ item.value }}</strong>
             {% if item.helper %}
             <div class="muted mt-6">{{ item.helper }}</div>
             {% endif %}
           </div>
           {% endfor %}
         </div>
+        </div>
       </article>
 
       {% if metrics_v2_payload.personal_summary %}
-      <article id="metrics-v2-summary-panel-personal" class="card metrics-v2-summary-card" role="tabpanel" aria-labelledby="metrics-v2-summary-tab-personal" data-metrics-v2-summary-panel="personal">
-        <div class="row">
-          <strong>自分の指標</strong>
-          <span class="badge">{{ metrics_v2_payload.scope.label }}</span>
-        </div>
+      <article id="metrics-v2-summary-panel-personal" class="card metrics-v2-summary-card ui-chart-card" role="tabpanel" aria-labelledby="metrics-v2-summary-tab-personal" data-metrics-v2-summary-panel="personal">
+        <header class="ui-chart-card__header">
+          <div class="ui-chart-card__identity">
+            <span class="ui-chart-card__kicker">My performance</span>
+            <h2 class="ui-chart-card__title">自分の指標</h2>
+            <p class="ui-chart-card__description">現在の達成率と平均値をひと目で確認できます。</p>
+          </div>
+          <span class="ui-chart-card__meta">{{ metrics_v2_payload.scope.label }}</span>
+        </header>
+        <div class="ui-chart-card__body">
         <div class="grid grid-2 mt-12">
           {% for rate in metrics_v2_payload.personal_summary.rates %}
-          <div class="metric-card metrics-v2-rate-card">
-            <div class="row">
-              <strong>{{ rate.label }}</strong>
-            </div>
+          <div class="metric-card metrics-v2-rate-card metrics-v2-stat-card">
+            <span class="metrics-v2-stat-label">{{ rate.label }}</span>
             <div class="metrics-v2-mini-donut">
               <canvas class="metrics-v2-donut-chart" data-chart-values="{{ rate.chart_data|join:',' }}" width="132" height="132"></canvas>
               <div class="metrics-v2-mini-donut-value">{{ rate.value }}</div>
@@ -80,14 +87,15 @@
         </div>
         <div class="grid grid-2 mt-12">
           {% for item in metrics_v2_payload.personal_summary.averages %}
-          <div class="metric-card">
-            <div class="muted">{{ item.label }}</div>
-            <strong>{{ item.value }}</strong>
+          <div class="metric-card metrics-v2-stat-card metrics-v2-average-card">
+            <span class="metrics-v2-stat-label">{{ item.label }}</span>
+            <strong class="metrics-v2-stat-value">{{ item.value }}</strong>
             {% if item.helper %}
             <div class="muted mt-6">{{ item.helper }}</div>
             {% endif %}
           </div>
           {% endfor %}
+        </div>
         </div>
       </article>
       {% endif %}
@@ -95,63 +103,45 @@
   </section>
 
   <section class="mt-16 grid grid-2 metrics-v2-history-grid">
-    <article class="card">
-      <div class="row">
-        <strong>月ごとの比較・推移</strong>
-      </div>
-      <div class="muted mt-6">直近6か月の金額と件数です。</div>
-      <div class="metrics-v2-chart-frame mt-12">
+    <article class="card ui-chart-card">
+      <header class="ui-chart-card__header"><div class="ui-chart-card__identity"><span class="ui-chart-card__kicker">Monthly trend</span><h2 class="ui-chart-card__title">月ごとの比較・推移</h2><p class="ui-chart-card__description">直近6か月の金額と件数です。</p></div></header>
+      <div class="ui-chart-card__body"><div class="metrics-v2-chart-frame ui-chart-frame">
         <canvas id="metrics-v2-month-history-chart" class="metrics-v2-history-chart" aria-label="月ごとの比較・推移"></canvas>
-      </div>
+        <p class="ui-chart-empty" data-chart-empty hidden>表示できる月別実績がありません。</p>
+      </div></div>
     </article>
-    <article class="card">
-      <div class="row">
-        <strong>路程ごとの比較・推移</strong>
-      </div>
-      <div class="muted mt-6">直近6路程の金額と件数です。</div>
-      <div class="metrics-v2-chart-frame mt-12">
+    <article class="card ui-chart-card">
+      <header class="ui-chart-card__header"><div class="ui-chart-card__identity"><span class="ui-chart-card__kicker">Period trend</span><h2 class="ui-chart-card__title">路程ごとの比較・推移</h2><p class="ui-chart-card__description">直近6路程の金額と件数です。</p></div></header>
+      <div class="ui-chart-card__body"><div class="metrics-v2-chart-frame ui-chart-frame">
         <canvas id="metrics-v2-period-history-chart" class="metrics-v2-history-chart" aria-label="路程ごとの比較・推移"></canvas>
-      </div>
+        <p class="ui-chart-empty" data-chart-empty hidden>表示できる路程別実績がありません。</p>
+      </div></div>
     </article>
   </section>
 
-  <section class="card mt-16">
-    <div class="row">
-      <div>
-        <h3>ランキングモード</h3>
-        <div class="muted">他メンバーとの比較を客観的に確認できます。</div>
-      </div>
-    </div>
-    <div class="metrics-v2-chart-frame metrics-v2-chart-frame-ranking mt-12">
+  <section class="card ui-chart-card mt-16">
+    <header class="ui-chart-card__header"><div class="ui-chart-card__identity"><span class="ui-chart-card__kicker">Member ranking</span><h2 class="ui-chart-card__title">ランキングモード</h2><p class="ui-chart-card__description">他メンバーとの比較を客観的に確認できます。</p></div><div class="ui-chart-card__controls"><label for="metrics-v2-ranking-metric">指標<select id="metrics-v2-ranking-metric" data-metrics-v2-ranking-select>{% for option in metrics_v2_payload.ranking.options %}<option value="{{ option.key }}" {% if option.key == metrics_v2_payload.ranking.default_metric %}selected{% endif %}>{{ option.label }}</option>{% endfor %}</select></label></div></header>
+    <div class="ui-chart-card__body"><div class="metrics-v2-chart-frame metrics-v2-chart-frame-ranking ui-chart-frame">
       <canvas id="metrics-v2-ranking-chart" class="metrics-v2-ranking-chart" aria-label="ランキング"></canvas>
-    </div>
-    <div class="mt-12">
-      <label for="metrics-v2-ranking-metric">指標</label>
-      <select id="metrics-v2-ranking-metric" data-metrics-v2-ranking-select>
-        {% for option in metrics_v2_payload.ranking.options %}
-        <option value="{{ option.key }}" {% if option.key == metrics_v2_payload.ranking.default_metric %}selected{% endif %}>{{ option.label }}</option>
-        {% endfor %}
-      </select>
-    </div>
+      <p class="ui-chart-empty" data-chart-empty hidden>ランキング対象の実績がありません。</p>
+    </div></div>
   </section>
 
   <section class="mt-16">
     <div class="grid grid-3 metrics-v2-distribution-grid">
       {% for card in metrics_v2_payload.distribution_cards %}
-      <article class="card">
-        <div class="row">
-          <strong>{{ card.title }}</strong>
-          <span class="badge">{{ card.total_text }}</span>
-        </div>
-        <div class="metrics-v2-chart-frame metrics-v2-chart-frame-distribution mt-12">
+      <article class="card ui-chart-card">
+        <header class="ui-chart-card__header"><div class="ui-chart-card__identity"><span class="ui-chart-card__kicker">Audience mix</span><h2 class="ui-chart-card__title">{{ card.title }}</h2></div><span class="ui-chart-card__meta">{{ card.total_text }}</span></header>
+        <div class="ui-chart-card__body"><div class="metrics-v2-chart-frame metrics-v2-chart-frame-distribution ui-chart-frame ui-chart-frame--compact">
           <canvas
             class="metrics-v2-distribution-chart"
             aria-label="{{ card.title }}"
             data-chart-labels="{{ card.labels|join:'|' }}"
             data-chart-values="{{ card.counts|join:',' }}"
           ></canvas>
+          <p class="ui-chart-empty" data-chart-empty hidden>表示できる属性データがありません。</p>
         </div>
-        <div class="metrics-v2-distribution-list mt-12">
+        {% if card.has_data %}<div class="metrics-v2-distribution-list ui-chart-legend">
           {% for row in card.rows %}
           <div class="metrics-v2-distribution-row">
             <span class="metrics-v2-distribution-label">
@@ -161,34 +151,23 @@
             <span class="muted">{{ row.count_text }} / {{ row.percent_text }}</span>
           </div>
           {% endfor %}
+        </div>{% endif %}
         </div>
       </article>
       {% endfor %}
     </div>
   </section>
 
-  <section class="card mt-16">
-    <div class="row">
-      <div>
-        <h3>属性別の平均金額</h3>
-        <div class="muted">年代・男女・国籍で平均金額の差を確認できます。</div>
-      </div>
-    </div>
-    <div class="mt-12">
-      <label for="metrics-v2-amount-mode">分類</label>
-      <select id="metrics-v2-amount-mode" data-metrics-v2-amount-select>
-        <option value="age">年代</option>
-        <option value="gender">男女</option>
-        <option value="nationality">国籍</option>
-      </select>
-    </div>
-    <div class="metrics-v2-chart-frame mt-12">
+  <section class="card ui-chart-card mt-16">
+    <header class="ui-chart-card__header"><div class="ui-chart-card__identity"><span class="ui-chart-card__kicker">Average amount</span><h2 class="ui-chart-card__title">属性別の平均金額</h2><p class="ui-chart-card__description">年代・男女・国籍で平均金額の差を確認できます。</p></div><div class="ui-chart-card__controls"><label for="metrics-v2-amount-mode">分類<select id="metrics-v2-amount-mode" data-metrics-v2-amount-select><option value="age">年代</option><option value="gender">男女</option><option value="nationality">国籍</option></select></label></div></header>
+    <div class="ui-chart-card__body"><div class="metrics-v2-chart-frame ui-chart-frame">
       <canvas id="metrics-v2-average-amount-chart" class="metrics-v2-history-chart" aria-label="属性別の平均金額"></canvas>
-    </div>
+      <p class="ui-chart-empty" data-chart-empty hidden>表示できる平均金額データがありません。</p>
+    </div></div>
   </section>
   </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=8"></script>
+<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=9"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

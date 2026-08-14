@@ -43,6 +43,18 @@ class TargetsFlowTests(TestCase):
                 )
                 self.assertContains(response, ">目標設定</span>", html=False)
 
+    def test_target_dashboard_uses_current_target_overview_cards(self):
+        response = self.client.get(reverse("target_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="card ui-section mt-16 target-current-overview"', count=2)
+        self.assertContains(response, 'class="target-current-period-panel"', count=2)
+        self.assertContains(response, 'class="target-current-department-card"')
+        self.assertContains(response, "現在の月目標")
+        self.assertContains(response, "現在の路程目標")
+        self.assertContains(response, "進行中")
+        self.assertContains(response, "現在の路程は未設定です")
+
     def test_target_creation_forms_use_card_ui_and_keep_input_contracts(self):
         month_response = self.client.get(reverse("target_month_settings"))
         self.assertContains(month_response, "月目標を作成")

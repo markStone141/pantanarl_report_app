@@ -4,7 +4,7 @@
 {% block title %}振り返りレポート | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=27" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=28" />
 {% endblock %}
 
 {% block content %}
@@ -275,28 +275,34 @@
   </section>
 
   <section class="mt-16">
-    <div class="row">
+    <div class="ui-section-heading">
       <div>
-        <h3>属性別分析</h3>
-        <div class="muted">年代・男女・国籍の比率と平均金額を確認できます。</div>
+        <span class="ui-section-kicker">Audience analysis</span>
+        <h2>属性別分析</h2>
+        <p class="ui-chart-card__description">年代・男女・国籍の比率と平均金額を確認できます。</p>
       </div>
     </div>
     <div class="grid grid-3 metrics-v2-distribution-grid mt-12">
       {% for card in report.distribution_cards %}
-      <article class="card">
-        <div class="row">
-          <strong>{{ card.title }}</strong>
-          <span class="badge">{{ card.total_text }}</span>
-        </div>
-        <div class="metrics-v2-chart-frame metrics-v2-chart-frame-distribution mt-12">
+      <article class="card ui-chart-card">
+        <header class="ui-chart-card__header">
+          <div class="ui-chart-card__identity">
+            <span class="ui-chart-card__kicker">Audience mix</span>
+            <h2 class="ui-chart-card__title">{{ card.title }}</h2>
+          </div>
+          <span class="ui-chart-card__meta">{{ card.total_text }}</span>
+        </header>
+        <div class="ui-chart-card__body">
+        <div class="metrics-v2-chart-frame metrics-v2-chart-frame-distribution ui-chart-frame ui-chart-frame--compact">
           <canvas
             class="metrics-v2-distribution-chart"
             aria-label="{{ card.title }}"
             data-chart-labels="{{ card.labels|join:'|' }}"
             data-chart-values="{{ card.counts|join:',' }}"
           ></canvas>
+          <p class="ui-chart-empty" data-chart-empty hidden>表示できる属性データがありません。</p>
         </div>
-        <div class="metrics-v2-distribution-list mt-12">
+        {% if card.has_data %}<div class="metrics-v2-distribution-list ui-chart-legend">
           {% for row in card.rows %}
           <div class="metrics-v2-distribution-row">
             <span class="metrics-v2-distribution-label">
@@ -306,37 +312,41 @@
             <span class="muted">{{ row.count_text }} / {{ row.percent_text }}</span>
           </div>
           {% endfor %}
+        </div>{% endif %}
         </div>
       </article>
       {% endfor %}
     </div>
   </section>
 
-  <section class="card mt-16">
-    <div class="row">
-      <div>
-        <h3>属性別の平均金額</h3>
-        <div class="muted">年代・男女・国籍で平均金額の差を確認できます。</div>
+  <section class="card ui-chart-card mt-16">
+    <header class="ui-chart-card__header">
+      <div class="ui-chart-card__identity">
+        <span class="ui-chart-card__kicker">Average amount</span>
+        <h2 class="ui-chart-card__title">属性別の平均金額</h2>
+        <p class="ui-chart-card__description">年代・男女・国籍で平均金額の差を確認できます。</p>
       </div>
-    </div>
-    <div class="mt-12">
-      <label for="metrics-v2-amount-mode">分類</label>
-      <select id="metrics-v2-amount-mode" data-metrics-v2-amount-select>
-        <option value="age">年代</option>
-        <option value="gender">男女</option>
-        <option value="nationality">国籍</option>
-      </select>
-    </div>
-    <div class="metrics-v2-chart-frame mt-12">
+      <div class="ui-chart-card__controls no-print">
+        <label for="metrics-v2-amount-mode">分類
+          <select id="metrics-v2-amount-mode" data-metrics-v2-amount-select>
+            <option value="age">年代</option>
+            <option value="gender">男女</option>
+            <option value="nationality">国籍</option>
+          </select>
+        </label>
+      </div>
+    </header>
+    <div class="ui-chart-card__body"><div class="metrics-v2-chart-frame ui-chart-frame">
       <canvas id="metrics-v2-average-amount-chart" class="metrics-v2-history-chart" aria-label="属性別の平均金額"></canvas>
-    </div>
+      <p class="ui-chart-empty" data-chart-empty hidden>表示できる平均金額データがありません。</p>
+    </div></div>
   </section>
   </main>
 </div>
 
 {{ report.analysis_chart_payload|json_script:"metrics-v2-dashboard-data" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=6"></script>
+<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=9"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 <script>
   (() => {
