@@ -46,6 +46,21 @@ class MemberSettingsViewTests(TestCase):
         self.assertIn(".dashboard-drawer-nav {", drawer_css)
         self.assertIn("z-index: 280;", drawer_css)
 
+    def test_shared_chart_card_foundation_is_loaded(self):
+        base_template = (Path(settings.BASE_DIR) / "templates/base.html").read_text(encoding="utf-8")
+        chart_css = (Path(settings.BASE_DIR) / "static/chart_cards.css").read_text(encoding="utf-8")
+
+        self.assertIn("{% static 'chart_cards.css' %}?v=1", base_template)
+        for selector in (
+            ".ui-chart-card {",
+            ".ui-chart-card__header {",
+            ".ui-chart-card__body {",
+            ".ui-chart-frame {",
+            ".ui-chart-empty {",
+        ):
+            self.assertIn(selector, chart_css)
+        self.assertIn("max-width: 100%;", chart_css)
+
     def test_register_member_creates_record(self):
         response = self.client.post(
             reverse("member_create"),

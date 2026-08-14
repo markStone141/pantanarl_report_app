@@ -275,3 +275,11 @@
 - `backend/docs/BUTTON_UI_INVENTORY.md`
 - `backend/docs/GIT_BUNDLE_PUSH_WORKFLOW.md`
 - `logs/latest-summary.md`
+
+## グラフカード刷新 工程1の終了判定（2026-08-14）
+
+- 台帳: `backend/docs/GRAPH_UI_INVENTORY.md` に分析、振り返り、実績管理、個人実績のChart.jsグラフと操作・空状態を一覧化した。
+- 共通基盤: `chart_cards.css` にカード、見出し、主値、操作、グラフ枠、凡例、空状態、モバイル、印刷の共通契約を追加した。
+- 維持事項: Canvas ID、`data-*`、集計payload、Chart.js生成・破棄処理は変更していない。
+- 検証: 共通契約テスト、Django check、BOM、差分検査が成功した。
+- 次工程: 分析するページの全グラフカードへ共通構造を適用する。
