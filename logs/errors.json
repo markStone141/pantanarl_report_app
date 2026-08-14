@@ -852,5 +852,20 @@
     "action": "初回対象テストのクラス名指定と一時表示DBの準備が不正で、ブラウザ確認がタイムアウトした",
     "reason": "実装不具合ではなく検証環境とテスト指定の誤りだったため",
     "next_action": "正しいテストクラスとmigration済み一時DBで再実行する"
+  },
+  {
+    "timestamp": "2026-08-14T16:38:36+09:00",
+    "expires_at": "2026-11-12T16:38:36+09:00",
+    "retention_days": 90,
+    "run_id": "graph-card-ui-20260814",
+    "loop": 3,
+    "role": "validator",
+    "event": "phase3-visual-script-syntax",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "工程3の一時視覚確認スクリプトで構文エラーを検出した",
+    "reason": "page.evaluateの引数括弧が1つ多かったため",
+    "next_action": "括弧を修正したスクリプトで視覚確認を再実行する"
   }
 ]
