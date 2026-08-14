@@ -94,7 +94,7 @@
     {% include "includes/ui_section_heading.html" with kicker="PROGRESS" title="目標達成率" heading_class="performance-dashboard-section-heading" kicker_class="performance-dashboard-section-kicker" %}
     <div class="grid grid-2 mt-12">
       {% for card in dashboard_snapshot.month_progress_cards %}
-      <article class="card performance-progress-card performance-dashboard-inner-card">
+      <article class="card ui-chart-card performance-progress-card performance-progress-chart-card performance-dashboard-inner-card">
         <div class="row">
           <strong>月目標達成率</strong>
         </div>
@@ -136,13 +136,13 @@
         </div>
       </article>
       {% empty %}
-      <article class="card performance-progress-card performance-dashboard-inner-card">
+      <article class="card ui-chart-card performance-progress-card performance-progress-chart-card performance-dashboard-inner-card">
         <p class="muted">対象部署の月目標データがありません。</p>
       </article>
       {% endfor %}
 
       {% for card in dashboard_snapshot.period_progress_cards %}
-      <article class="card performance-progress-card performance-dashboard-inner-card">
+      <article class="card ui-chart-card performance-progress-card performance-progress-chart-card performance-dashboard-inner-card">
         <div class="row">
           <strong>路程目標達成率</strong>
         </div>
@@ -184,19 +184,19 @@
         </div>
       </article>
       {% empty %}
-      <article class="card performance-progress-card performance-dashboard-inner-card">
+      <article class="card ui-chart-card performance-progress-card performance-progress-chart-card performance-dashboard-inner-card">
         <p class="muted">対象部署の路程目標データがありません。</p>
       </article>
       {% endfor %}
     </div>
   </section>
 
-  <section class="card ui-section mt-16 performance-dashboard-section">
+  <section class="card ui-section ui-chart-card performance-trend-card mt-16 performance-dashboard-section">
     {% include "includes/ui_section_heading.html" with kicker="TREND" title="直近稼働の全体実績推移" heading_class="performance-dashboard-section-heading" kicker_class="performance-dashboard-section-kicker" %}
     <p id="performance-trend-description" class="muted">1稼働 = 実績が登録された1日です。金額は棒、{{ dashboard_snapshot.overall_activity_trend.count_label }}は折れ線で表示します。</p>
     {% if dashboard_snapshot.overall_activity_trend.has_data %}
     {{ dashboard_snapshot.overall_activity_trend|json_script:"performance-activity-trend-data" }}
-    <div class="performance-trend-legend mt-12">
+    <div class="performance-trend-legend ui-chart-legend mt-12">
       <span id="performance-trend-primary-legend" class="performance-trend-legend-item">
         <span id="performance-trend-primary-swatch" class="performance-trend-legend-swatch performance-trend-legend-swatch-bar"></span>
         <span id="performance-trend-primary-label">金額</span>
@@ -206,22 +206,22 @@
         <span id="performance-trend-line-label">{{ dashboard_snapshot.overall_activity_trend.count_label }}</span>
       </span>
     </div>
-    <div class="performance-trend-controls mt-12">
+    <div class="performance-trend-controls ui-chart-card__controls mt-12">
       <button type="button" id="performance-trend-decrease" class="ui-button ui-button--secondary">-10</button>
       <span id="performance-trend-visible-count" class="muted"></span>
       <button type="button" id="performance-trend-increase" class="ui-button ui-button--secondary">+10</button>
     </div>
-    <div class="performance-trend-mode-switch mt-12">
+    <div class="performance-trend-mode-switch ui-chart-card__controls mt-12">
       <button type="button" id="performance-trend-mode-amount" class="ui-choice-button is-active" aria-pressed="true">金額/件数</button>
       <button type="button" id="performance-trend-mode-rate" class="ui-choice-button" aria-pressed="false">日目達成率</button>
       <button type="button" id="performance-trend-mode-activity" class="ui-choice-button" aria-pressed="false">AP/CM</button>
       {% if dashboard_snapshot.overall_activity_trend.is_wv %}<button type="button" id="performance-trend-mode-wv" class="ui-choice-button" aria-pressed="false">CS/難民</button>{% endif %}
     </div>
-    <div class="performance-chart-card performance-dashboard-inner-card mt-12">
+    <div class="performance-chart-card performance-dashboard-inner-card ui-chart-frame mt-12">
       <canvas id="performance-activity-trend-chart" aria-label="直近稼働の全体実績推移"></canvas>
     </div>
     {% else %}
-    <div class="ui-state mt-12"><strong>実績データがありません</strong><span>表示できる稼働実績が登録されると、ここに推移が表示されます。</span></div>
+    <div class="ui-chart-empty mt-12"><strong>実績データがありません</strong><span>表示できる稼働実績が登録されると、ここに推移が表示されます。</span></div>
     {% endif %}
   </section>
 

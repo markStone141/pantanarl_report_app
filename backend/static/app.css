@@ -3329,12 +3329,95 @@ th {
   gap: 0;
 }
 
+.card.ui-chart-card.performance-progress-chart-card,
+.card.ui-chart-card.performance-trend-card {
+  padding: 20px;
+}
+
+.performance-progress-chart-card {
+  border-color: var(--ui-border);
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow-card);
+}
+
+.performance-progress-chart-card > .row:first-child {
+  align-items: flex-start;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ui-border-subtle);
+}
+
+.performance-progress-chart-card > .row:first-child strong {
+  color: var(--ui-text);
+  font-size: 1rem;
+}
+
+.performance-progress-chart-card .performance-progress-target-line {
+  color: #526a82;
+  font-weight: 750;
+}
+
+.performance-progress-chart-card .performance-progress-stats {
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px;
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: 12px;
+  background: var(--ui-surface-subtle);
+}
+
+.performance-trend-card {
+  min-width: 0;
+}
+
+.performance-trend-card .performance-chart-card.ui-chart-frame {
+  min-height: 300px;
+  padding: 14px;
+}
+
+.performance-trend-card > .ui-chart-empty {
+  min-height: 220px;
+}
+
+.performance-trend-card > .ui-chart-empty strong,
+.performance-trend-card > .ui-chart-empty span {
+  display: block;
+}
+
+.performance-trend-card > .ui-chart-empty strong {
+  color: var(--ui-text);
+}
+
 .performance-history-value-card {
   min-width: 0;
   padding: 17px 18px;
   border-color: #dce5eb;
   background: #fff;
   box-shadow: none;
+}
+
+.card.ui-chart-card.performance-history-value-card {
+  padding: 17px 18px;
+}
+
+@media (max-width: 640px) {
+  .card.ui-chart-card.performance-progress-chart-card,
+  .card.ui-chart-card.performance-trend-card {
+    padding: 16px;
+  }
+
+  .performance-trend-card .performance-chart-card.ui-chart-frame {
+    min-height: 250px;
+    padding: 8px;
+  }
+
+  .performance-trend-card .performance-trend-controls {
+    justify-content: space-between;
+  }
+
+  .performance-trend-card .performance-trend-mode-switch > button {
+    flex: 1 1 calc(50% - 5px);
+    min-width: 0;
+  }
 }
 
 .performance-history-value-card__head {

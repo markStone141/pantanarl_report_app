@@ -61,12 +61,13 @@
   </section>
   {% endif %}
 
-  <section class="card mt-16">
-    <h3>{{ history_scope.label }} の実績推移</h3>
-    <p id="performance-trend-description" class="muted">1稼働 = 実績が登録された1日です。金額は棒、{{ activity_trend.count_label }}は折れ線で表示します。</p>
+  <section class="card ui-chart-card performance-trend-card mt-16">
+    <span class="ui-chart-card__kicker">Personal trend</span>
+    <h2 class="ui-chart-card__title">{{ history_scope.label }} の実績推移</h2>
+    <p id="performance-trend-description" class="ui-chart-card__description">1稼働 = 実績が登録された1日です。金額は棒、{{ activity_trend.count_label }}は折れ線で表示します。</p>
     {% if activity_trend.has_data %}
     {{ activity_trend|json_script:"performance-activity-trend-data" }}
-    <div class="performance-trend-legend mt-12">
+    <div class="performance-trend-legend ui-chart-legend mt-12">
       <span id="performance-trend-primary-legend" class="performance-trend-legend-item">
         <span id="performance-trend-primary-swatch" class="performance-trend-legend-swatch performance-trend-legend-swatch-bar"></span>
         <span id="performance-trend-primary-label">金額</span>
@@ -76,22 +77,22 @@
         <span id="performance-trend-line-label">{{ activity_trend.count_label }}</span>
       </span>
     </div>
-    <div class="performance-trend-controls mt-12">
+    <div class="performance-trend-controls ui-chart-card__controls mt-12">
       <button type="button" id="performance-trend-decrease" class="ui-button ui-button--secondary">-10</button>
       <span id="performance-trend-visible-count" class="muted"></span>
       <button type="button" id="performance-trend-increase" class="ui-button ui-button--secondary">+10</button>
     </div>
-    <div class="performance-trend-mode-switch mt-12">
+    <div class="performance-trend-mode-switch ui-chart-card__controls mt-12">
       <button type="button" id="performance-trend-mode-amount" class="ui-choice-button is-active" aria-pressed="true">金額/件数</button>
       <button type="button" id="performance-trend-mode-rate" class="ui-choice-button" aria-pressed="false">日目達成率</button>
       <button type="button" id="performance-trend-mode-activity" class="ui-choice-button" aria-pressed="false">AP/CM</button>
       {% if activity_trend.is_wv %}<button type="button" id="performance-trend-mode-wv" class="ui-choice-button" aria-pressed="false">CS/難民</button>{% endif %}
     </div>
-    <div class="performance-chart-card mt-12">
+    <div class="performance-chart-card ui-chart-frame mt-12">
       <canvas id="performance-activity-trend-chart" aria-label="{{ history_scope.label }} の実績推移"></canvas>
     </div>
     {% else %}
-    <p class="muted mt-12">表示できる実績はまだありません。</p>
+    <div class="ui-chart-empty mt-12">表示できる実績はまだありません。</div>
     {% endif %}
     <div class="performance-recent-detail-toolbar mt-12">
       {% if detail_filter_mode == "buttons" %}
