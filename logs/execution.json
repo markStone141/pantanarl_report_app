@@ -4085,5 +4085,35 @@
     "action": "目標概要・メンバー管理UI工程を正式完了に戻した",
     "reason": "対象79件、全体399件、PC・モバイル・AJAX・BOM検証が揃い残課題が解消したため",
     "next_action": "グラフカードUI刷新の前提修正と工程計画を開始する"
+  },
+  {
+    "timestamp": "2026-08-14T16:05:56+09:00",
+    "expires_at": "2026-09-13T16:05:56+09:00",
+    "retention_days": 30,
+    "run_id": "graph-card-ui-20260814",
+    "loop": 0,
+    "role": "project_manager",
+    "event": "goal_defined",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "グラフカードUI刷新を工程0から工程5へ分割し、分析・振り返りレポートを優先対象にした",
+    "reason": "全画面を一括変更せず、共通基盤と画面群ごとに検証可能な単位で進めるため",
+    "next_action": "工程0のモバイルヘッダー重なりを修正する"
+  },
+  {
+    "timestamp": "2026-08-14T16:05:57+09:00",
+    "expires_at": "2026-09-13T16:05:57+09:00",
+    "retention_days": 30,
+    "run_id": "graph-card-ui-20260814",
+    "loop": 0,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "対象3件と全体400件、Django check、migration、BOM、390pxの分析・レポートでドロワー前面表示を検証した",
+    "reason": "条件指定がメニューを隠さず、既存機能に回帰がないことを確認するため",
+    "next_action": "工程0をコミットし、次工程はグラフ台帳と共通基盤へ進む"
   }
 ]

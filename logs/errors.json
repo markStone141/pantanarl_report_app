@@ -837,5 +837,20 @@
     "action": "目標概要とメンバー管理UIの実装・主要検証を完了し、大規模変更基準に従って最終監査前に区切った",
     "reason": "変更が10ファイルおよび500行を超え、リポジトリのHandoff必須条件に達したため",
     "next_action": "HANDOFF.mdに従ってCSS監査、状態完了化、最終コミット確認を行う"
+  },
+  {
+    "timestamp": "2026-08-14T16:05:56+09:00",
+    "expires_at": "2026-11-12T16:05:56+09:00",
+    "retention_days": 90,
+    "run_id": "graph-card-ui-20260814",
+    "loop": 0,
+    "role": "observer",
+    "event": "result_observed",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "初回対象テストのクラス名指定と一時表示DBの準備が不正で、ブラウザ確認がタイムアウトした",
+    "reason": "実装不具合ではなく検証環境とテスト指定の誤りだったため",
+    "next_action": "正しいテストクラスとmigration済み一時DBで再実行する"
   }
 ]

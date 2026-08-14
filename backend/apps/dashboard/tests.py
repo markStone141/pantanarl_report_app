@@ -39,6 +39,13 @@ class MemberSettingsViewTests(TestCase):
         self.assertIn('event.target.closest("a[href]")', drawer_script)
         self.assertIn("window.location.assign(destination)", drawer_script)
 
+    def test_shared_mobile_drawer_stays_above_header_controls(self):
+        drawer_css = (Path(settings.BASE_DIR) / "static/dashboard/mobile_drawer.css").read_text(encoding="utf-8")
+
+        self.assertIn(".dashboard-drawer-topbar {\n    position: relative;\n    z-index: 250;", drawer_css)
+        self.assertIn(".dashboard-drawer-nav {", drawer_css)
+        self.assertIn("z-index: 280;", drawer_css)
+
     def test_register_member_creates_record(self):
         response = self.client.post(
             reverse("member_create"),
