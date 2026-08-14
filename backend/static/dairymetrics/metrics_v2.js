@@ -147,6 +147,18 @@
     });
   }
 
+  function setChartEmptyState(canvas, isEmpty) {
+    if (!canvas) {
+      return;
+    }
+    const frame = canvas.closest(".ui-chart-frame");
+    const emptyState = frame ? frame.querySelector("[data-chart-empty]") : null;
+    canvas.hidden = isEmpty;
+    if (emptyState) {
+      emptyState.hidden = !isEmpty;
+    }
+  }
+
   function createRateDoughnutChart(canvas, values) {
     if (!canvas) {
       return;
@@ -173,7 +185,9 @@
     const values = (canvas.dataset.chartValues || "")
       .split(",")
       .map(function (value) { return Number(value || 0); });
-    if (!values.some(function (value) { return value > 0; })) {
+    const isEmpty = !values.some(function (value) { return value > 0; });
+    setChartEmptyState(canvas, isEmpty);
+    if (isEmpty) {
       return;
     }
     const context = canvas.getContext("2d");
@@ -207,7 +221,9 @@
 
   function buildComboChart(canvasId, chartPayload) {
     const canvas = document.getElementById(canvasId);
-    if (!canvas || !chartPayload || !chartPayload.labels || !chartPayload.labels.length) {
+    const isEmpty = !chartPayload || !chartPayload.labels || !chartPayload.labels.length || chartPayload.has_data === false;
+    setChartEmptyState(canvas, isEmpty);
+    if (!canvas || isEmpty) {
       return null;
     }
     const context = canvas.getContext("2d");
@@ -301,7 +317,9 @@
 
   function renderRanking(metricKey) {
     const metricPayload = payload.ranking && payload.ranking.metric_map ? payload.ranking.metric_map[metricKey] : null;
-    if (!rankingCanvas || !metricPayload) {
+    const isEmpty = !metricPayload || !metricPayload.labels || !metricPayload.labels.length;
+    setChartEmptyState(rankingCanvas, isEmpty);
+    if (!rankingCanvas || isEmpty) {
       return;
     }
     if (rankingChart) {
@@ -398,7 +416,9 @@
 
   function renderAverageAmount(mode) {
     const chartPayload = payload.average_amount_comparison ? payload.average_amount_comparison[mode] : null;
-    if (!averageAmountCanvas || !chartPayload) {
+    const isEmpty = !chartPayload || !chartPayload.labels || !chartPayload.labels.length;
+    setChartEmptyState(averageAmountCanvas, isEmpty);
+    if (!averageAmountCanvas || isEmpty) {
       return;
     }
     if (averageAmountChart) {

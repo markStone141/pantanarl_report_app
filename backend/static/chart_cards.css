@@ -7,6 +7,10 @@
   box-shadow: var(--ui-shadow-card);
 }
 
+.card.ui-chart-card {
+  padding: 0;
+}
+
 .ui-chart-card__header {
   display: flex;
   align-items: flex-start;
@@ -138,6 +142,10 @@
   font-size: 0.85rem;
   line-height: 1.65;
   text-align: center;
+}
+
+.ui-chart-empty[hidden] {
+  display: none;
 }
 
 @media (max-width: 640px) {

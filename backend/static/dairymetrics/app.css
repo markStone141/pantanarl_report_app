@@ -2678,10 +2678,48 @@
   gap: 8px;
 }
 
+.metrics-v2-summary-card > .ui-chart-card__body {
+  padding-top: 8px;
+}
+
+.metrics-v2-stat-card {
+  min-width: 0;
+  border-color: #e2eaf3;
+  border-radius: 16px;
+  background: #fbfcfe;
+  box-shadow: none;
+}
+
+.metrics-v2-stat-label {
+  display: block;
+  color: #64758a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+}
+
+.metrics-v2-stat-value {
+  display: block;
+  margin-top: 8px;
+  color: #1b2a3a;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.metrics-v2-average-card {
+  padding: 16px;
+}
+
 .metrics-v2-rate-card {
   display: grid;
   gap: 10px;
   text-align: center;
+}
+
+.metrics-v2-rate-card .metrics-v2-stat-label {
+  text-align: left;
 }
 
 .metrics-v2-rate-card .row {
@@ -2722,6 +2760,10 @@
   height: 320px;
 }
 
+.metrics-v2-chart-frame.ui-chart-frame {
+  height: 320px;
+}
+
 .metrics-v2-chart-frame canvas {
   width: 100% !important;
   height: 100% !important;
@@ -2733,6 +2775,10 @@
 }
 
 .metrics-v2-chart-frame-ranking {
+  height: 420px;
+}
+
+.metrics-v2-chart-frame-ranking.ui-chart-frame {
   height: 420px;
 }
 
@@ -2755,6 +2801,10 @@
   height: 300px;
 }
 
+.metrics-v2-chart-frame-distribution.ui-chart-frame {
+  height: 300px;
+}
+
 .metrics-v2-distribution-list {
   display: grid;
   gap: 8px;
@@ -2765,6 +2815,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.metrics-v2-distribution-list.ui-chart-legend {
+  display: grid;
+  margin-top: 12px;
+}
+
+.metrics-v2-distribution-list.ui-chart-legend:empty {
+  display: none;
+}
+
+.metrics-v2-chart-frame > .ui-chart-empty {
+  height: 100%;
+  min-height: 0;
 }
 
 .metrics-v2-distribution-label {
@@ -3185,6 +3249,12 @@
     height: 260px;
   }
 
+  .metrics-v2-chart-frame.ui-chart-frame,
+  .metrics-v2-chart-frame-ranking.ui-chart-frame,
+  .metrics-v2-chart-frame-distribution.ui-chart-frame {
+    height: 260px;
+  }
+
   .metrics-v2-distribution-row {
     align-items: flex-start;
     flex-direction: column;
@@ -3205,6 +3275,19 @@
 
   .metrics-v2-distribution-grid {
     grid-template-columns: 1fr;
+  }
+
+  .metrics-v2-summary-tabs {
+    width: 100%;
+  }
+
+  .metrics-v2-summary-tab {
+    min-width: 0;
+    flex: 1 1 0;
+  }
+
+  .metrics-v2-stat-card {
+    padding: 14px;
   }
 
   .metrics-report-ranking-grid,

@@ -50,7 +50,7 @@ class MemberSettingsViewTests(TestCase):
         base_template = (Path(settings.BASE_DIR) / "templates/base.html").read_text(encoding="utf-8")
         chart_css = (Path(settings.BASE_DIR) / "static/chart_cards.css").read_text(encoding="utf-8")
 
-        self.assertIn("{% static 'chart_cards.css' %}?v=1", base_template)
+        self.assertIn("{% static 'chart_cards.css' %}?v=3", base_template)
         for selector in (
             ".ui-chart-card {",
             ".ui-chart-card__header {",
