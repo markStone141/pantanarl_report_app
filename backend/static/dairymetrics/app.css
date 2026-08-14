@@ -494,69 +494,6 @@
   color: #8a6f76;
 }
 
-.dairymetrics-mini-chart {
-  padding: 14px;
-  border-radius: 14px;
-  border: 1px solid #d3e0eb;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #f6faff 100%);
-}
-
-.dairymetrics-mini-chart h3 {
-  margin: 0 0 4px;
-}
-
-.dairymetrics-chart-grid {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
-  align-items: end;
-}
-
-.dairymetrics-chart-col {
-  display: grid;
-  gap: 6px;
-  justify-items: center;
-}
-
-.dairymetrics-chart-bars {
-  width: 100%;
-  min-height: 92px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  align-items: end;
-}
-
-.dairymetrics-chart-bar {
-  width: 100%;
-  border-radius: 999px 999px 6px 6px;
-  min-height: 10px;
-}
-
-.dairymetrics-chart-bar.is-count {
-  background: linear-gradient(180deg, #3d8cff 0%, #1b67b8 100%);
-}
-
-.dairymetrics-chart-bar.is-amount {
-  background: linear-gradient(180deg, #89b9ff 0%, #4f87d8 100%);
-}
-
-.dairymetrics-chart-values {
-  display: grid;
-  gap: 2px;
-  justify-items: center;
-  font-size: 0.76rem;
-}
-
-.dairymetrics-chart-values strong {
-  font-size: 0.9rem;
-}
-
-.dairymetrics-chart-label {
-  font-size: 0.76rem;
-}
-
 .dairymetrics-status-badge {
   border: 1px solid transparent;
 }
@@ -1786,14 +1723,6 @@
 
   .dairymetrics-title-row {
     gap: 8px;
-  }
-
-  .dairymetrics-chart-grid {
-    gap: 6px;
-  }
-
-  .dairymetrics-chart-bars {
-    min-height: 74px;
   }
 
   .dairymetrics-month-filter {

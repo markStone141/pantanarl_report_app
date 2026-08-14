@@ -61,6 +61,30 @@ class MemberSettingsViewTests(TestCase):
             self.assertIn(selector, chart_css)
         self.assertIn("max-width: 100%;", chart_css)
 
+    def test_all_canvas_templates_use_the_shared_chart_card_contract(self):
+        apps_root = Path(settings.BASE_DIR) / "apps"
+        canvas_templates = {}
+        for template in apps_root.rglob("*.html"):
+            content = template.read_text(encoding="utf-8")
+            canvas_count = content.count("<canvas")
+            if canvas_count:
+                canvas_templates[template.relative_to(apps_root).as_posix()] = (content, canvas_count)
+
+        self.assertEqual(
+            set(canvas_templates),
+            {
+                "dairymetrics/templates/dairymetrics/metrics_report.html",
+                "dairymetrics/templates/dairymetrics/metrics_v2.html",
+                "performance/templates/performance/history.html",
+                "performance/templates/performance/index.html",
+                "performance/templates/performance/member_detail.html",
+                "performance/templates/performance/member_history.html",
+            },
+        )
+        self.assertEqual(sum(count for _content, count in canvas_templates.values()), 19)
+        for content, _count in canvas_templates.values():
+            self.assertIn("ui-chart-card", content)
+
     def test_register_member_creates_record(self):
         response = self.client.post(
             reverse("member_create"),

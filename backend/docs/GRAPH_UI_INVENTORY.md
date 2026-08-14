@@ -23,3 +23,10 @@
 - `.ui-chart-frame` はCanvasの幅をカード内に制限し、モバイルのページ横スクロールを防ぐ。
 - Canvasの既存ID、`data-*`、JSON payload、Chart.js生成・破棄処理は変更しない。
 - 空データは `.ui-chart-empty` でカード内表示し、印刷時は操作だけを非表示にする。
+
+## 工程5監査結果
+
+- テンプレート内のCanvasは19件で、すべて `dairymetrics` または `performance` の上記対象画面に集約されている。
+- 19件は共通 `.ui-chart-card` のカード、またはその配下の達成率カードとして表示される。
+- 入力画面向け旧CSSミニグラフはテンプレート参照が0件だったため、関連セレクタを削除した。
+- WVのCS／難民モード、補正実績、Chart.js再生成用のID・クラス・payloadは維持した。
