@@ -52,6 +52,7 @@
             <div class="metric-card ui-summary-card"><span class="muted">活動人数</span><strong class="mt-4">{{ row.member_count }}名</strong></div>
           </div>
           <div class="muted mt-12">最新活動日 {{ row.latest_activity_date|date:"Y/m/d" }} / AP {{ row.approach_count }} / CM {{ row.communication_count }}{% if row.cs_count or row.refugee_count %} / CS {{ row.cs_count }} / 難民 {{ row.refugee_count }}{% endif %}</div>
+          <a class="ui-button ui-button--secondary mt-12" href="{% url 'performance_activity_site_detail' row.site_id %}?start_date={{ start_date|date:'Y-m-d' }}&amp;end_date={{ end_date|date:'Y-m-d' }}&amp;department={{ selected_department_id }}&amp;sort={{ sort }}&amp;direction={{ direction }}">活動履歴を見る</a>
         </article>
         {% endfor %}
       </div>

@@ -7,12 +7,16 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.utils.http import urlencode
 
 from apps.accounts.models import Department
-from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction
+from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjustment
 from apps.performance.services.navigation import performance_nav_items
 from .models import ActivitySite, ActivitySiteAlias, ActivitySiteDepartment, ActivitySiteProposal, normalize_site_name
-from .selectors import SORT_FIELDS, build_activity_site_comparison
+from .selectors import SORT_FIELDS, activity_site_history_queryset, build_activity_site_comparison
+
+
+ADJUSTMENT_SOURCE_LABELS = dict(MetricAdjustment.SOURCE_CHOICES)
 
 
 def staff_required(view_func):
@@ -25,6 +29,30 @@ def staff_required(view_func):
         return view_func(request, *args, **kwargs)
 
     return wrapper
+
+
+def _activity_site_filter_context(request):
+    today = timezone.localdate()
+    default_start = today.replace(day=1)
+    start_date = parse_date(request.GET.get("start_date") or "") or default_start
+    end_date = parse_date(request.GET.get("end_date") or "") or today
+    error_message = ""
+    if start_date > end_date:
+        start_date, end_date = default_start, today
+        error_message = "期間の開始日は終了日以前にしてください。今月の期間で表示しています。"
+
+    department_id = request.GET.get("department") or None
+    departments = Department.objects.filter(is_active=True).order_by("code")
+    if department_id and (not department_id.isdigit() or not departments.filter(pk=department_id).exists()):
+        department_id = None
+    return {
+        "start_date": start_date,
+        "end_date": end_date,
+        "department_id": department_id,
+        "departments": departments,
+        "selected_department_id": str(department_id or ""),
+        "error_message": error_message,
+    }
 
 
 def _site_for_name(canonical_name, *, reviewer):
@@ -137,27 +165,15 @@ def activity_site_proposals_manage(request):
 
 @staff_required
 def activity_site_comparison(request):
-    today = timezone.localdate()
-    default_start = today.replace(day=1)
-    start_date = parse_date(request.GET.get("start_date") or "") or default_start
-    end_date = parse_date(request.GET.get("end_date") or "") or today
-    error_message = ""
-    if start_date > end_date:
-        start_date, end_date = default_start, today
-        error_message = "期間の開始日は終了日以前にしてください。今月の期間で表示しています。"
-
-    department_id = request.GET.get("department") or None
-    departments = Department.objects.filter(is_active=True).order_by("code")
-    if department_id and (not department_id.isdigit() or not departments.filter(pk=department_id).exists()):
-        department_id = None
+    filters = _activity_site_filter_context(request)
     sort = request.GET.get("sort") or "support_amount"
     sort = sort if sort in SORT_FIELDS else "support_amount"
     direction = request.GET.get("direction") or "desc"
     direction = direction if direction in {"asc", "desc"} else "desc"
     rows = build_activity_site_comparison(
-        start_date=start_date,
-        end_date=end_date,
-        department_id=department_id,
+        start_date=filters["start_date"],
+        end_date=filters["end_date"],
+        department_id=filters["department_id"],
         sort=sort,
         direction=direction,
     )
@@ -168,12 +184,54 @@ def activity_site_comparison(request):
         {
             "nav_items": performance_nav_items(),
             "page": page,
-            "departments": departments,
-            "selected_department_id": str(department_id or ""),
-            "start_date": start_date,
-            "end_date": end_date,
             "sort": sort,
             "direction": direction,
-            "error_message": error_message,
+            **filters,
+        },
+    )
+
+
+@staff_required
+def activity_site_detail(request, site_id):
+    site = get_object_or_404(ActivitySite, pk=site_id)
+    filters = _activity_site_filter_context(request)
+    summary_rows = build_activity_site_comparison(
+        start_date=filters["start_date"],
+        end_date=filters["end_date"],
+        department_id=filters["department_id"],
+        site_id=site.id,
+    )
+    history = activity_site_history_queryset(
+        site_id=site.id,
+        start_date=filters["start_date"],
+        end_date=filters["end_date"],
+        department_id=filters["department_id"],
+    )
+    page = Paginator(history, 20).get_page(request.GET.get("page"))
+    for row in page.object_list:
+        if row["history_source"] == "補正":
+            row["history_source"] = f"補正（{ADJUSTMENT_SOURCE_LABELS.get(row['history_source_code'], 'その他')}）"
+
+    comparison_query = urlencode(
+        {
+            "start_date": filters["start_date"].isoformat(),
+            "end_date": filters["end_date"].isoformat(),
+            "department": filters["selected_department_id"],
+            "sort": request.GET.get("sort") or "support_amount",
+            "direction": request.GET.get("direction") or "desc",
+        }
+    )
+    return render(
+        request,
+        "activity_sites/detail.html",
+        {
+            "nav_items": performance_nav_items(),
+            "site": site,
+            "summary": summary_rows[0] if summary_rows else None,
+            "page": page,
+            "comparison_query": comparison_query,
+            "sort": request.GET.get("sort") or "support_amount",
+            "direction": request.GET.get("direction") or "desc",
+            **filters,
         },
     )

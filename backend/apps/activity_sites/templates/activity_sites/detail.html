@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}{{ site.canonical_name }} | 現場別実績{% endblock %}
+
+{% block content %}
+<div class="app-shell">
+  {% include "includes/app_navigation.html" with page_title=site.canonical_name page_subtitle="この現場の活動実績を時系列で確認します。" %}
+  <main class="container app-shell-content">
+    {% if error_message %}<div class="ui-feedback ui-feedback--error" role="alert">{{ error_message }}</div>{% endif %}
+    <div class="mt-16"><a class="ui-button ui-button--secondary" href="{% url 'performance_activity_site_comparison' %}?{{ comparison_query }}">現場別比較へ戻る</a></div>
+
+    <section class="card ui-section mt-16">
+      {% include "includes/ui_section_heading.html" with kicker="FILTER" title="表示期間" meta=page.paginator.count meta_label="記録数:" %}
+      <form method="get" class="grid grid-2 mt-12">
+        <input type="hidden" name="sort" value="{{ sort }}"><input type="hidden" name="direction" value="{{ direction }}">
+        <div><label for="history-start-date">開始日</label><input id="history-start-date" type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}"></div>
+        <div><label for="history-end-date">終了日</label><input id="history-end-date" type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}"></div>
+        <div>
+          <label for="history-department">部署</label>
+          <select id="history-department" name="department">
+            <option value="">すべての部署</option>
+            {% for department in departments %}<option value="{{ department.id }}"{% if selected_department_id == department.id|stringformat:'s' %} selected{% endif %}>{{ department.code }} - {{ department.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="mt-8"><button class="ui-button ui-button--primary" type="submit">この条件で表示</button></div>
+      </form>
+    </section>
+
+    <section class="card ui-section mt-16">
+      {% include "includes/ui_section_heading.html" with kicker="SUMMARY" title="期間内の実績" %}
+      {% if summary %}
+      <div class="ui-summary-grid mt-12">
+        <div class="metric-card ui-summary-card"><span class="muted">実績</span><strong class="mt-4">{{ summary.result_count }}件</strong></div>
+        <div class="metric-card ui-summary-card"><span class="muted">金額</span><strong class="mt-4">{{ summary.support_amount }}円</strong></div>
+        <div class="metric-card ui-summary-card"><span class="muted">活動日数</span><strong class="mt-4">{{ summary.activity_days }}日</strong></div>
+        <div class="metric-card ui-summary-card"><span class="muted">活動人数</span><strong class="mt-4">{{ summary.member_count }}名</strong></div>
+      </div>
+      <div class="muted mt-12">最新活動日 {{ summary.latest_activity_date|date:"Y/m/d" }} / AP {{ summary.approach_count }} / CM {{ summary.communication_count }}{% if summary.cs_count or summary.refugee_count %} / CS {{ summary.cs_count }} / 難民 {{ summary.refugee_count }}{% endif %}</div>
+      {% else %}<div class="ui-empty-state mt-12">この期間の実績はありません。</div>{% endif %}
+    </section>
+
+    <section class="card ui-section mt-16">
+      {% include "includes/ui_section_heading.html" with kicker="HISTORY" title="活動履歴" %}
+      {% if page.object_list %}
+      <div class="grid grid-2 mt-12">
+        {% for row in page.object_list %}
+        <article class="ui-list-card">
+          <div class="row"><strong>{{ row.history_date|date:"Y/m/d" }}　{{ row.history_member }}</strong><span class="badge">{{ row.history_source }}</span></div>
+          <div class="muted mt-6">{{ row.history_department }} / 実績 {{ row.history_result }}件 / {{ row.history_amount }}円</div>
+          {% if row.history_approach or row.history_communication %}<div class="muted mt-4">AP {{ row.history_approach }} / CM {{ row.history_communication }}</div>{% endif %}
+          {% if row.history_note %}<div class="mt-8">{{ row.history_note|linebreaksbr }}</div>{% endif %}
+        </article>
+        {% endfor %}
+      </div>
+      {% if page.has_other_pages %}<nav class="mt-16" aria-label="ページ移動">{% if page.has_previous %}<a class="ui-button ui-button--secondary" href="?start_date={{ start_date|date:'Y-m-d' }}&amp;end_date={{ end_date|date:'Y-m-d' }}&amp;department={{ selected_department_id }}&amp;sort={{ sort }}&amp;direction={{ direction }}&amp;page={{ page.previous_page_number }}">前へ</a>{% endif %}<span class="muted"> {{ page.number }} / {{ page.paginator.num_pages }} </span>{% if page.has_next %}<a class="ui-button ui-button--secondary" href="?start_date={{ start_date|date:'Y-m-d' }}&amp;end_date={{ end_date|date:'Y-m-d' }}&amp;department={{ selected_department_id }}&amp;sort={{ sort }}&amp;direction={{ direction }}&amp;page={{ page.next_page_number }}">次へ</a>{% endif %}</nav>{% endif %}
+      {% else %}<div class="ui-empty-state mt-12">この期間に表示できる活動履歴はありません。</div>{% endif %}
+    </section>
+  </main>
+</div>
+{% endblock %}
