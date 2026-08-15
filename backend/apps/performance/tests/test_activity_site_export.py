@@ -11,6 +11,7 @@ from django.db.models.deletion import ProtectedError
 from django.urls import reverse
 
 from apps.activity_sites.models import ActivitySite, ActivitySiteAlias, ActivitySiteProposal
+from apps.activity_sites.import_service import import_activity_sites
 from apps.dairymetrics.models import (
     MemberDailyMetricEntry,
     MemberMetricTransaction,
@@ -236,3 +237,102 @@ class ActivitySiteModelTests(PerformanceTestBase):
             site.delete()
 
         self.assertTrue(ActivitySiteProposal.objects.filter(pk=proposal.pk).exists())
+
+
+class ActivitySiteImportTests(PerformanceTestBase):
+    def _write_csv(self, directory, rows):
+        path = Path(directory) / "reviewed-sites.csv"
+        with path.open("w", encoding="utf-8-sig", newline="") as output:
+            writer = csv.DictWriter(
+                output,
+                fieldnames=["canonical_name", "raw_variants", "department_codes", "active"],
+            )
+            writer.writeheader()
+            writer.writerows(rows)
+        return path
+
+    def test_dry_run_rolls_back_master_and_history_links(self):
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 8, 2),
+            location_name="渋谷 駅前",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write_csv(directory, [{
+                "canonical_name": "渋谷駅前",
+                "raw_variants": "渋谷 駅前",
+                "department_codes": "UN",
+                "active": "1",
+            }])
+            result = import_activity_sites(path, dry_run=True)
+
+        entry.refresh_from_db()
+        self.assertTrue(result.dry_run)
+        self.assertEqual(result.linked_counts["entries"], 1)
+        self.assertFalse(ActivitySite.objects.exists())
+        self.assertIsNone(entry.activity_site_id)
+
+    def test_apply_is_idempotent_preserves_raw_text_and_inherits_parent_site(self):
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 8, 3),
+            location_name="渋谷 駅前",
+        )
+        metric_transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=1000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write_csv(directory, [{
+                "canonical_name": "渋谷駅前",
+                "raw_variants": "渋谷 駅前",
+                "department_codes": "UN",
+                "active": "1",
+            }])
+            first = import_activity_sites(path)
+            second = import_activity_sites(path)
+
+        entry.refresh_from_db()
+        metric_transaction.refresh_from_db()
+        site = ActivitySite.objects.get()
+        self.assertEqual(first.linked_counts["entries"], 1)
+        self.assertEqual(second.linked_counts["entries"], 0)
+        self.assertEqual(ActivitySite.objects.count(), 1)
+        self.assertEqual(ActivitySiteAlias.objects.count(), 1)
+        self.assertEqual(entry.activity_site_id, site.id)
+        self.assertEqual(metric_transaction.activity_site_id, site.id)
+        self.assertEqual(entry.location_name, "渋谷 駅前")
+        self.assertTrue(site.departments.filter(pk=self.department.pk).exists())
+
+    def test_ambiguous_alias_rejects_entire_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write_csv(directory, [
+                {"canonical_name": "A現場", "raw_variants": "共通名", "department_codes": "UN", "active": "1"},
+                {"canonical_name": "B現場", "raw_variants": "共通名", "department_codes": "UN", "active": "1"},
+            ])
+
+            with self.assertRaises(ValidationError):
+                import_activity_sites(path)
+
+        self.assertFalse(ActivitySite.objects.exists())
+
+    def test_management_command_dry_run_reports_without_writing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write_csv(directory, [{
+                "canonical_name": "東京駅前",
+                "raw_variants": "東京 駅前",
+                "department_codes": "UN",
+                "active": "1",
+            }])
+            output = io.StringIO()
+
+            call_command("import_activity_sites", str(path), dry_run=True, stdout=output)
+
+        self.assertIn("DRY RUN: sites=1", output.getvalue())
+        self.assertFalse(ActivitySite.objects.exists())
