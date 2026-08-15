@@ -867,5 +867,20 @@
     "action": "工程3の一時視覚確認スクリプトで構文エラーを検出した",
     "reason": "page.evaluateの引数括弧が1つ多かったため",
     "next_action": "括弧を修正したスクリプトで視覚確認を再実行する"
+  },
+  {
+    "timestamp": "2026-08-15T11:12:08+09:00",
+    "expires_at": "2026-11-13T11:12:08+09:00",
+    "retention_days": 90,
+    "run_id": "run-sites-phase-one",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "BOM全体検査を実行",
+    "reason": "同期フォルダー上の全ファイル走査が長時間無出力となったため中断",
+    "next_action": "変更ファイルの先頭バイトを直接検査"
   }
 ]

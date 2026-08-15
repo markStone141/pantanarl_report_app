@@ -11,6 +11,16 @@
   <div class="ui-feedback ui-feedback--success" role="status">{{ status_message }}</div>
   {% endif %}
 
+  {% if can_manage_activity_sites %}
+  <section class="card ui-section mt-16">
+    {% include "includes/ui_section_heading.html" with kicker="SITE DATA" title="現場マスタ準備" meta="既存データの確認" %}
+    <p class="muted mt-8">過去に入力された現場名を表記揺れごとに整理し、重複をまとめたCSVを出力します。実績データは変更しません。</p>
+    <div class="mt-12">
+      <a class="ui-button ui-button--secondary" href="{% url 'performance_activity_sites_export' %}">現場一覧CSVを出力</a>
+    </div>
+  </section>
+  {% endif %}
+
   <section class="card ui-section mt-16 performance-dashboard-section">
     {% include "includes/ui_section_heading.html" with kicker="TODAY" title="本日の活動状況" meta=today_detail_date|date:"Y/m/d" heading_class="performance-dashboard-section-heading" kicker_class="performance-dashboard-section-kicker" meta_class="performance-dashboard-section-date" %}
     <div class="performance-today-summary-grid ui-summary-grid mt-12">

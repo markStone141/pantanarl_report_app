@@ -1,25 +1,25 @@
 # Latest AI Work Summary
 
-- Timestamp: `2026-08-14T16:54:07+09:00`
-- Run ID: `graph-card-ui-20260814`
-- Loop: `5`
+- Timestamp: `2026-08-15T11:13:31+09:00`
+- Run ID: `run-sites-phase-one`
+- Loop: `1`
 - Role: `reporter`
-- Event: `phase5-graph-audit-complete`
+- Event: `stopped`
 - Status: `success`
 - Event Retention: `30 days`
-- Event Expires At: `2026-09-13T16:54:07+09:00`
+- Event Expires At: `2026-09-14T11:13:31+09:00`
 - Summary Retention: `365 days`
-- Summary Expires At: `2027-08-14T16:54:07+09:00`
+- Summary Expires At: `2027-08-15T11:13:31+09:00`
 - Sensitivity: `normal`
 
 ## Action
 
-Canvas 19件の共通契約監査と全402テストを完了した
+現場名CSV出力工程を完了
 
 ## Reason
 
-残存旧UIとデータ・モバイル・WV・補正実績の回帰がないことを確定するため
+管理者導線、管理コマンド、重複整理、権限と回帰検証が完了したため
 
 ## Next Action
 
-工程0から5の完了を利用者へ報告する
+現場マスタと別名、申請モデルを追加

@@ -65,6 +65,10 @@ from apps.performance.services.scopes import (
     resolve_performance_history_scope as _resolve_performance_history_scope,
 )
 from apps.performance.services.admin_entries import build_admin_entry_management_page
+from apps.performance.services.activity_site_export import (
+    collect_activity_site_discovery_rows,
+    write_activity_site_discovery_csv,
+)
 from apps.performance.services.adjustments import (
     combined_adjustment_list_rows,
     filtered_adjustments_queryset,
@@ -251,6 +255,7 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         "dashboard_start": dashboard_start,
         "dashboard_end": dashboard_end,
         "status_message": request.GET.get("status") or "",
+        "can_manage_activity_sites": resolve_request_role(request) == ROLE_ADMIN,
         **build_department_today_detail_context(
             department=dashboard_department,
             target_date=today,
@@ -258,6 +263,15 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         ),
     }
     return render(request, "performance/index.html", context)
+
+
+@require_performance_roles(ROLE_ADMIN, auto_close=False)
+def performance_activity_sites_export(request: HttpRequest) -> HttpResponse:
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="activity_sites.csv"'
+    response.write("\ufeff")
+    write_activity_site_discovery_csv(response, collect_activity_site_discovery_rows())
+    return response
 
 @require_performance_roles(ROLE_ADMIN)
 def performance_admin_entries(request: HttpRequest) -> HttpResponse:
