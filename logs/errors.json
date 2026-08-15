@@ -897,5 +897,35 @@
     "action": "正式名と別名の衝突防止テストを実行",
     "reason": "語間空白を残す正規化仕様に対してテストデータが完全同名になっていなかった",
     "next_action": "テストデータを先頭末尾空白だけの表記揺れへ修正"
+  },
+  {
+    "timestamp": "2026-08-15T12:11:30+09:00",
+    "expires_at": "2026-11-13T12:11:30+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260815-activity-sites-phase7",
+    "loop": 1,
+    "role": "test_agent",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "現場別比較の対象テストを実行",
+    "reason": "WVキャンセル金額の期待値に通常部門単価を使ったテストデータ誤り",
+    "next_action": "WV固定単価を参照するテストへ修正して再実行"
+  },
+  {
+    "timestamp": "2026-08-15T12:12:59+09:00",
+    "expires_at": "2026-11-13T12:12:59+09:00",
+    "retention_days": 90,
+    "run_id": "run-20260815-activity-sites-phase7",
+    "loop": 2,
+    "role": "test_agent",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "現場別比較の対象テストを再実行",
+    "reason": "取引保存時に日次集計へ加算される既存仕様を期待値へ未反映",
+    "next_action": "日次集計更新後の値を基準にし、取引自体が再加算されないことを検証"
   }
 ]

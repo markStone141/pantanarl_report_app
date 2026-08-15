@@ -1,5 +1,5 @@
 from django.urls import path
-from apps.activity_sites.views import activity_site_proposals_manage
+from apps.activity_sites.views import activity_site_comparison, activity_site_proposals_manage
 
 from .views import (
     performance_adjustment_delete,
@@ -46,6 +46,7 @@ urlpatterns = [
     path("history/", performance_history, name="performance_history"),
     path("entries/", performance_admin_entries, name="performance_admin_entries"),
     path("activity-sites/export/", performance_activity_sites_export, name="performance_activity_sites_export"),
+    path("activity-sites/comparison/", activity_site_comparison, name="performance_activity_site_comparison"),
     path("activity-sites/proposals/", activity_site_proposals_manage, name="performance_activity_site_proposals"),
     path("closeout-notes/", performance_closeout_notes, name="performance_closeout_notes"),
     path("member/", performance_member_dashboard, name="performance_member_dashboard"),

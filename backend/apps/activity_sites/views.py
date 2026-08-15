@@ -1,14 +1,18 @@
 from functools import wraps
 
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 
+from apps.accounts.models import Department
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction
 from apps.performance.services.navigation import performance_nav_items
 from .models import ActivitySite, ActivitySiteAlias, ActivitySiteDepartment, ActivitySiteProposal, normalize_site_name
+from .selectors import SORT_FIELDS, build_activity_site_comparison
 
 
 def staff_required(view_func):
@@ -127,5 +131,49 @@ def activity_site_proposals_manage(request):
             "active_sites": ActivitySite.objects.filter(is_active=True).order_by("canonical_name", "id"),
             "error_message": error_message,
             "updated": request.GET.get("updated") or "",
+        },
+    )
+
+
+@staff_required
+def activity_site_comparison(request):
+    today = timezone.localdate()
+    default_start = today.replace(day=1)
+    start_date = parse_date(request.GET.get("start_date") or "") or default_start
+    end_date = parse_date(request.GET.get("end_date") or "") or today
+    error_message = ""
+    if start_date > end_date:
+        start_date, end_date = default_start, today
+        error_message = "期間の開始日は終了日以前にしてください。今月の期間で表示しています。"
+
+    department_id = request.GET.get("department") or None
+    departments = Department.objects.filter(is_active=True).order_by("code")
+    if department_id and (not department_id.isdigit() or not departments.filter(pk=department_id).exists()):
+        department_id = None
+    sort = request.GET.get("sort") or "support_amount"
+    sort = sort if sort in SORT_FIELDS else "support_amount"
+    direction = request.GET.get("direction") or "desc"
+    direction = direction if direction in {"asc", "desc"} else "desc"
+    rows = build_activity_site_comparison(
+        start_date=start_date,
+        end_date=end_date,
+        department_id=department_id,
+        sort=sort,
+        direction=direction,
+    )
+    page = Paginator(rows, 24).get_page(request.GET.get("page"))
+    return render(
+        request,
+        "activity_sites/comparison.html",
+        {
+            "nav_items": performance_nav_items(),
+            "page": page,
+            "departments": departments,
+            "selected_department_id": str(department_id or ""),
+            "start_date": start_date,
+            "end_date": end_date,
+            "sort": sort,
+            "direction": direction,
+            "error_message": error_message,
         },
     )

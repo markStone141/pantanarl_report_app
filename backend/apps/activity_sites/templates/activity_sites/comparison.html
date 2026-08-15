@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}現場別実績 | 実績管理{% endblock %}
+
+{% block content %}
+<div class="app-shell">
+  {% include "includes/app_navigation.html" with page_title="現場別実績" page_subtitle="期間内の最終実績を現場ごとに比較します。" %}
+  <main class="container app-shell-content">
+    {% if error_message %}<div class="ui-feedback ui-feedback--error" role="alert">{{ error_message }}</div>{% endif %}
+    <section class="card ui-section mt-16">
+      {% include "includes/ui_section_heading.html" with kicker="FILTER" title="比較条件" meta=page.paginator.count meta_label="現場数:" %}
+      <form method="get" class="grid grid-2 mt-12">
+        <div><label for="site-start-date">開始日</label><input id="site-start-date" type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}"></div>
+        <div><label for="site-end-date">終了日</label><input id="site-end-date" type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}"></div>
+        <div>
+          <label for="site-department">部署</label>
+          <select id="site-department" name="department">
+            <option value="">すべての部署</option>
+            {% for department in departments %}<option value="{{ department.id }}"{% if selected_department_id == department.id|stringformat:'s' %} selected{% endif %}>{{ department.code }} - {{ department.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="site-sort">並び順</label>
+          <select id="site-sort" name="sort">
+            <option value="support_amount"{% if sort == 'support_amount' %} selected{% endif %}>金額</option>
+            <option value="result_count"{% if sort == 'result_count' %} selected{% endif %}>実績件数</option>
+            <option value="latest"{% if sort == 'latest' %} selected{% endif %}>最新活動日</option>
+            <option value="activity_days"{% if sort == 'activity_days' %} selected{% endif %}>活動日数</option>
+            <option value="member_count"{% if sort == 'member_count' %} selected{% endif %}>活動人数</option>
+            <option value="name"{% if sort == 'name' %} selected{% endif %}>現場名</option>
+          </select>
+        </div>
+        <div>
+          <label for="site-direction">方向</label>
+          <select id="site-direction" name="direction"><option value="desc"{% if direction == 'desc' %} selected{% endif %}>多い・新しい順</option><option value="asc"{% if direction == 'asc' %} selected{% endif %}>少ない・古い順</option></select>
+        </div>
+        <div class="mt-8"><button class="ui-button ui-button--primary" type="submit">この条件で比較</button></div>
+      </form>
+    </section>
+
+    <section class="card ui-section mt-16">
+      {% include "includes/ui_section_heading.html" with kicker="SITE COMPARISON" title="現場ごとの実績" %}
+      {% if page.object_list %}
+      <div class="grid grid-2 mt-12">
+        {% for row in page.object_list %}
+        <article class="ui-list-card">
+          <div class="row"><strong>{{ row.site_name }}</strong><span class="badge">{{ row.department_codes|join:", " }}</span></div>
+          <div class="ui-summary-grid mt-12">
+            <div class="metric-card ui-summary-card"><span class="muted">実績</span><strong class="mt-4">{{ row.result_count }}件</strong></div>
+            <div class="metric-card ui-summary-card"><span class="muted">金額</span><strong class="mt-4">{{ row.support_amount }}円</strong></div>
+            <div class="metric-card ui-summary-card"><span class="muted">活動日数</span><strong class="mt-4">{{ row.activity_days }}日</strong></div>
+            <div class="metric-card ui-summary-card"><span class="muted">活動人数</span><strong class="mt-4">{{ row.member_count }}名</strong></div>
+          </div>
+          <div class="muted mt-12">最新活動日 {{ row.latest_activity_date|date:"Y/m/d" }} / AP {{ row.approach_count }} / CM {{ row.communication_count }}{% if row.cs_count or row.refugee_count %} / CS {{ row.cs_count }} / 難民 {{ row.refugee_count }}{% endif %}</div>
+        </article>
+        {% endfor %}
+      </div>
+      {% if page.has_other_pages %}<nav class="mt-16" aria-label="ページ移動">{% if page.has_previous %}<a class="ui-button ui-button--secondary" href="?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&department={{ selected_department_id }}&sort={{ sort }}&direction={{ direction }}&page={{ page.previous_page_number }}">前へ</a>{% endif %}<span class="muted"> {{ page.number }} / {{ page.paginator.num_pages }} </span>{% if page.has_next %}<a class="ui-button ui-button--secondary" href="?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&department={{ selected_department_id }}&sort={{ sort }}&direction={{ direction }}&page={{ page.next_page_number }}">次へ</a>{% endif %}</nav>{% endif %}
+      {% else %}<div class="ui-empty-state mt-12">この期間に正式現場へ紐づく実績はありません。</div>{% endif %}
+    </section>
+  </main>
+</div>
+{% endblock %}
