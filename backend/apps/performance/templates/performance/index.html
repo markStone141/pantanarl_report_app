@@ -16,6 +16,7 @@
     {% include "includes/ui_section_heading.html" with kicker="SITE DATA" title="現場マスタ準備" meta="既存データの確認" %}
     <p class="muted mt-8">過去に入力された現場名を表記揺れごとに整理し、重複をまとめたCSVを出力します。実績データは変更しません。</p>
     <div class="mt-12">
+      <a class="ui-button ui-button--primary" href="{% url 'performance_activity_site_proposals' %}">新規現場申請を確認{% if pending_activity_site_proposal_count %} ({{ pending_activity_site_proposal_count }}){% endif %}</a>
       <a class="ui-button ui-button--secondary" href="{% url 'performance_activity_sites_export' %}">現場一覧CSVを出力</a>
     </div>
   </section>

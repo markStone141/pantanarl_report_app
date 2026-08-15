@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from apps.accounts.auth import ROLE_ADMIN, ROLE_REPORT, resolve_request_role
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.activity_sites.models import ActivitySiteProposal
 from apps.common.target_periods import period_options_active_first
 from apps.dairymetrics.forms import DairyMetricsLoginForm, DairymetricsV2TransactionForm, MemberScopeTargetForm
 from apps.dairymetrics.models import (
@@ -256,6 +257,11 @@ def performance_index(request: HttpRequest) -> HttpResponse:
         "dashboard_end": dashboard_end,
         "status_message": request.GET.get("status") or "",
         "can_manage_activity_sites": resolve_request_role(request) == ROLE_ADMIN,
+        "pending_activity_site_proposal_count": (
+            ActivitySiteProposal.objects.filter(status=ActivitySiteProposal.STATUS_PENDING).count()
+            if resolve_request_role(request) == ROLE_ADMIN
+            else 0
+        ),
         **build_department_today_detail_context(
             department=dashboard_department,
             target_date=today,

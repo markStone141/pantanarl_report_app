@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}新規現場申請 | 実績管理{% endblock %}
+
+{% block content %}
+<div class="app-shell">
+  {% include "includes/app_navigation.html" with page_title="新規現場申請" page_subtitle="仮入力された現場を承認、修正、既存現場へ統合します。" %}
+  <main class="container app-shell-content">
+    {% if error_message %}<div class="ui-feedback ui-feedback--error" role="alert">{{ error_message }}</div>{% endif %}
+    {% if updated %}<div class="ui-feedback ui-feedback--success" role="status">申請を更新しました。</div>{% endif %}
+    <section class="card ui-section mt-16">
+      {% include "includes/ui_section_heading.html" with kicker="PENDING" title="承認待ち" meta=proposals|length meta_label="申請数:" %}
+      {% if proposals %}
+        {% for proposal in proposals %}
+        <article class="ui-list-card mt-12">
+          <div class="row">
+            <div>
+              <strong>{{ proposal.proposed_name }}</strong>
+              <div class="muted mt-4">{{ proposal.department.code }} / {{ proposal.proposed_by.username|default:"申請者不明" }} / {{ proposal.created_at|date:"Y/m/d H:i" }}</div>
+            </div>
+            <span class="badge">申請中</span>
+          </div>
+          <form method="post" class="mt-12" data-submit-lock>
+            {% csrf_token %}
+            <input type="hidden" name="proposal_id" value="{{ proposal.id }}">
+            <input type="hidden" name="action" value="approve">
+            <label for="proposal-{{ proposal.id }}-name">正式な現場名</label>
+            <input id="proposal-{{ proposal.id }}-name" name="canonical_name" maxlength="128" value="{{ proposal.proposed_name }}" required>
+            <button type="submit" class="ui-button ui-button--primary mt-8">この名称で承認</button>
+          </form>
+          <form method="post" class="mt-12" data-submit-lock>
+            {% csrf_token %}
+            <input type="hidden" name="proposal_id" value="{{ proposal.id }}">
+            <input type="hidden" name="action" value="merge">
+            <label for="proposal-{{ proposal.id }}-site">既存現場へ統合</label>
+            <select id="proposal-{{ proposal.id }}-site" name="resolved_site" required>
+              <option value="">統合先を選択</option>
+              {% for site in active_sites %}<option value="{{ site.id }}">{{ site.canonical_name }}</option>{% endfor %}
+            </select>
+            <button type="submit" class="ui-button ui-button--secondary mt-8">選択した現場へ統合</button>
+          </form>
+          <details class="mt-12">
+            <summary>この申請を却下</summary>
+            <form method="post" class="mt-8" data-submit-lock onsubmit="return confirm('この申請を却下しますか？入力済み実績は削除されません。');">
+              {% csrf_token %}
+              <input type="hidden" name="proposal_id" value="{{ proposal.id }}">
+              <input type="hidden" name="action" value="reject">
+              <label for="proposal-{{ proposal.id }}-note">却下理由（任意）</label>
+              <textarea id="proposal-{{ proposal.id }}-note" name="review_note" rows="2"></textarea>
+              <button type="submit" class="ui-button ui-button--danger mt-8">却下する</button>
+            </form>
+          </details>
+        </article>
+        {% endfor %}
+      {% else %}
+      <div class="ui-empty-state mt-12">承認待ちの現場申請はありません。</div>
+      {% endif %}
+    </section>
+  </main>
+</div>
+{% endblock %}

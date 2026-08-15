@@ -336,3 +336,108 @@ class ActivitySiteImportTests(PerformanceTestBase):
 
         self.assertIn("DRY RUN: sites=1", output.getvalue())
         self.assertFalse(ActivitySite.objects.exists())
+
+
+class ActivitySiteProposalManagementTests(PerformanceTestBase):
+    def _proposal_with_history(self, name="新宿 南口"):
+        proposal = ActivitySiteProposal.objects.create(
+            proposed_name=name,
+            department=self.department,
+            proposed_by=self.user,
+        )
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 8, 5 + ActivitySiteProposal.objects.count()),
+            location_name=name,
+            activity_site_proposal=proposal,
+        )
+        metric_transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=1000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location=name,
+        )
+        return proposal, entry, metric_transaction
+
+    def test_dashboard_notifies_admin_and_management_page_is_staff_only(self):
+        proposal, _, _ = self._proposal_with_history()
+
+        dashboard_response = self.client.get(reverse("performance_index"))
+        manage_response = self.client.get(reverse("performance_activity_site_proposals"))
+
+        self.assertContains(dashboard_response, "新規現場申請を確認 (1)")
+        self.assertContains(manage_response, proposal.proposed_name)
+        self.assertContains(manage_response, "この名称で承認")
+
+        self.client.logout()
+        report_user = self.create_user("proposal-report-user", is_staff=False)
+        self.login(report_user)
+        denied_response = self.client.get(reverse("performance_activity_site_proposals"))
+        self.assertEqual(denied_response.status_code, 403)
+
+    def test_corrected_approval_links_history_and_preserves_raw_text(self):
+        proposal, entry, metric_transaction = self._proposal_with_history()
+
+        response = self.client.post(
+            reverse("performance_activity_site_proposals"),
+            {"proposal_id": proposal.id, "action": "approve", "canonical_name": "新宿南口"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        proposal.refresh_from_db()
+        entry.refresh_from_db()
+        metric_transaction.refresh_from_db()
+        site = ActivitySite.objects.get(canonical_name="新宿南口")
+        self.assertEqual(proposal.status, ActivitySiteProposal.STATUS_APPROVED)
+        self.assertEqual(proposal.resolved_site_id, site.id)
+        self.assertEqual(entry.activity_site_id, site.id)
+        self.assertEqual(metric_transaction.activity_site_id, site.id)
+        self.assertEqual(entry.location_name, "新宿 南口")
+        self.assertTrue(ActivitySiteAlias.objects.filter(site=site, normalized_name="新宿 南口").exists())
+        self.assertTrue(site.departments.filter(pk=self.department.pk).exists())
+
+        self.member.user = self.user
+        self.member.save(update_fields=["user"])
+        display_response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code, "date": entry.entry_date.strftime("%Y-%m-%d")},
+        )
+        self.assertEqual(display_response.context["current_location_name"], site.canonical_name)
+
+        second_response = self.client.post(
+            reverse("performance_activity_site_proposals"),
+            {"proposal_id": proposal.id, "action": "approve", "canonical_name": "新宿南口"},
+        )
+        self.assertIn("already-reviewed", second_response.url)
+        self.assertEqual(ActivitySite.objects.count(), 1)
+
+    def test_merge_uses_existing_site_and_reject_preserves_history(self):
+        existing_site = ActivitySite.objects.create(canonical_name="池袋西口")
+        merge_proposal, merge_entry, _ = self._proposal_with_history("池袋 西口")
+
+        merge_response = self.client.post(
+            reverse("performance_activity_site_proposals"),
+            {"proposal_id": merge_proposal.id, "action": "merge", "resolved_site": existing_site.id},
+        )
+
+        self.assertEqual(merge_response.status_code, 302)
+        merge_proposal.refresh_from_db()
+        merge_entry.refresh_from_db()
+        self.assertEqual(merge_proposal.status, ActivitySiteProposal.STATUS_MERGED)
+        self.assertEqual(merge_entry.activity_site_id, existing_site.id)
+
+        reject_proposal, reject_entry, _ = self._proposal_with_history("上野新規")
+        reject_response = self.client.post(
+            reverse("performance_activity_site_proposals"),
+            {"proposal_id": reject_proposal.id, "action": "reject", "review_note": "対象外"},
+        )
+        self.assertEqual(reject_response.status_code, 302)
+        reject_proposal.refresh_from_db()
+        reject_entry.refresh_from_db()
+        self.assertEqual(reject_proposal.status, ActivitySiteProposal.STATUS_REJECTED)
+        self.assertEqual(reject_proposal.review_note, "対象外")
+        self.assertIsNone(reject_entry.activity_site_id)
+        self.assertEqual(reject_entry.location_name, "上野新規")

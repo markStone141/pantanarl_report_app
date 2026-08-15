@@ -300,7 +300,11 @@ def build_transaction_entry_context(
     personal_target_cs_count = int(getattr(existing_entry, "daily_target_cs_count", 0) or 0)
     personal_target_refugee_count = int(getattr(existing_entry, "daily_target_refugee_count", 0) or 0)
     personal_total_amount = int(getattr(existing_entry, "support_amount", 0) or 0)
-    current_location_name = getattr(existing_entry, "location_name", "") or ""
+    current_location_name = (
+        existing_entry.activity_site.canonical_name
+        if existing_entry and existing_entry.activity_site_id
+        else getattr(existing_entry, "location_name", "") or ""
+    )
     department_day_total = int(getattr(department_summary, "support_amount", 0) or 0)
     department_day_target = int(getattr(department_summary, "daily_target_amount", 0) or 0)
 
