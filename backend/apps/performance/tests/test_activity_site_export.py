@@ -5,8 +5,11 @@ from datetime import date
 from pathlib import Path
 
 from django.core.management import call_command
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.urls import reverse
 
+from apps.activity_sites.models import ActivitySite, ActivitySiteAlias, ActivitySiteProposal
 from apps.dairymetrics.models import (
     MemberDailyMetricEntry,
     MemberMetricTransaction,
@@ -110,3 +113,46 @@ class ActivitySiteExportTests(PerformanceTestBase):
             self.assertTrue(raw.startswith(b"\xef\xbb\xbf"))
             rows = list(csv.DictReader(io.StringIO(raw.decode("utf-8-sig"))))
             self.assertEqual(len(rows), 2)
+
+
+class ActivitySiteModelTests(PerformanceTestBase):
+    def test_site_and_alias_names_are_normalized_for_unique_matching(self):
+        site = ActivitySite.objects.create(canonical_name="  Ｓｈｉｂｕｙａ　駅前  ", created_by=self.user)
+        alias = ActivitySiteAlias.objects.create(site=site, alias_name="渋谷   駅前")
+
+        self.assertEqual(site.normalized_name, "shibuya 駅前")
+        self.assertEqual(alias.normalized_name, "渋谷 駅前")
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            ActivitySite.objects.create(canonical_name="SHIBUYA 駅前")
+
+    def test_only_one_pending_proposal_is_allowed_per_department_and_name(self):
+        ActivitySiteProposal.objects.create(
+            proposed_name="新宿　西口",
+            department=self.department,
+            proposed_by=self.user,
+        )
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            ActivitySiteProposal.objects.create(
+                proposed_name="  新宿 西口  ",
+                department=self.department,
+                proposed_by=self.user,
+            )
+
+    def test_alias_cannot_shadow_another_canonical_site_name(self):
+        first_site = ActivitySite.objects.create(canonical_name="池袋東口")
+        ActivitySite.objects.create(canonical_name="池袋西口")
+
+        with self.assertRaises(ValidationError):
+            ActivitySiteAlias.objects.create(site=first_site, alias_name="  池袋西口  ")
+
+    def test_approved_or_merged_proposal_requires_resolved_site(self):
+        proposal = ActivitySiteProposal(
+            proposed_name="池袋東口",
+            department=self.department,
+            status=ActivitySiteProposal.STATUS_APPROVED,
+        )
+
+        with self.assertRaises(ValidationError):
+            proposal.full_clean()
