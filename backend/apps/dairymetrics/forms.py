@@ -3,6 +3,8 @@ from django.contrib.auth import authenticate
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member
+from apps.activity_sites.models import ActivitySite
+from apps.activity_sites.submission_service import available_activity_sites
 
 from .models import (
     DepartmentDailyMetricSummary,
@@ -342,6 +344,10 @@ class DairymetricsV2PersonalSetupForm(forms.Form):
         widget=forms.DateInput(attrs={"type": "date", "class": "dairymetrics-native-date dairymetrics-date-input"}),
     )
     location_name = forms.CharField(label="今日の活動現場", max_length=128, required=False)
+    activity_site = forms.ModelChoiceField(
+        queryset=ActivitySite.objects.none(), label="今日の活動現場", required=False
+    )
+    new_activity_site_name = forms.CharField(label="新しい現場名", max_length=128, required=False)
     daily_target_count = forms.IntegerField(label="個人の件数目標", min_value=0, initial=0)
     daily_target_cs_count = forms.IntegerField(label="個人のCS件数目標", min_value=0, initial=0, required=False)
     daily_target_refugee_count = forms.IntegerField(label="個人の難民件数目標", min_value=0, initial=0, required=False)
@@ -353,6 +359,9 @@ class DairymetricsV2PersonalSetupForm(forms.Form):
         if member is not None:
             departments = departments.filter(member_links__member=member).distinct()
         self.fields["department"].queryset = departments.order_by("code")
+        department = self._resolve_department()
+        if department:
+            self.fields["activity_site"].queryset = available_activity_sites(department)
         department_code = self._resolve_department_code()
         if department_code == "WV":
             self.fields["daily_target_count"].required = False
@@ -361,18 +370,27 @@ class DairymetricsV2PersonalSetupForm(forms.Form):
             self.fields.pop("daily_target_refugee_count", None)
 
     def _resolve_department_code(self):
+        department = self._resolve_department()
+        return department.code if department else ""
+
+    def _resolve_department(self):
         if self.is_bound:
             department = self.data.get(self.add_prefix("department")) or self.data.get("department")
             if department and str(department).isdigit():
-                department_obj = self.fields["department"].queryset.filter(pk=department).first()
-                return department_obj.code if department_obj else ""
+                return self.fields["department"].queryset.filter(pk=department).first()
         initial_department = self.initial.get("department")
         if hasattr(initial_department, "code"):
-            return initial_department.code
-        return ""
+            return initial_department
+        return None
 
     def clean(self):
         cleaned_data = super().clean()
+        if cleaned_data.get("activity_site") and cleaned_data.get("new_activity_site_name"):
+            raise forms.ValidationError("登録済み現場の選択と新規申請はどちらか一方にしてください。")
+        if not any(
+            [cleaned_data.get("activity_site"), cleaned_data.get("new_activity_site_name"), cleaned_data.get("location_name")]
+        ):
+            raise forms.ValidationError("活動現場を選択するか、新しい現場名を入力してください。")
         if self._resolve_department_code() == "WV":
             cleaned_data["daily_target_cs_count"] = cleaned_data.get("daily_target_cs_count") or 0
             cleaned_data["daily_target_refugee_count"] = cleaned_data.get("daily_target_refugee_count") or 0

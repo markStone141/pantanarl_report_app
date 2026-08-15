@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Department, Member, MemberDepartment
+from apps.activity_sites.models import ActivitySite, ActivitySiteAlias, ActivitySiteProposal
 from apps.common.test_helpers import AppTestMixin
 from apps.mail.models import MailDepartmentRouting, MailIntegrationSetting, MailSendHistory, MailRecipientGroup
 from apps.targets.models import (
@@ -1675,3 +1676,142 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         ranking_payload = response.context["metrics_v2_payload"]["ranking"]["metric_map"]["conversion_rate"]
         rates_by_member = dict(zip(ranking_payload["labels"], ranking_payload["values"]))
         self.assertEqual(rates_by_member["Conversion Base"], 10.0)
+
+    def _personal_setup_payload(self, **overrides):
+        payload = {
+            "action": "save_personal_setup",
+            "department": str(self.department.id),
+            "entry_date": timezone.localdate().strftime("%Y-%m-%d"),
+            "daily_target_count": "2",
+            "daily_target_amount": "4000",
+            "location_name": "",
+            "activity_site": "",
+            "new_activity_site_name": "",
+        }
+        payload.update(overrides)
+        return payload
+
+    def test_personal_setup_lists_only_available_activity_sites(self):
+        available = ActivitySite.objects.create(canonical_name="渋谷駅前")
+        available.departments.add(self.department)
+        global_site = ActivitySite.objects.create(canonical_name="全社共通現場")
+        other_department = self.create_department("WV")
+        unavailable = ActivitySite.objects.create(canonical_name="WV専用現場")
+        unavailable.departments.add(other_department)
+        ActivitySite.objects.create(canonical_name="無効現場", is_active=False)
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {"department": self.department.code},
+        )
+
+        self.assertContains(response, available.canonical_name)
+        self.assertContains(response, global_site.canonical_name)
+        self.assertNotContains(response, unavailable.canonical_name)
+        self.assertNotContains(response, "無効現場")
+        self.assertContains(response, "候補にない現場を申請")
+        self.assertContains(response, "data-activity-site-select", html=False)
+        self.assertContains(response, "data-new-activity-site-input", html=False)
+        self.assertContains(response, "window.confirm", html=False)
+
+    def test_personal_setup_saves_selected_site_and_transaction_inherits_it(self):
+        site = ActivitySite.objects.create(canonical_name="池袋東口")
+        site.departments.add(self.department)
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            self._personal_setup_payload(activity_site=str(site.id)),
+        )
+
+        self.assertEqual(response.status_code, 302)
+        entry = MemberDailyMetricEntry.objects.get(
+            member=self.member,
+            department=self.department,
+            entry_date=timezone.localdate(),
+        )
+        self.assertEqual(entry.activity_site_id, site.id)
+        self.assertIsNone(entry.activity_site_proposal_id)
+        self.assertEqual(entry.location_name, site.canonical_name)
+
+        transaction_response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            {
+                "action": "save_transaction",
+                "department_code": self.department.code,
+                "entry_date": timezone.localdate().strftime("%Y-%m-%d"),
+                "support_amount": "3000",
+                "location": site.canonical_name,
+                "age_band": MemberMetricTransaction.AGE_BAND_SEVENTIES,
+                "gender": MemberMetricTransaction.GENDER_FEMALE,
+                "nationality_type": MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            },
+        )
+        self.assertEqual(transaction_response.status_code, 302)
+        self.assertEqual(MemberMetricTransaction.objects.get(entry=entry).activity_site_id, site.id)
+
+    def test_unknown_site_creates_one_pending_proposal_and_keeps_activity_available(self):
+        self.client.force_login(self.user)
+        payload = self._personal_setup_payload(new_activity_site_name="  新宿　南口  ")
+
+        first_response = self.client.post(reverse("dairymetrics_entry_v2_transaction_demo"), payload)
+        second_response = self.client.post(reverse("dairymetrics_entry_v2_transaction_demo"), payload)
+
+        self.assertEqual(first_response.status_code, 302)
+        self.assertEqual(second_response.status_code, 302)
+        proposal = ActivitySiteProposal.objects.get()
+        entry = MemberDailyMetricEntry.objects.get(
+            member=self.member,
+            department=self.department,
+            entry_date=timezone.localdate(),
+        )
+        self.assertEqual(proposal.status, ActivitySiteProposal.STATUS_PENDING)
+        self.assertEqual(proposal.proposed_by_id, self.user.id)
+        self.assertEqual(entry.activity_site_proposal_id, proposal.id)
+        self.assertIsNone(entry.activity_site_id)
+        self.assertEqual(entry.location_name, "新宿　南口")
+
+    def test_new_name_matching_alias_uses_existing_site_without_proposal(self):
+        site = ActivitySite.objects.create(canonical_name="渋谷駅前")
+        site.departments.add(self.department)
+        ActivitySiteAlias.objects.create(site=site, alias_name="渋谷 駅前")
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("dairymetrics_entry_v2_transaction_demo"),
+            self._personal_setup_payload(new_activity_site_name="  渋谷 駅前  "),
+        )
+
+        self.assertEqual(response.status_code, 302)
+        entry = MemberDailyMetricEntry.objects.get(
+            member=self.member,
+            department=self.department,
+            entry_date=timezone.localdate(),
+        )
+        self.assertEqual(entry.activity_site_id, site.id)
+        self.assertEqual(entry.location_name, site.canonical_name)
+        self.assertFalse(ActivitySiteProposal.objects.exists())
+
+    def test_department_ajax_does_not_carry_site_from_previous_department(self):
+        un_site = ActivitySite.objects.create(canonical_name="UN専用現場")
+        un_site.departments.add(self.department)
+        wv_department = self.create_department("WV")
+        MemberDepartment.objects.create(member=self.member, department=wv_department)
+        wv_site = ActivitySite.objects.create(canonical_name="WV専用現場")
+        wv_site.departments.add(wv_department)
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("dairymetrics_entry_v2_personal_setup_fields"),
+            {
+                "department": str(wv_department.id),
+                "entry_date": timezone.localdate().strftime("%Y-%m-%d"),
+                "activity_site": str(un_site.id),
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(wv_site.canonical_name, response.json()["setup_html"])
+        self.assertNotIn(un_site.canonical_name, response.json()["setup_html"])

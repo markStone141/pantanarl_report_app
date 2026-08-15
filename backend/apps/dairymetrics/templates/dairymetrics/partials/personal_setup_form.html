@@ -28,8 +28,24 @@
     </div>
     <div class="dairymetrics-field">
       <label for="{{ location_id }}">今日の活動現場</label>
-      <input id="{{ location_id }}" type="text" name="location_name" value="{{ personal_location_name_value }}">
-      {% if personal_setup_form.location_name.errors %}<div class="error-text">{{ personal_setup_form.location_name.errors|striptags }}</div>{% endif %}
+      <select id="{{ location_id }}" name="activity_site" data-activity-site-select>
+        <option value="">現場を選択してください</option>
+        {% for site in personal_setup_form.fields.activity_site.queryset %}
+        <option value="{{ site.id }}" {% if personal_activity_site_value|stringformat:"s" == site.id|stringformat:"s" %}selected{% endif %}>{{ site.canonical_name }}</option>
+        {% endfor %}
+      </select>
+      <input type="hidden" name="location_name" value="{{ personal_location_name_value }}">
+      {% if personal_setup_form.activity_site.errors %}<div class="error-text">{{ personal_setup_form.activity_site.errors|striptags }}</div>{% endif %}
+      <details class="mt-8" data-new-activity-site-details {% if personal_new_activity_site_name_value %}open{% endif %}>
+        <summary>候補にない現場を申請</summary>
+        <div class="dairymetrics-field mt-8">
+          <label for="{{ location_id }}-new">新しい現場名</label>
+          <input id="{{ location_id }}-new" type="text" name="new_activity_site_name" maxlength="128" value="{{ personal_new_activity_site_name_value }}" data-new-activity-site-input>
+          <p class="muted mt-4">承認待ちのまま活動を開始できます。管理者が後から正式名称へ修正・統合します。</p>
+        </div>
+      </details>
+      {% if personal_setup_form.new_activity_site_name.errors %}<div class="error-text">{{ personal_setup_form.new_activity_site_name.errors|striptags }}</div>{% endif %}
+      {% if personal_setup_form.non_field_errors %}<div class="error-text">{{ personal_setup_form.non_field_errors|striptags }}</div>{% endif %}
     </div>
     {% if selected_department_is_wv %}
     <div class="dairymetrics-field">

@@ -47,7 +47,7 @@ def build_entry_form(*, member, data=None, department_code="", entry_date=None):
                 department__code=department_code,
                 entry_date=entry_date,
             )
-            .select_related("department")
+            .select_related("department", "activity_site", "activity_site_proposal")
             .first()
         )
     initial = {"entry_date": entry_date}
@@ -165,7 +165,7 @@ def build_entry_v2_base_context(*, member, selected_department, entry_date, age_
                 department__code=selected_department_code,
                 entry_date=entry_date,
             )
-            .select_related("department")
+            .select_related("department", "activity_site", "activity_site_proposal")
             .first()
         )
     initial_count = 0
@@ -532,6 +532,12 @@ def build_transaction_entry_context(
             "department": selected_department_obj,
             "entry_date": entry_date,
             "location_name": current_location_name,
+            "activity_site": getattr(existing_entry, "activity_site_id", None),
+            "new_activity_site_name": (
+                existing_entry.activity_site_proposal.proposed_name
+                if existing_entry and existing_entry.activity_site_proposal_id
+                else ""
+            ),
             "daily_target_count": personal_target_count or previous_personal_target_count,
             "daily_target_cs_count": personal_target_cs_count or previous_personal_target_cs_count,
             "daily_target_refugee_count": personal_target_refugee_count or previous_personal_target_refugee_count,
@@ -588,6 +594,8 @@ def build_transaction_entry_context(
         personal_target_refugee_count_value = "0"
     personal_target_amount_value = str(personal_setup_form["daily_target_amount"].value() or previous_personal_target_amount)
     personal_location_name_value = str(personal_setup_form["location_name"].value() or current_location_name)
+    personal_activity_site_value = str(personal_setup_form["activity_site"].value() or "")
+    personal_new_activity_site_name_value = str(personal_setup_form["new_activity_site_name"].value() or "")
     department_target_amount_value = str(department_target_form["daily_target_amount"].value() or previous_department_target_amount)
     transaction_amount_value = str(transaction_form["support_amount"].value() or "3000")
     transaction_form_is_wv = is_wv_department(selected_department_obj)
@@ -671,6 +679,8 @@ def build_transaction_entry_context(
         "personal_target_refugee_count_value": personal_target_refugee_count_value,
         "personal_target_amount_value": personal_target_amount_value,
         "personal_location_name_value": personal_location_name_value,
+        "personal_activity_site_value": personal_activity_site_value,
+        "personal_new_activity_site_name_value": personal_new_activity_site_name_value,
         "department_target_amount_value": department_target_amount_value,
         "transaction_amount_value": transaction_amount_value,
         "transaction_form_is_wv": transaction_form_is_wv,

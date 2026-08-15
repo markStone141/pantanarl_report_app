@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from apps.accounts.models import Department
+from apps.activity_sites.submission_service import resolve_activity_site_submission
 from apps.mail.models import MailSendHistory
 from apps.mail.services import MailSendError, record_transaction_mail_failure, send_transaction_mail
 from apps.testimony.services.notifications import unread_recent_article_notification
@@ -97,6 +98,8 @@ def entry_v2_personal_setup_fields(request: HttpRequest) -> HttpResponse:
         "department": selected_department_obj,
         "entry_date": entry_date,
         "location_name": (request.GET.get("location_name") or "").strip(),
+        "activity_site": (request.GET.get("activity_site") or "").strip(),
+        "new_activity_site_name": (request.GET.get("new_activity_site_name") or "").strip(),
         "daily_target_count": (request.GET.get("daily_target_count") or "").strip() or 0,
         "daily_target_cs_count": (request.GET.get("daily_target_cs_count") or "").strip() or 0,
         "daily_target_refugee_count": (request.GET.get("daily_target_refugee_count") or "").strip() or 0,
@@ -191,7 +194,16 @@ def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
                 entry.daily_target_cs_count = personal_setup_form.cleaned_data.get("daily_target_cs_count") or 0
                 entry.daily_target_refugee_count = personal_setup_form.cleaned_data.get("daily_target_refugee_count") or 0
                 entry.daily_target_amount = personal_setup_form.cleaned_data["daily_target_amount"]
-                entry.location_name = personal_setup_form.cleaned_data["location_name"]
+                site_submission = resolve_activity_site_submission(
+                    department=selected_department_obj,
+                    proposed_by=request.user,
+                    selected_site=personal_setup_form.cleaned_data.get("activity_site"),
+                    new_name=personal_setup_form.cleaned_data.get("new_activity_site_name"),
+                    legacy_name=personal_setup_form.cleaned_data.get("location_name"),
+                )
+                entry.activity_site = site_submission.site
+                entry.activity_site_proposal = site_submission.proposal
+                entry.location_name = site_submission.location_name
                 entry.input_source = MemberDailyMetricEntry.SOURCE_MEMBER
                 entry.save(
                     update_fields=[
@@ -200,6 +212,8 @@ def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
                         "daily_target_refugee_count",
                         "daily_target_amount",
                         "location_name",
+                        "activity_site",
+                        "activity_site_proposal",
                         "input_source",
                         "updated_at",
                     ]
@@ -289,6 +303,8 @@ def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
                     else:
                         transaction_obj = transaction_form.save(commit=False)
                         transaction_obj.entry = entry
+                        if transaction_instance is None:
+                            transaction_obj.activity_site = entry.activity_site
                         transaction_obj.save()
                         return redirect(
                             build_v2_redirect_url(

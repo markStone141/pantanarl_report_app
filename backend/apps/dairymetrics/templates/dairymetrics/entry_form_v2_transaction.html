@@ -447,6 +447,31 @@
       });
     }
 
+    function bindActivitySiteFields(root = document) {
+      root.querySelectorAll("form").forEach(function (form) {
+        const siteSelect = form.querySelector("[data-activity-site-select]");
+        const newSiteInput = form.querySelector("[data-new-activity-site-input]");
+        if (!siteSelect || !newSiteInput || form.dataset.activitySiteBound === "1") return;
+        form.dataset.activitySiteBound = "1";
+        siteSelect.addEventListener("change", function () {
+          if (siteSelect.value) newSiteInput.value = "";
+        });
+        newSiteInput.addEventListener("input", function () {
+          if (newSiteInput.value.trim()) siteSelect.value = "";
+        });
+        form.addEventListener("submit", function (event) {
+          const proposedName = newSiteInput.value.trim();
+          if (!proposedName || form.dataset.activitySiteConfirmed === "1") return;
+          if (!window.confirm(`未登録の現場「${proposedName}」を仮申請して活動を開始しますか？`)) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+          form.dataset.activitySiteConfirmed = "1";
+        });
+      });
+    }
+
     function buildPersonalSetupQuery(form) {
       const formData = new FormData(form);
       const params = new URLSearchParams();
@@ -454,6 +479,8 @@
         "department",
         "entry_date",
         "location_name",
+        "activity_site",
+        "new_activity_site_name",
         "daily_target_count",
         "daily_target_cs_count",
         "daily_target_refugee_count",
@@ -495,10 +522,12 @@
       if (setupRoot && payload.setup_html) {
         setupRoot.innerHTML = payload.setup_html;
         bindTargetSelects(setupRoot);
+        bindActivitySiteFields(setupRoot);
       }
       if (inlineRoot && payload.inline_html) {
         inlineRoot.innerHTML = payload.inline_html;
         bindTargetSelects(inlineRoot);
+        bindActivitySiteFields(inlineRoot);
       }
       const departmentTargetRoot = document.getElementById("dairymetrics-v2-department-target-form-root");
       const departmentTargetInlineRoot = document.getElementById("dairymetrics-v2-inline-department-target-form-root");
@@ -1039,6 +1068,7 @@
     });
 
     bindTargetSelects(document);
+    bindActivitySiteFields(document);
 
     ageSelect?.addEventListener("change", syncStudentField);
     transactionResultTypeSelect?.addEventListener("change", syncWvTransactionFields);
