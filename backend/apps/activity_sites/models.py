@@ -137,7 +137,7 @@ class ActivitySiteProposal(models.Model):
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_PENDING)
     resolved_site = models.ForeignKey(
         ActivitySite,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="resolved_proposals",

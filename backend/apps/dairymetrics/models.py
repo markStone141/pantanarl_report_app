@@ -29,6 +29,20 @@ class MemberDailyMetricEntry(models.Model):
     cs_count = models.PositiveIntegerField(default=0)
     refugee_count = models.PositiveIntegerField(default=0)
     location_name = models.CharField(max_length=128, blank=True)
+    activity_site = models.ForeignKey(
+        "activity_sites.ActivitySite",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="metric_entries",
+    )
+    activity_site_proposal = models.ForeignKey(
+        "activity_sites.ActivitySiteProposal",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="metric_entries",
+    )
     memo = models.TextField(blank=True)
     activity_closed = models.BooleanField(default=False)
     activity_closed_at = models.DateTimeField(null=True, blank=True)
@@ -45,6 +59,9 @@ class MemberDailyMetricEntry(models.Model):
                 fields=["member", "department", "entry_date"],
                 name="unique_member_department_entry_date",
             )
+        ]
+        indexes = [
+            models.Index(fields=["activity_site", "department", "entry_date"], name="dm_site_dept_date_idx")
         ]
 
     def __str__(self) -> str:
@@ -266,12 +283,20 @@ class MemberMetricTransaction(models.Model):
     wv_cs_count = models.PositiveIntegerField(default=0)
     wv_refugee_amount = models.PositiveIntegerField(default=0)
     location = models.CharField(max_length=128, blank=True)
+    activity_site = models.ForeignKey(
+        "activity_sites.ActivitySite",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="metric_transactions",
+    )
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["created_at", "id"]
+        indexes = [models.Index(fields=["activity_site", "created_at"], name="dm_site_tx_created_idx")]
 
     def __str__(self) -> str:
         return f"{self.entry} #{self.pk or 'new'}"
@@ -560,6 +585,13 @@ class MetricAdjustment(models.Model):
     return_qr_count = models.PositiveIntegerField(default=0)
     return_qr_amount = models.PositiveIntegerField(default=0)
     location_name = models.CharField(max_length=120, blank=True)
+    activity_site = models.ForeignKey(
+        "activity_sites.ActivitySite",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="metric_adjustments",
+    )
     cs_count = models.PositiveIntegerField(default=0)
     refugee_count = models.PositiveIntegerField(default=0)
     note = models.TextField(blank=True)
@@ -574,6 +606,7 @@ class MetricAdjustment(models.Model):
 
     class Meta:
         ordering = ["-target_date", "-created_at"]
+        indexes = [models.Index(fields=["activity_site", "target_date"], name="dm_site_adj_date_idx")]
 
     def __str__(self) -> str:
         return f"{self.member.name} {self.department.code} {self.target_date} {self.source_type}"
@@ -606,6 +639,13 @@ class WVMetricCancellation(models.Model):
     gender = models.CharField(max_length=16, choices=MemberMetricTransaction.GENDER_CHOICES, blank=True)
     nationality_type = models.CharField(max_length=16, choices=MemberMetricTransaction.NATIONALITY_CHOICES, blank=True)
     location_name = models.CharField(max_length=120, blank=True)
+    activity_site = models.ForeignKey(
+        "activity_sites.ActivitySite",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="metric_cancellations",
+    )
     comment = models.TextField(blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -619,6 +659,7 @@ class WVMetricCancellation(models.Model):
 
     class Meta:
         ordering = ["-target_date", "-created_at"]
+        indexes = [models.Index(fields=["activity_site", "target_date"], name="dm_site_cancel_date_idx")]
 
     def __str__(self) -> str:
         return f"{self.member.name} WV cancel {self.target_date} {self.get_wv_result_type_display()}"

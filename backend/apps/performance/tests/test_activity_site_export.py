@@ -7,6 +7,7 @@ from pathlib import Path
 from django.core.management import call_command
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.db.models.deletion import ProtectedError
 from django.urls import reverse
 
 from apps.activity_sites.models import ActivitySite, ActivitySiteAlias, ActivitySiteProposal
@@ -156,3 +157,82 @@ class ActivitySiteModelTests(PerformanceTestBase):
 
         with self.assertRaises(ValidationError):
             proposal.full_clean()
+
+    def test_legacy_location_text_survives_site_deletion(self):
+        site = ActivitySite.objects.create(canonical_name="上野駅前")
+        entry = MemberDailyMetricEntry.objects.create(
+            member=self.member,
+            department=self.department,
+            entry_date=date(2026, 8, 1),
+            location_name="上野 駅前",
+            activity_site=site,
+        )
+        adjustment = MetricAdjustment.objects.create(
+            member=self.member,
+            department=self.department,
+            target_date=date(2026, 8, 1),
+            location_name="上野 駅前",
+            activity_site=site,
+        )
+        metric_transaction = MemberMetricTransaction.objects.create(
+            entry=entry,
+            support_amount=1000,
+            age_band=MemberMetricTransaction.AGE_BAND_TWENTIES,
+            gender=MemberMetricTransaction.GENDER_FEMALE,
+            nationality_type=MemberMetricTransaction.NATIONALITY_DOMESTIC,
+            location="上野 駅前",
+            activity_site=site,
+        )
+        report = DailyDepartmentReport.objects.create(
+            department=self.department,
+            report_date=date(2026, 8, 1),
+            location="上野 駅前",
+            activity_site=site,
+        )
+        report_line = DailyDepartmentReportLine.objects.create(
+            report=report,
+            member=self.member,
+            location="上野 駅前",
+            activity_site=site,
+        )
+        wv_department = self.create_department("WV")
+        wv_member = self.create_member(name="WV Site Member", department=wv_department)
+        cancellation = WVMetricCancellation.objects.create(
+            member=wv_member,
+            department=wv_department,
+            target_date=date(2026, 8, 1),
+            location_name="上野 駅前",
+            activity_site=site,
+        )
+
+        site.delete()
+        entry.refresh_from_db()
+        adjustment.refresh_from_db()
+        metric_transaction.refresh_from_db()
+        report.refresh_from_db()
+        report_line.refresh_from_db()
+        cancellation.refresh_from_db()
+
+        self.assertIsNone(entry.activity_site_id)
+        self.assertIsNone(adjustment.activity_site_id)
+        self.assertIsNone(metric_transaction.activity_site_id)
+        self.assertIsNone(report.activity_site_id)
+        self.assertIsNone(report_line.activity_site_id)
+        self.assertIsNone(cancellation.activity_site_id)
+        self.assertEqual(entry.location_name, "上野 駅前")
+        self.assertEqual(adjustment.location_name, "上野 駅前")
+
+    def test_site_resolving_an_approved_proposal_is_protected_from_deletion(self):
+        site = ActivitySite.objects.create(canonical_name="品川駅前")
+        proposal = ActivitySiteProposal.objects.create(
+            proposed_name="品川駅前",
+            department=self.department,
+            proposed_by=self.user,
+            status=ActivitySiteProposal.STATUS_APPROVED,
+            resolved_site=site,
+        )
+
+        with self.assertRaises(ProtectedError):
+            site.delete()
+
+        self.assertTrue(ActivitySiteProposal.objects.filter(pk=proposal.pk).exists())

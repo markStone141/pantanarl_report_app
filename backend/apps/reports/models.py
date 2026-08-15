@@ -21,12 +21,20 @@ class DailyDepartmentReport(models.Model):
     total_count = models.PositiveIntegerField(default=0)
     followup_count = models.PositiveIntegerField(default=0)
     location = models.CharField(max_length=128, blank=True)
+    activity_site = models.ForeignKey(
+        "activity_sites.ActivitySite",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="daily_reports",
+    )
     memo = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     edited_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-report_date", "-created_at"]
+        indexes = [models.Index(fields=["activity_site", "report_date"], name="report_site_date_idx")]
 
     def __str__(self) -> str:
         return f"{self.department.code} {self.report_date}"
@@ -50,7 +58,15 @@ class DailyDepartmentReportLine(models.Model):
     cs_count = models.PositiveIntegerField(default=0)
     refugee_count = models.PositiveIntegerField(default=0)
     location = models.CharField(max_length=128, blank=True)
+    activity_site = models.ForeignKey(
+        "activity_sites.ActivitySite",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="daily_report_lines",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["id"]
+        indexes = [models.Index(fields=["activity_site"], name="report_line_site_idx")]
