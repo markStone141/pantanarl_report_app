@@ -91,11 +91,14 @@ def _ensure_default_metrics() -> None:
             )
 
 
-def _department_configs():
+def _department_configs(*, for_history: bool = False):
     _ensure_default_metrics()
     configs = []
     for code, fallback_label in TARGET_DEPARTMENTS:
         department = _department_by_code(code=code, label=fallback_label)
+        is_visible = department.show_in_target_history if for_history else department.show_in_dashboard_progress
+        if not department.is_active or not is_visible:
+            continue
         metrics = list(
             TargetMetric.objects.filter(department=department, is_active=True).order_by("display_order", "id")
         )
@@ -621,7 +624,7 @@ def target_index(request: HttpRequest) -> HttpResponse:
 
 @require_roles(ROLE_ADMIN)
 def target_month_history_detail(request: HttpRequest) -> HttpResponse:
-    configs = _department_configs()
+    configs = _department_configs(for_history=True)
     target_month = _month_start(request.GET.get("month"))
     row = _build_month_history_entry(target_month=target_month, configs=configs)
     return render(request, "targets/_history_detail_body.html", {"row": row})
@@ -629,7 +632,7 @@ def target_month_history_detail(request: HttpRequest) -> HttpResponse:
 
 @require_roles(ROLE_ADMIN)
 def target_period_history_detail(request: HttpRequest, period_id: int) -> HttpResponse:
-    configs = _department_configs()
+    configs = _department_configs(for_history=True)
     period = get_object_or_404(Period, id=period_id)
     row = _build_period_history_entry(period=period, configs=configs)
     return render(request, "targets/_history_detail_body.html", {"row": row})

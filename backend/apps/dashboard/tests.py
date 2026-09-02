@@ -673,6 +673,26 @@ class DepartmentSettingsViewTests(TestCase):
         self.assertTrue(department.show_in_dashboard_submission)
         self.assertTrue(department.show_in_dashboard_progress)
 
+    def test_update_department_can_hide_target_history_independently(self):
+        department = self.depts["UN"]
+        response = self.client.post(
+            reverse("department_settings"),
+            {
+                "action": "save_department",
+                "edit_department_id": str(department.id),
+                "name": department.name,
+                "code": department.code,
+                "default_reporter": "",
+                "show_in_dashboard_submission": "on",
+                "show_in_dashboard_progress": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        department.refresh_from_db()
+        self.assertTrue(department.show_in_dashboard_progress)
+        self.assertFalse(department.show_in_target_history)
+
     def test_update_department_rejects_reporter_outside_department(self):
         department = self.depts["UN"]
         response = self.client.post(

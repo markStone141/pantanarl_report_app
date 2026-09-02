@@ -80,7 +80,12 @@ class DepartmentForm(forms.Form):
         initial=True,
     )
     show_in_dashboard_progress = forms.BooleanField(
-        label="目標進捗に表示",
+        label="目標進捗・目標設定に表示",
+        required=False,
+        initial=True,
+    )
+    show_in_target_history = forms.BooleanField(
+        label="目標履歴に表示",
         required=False,
         initial=True,
     )

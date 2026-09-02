@@ -448,6 +448,7 @@ def department_settings(request: HttpRequest) -> HttpResponse:
                             department.default_reporter = default_reporter
                             department.show_in_dashboard_submission = form.cleaned_data["show_in_dashboard_submission"]
                             department.show_in_dashboard_progress = form.cleaned_data["show_in_dashboard_progress"]
+                            department.show_in_target_history = form.cleaned_data["show_in_target_history"]
                             department.save(
                                 update_fields=[
                                     "name",
@@ -455,6 +456,7 @@ def department_settings(request: HttpRequest) -> HttpResponse:
                                     "default_reporter",
                                     "show_in_dashboard_submission",
                                     "show_in_dashboard_progress",
+                                    "show_in_target_history",
                                 ]
                             )
                             status_message = f"{department.name}（{department.code}）を更新しました。"
@@ -468,6 +470,7 @@ def department_settings(request: HttpRequest) -> HttpResponse:
                             is_active=True,
                             show_in_dashboard_submission=form.cleaned_data["show_in_dashboard_submission"],
                             show_in_dashboard_progress=form.cleaned_data["show_in_dashboard_progress"],
+                            show_in_target_history=form.cleaned_data["show_in_target_history"],
                         )
                         status_message = f"{department.name}（{department.code}）を追加しました。"
                         edit_department = None
