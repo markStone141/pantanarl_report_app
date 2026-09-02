@@ -75,7 +75,7 @@ class DepartmentForm(forms.Form):
         empty_label="未設定",
     )
     show_in_dashboard_submission = forms.BooleanField(
-        label="提出状況一覧に表示",
+        label="提出状況・報告入力に表示",
         required=False,
         initial=True,
     )

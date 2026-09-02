@@ -65,6 +65,7 @@ def report_index(request: HttpRequest) -> HttpResponse:
         department.code: department.name
         for department in Department.objects.filter(
             is_active=True,
+            show_in_dashboard_submission=True,
             code__in=REPORT_ROUTE_BY_DEPARTMENT_CODE.keys(),
         )
     }
@@ -74,6 +75,7 @@ def report_index(request: HttpRequest) -> HttpResponse:
             "url_name": url_name,
         }
         for code, url_name in REPORT_ROUTE_BY_DEPARTMENT_CODE.items()
+        if code in department_map
     ]
     context = {
         "department_buttons": department_buttons,
@@ -270,6 +272,15 @@ def _render_report_form(
     redirect_target: str = "dashboard_index",
 ) -> HttpResponse:
     department = _department_by_code(dept_code)
+    if (
+        editing_report is None
+        and (
+            department is None
+            or not department.is_active
+            or not department.show_in_dashboard_submission
+        )
+    ):
+        return redirect("report_index")
     members = _members_for_department(dept_code)
     default_reporter_id = department.default_reporter_id if department else None
     selected_date, selected_mode = _selected_report_date(request)
