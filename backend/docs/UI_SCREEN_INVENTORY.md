@@ -1,6 +1,6 @@
 # 全アプリUI・画面台帳
 
-最終更新日: 2026-08-12
+最終更新日: 2026-08-13
 
 ## 監査範囲
 
@@ -62,3 +62,12 @@
 - 上部ヘッダーは現在ページ、短い説明、利用者、画面固有の主要操作に絞る。
 - メニューは「日々の活動」「集計・振り返り」「情報共有」「管理・設定」「個別業務」「アカウント」を基準にする。
 - `talks` の独自ドロワーを別系統として残さず、共通定義へ統合できる構造を設計する。
+
+## 2026-08-13 完成監査
+
+- 本番テンプレート86件のうち、共通シェル35件と意図したログイン・エラー・長文独立UIを確認した。
+- 共通NAV、DairyMetrics、Mosaicのドロワーボタン3系統はすべて `ui-icon-button` を使用する。
+- 旧 `topbar-menu-toggle`、`menu-collapsible`、`btn-inline dashboard-drawer-toggle` は0件。
+- 残る `btn-inline` 57件は、ページング、コンパクトな編集・削除、Talks／Testimony／Mosaic／Monthly Guide固有操作のサイズ互換として維持する。ドロワー開閉には使用しない。
+- PC幅1440pxとモバイル幅390pxの固定画像を `docs/ui-shell-desktop.png`、`docs/ui-shell-mobile.png` に更新した。
+- 詳細な検証結果と公開判定は `UI_COMPLETION_AUDIT_2026-08-13.md` を参照する。

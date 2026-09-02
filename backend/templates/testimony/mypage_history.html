@@ -4,7 +4,7 @@
 
 {% block testimony_content %}
 <article class="card testimony-section">
-  <h2 style="margin-bottom:10px;">閲覧履歴</h2>
+  <h2 class="testimony-form-heading">閲覧履歴</h2>
   {% for row in histories %}
     <div class="testimony-list-item">
       <a class="testimony-list-item-title" href="{% url 'testimony_article_detail' row.article_id %}">{{ row.article.title }}</a>
@@ -18,7 +18,7 @@
   {% endfor %}
 
   {% if is_paginated %}
-    <div class="knowledge-pagination" style="margin-top:14px;">
+    <div class="knowledge-pagination testimony-history-pagination">
       <div class="knowledge-pagination-main">
         {% if page_obj.has_previous %}
           <a class="btn-inline" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}">前へ</a>

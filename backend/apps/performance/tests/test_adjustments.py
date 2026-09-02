@@ -46,6 +46,9 @@ class AdjustmentsTests(PerformanceTestBase):
         self.assertContains(response, "有効メンバー一覧")
         self.assertContains(response, "直近稼働の全体実績推移")
         self.assertContains(response, "performance-activity-trend-chart")
+        self.assertContains(response, 'class="card ui-section ui-chart-card performance-trend-card', html=False)
+        self.assertContains(response, 'class="performance-chart-card performance-dashboard-inner-card ui-chart-frame', html=False)
+        self.assertContains(response, "performance-progress-chart-card", html=False)
         self.assertContains(response, "日目達成率")
         self.assertContains(response, entry.entry_date.strftime("%m/%d"))
         self.assertContains(response, "戻り・増額登録")
@@ -391,9 +394,9 @@ class AdjustmentsTests(PerformanceTestBase):
         payload = response.json()
         self.assertIn("list_html", payload)
         self.assertIn("Bob", payload["list_html"])
-        self.assertIn("WV", payload["list_html"])
+        self.assertIn('data-label="部署">WV</td>', payload["list_html"])
         self.assertNotIn("Alice", payload["list_html"])
-        self.assertNotIn("UN", payload["list_html"])
+        self.assertNotIn('data-label="部署">UN</td>', payload["list_html"])
 
 
     def test_performance_adjustments_ajax_searches_source_type_display_label(self):
@@ -672,6 +675,8 @@ class AdjustmentsTests(PerformanceTestBase):
         self.assertContains(response, "集計条件")
         self.assertContains(response, "全体の月目標")
         self.assertContains(response, "個人の月目標")
+        self.assertContains(response, 'class="card ui-chart-card performance-history-value-card performance-progress-chart-card"', count=2)
+        self.assertContains(response, 'class="performance-history-breakdown"', count=2)
         self.assertContains(response, "日次実績")
         self.assertContains(response, "補正実績")
         self.assertContains(response, entry_today.entry_date.strftime("%Y/%m/%d"))

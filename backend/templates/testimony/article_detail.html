@@ -10,8 +10,8 @@
     <span>記事一覧へ戻る</span>
   </a>
 </div>
-<article class="card testimony-section" style="padding:23px;">
-  <h2 style="font-size:1.55rem; margin-bottom:10px;">{{ article.title }}</h2>
+<article class="card testimony-section testimony-detail-card">
+  <h2 class="testimony-detail-title">{{ article.title }}</h2>
   <p class="muted testimony-detail-meta">
     <span><i class="fa-solid fa-user" aria-hidden="true"></i> {{ article.author }}</span>
     <span><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> {{ article.created_at|date:"Y-m-d H:i" }}</span>
@@ -22,9 +22,9 @@
       <span><i class="fa-regular fa-calendar" aria-hidden="true"></i> 証日 {{ article.testimonied_at|date:"Y/m/d" }}</span>
     {% endif %}
   </p>
-  <div style="white-space:pre-wrap; margin-top:20px;">{{ article.body }}</div>
+  <div class="testimony-detail-body">{{ article.body }}</div>
   {% if article.video_url %}
-    <p style="margin-top:8px;">
+    <p class="testimony-detail-video">
       <a href="{{ article.video_url }}" target="_blank" rel="noopener">
         <i class="fa-solid fa-video" aria-hidden="true"></i> 動画リンク
       </a>

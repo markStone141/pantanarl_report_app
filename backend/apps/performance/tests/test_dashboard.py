@@ -139,6 +139,23 @@ class DashboardTests(PerformanceTestBase):
             html=True,
         )
 
+    def test_performance_index_places_ajax_department_switch_in_header(self):
+        other_department = Department.objects.create(code="WV", name="West View", is_active=True)
+
+        response = self.client.get(reverse("performance_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "data-performance-department-switch-root", html=False)
+        self.assertContains(response, "data-performance-department-switch", html=False)
+        self.assertContains(response, 'data-switch-url="/performance/"', html=False)
+        self.assertContains(response, 'data-performance-dashboard-content', html=False)
+        self.assertContains(response, "performance/department_switch.js", html=False)
+        self.assertNotContains(response, ">表示</button>", html=False)
+        header_html = response.content.decode("utf-8").split("</header>", 1)[0]
+        self.assertLess(header_html.index("実績管理"), header_html.index("performance-dashboard-department"))
+        self.assertLess(header_html.index("performance-dashboard-department"), header_html.index("dashboard-drawer-toggle"))
+        self.assertIn(f'<option value="{other_department.id}">WV (West View)</option>', header_html)
+
 
     def test_performance_index_auto_closes_stale_open_entries(self):
         stale_entry = MemberDailyMetricEntry.objects.create(
@@ -229,6 +246,8 @@ class DashboardTests(PerformanceTestBase):
         self.assertContains(response, f"{selected_period.start_date:%Y/%m/%d} - {selected_period.end_date:%Y/%m/%d}")
         self.assertContains(response, "4,500円")
         self.assertContains(response, "16.1%")
+        self.assertContains(response, 'class="card ui-chart-card performance-history-value-card performance-progress-chart-card"')
+        self.assertContains(response, 'class="performance-history-track"')
         self.assertContains(response, "過去の実績を見る")
 
 
@@ -274,21 +293,27 @@ class DashboardTests(PerformanceTestBase):
         self.assertContains(index_response, "本日の決済詳細")
         self.assertContains(index_response, "本日の送信メール詳細")
         self.assertContains(index_response, "本日の記録")
-        self.assertContains(index_response, "決済 <span class=\"performance-record-tab-count\">1件</span>", html=True)
-        self.assertContains(index_response, "メール <span class=\"performance-record-tab-count\">1件</span>", html=True)
+        self.assertContains(index_response, '<span class="performance-record-tab-count">1件</span>', count=2)
         self.assertContains(index_response, 'role="tablist"')
         self.assertContains(index_response, 'data-performance-record-panel="transactions"')
         self.assertContains(index_response, 'data-performance-record-panel="mails"')
+        self.assertContains(index_response, 'class="performance-record-card performance-transaction-record-card"')
+        self.assertContains(index_response, 'class="performance-record-card performance-mail-record-card"')
+        self.assertContains(index_response, 'class="performance-mail-status is-sent">送信済み</span>')
+        self.assertContains(index_response, "詳細を見る")
+        self.assertContains(index_response, "メール内容を見る")
+        self.assertNotContains(index_response, 'class="mobile-card-table performance-recent-detail-table"')
         self.assertContains(index_response, 'class="card ui-section mt-16 performance-dashboard-section"')
         self.assertContains(index_response, 'class="ui-section-kicker performance-dashboard-section-kicker">TODAY</span>')
         self.assertContains(index_response, 'class="ui-section-kicker performance-dashboard-section-kicker">RECORDS</span>')
         self.assertContains(index_response, 'class="ui-section-kicker performance-dashboard-section-kicker">PROGRESS</span>')
         self.assertContains(index_response, 'class="ui-section-kicker performance-dashboard-section-kicker">TREND</span>')
         self.assertContains(index_response, 'class="ui-section-kicker performance-dashboard-section-kicker">MEMBERS</span>')
-        self.assertContains(index_response, 'class="grid ui-form-grid performance-dashboard-filter-grid"')
+        self.assertContains(index_response, 'class="app-header-department-switch"')
+        self.assertContains(index_response, 'data-performance-department-switch')
         self.assertContains(index_response, 'class="performance-member-status-filters ui-tabs mt-12"')
-        self.assertContains(index_response, 'class="card performance-progress-card performance-dashboard-inner-card"')
-        self.assertContains(index_response, 'class="performance-chart-card performance-dashboard-inner-card mt-12"')
+        self.assertContains(index_response, 'class="card ui-chart-card performance-progress-card performance-progress-chart-card performance-dashboard-inner-card"')
+        self.assertContains(index_response, 'class="performance-chart-card performance-dashboard-inner-card ui-chart-frame mt-12"')
         self.assertContains(index_response, 'class="performance-activity-grid mt-12"')
         self.assertContains(index_response, 'class="performance-activity-group performance-activity-group-active"')
         self.assertContains(index_response, 'class="performance-activity-group performance-activity-group-finished"')

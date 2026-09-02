@@ -42,6 +42,7 @@ from .services.members import (
 from .services.target_display import (
     build_mail_metric_lines,
     build_remaining_values,
+    format_adjustment_breakdown,
     build_target_metric_text,
     build_target_actual_text,
     mail_period_heading,
@@ -126,6 +127,11 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                     adjustment_totals=month_adjustment_totals_by_code.get(code, {}),
                 ),
                 "month_rate": month_rate_text,
+                "month_metrics": metric_detail_by_code.get(code, {}).get("month", []),
+                "month_adjustment_note": format_adjustment_breakdown(
+                    code=code,
+                    totals=month_adjustment_totals_by_code.get(code, {}),
+                ),
                 "period_target": build_target_metric_text(
                     metrics=metrics_by_code[code],
                     target_values=period_target_values_by_code.get(code, {}),
@@ -138,6 +144,11 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                     adjustment_totals=period_adjustment_totals_by_code.get(code, {}),
                 ),
                 "period_rate": period_rate_text,
+                "period_metrics": metric_detail_by_code.get(code, {}).get("period", []),
+                "period_adjustment_note": format_adjustment_breakdown(
+                    code=code,
+                    totals=period_adjustment_totals_by_code.get(code, {}),
+                ),
             }
         )
 

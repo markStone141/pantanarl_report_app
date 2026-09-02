@@ -9,6 +9,7 @@ from apps.common.report_metrics import (
     SPLIT_COUNT_CODES,
     collect_actual_totals,
     format_metric_triples,
+    metric_detail_rows,
 )
 from apps.dairymetrics.models import MemberDailyMetricEntry
 from apps.targets.models import MonthTargetMetricValue, PeriodTargetMetricValue, TargetMetric
@@ -77,12 +78,14 @@ def build_report_dashboard_cards_context():
         period_start = current_period.start_date
         period_end = current_period.end_date
         current_period_label = current_period.name
+        current_period_range = f"{period_start.month}/{period_start.day}～{period_end.month}/{period_end.day}"
     else:
         period_target_values_by_code = {code: {} for code in target_codes}
         period_status = "-"
         period_start = None
         period_end = None
         current_period_label = "-"
+        current_period_range = "-"
 
     month_start = current_month
     if current_month.month == 12:
@@ -135,9 +138,19 @@ def build_report_dashboard_cards_context():
                 "month_target": month_target_text,
                 "month_actual": month_actual_text,
                 "month_rate": month_rate_text,
+                "month_metrics": metric_detail_rows(
+                    metrics=metrics_by_code[code],
+                    target_values=month_target_values_by_code.get(code, {}),
+                    actual_totals=month_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+                ),
                 "period_target": period_target_text,
                 "period_actual": period_actual_text,
                 "period_rate": period_rate_text,
+                "period_metrics": metric_detail_rows(
+                    metrics=metrics_by_code[code],
+                    target_values=period_target_values_by_code.get(code, {}),
+                    actual_totals=period_actual_totals_by_code.get(code, {"count": 0, "amount": 0}),
+                ),
             }
         )
 
@@ -168,5 +181,6 @@ def build_report_dashboard_cards_context():
         "target_month_status": month_status,
         "target_period_summary": current_period_label,
         "target_period_status": period_status,
+        "target_period_range": current_period_range,
         "target_progress_rows": target_progress_rows,
     }

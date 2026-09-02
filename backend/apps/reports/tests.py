@@ -59,21 +59,14 @@ class ReportMemberFilteringTests(TestCase):
         self.assertContains(response, "ユニセフ 報告へ")
         self.assertContains(response, "ワールドビジョン 報告へ")
 
-    def test_report_index_hides_legacy_metrics_links(self):
-        response = self.client.get(reverse("report_index"))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, reverse("performance_login"))
-        self.assertNotContains(response, 'href="/metrics/"', html=False)
-        self.assertNotContains(response, 'href="/metrics/admin/"', html=False)
-
-    def test_report_history_hides_legacy_metrics_links(self):
-        response = self.client.get(reverse("report_history"))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, reverse("performance_login"))
-        self.assertNotContains(response, 'href="/metrics/"', html=False)
-        self.assertNotContains(response, 'href="/metrics/admin/"', html=False)
+    def test_report_pages_hide_legacy_metrics_links(self):
+        for url_name in ("report_index", "report_history"):
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+                self.assertEqual(response.status_code, 200)
+                self.assertNotContains(response, reverse("performance_login"))
+                self.assertNotContains(response, 'href="/metrics/"', html=False)
+                self.assertNotContains(response, 'href="/metrics/admin/"', html=False)
 
     def test_report_index_shows_member_performance_link_for_authenticated_member(self):
         member_user = get_user_model().objects.create_user(username="report_member_nav", password="x", is_staff=False)
@@ -778,6 +771,16 @@ class ReportTargetMonthSelectionTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["target_period_summary"], period.name)
         self.assertEqual(response.context["target_period_status"], "active")
+        self.assertEqual(
+            response.context["target_period_range"],
+            f"{period.start_date.month}/{period.start_date.day}～{period.end_date.month}/{period.end_date.day}",
+        )
+        self.assertContains(response, 'class="target-scope-overview"')
+        self.assertContains(response, "現在路程")
+        self.assertContains(response, "進行中")
+        self.assertContains(response, 'class="target-progress-grid"')
+        self.assertContains(response, 'class="target-progress-value target-progress-value--actual"')
+        self.assertContains(response, "7,777")
         period.refresh_from_db()
         self.assertEqual(period.status, "active")
 

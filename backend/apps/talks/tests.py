@@ -430,10 +430,12 @@ class TalksFilteringAndUnreadTests(TalksBaseTestCase):
 
 
 class TalksAdminPermissionTests(TalksBaseTestCase):
-    def test_tag_manage_requires_admin(self):
+    def test_management_pages_require_admin(self):
         self._login_talks_member("alice", "pass1")
-        response = self.client.get(reverse("talks_tag_manage"))
-        self.assertRedirects(response, reverse("talks_index"))
+        for url_name in ("talks_tag_manage", "talks_deleted_posts_manage"):
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+                self.assertRedirects(response, reverse("talks_index"))
 
     def test_role_admin_can_access_tag_manage_without_talks_flag(self):
         self._set_role_admin_session()
@@ -504,11 +506,6 @@ class TalksAdminPermissionTests(TalksBaseTestCase):
         self.assertRedirects(response, reverse("talks_detail", args=[self.post1.id]))
         self.post1.refresh_from_db()
         self.assertEqual(self.post1.title, "Admin Edited")
-
-    def test_deleted_posts_manage_requires_admin(self):
-        self._login_talks_member("alice", "pass1")
-        response = self.client.get(reverse("talks_deleted_posts_manage"))
-        self.assertRedirects(response, reverse("talks_index"))
 
     def test_admin_can_restore_deleted_post(self):
         self.post1.is_deleted = True

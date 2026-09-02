@@ -4,23 +4,9 @@
 {% block title %}メール連携設定 | 管理者ページ{% endblock %}
 
 {% block content %}
-<div class="container">
-  <header id="dashboard-topbar" class="topbar topbar-desktop-expanded topbar-nav-always dashboard-drawer-topbar">
-    <div>
-      <strong>メール連携設定</strong>
-      <div class="muted topbar-muted">Gmail連携の設定値とテスト送信先の確認を管理します。</div>
-    </div>
-    <button id="dashboard-drawer-toggle" type="button" class="btn-inline dashboard-drawer-toggle" aria-label="Open menu" aria-expanded="false">
-      <i class="fa-solid fa-bars" aria-hidden="true"></i>
-    </button>
-    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
-      {% for url_name, label in nav_items %}
-      <a href="{% url url_name %}">{{ label }}</a>
-      {% endfor %}
-      <a href="{% url 'logout' %}" class="logout-link">ログアウト</a>
-    </nav>
-  </header>
-  <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
+<div class="app-shell">
+  {% include "includes/app_navigation.html" with page_title="メール連携設定" page_subtitle="Gmail連携の設定値とテスト送信先の確認を管理します。" %}
+  <main class="container app-shell-content">
 
   {% if status_message %}
   <div class="note mt-12">{{ status_message }}</div>
@@ -125,6 +111,7 @@
     <p class="muted">まだテスト送信履歴はありません。</p>
     {% endif %}
   </section>
+  </main>
 </div>
-<script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

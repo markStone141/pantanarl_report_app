@@ -3,6 +3,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.contrib.auth import get_user_model
+from django.contrib.staticfiles import finders
 from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import TestCase
@@ -291,9 +292,13 @@ class TestimonyArticleListTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("testimony_article_list"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, ".testimony-topbar")
-        self.assertContains(response, "z-index: 1520")
-        self.assertContains(response, "z-index: 1510")
+        self.assertContains(response, "testimony/app.css")
+        css_path = finders.find("testimony/app.css")
+        self.assertIsNotNone(css_path)
+        css = Path(css_path).read_text(encoding="utf-8")
+        self.assertIn(".testimony-topbar", css)
+        self.assertIn("z-index: 1520", css)
+        self.assertIn("z-index: 1510", css)
 
     def test_performance_member_dashboard_links_to_testimony(self):
         self.client.force_login(self.user)
@@ -366,7 +371,11 @@ class TestimonyArticleListTests(TestCase):
         self.assertEqual(admin_response.status_code, 200)
         self.assertContains(admin_response, "商材管理")
         self.assertContains(admin_response, "商材を追加")
-        self.assertContains(admin_response, "testimony-product-actions .btn-danger")
+        self.assertContains(admin_response, "testimony/app.css")
+        css_path = finders.find("testimony/app.css")
+        self.assertIsNotNone(css_path)
+        css = Path(css_path).read_text(encoding="utf-8")
+        self.assertIn(".testimony-product-actions .btn-danger", css)
 
     def test_article_list_emphasizes_product_as_badge(self):
         self.client.force_login(self.user)

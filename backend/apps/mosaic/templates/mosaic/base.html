@@ -8,14 +8,14 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mosaic-page">
+<div class="app-shell mosaic-page">
   <header id="dashboard-topbar" class="app-page-header dashboard-drawer-topbar">
     <div>
       <span class="app-page-eyebrow">STORE WORKSPACE</span>
       <strong>モザイクモール港北</strong>
       <div class="muted">接客ログと決済実績を記録します。</div>
     </div>
-    <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="メニューを開く">
+    <button id="dashboard-drawer-toggle" class="ui-icon-button dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="メニューを開く">
       <i class="fa-solid fa-bars" aria-hidden="true"></i>
     </button>
   </header>
@@ -37,17 +37,19 @@
     </nav>
     <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
 
-  {% if messages %}
-  <div class="mosaic-messages">
-    {% for message in messages %}
-    <div class="ui-feedback ui-feedback--success" role="status">{{ message }}</div>
-    {% endfor %}
-  </div>
-  {% endif %}
+  <main class="container app-shell-content mosaic-content">
+    {% if messages %}
+    <div class="mosaic-messages">
+      {% for message in messages %}
+      <div class="ui-feedback ui-feedback--success" role="status">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
 
-  {% block mosaic_content %}{% endblock %}
+    {% block mosaic_content %}{% endblock %}
+  </main>
 </div>
-<script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 <script>
   (function () {
     document.addEventListener("submit", function (event) {

@@ -1,0 +1,27 @@
+<div class="target-scope-overview" aria-label="目標の集計期間">
+  <section class="target-scope-panel target-scope-panel--month">
+    <div class="target-scope-panel__head">
+      <span class="target-scope-panel__icon" aria-hidden="true"><i class="fa-regular fa-calendar"></i></span>
+      <span class="target-scope-panel__label">対象月</span>
+      <span class="target-scope-status{% if target_month_status == 'active' %} is-active{% elif target_month_status == 'planned' %} is-planned{% elif target_month_status == 'finished' %} is-finished{% else %} is-unset{% endif %}">
+        {% if target_month_status == "active" %}進行中{% elif target_month_status == "planned" %}予定{% elif target_month_status == "finished" %}終了{% else %}未設定{% endif %}
+      </span>
+    </div>
+    <strong class="target-scope-panel__value">{{ target_month_summary|default:"-" }}</strong>
+    <span class="target-scope-panel__caption">月間目標の集計対象</span>
+  </section>
+
+  <section class="target-scope-panel target-scope-panel--period">
+    <div class="target-scope-panel__head">
+      <span class="target-scope-panel__icon" aria-hidden="true"><i class="fa-solid fa-route"></i></span>
+      <span class="target-scope-panel__label">現在路程</span>
+      <span class="target-scope-status{% if target_period_status == 'active' %} is-active{% elif target_period_status == 'planned' %} is-planned{% elif target_period_status == 'finished' %} is-finished{% else %} is-unset{% endif %}">
+        {% if target_period_status == "active" %}進行中{% elif target_period_status == "planned" %}予定{% elif target_period_status == "finished" %}終了{% else %}未設定{% endif %}
+      </span>
+    </div>
+    <strong class="target-scope-panel__value">{{ target_period_summary|default:"-" }}</strong>
+    <span class="target-scope-panel__caption">
+      {% if target_period_range and target_period_range != "-" %}{{ target_period_range }}{% else %}対象期間が設定されていません{% endif %}
+    </span>
+  </section>
+</div>

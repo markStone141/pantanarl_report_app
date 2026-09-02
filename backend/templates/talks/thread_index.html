@@ -33,8 +33,8 @@
         </div>
         <div class="knowledge-filter-tags" data-tag-group="desktop">
           {% for tag in available_tags %}
-            <label class="badge {% if forloop.counter > 10 %}is-hidden-default{% endif %}" data-tag-option style="{% if forloop.counter > 10 %}display:none; {% endif %}cursor:pointer; padding:7px 10px; border:1px solid #bcd4f1; background:{% if tag in selected_tags %}var(--brand){% else %}var(--brand-soft){% endif %}; color:{% if tag in selected_tags %}#fff{% else %}#1a4f87{% endif %};">
-              <input type="checkbox" name="tag" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} style="width:auto; min-height:0; margin-right:6px;">{{ tag }}
+            <label class="badge knowledge-tag-option{% if tag in selected_tags %} is-selected{% endif %} {% if forloop.counter > 10 %}is-hidden-default{% endif %}" data-tag-option{% if forloop.counter > 10 %} style="display:none;"{% endif %}>
+              <input class="knowledge-tag-checkbox" type="checkbox" name="tag" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %}>{{ tag }}
             </label>
           {% endfor %}
         </div>
@@ -251,8 +251,8 @@
           </div>
           <div class="knowledge-filter-tags" data-tag-group="mobile">
             {% for tag in available_tags %}
-              <label class="badge {% if forloop.counter > 10 %}is-hidden-default{% endif %}" data-tag-option style="{% if forloop.counter > 10 %}display:none; {% endif %}cursor:pointer; padding:7px 10px; border:1px solid #bcd4f1; background:{% if tag in selected_tags %}var(--brand){% else %}var(--brand-soft){% endif %}; color:{% if tag in selected_tags %}#fff{% else %}#1a4f87{% endif %};">
-                <input type="checkbox" name="tag" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} style="width:auto; min-height:0; margin-right:6px;">{{ tag }}
+              <label class="badge knowledge-tag-option{% if tag in selected_tags %} is-selected{% endif %} {% if forloop.counter > 10 %}is-hidden-default{% endif %}" data-tag-option{% if forloop.counter > 10 %} style="display:none;"{% endif %}>
+                <input class="knowledge-tag-checkbox" type="checkbox" name="tag" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %}>{{ tag }}
               </label>
             {% endfor %}
           </div>

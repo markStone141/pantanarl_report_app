@@ -1,0 +1,22 @@
+<section class="target-progress-metric">
+  <div class="target-progress-metric__head">
+    <span>{{ metric.label }}</span>
+    <strong class="target-progress-rate is-{{ metric.rate_status }}">{{ metric.rate }}</strong>
+  </div>
+  <div class="target-progress-values">
+    <div class="target-progress-value target-progress-value--actual">
+      <span>実績</span>
+      <strong>{{ metric.actual_text }}<small>{% if metric.unit == "yen" %}円{% elif metric.unit == "count" %}件{% else %}{{ metric.unit }}{% endif %}</small></strong>
+    </div>
+    <span class="target-progress-values__separator" aria-hidden="true">/</span>
+    <div class="target-progress-value">
+      <span>目標</span>
+      <strong>{{ metric.target_text }}<small>{% if metric.unit == "yen" %}円{% elif metric.unit == "count" %}件{% else %}{{ metric.unit }}{% endif %}</small></strong>
+    </div>
+  </div>
+  {% if metric.rate_value is not None %}
+  <div class="target-progress-track" role="progressbar" aria-label="{{ metric.label }}の達成率" aria-valuenow="{{ metric.rate_width|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
+    <span class="is-{{ metric.rate_status }}" style="width: {{ metric.rate_width|floatformat:1 }}%"></span>
+  </div>
+  {% endif %}
+</section>

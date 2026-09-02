@@ -4,7 +4,7 @@
 
 {% block testimony_content %}
 <article class="card testimony-section">
-  <h2 style="margin-bottom:10px;">記事入力</h2>
+  <h2 class="testimony-form-heading">記事入力</h2>
   <form method="post" class="stack">{% csrf_token %}
     {{ form.as_p }}
     <div class="testimony-form-actions">

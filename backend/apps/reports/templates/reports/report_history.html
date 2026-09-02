@@ -14,12 +14,12 @@
   </nav>
 
   <section class="card mt-16 report-history-card">
-    <div class="row mb-10 report-filter-row" style="gap:8px; align-items:center;">
+    <div class="row mb-10 report-filter-row">
       <h3>送信済みデータ</h3>
       <button type="button" id="report-filter-fab" class="ui-button ui-button--secondary report-filter-fab" aria-label="部門フィルタを開く" aria-expanded="false">
         <i class="fa-solid fa-filter" aria-hidden="true"></i> フィルタ
       </button>
-      <div id="report-filter-panel" class="inline-row report-filter-panel" style="gap:6px;">
+      <div id="report-filter-panel" class="inline-row report-filter-panel">
         <button type="button" id="report-filter-close" class="ui-icon-button report-filter-close" aria-label="部門フィルタを閉じる" title="閉じる">
           <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>
@@ -55,7 +55,7 @@
       <input type="hidden" name="date_from" value="{{ date_from }}">
       <input type="hidden" name="date_to" value="{{ date_to }}">
 
-      <div class="row mb-10 report-bulk-actions" style="gap:8px; justify-content:flex-start;">
+      <div class="row mb-10 report-bulk-actions">
         <button type="button" class="ui-button ui-button--secondary" id="select-visible-btn">全選択</button>
         <button type="button" class="ui-button ui-button--quiet" id="clear-visible-btn">選択解除</button>
         <button type="submit" class="ui-button ui-button--danger" id="bulk-delete-btn">選択削除</button>
@@ -94,7 +94,7 @@
             </td>
           </tr>
           <tr class="report-history-detail-row" data-dept="{{ report.department.code }}" data-detail-row="1">
-            <td colspan="8" style="background: #fafcfd;">
+            <td colspan="8" class="report-history-detail-cell">
               <strong>明細:</strong>
               {% for line in report.lines.all %}
                 {% if not forloop.first %} / {% endif %}

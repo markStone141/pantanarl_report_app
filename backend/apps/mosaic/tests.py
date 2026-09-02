@@ -206,8 +206,12 @@ class MosaicAppTests(TestCase):
 
         response = self.client.get(reverse("mosaic_master_create", args=["result-type"]))
 
+        self.assertContains(response, '<div class="app-shell mosaic-page">', html=False)
         self.assertContains(response, 'class="app-page-header dashboard-drawer-topbar"', html=False)
+        self.assertContains(response, '<main class="container app-shell-content mosaic-content">', html=False)
         self.assertContains(response, 'class="app-side-nav dashboard-drawer-nav"', html=False)
+        self.assertContains(response, 'class="ui-icon-button dashboard-drawer-toggle"', html=False)
+        self.assertNotContains(response, 'class="btn-inline dashboard-drawer-toggle"', html=False)
         self.assertContains(response, reverse("mosaic_dashboard"))
         self.assertContains(response, reverse("mosaic_interaction_create"))
         self.assertContains(response, reverse("mosaic_interaction_list"))

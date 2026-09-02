@@ -1,53 +1,61 @@
-<div class="row">
+<div class="performance-record-panel-heading">
   <div>
     {% if today_detail_tabbed %}<h4 class="performance-record-panel-title">本日の決済詳細</h4>{% else %}<h3>本日の決済詳細</h3>{% endif %}
     {% if not today_detail_tabbed %}<div class="muted">{{ today_detail_date|date:"Y/m/d" }} の選択部署決済明細です。</div>{% endif %}
   </div>
+  <span class="performance-record-panel-count">{{ today_transaction_rows|length }}件</span>
 </div>
 {% if today_transaction_rows %}
-<div class="mt-12">
-  <table class="mobile-card-table performance-recent-detail-table">
-    <thead>
-      <tr>
-        <th>メンバー</th>
-        <th>現場</th>
-        <th>区分</th>
-        <th>金額</th>
-        <th>詳細</th>
-        <th>操作</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in today_transaction_rows %}
-      <tr>
-        <td data-label="メンバー">{{ row.member_name }}</td>
-        <td data-label="現場">{{ row.location_name }}</td>
-        <td data-label="区分">{{ row.type_text }}</td>
-        <td data-label="金額">{{ row.amount_text }}</td>
-        <td data-label="詳細">
-          <details>
-            <summary>内容</summary>
-            <div class="mt-10 muted">{{ row.detail_text }}</div>
-            {% if row.comment %}<div class="mt-8">{{ row.comment }}</div>{% endif %}
-          </details>
-        </td>
-        <td data-label="操作">
+<div class="performance-record-list mt-12">
+  {% for row in today_transaction_rows %}
+  <article class="performance-record-card performance-transaction-record-card">
+    <div class="performance-record-card-head">
+      <div class="performance-record-person">
+        <span>メンバー</span>
+        <strong>{{ row.member_name }}</strong>
+      </div>
+      <span class="performance-record-type-badge">{{ row.type_text }}</span>
+    </div>
+    <div class="performance-record-card-main">
+      <div class="performance-record-primary-value">
+        <span>決済金額</span>
+        <strong>{{ row.amount_text }}</strong>
+      </div>
+      <div class="performance-record-location">
+        <span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> 現場</span>
+        <strong>{{ row.location_name }}</strong>
+      </div>
+    </div>
+    <details class="performance-record-details">
+      <summary><span>詳細を見る</span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary>
+      <div class="performance-record-detail-body">
+        <div>
+          <span>属性</span>
+          <strong>{{ row.detail_text }}</strong>
+        </div>
+        {% if row.comment %}
+        <div>
+          <span>コメント</span>
+          <p>{{ row.comment }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </details>
+    <div class="performance-record-actions" aria-label="{{ row.member_name }}の決済操作">
           <a class="ui-icon-button icon-btn" href="{{ row.edit_url }}?next={{ today_detail_next_url|urlencode }}" aria-label="{{ row.member_name }}の決済を編集" title="編集">
             <i class="fa-solid fa-pen"></i>
           </a>
-          <form method="post" action="{{ row.delete_url }}" style="display:inline;" onsubmit="return confirm('この決済明細を取り消します。日次実績と部署サマリからも差し引かれます。よろしいですか？');">
+          <form method="post" action="{{ row.delete_url }}" class="performance-record-delete-form" onsubmit="return confirm('この決済明細を取り消します。日次実績と部署サマリからも差し引かれます。よろしいですか？');">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ today_detail_next_url }}">
             <button class="ui-icon-button ui-icon-button--danger icon-btn icon-btn-danger" type="submit" aria-label="{{ row.member_name }}の決済を取り消す" title="取り消す">
               <i class="fa-solid fa-trash"></i>
             </button>
           </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    </div>
+  </article>
+  {% endfor %}
 </div>
 {% else %}
-<p class="muted mt-12">当日の決済明細はありません。</p>
+<div class="performance-record-empty mt-12"><i class="fa-regular fa-credit-card" aria-hidden="true"></i><p>当日の決済明細はありません。</p></div>
 {% endif %}

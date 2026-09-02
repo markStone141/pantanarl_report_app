@@ -4,107 +4,17 @@
 {% block title %}分析する | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=26" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=28" />
 {% endblock %}
 
 {% block content %}
-<div class="container">
-  <header id="dashboard-topbar" class="topbar dashboard-drawer-topbar topbar-nav-always">
-    <div>
-      <strong>分析する</strong>
-      <div class="topbar-muted">
-        {% if is_admin %}
-        {% if selected_member %}
-        {{ selected_member.name }}さん / {{ selected_department.name }} の分析
-        {% else %}
-        {{ selected_department.name }} の全体分析
-        {% endif %}
-        {% else %}
-        {{ member.name }}さん / {{ selected_department.name }} の分析
-        {% endif %}
-      </div>
-    </div>
-    <button id="dashboard-drawer-toggle" class="btn-inline dashboard-drawer-toggle" type="button" aria-controls="dashboard-drawer-nav" aria-expanded="false" aria-label="Open menu">
-      <i class="fa-solid fa-bars" aria-hidden="true"></i>
-    </button>
-    <nav id="dashboard-drawer-nav" class="dashboard-drawer-nav">
-      {% if is_admin %}
-      <a href="{% url 'performance_index' %}">管理者用ダッシュボード</a>
-      {% if selected_member %}
-      <a href="{% url 'performance_member_insight' selected_member.id selected_department.id %}">実績管理ダッシュボード</a>
-      <a href="{% url 'performance_member_history_insight' selected_member.id selected_department.id %}">過去の実績を見る</a>
-      {% else %}
-      <a href="{% url 'performance_history' %}">過去の実績を見る</a>
-      {% endif %}
-      <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
-      <a href="{% url 'dairymetrics_metrics_report' %}">振り返りレポート</a>
-      <a href="{% url 'dashboard_index' %}">総合管理者画面</a>
-      <a href="{% url 'talks_index' %}">お知らせ</a>
-      {% else %}
-      <a href="{% url 'performance_member_dashboard' %}">実績管理ダッシュボード</a>
-      <a href="{% url 'dairymetrics_entry_v2_transaction_demo' %}">決済入力</a>
-      <a href="{% url 'performance_member_history' %}">過去の実績を見る</a>
-      <a href="{% url 'dairymetrics_metrics_v2_demo' %}">分析する</a>
-      <a href="{% url 'dairymetrics_metrics_report' %}">振り返りレポート</a>
-      <a href="{% url 'talks_index' %}">お知らせ</a>
-      {% endif %}
-      <a href="{% url 'dairymetrics_logout' %}" class="logout-link">Logout</a>
-    </nav>
-    <div id="dashboard-drawer-backdrop" class="dashboard-drawer-backdrop" hidden></div>
-  </header>
+<div class="app-shell">
+  {% include "includes/app_navigation.html" with page_title="分析する" page_subtitle=metrics_page_subtitle header_controls_template="dairymetrics/partials/metrics_v2_header_controls.html" %}
+  <main class="container app-shell-content">
 
-  <section class="card mt-16">
-    <div class="row">
-      <div>
-        <h2>集計条件</h2>
-        <div class="muted">月・路程・期間を切り替えて振り返りできます。</div>
-      </div>
-    </div>
-    <form method="get" class="grid mt-12 metrics-v2-filter-grid">
-      <div>
-        <select id="metrics-v2-department" name="department" aria-label="部署">
-          {% for department in departments %}
-          <option value="{{ department.code }}" {% if department.code == selected_department.code %}selected{% endif %}>{{ department.name }}</option>
-          {% endfor %}
-        </select>
-        {% if is_admin and selected_member %}
-        <input type="hidden" name="member" value="{{ selected_member.id }}">
-        {% endif %}
-      </div>
-      <div>
-        <select id="metrics-v2-scope" name="scope" data-metrics-v2-scope aria-label="集計期間">
-          <option value="recent" {% if scope_value == "recent" %}selected{% endif %}>過去30日間</option>
-          <option value="month" {% if scope_value == "month" %}selected{% endif %}>月</option>
-          <option value="period" {% if scope_value == "period" %}selected{% endif %}>路程</option>
-          <option value="custom" {% if scope_value == "custom" %}selected{% endif %}>期間指定</option>
-        </select>
-      </div>
-      <div data-metrics-v2-scope-field="month">
-        <input id="metrics-v2-month" type="month" name="month" value="{{ month_value }}" aria-label="対象月">
-      </div>
-      <div data-metrics-v2-scope-field="period">
-        <select id="metrics-v2-period" name="period_id" aria-label="対象路程">
-          <option value="">選択してください</option>
-          {% for period in period_options %}
-          <option value="{{ period.id }}" {% if period.id == selected_period_id %}selected{% endif %}>{{ period.name }}（{{ period.start_date|date:"Y/m/d" }} - {{ period.end_date|date:"Y/m/d" }}）</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div data-metrics-v2-scope-field="custom">
-        <input id="metrics-v2-start-date" type="date" name="start_date" value="{{ start_date_value }}" aria-label="開始日">
-      </div>
-      <div data-metrics-v2-scope-field="custom">
-        <input id="metrics-v2-end-date" type="date" name="end_date" value="{{ end_date_value }}" aria-label="終了日">
-      </div>
-      <div>
-        <button type="submit" class="ui-button ui-button--secondary">表示</button>
-      </div>
-    </form>
-    <div class="mt-12">
-      <a class="ui-button ui-button--secondary" href="{% url 'dairymetrics_metrics_report' %}?department={{ selected_department.code }}&scope={{ scope_value }}{% if scope.month_start %}&month={{ month_value }}{% endif %}{% if scope.period %}&period_id={{ scope.period.id }}{% endif %}">この条件で振り返りレポートを見る</a>
-    </div>
-  </section>
+  <div class="metrics-page-actions mt-16">
+    <a class="ui-button ui-button--secondary" href="{% url 'dairymetrics_metrics_report' %}?department={{ selected_department.code }}&scope={{ scope_value }}{% if scope.month_start %}&month={{ month_value }}{% endif %}{% if scope.period %}&period_id={{ scope.period.id }}{% endif %}">この条件で振り返りレポートを見る</a>
+  </div>
 
   {{ metrics_v2_payload_json|json_script:"metrics-v2-dashboard-data" }}
 
@@ -116,17 +26,20 @@
     </div>
     {% endif %}
     <div class="metrics-v2-summary-panels">
-      <article id="metrics-v2-summary-panel-overall" class="card metrics-v2-summary-card" {% if metrics_v2_payload.personal_summary %}role="tabpanel" aria-labelledby="metrics-v2-summary-tab-overall" data-metrics-v2-summary-panel="overall" hidden{% endif %}>
-        <div class="row">
-          <strong>全体の指標</strong>
-          <span class="badge">{{ metrics_v2_payload.scope.label }}</span>
-        </div>
+      <article id="metrics-v2-summary-panel-overall" class="card metrics-v2-summary-card ui-chart-card" {% if metrics_v2_payload.personal_summary %}role="tabpanel" aria-labelledby="metrics-v2-summary-tab-overall" data-metrics-v2-summary-panel="overall" hidden{% endif %}>
+        <header class="ui-chart-card__header">
+          <div class="ui-chart-card__identity">
+            <span class="ui-chart-card__kicker">Overall performance</span>
+            <h2 class="ui-chart-card__title">全体の指標</h2>
+            <p class="ui-chart-card__description">対象部署の達成率と平均値をまとめて確認できます。</p>
+          </div>
+          <span class="ui-chart-card__meta">{{ metrics_v2_payload.scope.label }}</span>
+        </header>
+        <div class="ui-chart-card__body">
         <div class="grid grid-2 mt-12">
           {% for rate in metrics_v2_payload.overall_summary.rates %}
-          <div class="metric-card metrics-v2-rate-card">
-            <div class="row">
-              <strong>{{ rate.label }}</strong>
-            </div>
+          <div class="metric-card metrics-v2-rate-card metrics-v2-stat-card">
+            <span class="metrics-v2-stat-label">{{ rate.label }}</span>
             <div class="metrics-v2-mini-donut">
               <canvas class="metrics-v2-donut-chart" data-chart-values="{{ rate.chart_data|join:',' }}" width="132" height="132"></canvas>
               <div class="metrics-v2-mini-donut-value">{{ rate.value }}</div>
@@ -137,29 +50,33 @@
         </div>
         <div class="grid grid-2 mt-12">
           {% for item in metrics_v2_payload.overall_summary.averages %}
-          <div class="metric-card">
-            <div class="muted">{{ item.label }}</div>
-            <strong>{{ item.value }}</strong>
+          <div class="metric-card metrics-v2-stat-card metrics-v2-average-card">
+            <span class="metrics-v2-stat-label">{{ item.label }}</span>
+            <strong class="metrics-v2-stat-value">{{ item.value }}</strong>
             {% if item.helper %}
             <div class="muted mt-6">{{ item.helper }}</div>
             {% endif %}
           </div>
           {% endfor %}
         </div>
+        </div>
       </article>
 
       {% if metrics_v2_payload.personal_summary %}
-      <article id="metrics-v2-summary-panel-personal" class="card metrics-v2-summary-card" role="tabpanel" aria-labelledby="metrics-v2-summary-tab-personal" data-metrics-v2-summary-panel="personal">
-        <div class="row">
-          <strong>自分の指標</strong>
-          <span class="badge">{{ metrics_v2_payload.scope.label }}</span>
-        </div>
+      <article id="metrics-v2-summary-panel-personal" class="card metrics-v2-summary-card ui-chart-card" role="tabpanel" aria-labelledby="metrics-v2-summary-tab-personal" data-metrics-v2-summary-panel="personal">
+        <header class="ui-chart-card__header">
+          <div class="ui-chart-card__identity">
+            <span class="ui-chart-card__kicker">My performance</span>
+            <h2 class="ui-chart-card__title">自分の指標</h2>
+            <p class="ui-chart-card__description">現在の達成率と平均値をひと目で確認できます。</p>
+          </div>
+          <span class="ui-chart-card__meta">{{ metrics_v2_payload.scope.label }}</span>
+        </header>
+        <div class="ui-chart-card__body">
         <div class="grid grid-2 mt-12">
           {% for rate in metrics_v2_payload.personal_summary.rates %}
-          <div class="metric-card metrics-v2-rate-card">
-            <div class="row">
-              <strong>{{ rate.label }}</strong>
-            </div>
+          <div class="metric-card metrics-v2-rate-card metrics-v2-stat-card">
+            <span class="metrics-v2-stat-label">{{ rate.label }}</span>
             <div class="metrics-v2-mini-donut">
               <canvas class="metrics-v2-donut-chart" data-chart-values="{{ rate.chart_data|join:',' }}" width="132" height="132"></canvas>
               <div class="metrics-v2-mini-donut-value">{{ rate.value }}</div>
@@ -170,14 +87,15 @@
         </div>
         <div class="grid grid-2 mt-12">
           {% for item in metrics_v2_payload.personal_summary.averages %}
-          <div class="metric-card">
-            <div class="muted">{{ item.label }}</div>
-            <strong>{{ item.value }}</strong>
+          <div class="metric-card metrics-v2-stat-card metrics-v2-average-card">
+            <span class="metrics-v2-stat-label">{{ item.label }}</span>
+            <strong class="metrics-v2-stat-value">{{ item.value }}</strong>
             {% if item.helper %}
             <div class="muted mt-6">{{ item.helper }}</div>
             {% endif %}
           </div>
           {% endfor %}
+        </div>
         </div>
       </article>
       {% endif %}
@@ -185,63 +103,45 @@
   </section>
 
   <section class="mt-16 grid grid-2 metrics-v2-history-grid">
-    <article class="card">
-      <div class="row">
-        <strong>月ごとの比較・推移</strong>
-      </div>
-      <div class="muted mt-6">直近6か月の金額と件数です。</div>
-      <div class="metrics-v2-chart-frame mt-12">
+    <article class="card ui-chart-card">
+      <header class="ui-chart-card__header"><div class="ui-chart-card__identity"><span class="ui-chart-card__kicker">Monthly trend</span><h2 class="ui-chart-card__title">月ごとの比較・推移</h2><p class="ui-chart-card__description">直近6か月の金額と件数です。</p></div></header>
+      <div class="ui-chart-card__body"><div class="metrics-v2-chart-frame ui-chart-frame">
         <canvas id="metrics-v2-month-history-chart" class="metrics-v2-history-chart" aria-label="月ごとの比較・推移"></canvas>
-      </div>
+        <p class="ui-chart-empty" data-chart-empty hidden>表示できる月別実績がありません。</p>
+      </div></div>
     </article>
-    <article class="card">
-      <div class="row">
-        <strong>路程ごとの比較・推移</strong>
-      </div>
-      <div class="muted mt-6">直近6路程の金額と件数です。</div>
-      <div class="metrics-v2-chart-frame mt-12">
+    <article class="card ui-chart-card">
+      <header class="ui-chart-card__header"><div class="ui-chart-card__identity"><span class="ui-chart-card__kicker">Period trend</span><h2 class="ui-chart-card__title">路程ごとの比較・推移</h2><p class="ui-chart-card__description">直近6路程の金額と件数です。</p></div></header>
+      <div class="ui-chart-card__body"><div class="metrics-v2-chart-frame ui-chart-frame">
         <canvas id="metrics-v2-period-history-chart" class="metrics-v2-history-chart" aria-label="路程ごとの比較・推移"></canvas>
-      </div>
+        <p class="ui-chart-empty" data-chart-empty hidden>表示できる路程別実績がありません。</p>
+      </div></div>
     </article>
   </section>
 
-  <section class="card mt-16">
-    <div class="row">
-      <div>
-        <h3>ランキングモード</h3>
-        <div class="muted">他メンバーとの比較を客観的に確認できます。</div>
-      </div>
-    </div>
-    <div class="metrics-v2-chart-frame metrics-v2-chart-frame-ranking mt-12">
+  <section class="card ui-chart-card mt-16">
+    <header class="ui-chart-card__header"><div class="ui-chart-card__identity"><span class="ui-chart-card__kicker">Member ranking</span><h2 class="ui-chart-card__title">ランキングモード</h2><p class="ui-chart-card__description">他メンバーとの比較を客観的に確認できます。</p></div><div class="ui-chart-card__controls"><label for="metrics-v2-ranking-metric">指標<select id="metrics-v2-ranking-metric" data-metrics-v2-ranking-select>{% for option in metrics_v2_payload.ranking.options %}<option value="{{ option.key }}" {% if option.key == metrics_v2_payload.ranking.default_metric %}selected{% endif %}>{{ option.label }}</option>{% endfor %}</select></label></div></header>
+    <div class="ui-chart-card__body"><div class="metrics-v2-chart-frame metrics-v2-chart-frame-ranking ui-chart-frame">
       <canvas id="metrics-v2-ranking-chart" class="metrics-v2-ranking-chart" aria-label="ランキング"></canvas>
-    </div>
-    <div class="mt-12">
-      <label for="metrics-v2-ranking-metric">指標</label>
-      <select id="metrics-v2-ranking-metric" data-metrics-v2-ranking-select>
-        {% for option in metrics_v2_payload.ranking.options %}
-        <option value="{{ option.key }}" {% if option.key == metrics_v2_payload.ranking.default_metric %}selected{% endif %}>{{ option.label }}</option>
-        {% endfor %}
-      </select>
-    </div>
+      <p class="ui-chart-empty" data-chart-empty hidden>ランキング対象の実績がありません。</p>
+    </div></div>
   </section>
 
   <section class="mt-16">
     <div class="grid grid-3 metrics-v2-distribution-grid">
       {% for card in metrics_v2_payload.distribution_cards %}
-      <article class="card">
-        <div class="row">
-          <strong>{{ card.title }}</strong>
-          <span class="badge">{{ card.total_text }}</span>
-        </div>
-        <div class="metrics-v2-chart-frame metrics-v2-chart-frame-distribution mt-12">
+      <article class="card ui-chart-card">
+        <header class="ui-chart-card__header"><div class="ui-chart-card__identity"><span class="ui-chart-card__kicker">Audience mix</span><h2 class="ui-chart-card__title">{{ card.title }}</h2></div><span class="ui-chart-card__meta">{{ card.total_text }}</span></header>
+        <div class="ui-chart-card__body"><div class="metrics-v2-chart-frame metrics-v2-chart-frame-distribution ui-chart-frame ui-chart-frame--compact">
           <canvas
             class="metrics-v2-distribution-chart"
             aria-label="{{ card.title }}"
             data-chart-labels="{{ card.labels|join:'|' }}"
             data-chart-values="{{ card.counts|join:',' }}"
           ></canvas>
+          <p class="ui-chart-empty" data-chart-empty hidden>表示できる属性データがありません。</p>
         </div>
-        <div class="metrics-v2-distribution-list mt-12">
+        {% if card.has_data %}<div class="metrics-v2-distribution-list ui-chart-legend">
           {% for row in card.rows %}
           <div class="metrics-v2-distribution-row">
             <span class="metrics-v2-distribution-label">
@@ -251,33 +151,23 @@
             <span class="muted">{{ row.count_text }} / {{ row.percent_text }}</span>
           </div>
           {% endfor %}
+        </div>{% endif %}
         </div>
       </article>
       {% endfor %}
     </div>
   </section>
 
-  <section class="card mt-16">
-    <div class="row">
-      <div>
-        <h3>属性別の平均金額</h3>
-        <div class="muted">年代・男女・国籍で平均金額の差を確認できます。</div>
-      </div>
-    </div>
-    <div class="mt-12">
-      <label for="metrics-v2-amount-mode">分類</label>
-      <select id="metrics-v2-amount-mode" data-metrics-v2-amount-select>
-        <option value="age">年代</option>
-        <option value="gender">男女</option>
-        <option value="nationality">国籍</option>
-      </select>
-    </div>
-    <div class="metrics-v2-chart-frame mt-12">
+  <section class="card ui-chart-card mt-16">
+    <header class="ui-chart-card__header"><div class="ui-chart-card__identity"><span class="ui-chart-card__kicker">Average amount</span><h2 class="ui-chart-card__title">属性別の平均金額</h2><p class="ui-chart-card__description">年代・男女・国籍で平均金額の差を確認できます。</p></div><div class="ui-chart-card__controls"><label for="metrics-v2-amount-mode">分類<select id="metrics-v2-amount-mode" data-metrics-v2-amount-select><option value="age">年代</option><option value="gender">男女</option><option value="nationality">国籍</option></select></label></div></header>
+    <div class="ui-chart-card__body"><div class="metrics-v2-chart-frame ui-chart-frame">
       <canvas id="metrics-v2-average-amount-chart" class="metrics-v2-history-chart" aria-label="属性別の平均金額"></canvas>
-    </div>
+      <p class="ui-chart-empty" data-chart-empty hidden>表示できる平均金額データがありません。</p>
+    </div></div>
   </section>
+  </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=8"></script>
-<script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=9"></script>
+<script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

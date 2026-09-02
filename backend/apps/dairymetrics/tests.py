@@ -887,11 +887,24 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("dairymetrics_metrics_v2_demo"))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<div class="app-shell">', html=False)
+        self.assertContains(response, '<main class="container app-shell-content">', html=False)
+        self.assertContains(response, 'class="app-side-nav dashboard-drawer-nav"', html=False)
+        self.assertContains(response, 'class="ui-icon-button dashboard-drawer-toggle"', html=False)
+        self.assertNotContains(response, 'class="btn-inline dashboard-drawer-toggle"', html=False)
         self.assertContains(response, "分析する")
-        self.assertContains(response, "集計条件")
+        self.assertContains(response, 'aria-label="分析の集計条件"', html=False)
+        self.assertNotContains(response, "<h2>集計条件</h2>", html=False)
+        header_html = response.content.decode("utf-8").split("</header>", 1)[0]
+        self.assertLess(header_html.index("分析する"), header_html.index("metrics-v2-department"))
+        self.assertLess(header_html.index("metrics-v2-department"), header_html.index("dashboard-drawer-toggle"))
         self.assertContains(response, "月ごとの比較・推移")
         self.assertContains(response, "路程ごとの比較・推移")
         self.assertContains(response, "ランキングモード")
+        self.assertContains(response, 'class="card ui-chart-card"', html=False)
+        self.assertContains(response, 'class="ui-chart-card__header"', html=False)
+        self.assertContains(response, 'class="metrics-v2-chart-frame ui-chart-frame"', html=False)
+        self.assertContains(response, "data-chart-empty", html=False)
         self.assertContains(response, "年代別決済比率")
         self.assertContains(response, "metrics-v2-dashboard-data")
         self.assertContains(response, reverse("performance_member_dashboard"))
@@ -1052,10 +1065,19 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<div class="app-shell metrics-report-page">', html=False)
+        self.assertContains(response, '<main class="container app-shell-content">', html=False)
+        self.assertContains(response, 'class="app-side-nav dashboard-drawer-nav"', html=False)
+        self.assertContains(response, 'class="ui-icon-button dashboard-drawer-toggle"', html=False)
+        self.assertNotContains(response, 'class="btn-inline dashboard-drawer-toggle"', html=False)
         self.assertContains(response, "振り返りレポート")
         self.assertContains(response, reverse("talks_index"))
         self.assertNotContains(response, 'href="/metrics/"', html=False)
-        self.assertContains(response, "出力条件")
+        self.assertContains(response, 'aria-label="振り返りレポートの出力条件"', html=False)
+        self.assertNotContains(response, "<h2>出力条件</h2>", html=False)
+        header_html = response.content.decode("utf-8").split("</header>", 1)[0]
+        self.assertLess(header_html.index("振り返りレポート"), header_html.index('name="department"'))
+        self.assertLess(header_html.index('name="department"'), header_html.index("dashboard-drawer-toggle"))
         self.assertContains(response, "目標との差分")
         self.assertContains(response, "補正実績")
         self.assertContains(response, "補正実績一覧")
@@ -1084,6 +1106,10 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "男女比")
         self.assertContains(response, "国籍比")
         self.assertContains(response, "属性別の平均金額")
+        self.assertContains(response, 'class="card ui-chart-card"', html=False)
+        self.assertContains(response, 'class="ui-chart-card__controls no-print"', html=False)
+        self.assertContains(response, 'class="metrics-v2-chart-frame ui-chart-frame"', html=False)
+        self.assertContains(response, "data-chart-empty", html=False)
         self.assertContains(response, "metrics-v2-dashboard-data")
         self.assertContains(response, "metrics-v2-distribution-chart")
         self.assertContains(response, "2件を見る")
@@ -1314,13 +1340,13 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, f"{self.period.start_date:%Y/%m/%d} - {self.period.end_date:%Y/%m/%d}")
         self.assertContains(response, "ランキングモード")
         self.assertContains(response, "属性別の平均金額")
-        self.assertContains(response, "管理者用ダッシュボード")
-        self.assertContains(response, "過去の実績を見る")
-        self.assertContains(response, "総合管理者画面")
+        self.assertContains(response, "実績管理")
+        self.assertContains(response, "過去の実績")
+        self.assertContains(response, "総合管理")
         self.assertContains(response, "決済入力")
         self.assertContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
         self.assertContains(response, "metrics_v2.js")
-        self.assertContains(response, "?v=8")
+        self.assertContains(response, "?v=9")
         self.assertNotContains(response, 'role="tablist"', html=False)
         self.assertContains(response, reverse("performance_member_insight", args=[self.member.id, self.department.id]))
         ranking_metric = response.context["metrics_v2_payload_json"]["ranking"]["metric_map"]["support_amount"]
@@ -1348,7 +1374,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertEqual(response.context["selected_period_id"], self.period.id)
         self.assertNotEqual(response.context["selected_period_id"], finished_period.id)
 
-    def test_metrics_v2_period_scope_uses_selected_non_planned_period_id(self):
+    def test_metrics_pages_use_selected_non_planned_period_id(self):
         finished_period = Period.objects.create(
             month=self.period.month,
             name="選択した終了済み路程",
@@ -1358,45 +1384,22 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         )
         self.client.force_login(self.admin)
 
-        response = self.client.get(
-            reverse("dairymetrics_metrics_v2_demo"),
-            {
-                "department": self.department.code,
-                "scope": "period",
-                "period_id": str(finished_period.id),
-            },
-        )
+        for url_name in ("dairymetrics_metrics_v2_demo", "dairymetrics_metrics_report"):
+            with self.subTest(url_name=url_name):
+                response = self.client.get(
+                    reverse(url_name),
+                    {
+                        "department": self.department.code,
+                        "scope": "period",
+                        "period_id": str(finished_period.id),
+                    },
+                )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["scope"].scope, "period")
-        self.assertEqual(response.context["scope"].period.id, finished_period.id)
-        self.assertEqual(response.context["selected_period_id"], finished_period.id)
-        self.assertContains(response, "選択した終了済み路程")
-
-    def test_metrics_report_period_scope_uses_selected_non_planned_period_id(self):
-        finished_period = Period.objects.create(
-            month=self.period.month,
-            name="レポートで選択した終了済み路程",
-            status=TARGET_STATUS_FINISHED,
-            start_date=self.period.start_date - timedelta(days=10),
-            end_date=self.period.start_date - timedelta(days=1),
-        )
-        self.client.force_login(self.admin)
-
-        response = self.client.get(
-            reverse("dairymetrics_metrics_report"),
-            {
-                "department": self.department.code,
-                "scope": "period",
-                "period_id": str(finished_period.id),
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["scope"].scope, "period")
-        self.assertEqual(response.context["scope"].period.id, finished_period.id)
-        self.assertEqual(response.context["selected_period_id"], finished_period.id)
-        self.assertContains(response, "レポートで選択した終了済み路程")
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context["scope"].scope, "period")
+                self.assertEqual(response.context["scope"].period.id, finished_period.id)
+                self.assertEqual(response.context["selected_period_id"], finished_period.id)
+                self.assertContains(response, "選択した終了済み路程")
 
     def test_metrics_v2_period_scope_without_active_period_uses_recent_not_finished(self):
         self.period.status = TARGET_STATUS_FINISHED

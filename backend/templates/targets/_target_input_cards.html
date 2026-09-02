@@ -1,0 +1,23 @@
+<div class="target-settings-department-grid">
+  {% for row in rows %}
+  <section class="target-settings-department-card">
+    <header>
+      <span>部署</span>
+      <h4>{{ row.label }}</h4>
+    </header>
+    <div class="target-settings-metric-grid">
+      {% for metric in row.metrics %}
+      <label class="target-settings-metric-field">
+        <span>{{ metric.label }}</span>
+        <span class="target-settings-input-shell">
+          <input type="text" inputmode="numeric" name="{{ metric.input_name }}" value="{{ metric.value }}" aria-label="{{ row.label }} {{ metric.label }}" />
+          <small>{% if metric.unit == "yen" %}円{% elif metric.unit == "count" %}件{% else %}{{ metric.unit }}{% endif %}</small>
+        </span>
+      </label>
+      {% empty %}
+      <p class="muted">設定できる目標項目がありません。</p>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>

@@ -171,7 +171,8 @@ def metric_detail_rows(*, metrics, target_values, actual_totals):
             total_refugee_count=actual_totals.get("refugee_count", 0),
             unit=metric.unit or "",
         )
-        rate = f"{(actual / target) * 100:.1f}%" if target > 0 else "-"
+        rate_value = (actual / target) * 100 if target > 0 else None
+        rate = f"{rate_value:.1f}%" if rate_value is not None else "-"
         rows.append(
             {
                 "code": metric.code,
@@ -182,6 +183,15 @@ def metric_detail_rows(*, metrics, target_values, actual_totals):
                 "target_text": format_metric_value(metric_code=metric.code, value=target, unit=metric.unit or ""),
                 "actual_text": format_metric_value(metric_code=metric.code, value=actual, unit=metric.unit or ""),
                 "rate": rate,
+                "rate_value": rate_value,
+                "rate_width": min(rate_value, 100) if rate_value is not None else 0,
+                "rate_status": (
+                    "complete"
+                    if rate_value is not None and rate_value >= 100
+                    else "progress"
+                    if rate_value is not None and rate_value > 0
+                    else "empty"
+                ),
             }
         )
     return rows

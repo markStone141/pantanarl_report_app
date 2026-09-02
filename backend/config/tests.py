@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory, SimpleTestCase
 from django.urls import reverse
@@ -25,3 +26,11 @@ class ErrorPageTests(SimpleTestCase):
                 self.assertIn(expected_title, content)
                 self.assertIn("前の画面へ戻る", content)
                 self.assertIn(f'href="{reverse("home")}"', content)
+
+
+class TestEnvironmentTests(SimpleTestCase):
+    def test_suite_uses_fast_password_hasher(self):
+        self.assertEqual(
+            settings.PASSWORD_HASHERS,
+            ["django.contrib.auth.hashers.MD5PasswordHasher"],
+        )

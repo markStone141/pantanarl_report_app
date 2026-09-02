@@ -10,7 +10,7 @@
       aria-selected="true"
       aria-controls="performance-record-panel-transactions"
       data-performance-record-tab="transactions"
-    >決済 <span class="performance-record-tab-count">{{ today_transaction_rows|length }}件</span></button>
+    ><i class="fa-regular fa-credit-card" aria-hidden="true"></i><span>決済</span><span class="performance-record-tab-count">{{ today_transaction_rows|length }}件</span></button>
     <button
       type="button"
       class="performance-record-tab ui-tab"
@@ -19,7 +19,7 @@
       aria-selected="false"
       aria-controls="performance-record-panel-mails"
       data-performance-record-tab="mails"
-    >メール <span class="performance-record-tab-count">{{ today_mail_rows|length }}件</span></button>
+    ><i class="fa-regular fa-envelope" aria-hidden="true"></i><span>メール</span><span class="performance-record-tab-count">{{ today_mail_rows|length }}件</span></button>
   </div>
   <div
     class="performance-record-panel mt-12"

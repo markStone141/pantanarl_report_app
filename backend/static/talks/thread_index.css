@@ -12,6 +12,22 @@
       overflow-y: auto;
       padding-right: 2px;
     }
+.knowledge-tag-option {
+      cursor: pointer;
+      padding: 7px 10px;
+      border: 1px solid #bcd4f1;
+      background: var(--brand-soft);
+      color: #1a4f87;
+    }
+.knowledge-tag-option.is-selected {
+      background: var(--brand);
+      color: #fff;
+    }
+.knowledge-tag-checkbox {
+      width: auto;
+      min-height: 0;
+      margin-right: 6px;
+    }
 .knowledge-filter-actions {
       display: flex;
       gap: 8px;

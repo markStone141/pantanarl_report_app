@@ -39,6 +39,52 @@ class MemberSettingsViewTests(TestCase):
         self.assertIn('event.target.closest("a[href]")', drawer_script)
         self.assertIn("window.location.assign(destination)", drawer_script)
 
+    def test_shared_mobile_drawer_stays_above_header_controls(self):
+        drawer_css = (Path(settings.BASE_DIR) / "static/dashboard/mobile_drawer.css").read_text(encoding="utf-8")
+
+        self.assertIn(".dashboard-drawer-topbar {\n    position: relative;\n    z-index: 250;", drawer_css)
+        self.assertIn(".dashboard-drawer-nav {", drawer_css)
+        self.assertIn("z-index: 280;", drawer_css)
+
+    def test_shared_chart_card_foundation_is_loaded(self):
+        base_template = (Path(settings.BASE_DIR) / "templates/base.html").read_text(encoding="utf-8")
+        chart_css = (Path(settings.BASE_DIR) / "static/chart_cards.css").read_text(encoding="utf-8")
+
+        self.assertIn("{% static 'chart_cards.css' %}?v=3", base_template)
+        for selector in (
+            ".ui-chart-card {",
+            ".ui-chart-card__header {",
+            ".ui-chart-card__body {",
+            ".ui-chart-frame {",
+            ".ui-chart-empty {",
+        ):
+            self.assertIn(selector, chart_css)
+        self.assertIn("max-width: 100%;", chart_css)
+
+    def test_all_canvas_templates_use_the_shared_chart_card_contract(self):
+        apps_root = Path(settings.BASE_DIR) / "apps"
+        canvas_templates = {}
+        for template in apps_root.rglob("*.html"):
+            content = template.read_text(encoding="utf-8")
+            canvas_count = content.count("<canvas")
+            if canvas_count:
+                canvas_templates[template.relative_to(apps_root).as_posix()] = (content, canvas_count)
+
+        self.assertEqual(
+            set(canvas_templates),
+            {
+                "dairymetrics/templates/dairymetrics/metrics_report.html",
+                "dairymetrics/templates/dairymetrics/metrics_v2.html",
+                "performance/templates/performance/history.html",
+                "performance/templates/performance/index.html",
+                "performance/templates/performance/member_detail.html",
+                "performance/templates/performance/member_history.html",
+            },
+        )
+        self.assertEqual(sum(count for _content, count in canvas_templates.values()), 19)
+        for content, _count in canvas_templates.values():
+            self.assertIn("ui-chart-card", content)
+
     def test_register_member_creates_record(self):
         response = self.client.post(
             reverse("member_create"),
@@ -248,6 +294,9 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "ID未登録")
         self.assertContains(response, "アドレス未登録")
+        self.assertContains(response, 'class="member-settings-card"')
+        self.assertContains(response, 'data-member-settings-items')
+        self.assertNotContains(response, 'class="mobile-card-table"')
 
     def test_member_create_page_renders(self):
         response = self.client.get(reverse("member_create"))
@@ -255,6 +304,22 @@ class MemberSettingsViewTests(TestCase):
         self.assertContains(response, "新規メンバー追加")
         self.assertContains(response, "UN活動コード")
         self.assertContains(response, "メールアドレス")
+        self.assertContains(response, 'class="member-editor-form"')
+        self.assertContains(response, 'class="member-editor-card"', count=3)
+        self.assertContains(response, "基本情報")
+        self.assertContains(response, "所属部署")
+        self.assertContains(response, "ログイン情報")
+
+    def test_member_edit_page_uses_editor_context(self):
+        member = Member.objects.create(name="UI Edit Member", is_active=True)
+
+        response = self.client.get(reverse("member_edit", args=[member.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="member-editor-context"')
+        self.assertContains(response, "編集中のメンバー")
+        self.assertContains(response, "UI Edit Member")
+        self.assertContains(response, ">メンバー編集</a>", html=False)
 
     def test_member_settings_filters_by_query(self):
         Member.objects.create(name="Alpha User", email="alpha@example.com")
@@ -745,19 +810,18 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         session["role"] = "admin"
         session.save()
 
-    def test_dashboard_nav_links_to_report_index(self):
+    def test_dashboard_navigation_links_to_daily_and_shared_content(self):
         response = self.client.get(reverse("dashboard_index"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, f'href="{reverse("report_index")}"', html=False)
-        self.assertContains(response, "報告入力")
-
-    def test_dashboard_nav_links_to_testimony(self):
-        response = self.client.get(reverse("dashboard_index"))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, f'href="{reverse("testimony_article_list")}"', html=False)
-        self.assertContains(response, "証を見る")
+        cases = (
+            ("report_index", "報告入力"),
+            ("testimony_article_list", "証を見る"),
+        )
+        for url_name, label in cases:
+            with self.subTest(url_name=url_name):
+                self.assertContains(response, f'href="{reverse(url_name)}"', html=False)
+                self.assertContains(response, label)
 
     def test_dashboard_uses_grouped_shared_navigation(self):
         response = self.client.get(reverse("dashboard_index"))
@@ -1334,6 +1398,24 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["target_period_summary"], period.name)
         self.assertEqual(response.context["target_period_status"], "active")
+        self.assertContains(response, 'class="target-scope-overview"')
+        self.assertContains(response, "現在路程")
+        self.assertContains(response, "進行中")
+        self.assertContains(response, 'class="target-progress-grid"')
+        self.assertContains(response, 'class="target-progress-value target-progress-value--actual"')
+        content = response.content.decode()
+        self.assertLess(content.index("提出状況一覧"), content.index("本日の部門別実績"))
+        self.assertLess(content.index("本日の部門別実績"), content.index("メール本文作成"))
+        submission_markup = content.split('class="dashboard-submission-table"', 1)[1].split(
+            'class="card ui-section mt-16 dashboard-department-section"', 1
+        )[0]
+        self.assertIn("<th>部署</th>", submission_markup)
+        self.assertIn("<th>ステータス</th>", submission_markup)
+        self.assertNotIn("<th>件数</th>", submission_markup)
+        self.assertIn("実績詳細を見る", submission_markup)
+        self.assertContains(response, 'class="dashboard-submission-status is-pending"')
+        self.assertContains(response, 'class="dashboard-department-card"')
+        self.assertContains(response, "個人成績を見る")
         row = next(r for r in response.context["target_progress_rows"] if r["label"] == "UN")
         self.assertIn("9999", row["period_target"])
         period.refresh_from_db()

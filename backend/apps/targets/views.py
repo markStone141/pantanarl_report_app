@@ -547,6 +547,8 @@ def _period_form_values(selected_period: Period | None, *, include_edit_id: bool
         "form_month": _month_value_from_date(selected_month),
         "form_sequence": selected_sequence,
         "form_status": selected_status,
+        "form_status_label": STATUS_LABELS.get(selected_status, selected_status),
+        "form_status_class": f"is-{selected_status}",
         "form_start_date": selected_start,
         "form_end_date": selected_end,
         "form_edit_period_id": selected_id,
@@ -587,14 +589,21 @@ def target_index(request: HttpRequest) -> HttpResponse:
         sort_value=period_sort,
         page_number=request.GET.get("period_page") or 1,
     )
+    current_month_status = _month_status(current_month)
+    current_period_status = _stored_period_status(current_period)
     return render(
         request,
         "targets/target_dashboard.html",
         {
             "current_month_label": f"{current_month.year}年{current_month.month}月",
-            "current_month_status": _month_status(current_month),
+            "current_month_status": current_month_status,
+            "current_month_status_label": STATUS_LABELS.get(current_month_status, current_month_status),
+            "current_month_status_class": f"is-{current_month_status}",
             "current_period_label": _period_label(current_period),
-            "current_period_status": _stored_period_status(current_period),
+            "current_period_status": current_period_status,
+            "current_period_status_label": STATUS_LABELS.get(current_period_status, current_period_status),
+            "current_period_status_class": f"is-{current_period_status}",
+            "has_current_period": current_period is not None,
             "month_rows": _build_month_rows(target_month=current_month, configs=configs),
             "period_rows": _build_period_rows(period=current_period, configs=configs),
             "month_history_rows": month_history_rows,
@@ -648,13 +657,16 @@ def target_month_settings(request: HttpRequest) -> HttpResponse:
             month_deleted = True
 
     history_rows = _month_history_rows()
+    selected_status = _month_status(selected_month)
     return render(
         request,
         "targets/target_month_settings.html",
         {
             "selected_month": _month_value_from_date(selected_month),
             "selected_month_label": f"{selected_month.year}年{selected_month.month}月",
-            "selected_status": _month_status(selected_month),
+            "selected_status": selected_status,
+            "selected_status_label": STATUS_LABELS.get(selected_status, selected_status),
+            "selected_status_class": f"is-{selected_status}",
             "status_options": STATUS_OPTIONS,
             "rows": _build_month_rows(target_month=selected_month, configs=configs),
             "history_rows": history_rows,

@@ -129,6 +129,8 @@ def build_progress_card(*, label, actual_amount, target_amount, summary_text, ba
         "remaining_amount_text": f"{remaining_amount:,}円",
         "rate": rate,
         "rate_text": "-" if rate is None else f"{rate}%",
+        "rate_width": min(max(rate or 0, 0), 100),
+        "rate_status": "complete" if rate is not None and rate >= 100 else "progress" if rate else "empty",
         "chart_values": chart_values,
         "summary_text": summary_text,
     }
