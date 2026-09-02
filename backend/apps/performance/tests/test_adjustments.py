@@ -227,6 +227,47 @@ class AdjustmentsTests(PerformanceTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["member_options"], {})
 
+    def test_performance_adjustment_can_register_for_inactive_member(self):
+        inactive_member = self.create_member(name="Inactive Member", department=self.department)
+        inactive_member.is_active = False
+        inactive_member.save(update_fields=["is_active"])
+
+        response = self.client.post(
+            reverse("performance_adjustments"),
+            {
+                "department": self.department.id,
+                "member": inactive_member.id,
+                "target_date": "2026-05-16",
+                "source_type": MetricAdjustment.SOURCE_QR,
+                "location_name": "渋谷駅前",
+                "amount_choice": "1500",
+                "amount": "",
+            },
+        )
+
+        self.assertRedirects(response, reverse("performance_adjustments") + "?saved=1")
+        self.assertTrue(
+            MetricAdjustment.objects.filter(
+                member=inactive_member,
+                department=self.department,
+                target_date=date(2026, 5, 16),
+            ).exists()
+        )
+
+    def test_performance_adjustment_member_options_include_inactive_members(self):
+        inactive_member = self.create_member(name="Inactive Member", department=self.department)
+        inactive_member.is_active = False
+        inactive_member.save(update_fields=["is_active"])
+
+        response = self.client.get(
+            reverse("performance_past_entry_member_options"),
+            {"department": self.department.id},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(inactive_member.id, [option["id"] for option in response.json()["options"]])
+
 
     def test_performance_adjustment_member_options_api_excludes_inactive_members(self):
         inactive_member = self.create_member(name="Inactive Member", department=self.department)

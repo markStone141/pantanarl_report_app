@@ -25,7 +25,7 @@ def adjustment_member_options(*, department_id):
         return {}
     options = department_member_options(
         department_id=department_id,
-        active_only=True,
+        active_only=False,
     )
     for option in options:
         option["un_activity_code"] = option["un_activity_code"] or ""
