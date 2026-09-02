@@ -70,6 +70,23 @@ class ReportMemberFilteringTests(TestCase):
         self.assertNotContains(index_response, "ワールドビジョン 報告へ")
         self.assertRedirects(form_response, reverse("report_index"))
 
+    def test_report_index_applies_visibility_flags_to_actuals_and_target_progress(self):
+        un = Department.objects.create(name="UN", code="UN")
+        wv = Department.objects.create(name="WV", code="WV")
+        un.show_in_dashboard_submission = False
+        un.save(update_fields=["show_in_dashboard_submission"])
+        wv.show_in_dashboard_progress = False
+        wv.save(update_fields=["show_in_dashboard_progress"])
+
+        response = self.client.get(reverse("report_index"))
+
+        actual_codes = [card["code"] for card in response.context["kpi_cards"]]
+        progress_labels = [row["label"] for row in response.context["target_progress_rows"]]
+        self.assertNotIn("UN", actual_codes)
+        self.assertIn("WV", actual_codes)
+        self.assertIn("UN", progress_labels)
+        self.assertNotIn("WV", progress_labels)
+
     def test_report_pages_hide_legacy_metrics_links(self):
         for url_name in ("report_index", "report_history"):
             with self.subTest(url_name=url_name):
