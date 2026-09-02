@@ -23,14 +23,23 @@ def format_amount_text(value):
 
 def build_report_dashboard_cards_context():
     today = timezone.localdate()
-    target_departments = list(
-        Department.objects.filter(is_active=True).order_by("code").values_list("code", "name")
+    submission_departments = list(
+        Department.objects.filter(
+            is_active=True,
+            show_in_dashboard_submission=True,
+        ).order_by("code").values_list("code", "name")
+    )
+    progress_departments = list(
+        Department.objects.filter(
+            is_active=True,
+            show_in_dashboard_progress=True,
+        ).order_by("code").values_list("code", "name")
     )
     snapshot = build_submission_snapshot(
         report_date=today,
-        target_departments=target_departments,
+        target_departments=submission_departments,
     )
-    target_codes = snapshot["target_codes"]
+    progress_codes = [code for code, _ in progress_departments]
     submission_rows = snapshot["submission_rows"]
     daily_totals = snapshot["daily_totals"]
     member_totals = snapshot["member_totals"]
@@ -43,12 +52,12 @@ def build_report_dashboard_cards_context():
         MonthTargetMetricValue.objects.filter(
             target_month=current_month,
             metric__is_active=True,
-            department__code__in=target_codes,
+            department__code__in=progress_codes,
         )
         .order_by("department__code", "metric__display_order", "id")
         .values("department__code", "metric_id", "value")
     )
-    month_target_values_by_code = {code: {} for code in target_codes}
+    month_target_values_by_code = {code: {} for code in progress_codes}
     for row in month_target_rows:
         month_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
 
@@ -66,12 +75,12 @@ def build_report_dashboard_cards_context():
             PeriodTargetMetricValue.objects.filter(
                 period=current_period,
                 metric__is_active=True,
-                department__code__in=target_codes,
+                department__code__in=progress_codes,
             )
             .order_by("department__code", "metric__display_order", "id")
             .values("department__code", "metric_id", "value")
         )
-        period_target_values_by_code = {code: {} for code in target_codes}
+        period_target_values_by_code = {code: {} for code in progress_codes}
         for row in period_rows:
             period_target_values_by_code[row["department__code"]][row["metric_id"]] = row["value"]
         period_status = current_period.status
@@ -80,7 +89,7 @@ def build_report_dashboard_cards_context():
         current_period_label = current_period.name
         current_period_range = f"{period_start.month}/{period_start.day}～{period_end.month}/{period_end.day}"
     else:
-        period_target_values_by_code = {code: {} for code in target_codes}
+        period_target_values_by_code = {code: {} for code in progress_codes}
         period_status = "-"
         period_start = None
         period_end = None
@@ -96,32 +105,32 @@ def build_report_dashboard_cards_context():
     month_actual_totals_by_code = collect_actual_totals(
         start_date=month_start,
         end_date=month_end,
-        target_codes=target_codes,
+        target_codes=progress_codes,
         include_adjustments=True,
     )
     if period_start and period_end:
         period_actual_totals_by_code = collect_actual_totals(
             start_date=period_start,
             end_date=period_end,
-            target_codes=target_codes,
+            target_codes=progress_codes,
             include_adjustments=True,
         )
     else:
         period_actual_totals_by_code = {
             code: {"count": 0, "amount": 0, "cs_count": 0, "refugee_count": 0}
-            for code in target_codes
+            for code in progress_codes
         }
 
     metrics_by_code = {}
-    departments_by_code = {department.code: department for department in Department.objects.filter(code__in=target_codes)}
-    for code, _ in target_departments:
+    departments_by_code = {department.code: department for department in Department.objects.filter(code__in=progress_codes)}
+    for code, _ in progress_departments:
         department = departments_by_code.get(code)
         metrics_by_code[code] = list(
             TargetMetric.objects.filter(department=department, is_active=True).order_by("display_order", "id")
         ) if department else []
 
     target_progress_rows = []
-    for code, label in target_departments:
+    for code, label in progress_departments:
         month_target_text, month_actual_text, month_rate_text = format_metric_triples(
             metrics=metrics_by_code[code],
             target_values=month_target_values_by_code.get(code, {}),
@@ -155,7 +164,7 @@ def build_report_dashboard_cards_context():
         )
 
     kpi_cards = []
-    for code, label in target_departments:
+    for code, label in submission_departments:
         member_rows = build_member_rows(member_totals=member_totals, codes=[code])
         for member_row in member_rows:
             member_row["amount_text"] = format_amount_text(member_row.get("amount", 0))
