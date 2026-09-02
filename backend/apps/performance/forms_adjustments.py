@@ -74,7 +74,7 @@ class PerformanceMetricAdjustmentForm(forms.ModelForm):
             label="種別",
             choices=self.WV_SOURCE_CHOICES if is_wv_department else self.UN_SOURCE_CHOICES,
         )
-        member_queryset = Member.objects.active().filter(department_links__department__is_active=True).distinct()
+        member_queryset = Member.objects.filter(department_links__department__is_active=True).distinct()
         if selected_department is not None:
             member_queryset = member_queryset.filter(department_links__department=selected_department).distinct()
         else:
