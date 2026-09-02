@@ -59,6 +59,17 @@ class ReportMemberFilteringTests(TestCase):
         self.assertContains(response, "ユニセフ 報告へ")
         self.assertContains(response, "ワールドビジョン 報告へ")
 
+    def test_report_input_excludes_departments_hidden_from_submission_status(self):
+        department = Department.objects.create(name="ワールドビジョン", code="WV")
+        department.show_in_dashboard_submission = False
+        department.save(update_fields=["show_in_dashboard_submission"])
+
+        index_response = self.client.get(reverse("report_index"))
+        form_response = self.client.get(reverse("report_wv"))
+
+        self.assertNotContains(index_response, "ワールドビジョン 報告へ")
+        self.assertRedirects(form_response, reverse("report_index"))
+
     def test_report_pages_hide_legacy_metrics_links(self):
         for url_name in ("report_index", "report_history"):
             with self.subTest(url_name=url_name):
