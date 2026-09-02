@@ -43,6 +43,32 @@ class TargetsFlowTests(TestCase):
                 )
                 self.assertContains(response, ">目標設定</span>", html=False)
 
+    def test_target_settings_exclude_departments_hidden_from_dashboard_progress(self):
+        Department.objects.filter(code="WV").update(show_in_dashboard_progress=False)
+
+        month_response = self.client.get(reverse("target_month_settings"))
+        period_response = self.client.get(reverse("target_period_settings"))
+
+        for response in (month_response, period_response):
+            department_labels = [row["label"] for row in response.context["rows"]]
+            self.assertNotIn("WV", department_labels)
+            self.assertIn("UN", department_labels)
+
+    def test_target_history_visibility_is_independent_from_current_target_visibility(self):
+        wv = Department.objects.get(code="WV")
+        wv.show_in_dashboard_progress = False
+        wv.show_in_target_history = True
+        wv.save(update_fields=["show_in_dashboard_progress", "show_in_target_history"])
+
+        current_codes = [config["code"] for config in target_views._department_configs()]
+        history_codes = [config["code"] for config in target_views._department_configs(for_history=True)]
+        self.assertNotIn("WV", current_codes)
+        self.assertIn("WV", history_codes)
+
+        wv.show_in_target_history = False
+        wv.save(update_fields=["show_in_target_history"])
+        history_codes = [config["code"] for config in target_views._department_configs(for_history=True)]
+        self.assertNotIn("WV", history_codes)
     def test_month_targets_save_with_auto_status(self):
         today = timezone.localdate()
         current_month = today.replace(day=1)

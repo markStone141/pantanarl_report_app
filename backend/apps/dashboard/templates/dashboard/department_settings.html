@@ -52,6 +52,12 @@
         <div class="error-text">{{ form.show_in_dashboard_progress.errors|striptags }}</div>
         {% endif %}
 
+        <label for="id_show_in_target_history">{{ form.show_in_target_history.label }}</label>
+        {{ form.show_in_target_history }}
+        {% if form.show_in_target_history.errors %}
+        <div class="error-text">{{ form.show_in_target_history.errors|striptags }}</div>
+        {% endif %}
+
         <button type="submit" class="ui-button ui-button--primary mt-12">
           {% if edit_department %}部署を更新{% else %}部署を追加{% endif %}
         </button>
@@ -67,7 +73,7 @@
       <div class="table-scroll">
       <table class="mobile-card-table">
         <thead>
-          <tr><th>部署名</th><th>部署コード</th><th>提出状況</th><th>目標進捗</th><th>操作</th></tr>
+          <tr><th>部署名</th><th>部署コード</th><th>提出状況</th><th>目標進捗・目標設定</th><th>目標履歴</th><th>操作</th></tr>
         </thead>
         <tbody>
           {% for department in departments %}
@@ -76,6 +82,7 @@
             <td>{{ department.code }}</td>
             <td>{% if department.show_in_dashboard_submission %}表示{% else %}非表示{% endif %}</td>
             <td>{% if department.show_in_dashboard_progress %}表示{% else %}非表示{% endif %}</td>
+            <td>{% if department.show_in_target_history %}表示{% else %}非表示{% endif %}</td>
             <td>
               <a class="ui-button ui-button--secondary" href="{% url 'department_settings' %}?edit={{ department.id }}">編集</a>
               <a class="ui-button ui-button--secondary" href="{% url 'department_settings' %}?metric_department={{ department.id }}">指標</a>

@@ -33,6 +33,7 @@ def department_form_initial(department: Department | None) -> dict | None:
         "default_reporter": department.default_reporter_id,
         "show_in_dashboard_submission": department.show_in_dashboard_submission,
         "show_in_dashboard_progress": department.show_in_dashboard_progress,
+        "show_in_target_history": department.show_in_target_history,
     }
 
 
