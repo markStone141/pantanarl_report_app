@@ -46,6 +46,13 @@ class MemberSettingsViewTests(TestCase):
         self.assertIn(".dashboard-drawer-nav {", drawer_css)
         self.assertIn("z-index: 280;", drawer_css)
 
+    def test_mobile_drawer_keeps_logout_reachable(self):
+        drawer_css = (Path(settings.BASE_DIR) / "static/dashboard/mobile_drawer.css").read_text(encoding="utf-8")
+
+        self.assertIn("height: 100dvh;", drawer_css)
+        self.assertIn(".dashboard-drawer-nav .app-nav-account", drawer_css)
+        self.assertIn("overscroll-behavior: contain;", drawer_css)
+
     def test_shared_chart_card_foundation_is_loaded(self):
         base_template = (Path(settings.BASE_DIR) / "templates/base.html").read_text(encoding="utf-8")
         chart_css = (Path(settings.BASE_DIR) / "static/chart_cards.css").read_text(encoding="utf-8")
