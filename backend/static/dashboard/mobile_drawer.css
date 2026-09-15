@@ -304,12 +304,16 @@
     right: 0;
     width: min(84vw, 320px);
     height: 100vh;
+    height: 100dvh;
+    box-sizing: border-box;
     background: #123b6d;
     padding: 18px 14px;
     z-index: 280;
     display: block !important;
     overflow-x: visible !important;
     overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     transform: translateX(100%) !important;
     transition: transform 0.24s ease;
     visibility: hidden !important;
