@@ -174,7 +174,7 @@
         const parts = text.split("/");
         return parts.length > 1 ? parts[parts.length - 1] : text;
       }
-      lines.push(section.heading + "（" + section.name + "）");
+      lines.push(section.heading === section.name ? section.name : section.heading + "（" + section.name + "）");
       lines.push("全体");
       lines.push("件数" + section.daily_count + "件、" + amountLabel + section.daily_amount_text);
       lines.push("");
@@ -239,7 +239,7 @@
         const parts = text.split("/");
         return parts.length > 1 ? parts[parts.length - 1] : text;
       }
-      lines.push(section.heading + "（" + section.name + "）");
+      lines.push(section.heading === section.name ? section.name : section.heading + "（" + section.name + "）");
 
       if (section.has_report) {
         lines.push("全体");

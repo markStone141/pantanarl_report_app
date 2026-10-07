@@ -1,5 +1,7 @@
 from django.urls import reverse
 
+from apps.common.report_metrics import is_un_department_code
+
 
 RANKING_METRIC_OPTIONS = [
     {"key": "conversion_rate", "label": "決済率", "unit": "%"},
@@ -30,7 +32,7 @@ def ranking_metric_options_for_department(department_code: str) -> list[dict]:
         for option in RANKING_METRIC_OPTIONS
         if (
             (department_code == "WV" or option["key"] not in WV_ONLY_RANKING_METRIC_KEYS)
-            and (department_code == "UN" or option["key"] not in UN_ONLY_RANKING_METRIC_KEYS)
+            and (is_un_department_code(department_code) or option["key"] not in UN_ONLY_RANKING_METRIC_KEYS)
         )
     ]
 

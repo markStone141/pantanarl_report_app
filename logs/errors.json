@@ -867,5 +867,35 @@
     "action": "工程3の一時視覚確認スクリプトで構文エラーを検出した",
     "reason": "page.evaluateの引数括弧が1つ多かったため",
     "next_action": "括弧を修正したスクリプトで視覚確認を再実行する"
+  },
+  {
+    "timestamp": "2026-10-07T15:38:36+09:00",
+    "expires_at": "2027-01-05T15:38:36+09:00",
+    "retention_days": 90,
+    "run_id": "run-20261007-ui-departments",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "全415テスト:414成功、既存RoleGuardTests1件失敗",
+    "reason": "部署未作成時の200期待と既存リダイレクト実装の不整合。新規失敗なし",
+    "next_action": "既存不整合は別作業で対応"
+  },
+  {
+    "timestamp": "2026-10-07T15:46:34+09:00",
+    "expires_at": "2027-01-05T15:46:34+09:00",
+    "retention_days": 90,
+    "run_id": "run-20261007-department-separation",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "全421テスト:420成功、既存RoleGuardTests1件失敗",
+    "reason": "既存の部署未作成時200期待とリダイレクト実装の不整合。新規失敗なし",
+    "next_action": "既存不整合は別作業で対応"
   }
 ]
