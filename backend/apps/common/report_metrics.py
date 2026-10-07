@@ -6,6 +6,11 @@ STATUS_SUBMITTED = "提出済み"
 STATUS_NOT_SUBMITTED = "未提出"
 
 
+def is_un_department_code(code: str) -> bool:
+    """UI-created UN branches share metrics while retaining separate data."""
+    return code == "UN" or code.startswith("UN_")
+
+
 def period_status(*, today, start_date, end_date) -> str:
     if start_date <= today <= end_date:
         return "active"

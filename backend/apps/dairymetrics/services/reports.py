@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from django.db.models import Count, Sum
 
+from apps.common.report_metrics import is_un_department_code
+
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjustment
 from apps.dairymetrics.services.final_actuals import (
     ENTRY_METRIC_FIELDS,
@@ -181,7 +183,7 @@ def _member_report_rows(*, department, scope):
     )
     active_days_by_member_id = {row["member_id"]: int(row["active_days"] or 0) for row in active_day_rows}
     stability_scores_by_member_id = {}
-    if department.code == "UN":
+    if is_un_department_code(department.code):
         daily_values_by_member_id = {
             member.id: _daily_un_final_values(
                 member=member,

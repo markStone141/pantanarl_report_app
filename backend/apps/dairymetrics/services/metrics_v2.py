@@ -10,6 +10,7 @@ from django.db.models import Count, Sum
 from django.utils import timezone
 
 from apps.accounts.models import Member
+from apps.common.report_metrics import is_un_department_code
 from apps.targets.models import (
     DepartmentMonthTarget,
     DepartmentPeriodTarget,
@@ -757,7 +758,7 @@ def _ranking_members(*, department, scope: MetricsV2Scope):
 def _build_ranking_payload(*, department, scope: MetricsV2Scope):
     members = _ranking_members(department=department, scope=scope)
     stability_scores_by_member_id = {}
-    if department.code == "UN":
+    if is_un_department_code(department.code):
         member_ids = [member.id for member in members]
         active_day_rows = (
             MemberDailyMetricEntry.objects.filter(

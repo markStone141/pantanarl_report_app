@@ -69,10 +69,11 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
     target_departments = [(department.code, department.name) for department in submission_department_objects]
     snapshot = build_submission_snapshot(
         report_date=today,
-        target_departments=target_departments,
+        target_departments=[(department.code, department.name) for department in all_department_objects],
     )
     target_codes = snapshot["target_codes"]
-    submission_rows = snapshot["submission_rows"]
+    submission_codes = {department.code for department in submission_department_objects}
+    submission_rows = [row for row in snapshot["submission_rows"] if row["code"] in submission_codes]
     daily_totals = snapshot["daily_totals"]
     member_totals = snapshot["member_totals"]
     for row in submission_rows:
@@ -206,6 +207,12 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
             ("STYLE2", "Styleチーム"),
             ("STYLE1", "Styleチーム"),
         ]
+        legacy_codes = {code for code, _ in section_order}
+        section_order.extend(
+            (code, name)
+            for code, name in label_by_code.items()
+            if code not in legacy_codes
+        )
         mail_sections = []
         for code, heading in section_order:
             if code not in label_by_code:
