@@ -203,6 +203,7 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
 
         section_order = [
             ("UN", "UN①"),
+            ("UN_KANSAI", label_by_code.get("UN_KANSAI", "UN関西")),
             ("WV", "UN②"),
             ("STYLE2", "Styleチーム"),
             ("STYLE1", "Styleチーム"),
@@ -265,7 +266,7 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
                 }
             )
 
-        un_wv_codes = [code for code in ["UN", "WV"] if code in label_by_code]
+        un_wv_codes = [code for code in ["UN", "UN_KANSAI", "WV"] if code in label_by_code]
         un_wv_month_actual = sum(
             base_month_actual_totals_by_code.get(code, {"amount": 0})["amount"] for code in un_wv_codes
         )

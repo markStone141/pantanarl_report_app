@@ -144,6 +144,42 @@ class DepartmentSeparationTests(TestCase):
             self.assertNotIn(department.code, [s["code"] for s in payload["sections"]])
             self.assertIn("UN", [s["code"] for s in payload["sections"]])
 
+    def test_mail_places_kansai_after_un_and_includes_it_in_un_total(self):
+        for code in ["WV", "STYLE2"]:
+            department = self.add_mail_department(code)
+            metric = TargetMetric.objects.create(department=department, code="amount", label="金額", unit="円")
+            MonthTargetMetricValue.objects.create(
+                department=department, metric=metric, target_month=self.month,
+                value=10000 if code == "WV" else 500000,
+            )
+        response = self.client.get(reverse("dashboard_index"))
+        payload = response.context["mail_template_payload_map"]["today"]
+        self.assertEqual([s["code"] for s in payload["sections"]], ["UN", "UN_KANSAI", "WV", "STYLE2"])
+        self.assertEqual(payload["un_wv_summary"], {
+            "actual_text": "9,000円", "target_text": "100,000円", "rate": "9.0%",
+        })
+        previous = self.client.get(reverse("dashboard_index"), {"mode": "prev"})
+        self.assertEqual(previous.context["mail_template_payload_map"], response.context["mail_template_payload_map"])
+
+    def add_mail_department(self, code):
+        response = self.client.post(reverse("department_settings"), {
+            "action": "save_department", "code": code, "name": code,
+            "show_in_dashboard_submission": "on", "show_in_dashboard_progress": "on",
+        })
+        self.assertEqual(response.status_code, 200)
+        return Department.objects.get(code=code)
+
+    def test_un_total_without_kansai_and_without_targets(self):
+        self.departments[1].show_in_dashboard_submission = False
+        self.departments[1].save()
+        response = self.client.get(reverse("dashboard_index"))
+        self.assertEqual(response.context["mail_template_payload_map"]["today"]["un_wv_summary"], {
+            "actual_text": "2,000円", "target_text": "20,000円", "rate": "10.0%",
+        })
+        MonthTargetMetricValue.objects.all().delete()
+        response = self.client.get(reverse("dashboard_index"))
+        self.assertEqual(response.context["mail_template_payload_map"]["today"]["un_wv_summary"]["rate"], "-")
+
     def test_member_in_both_departments_has_separate_personal_targets_and_actuals(self):
         member = self.members[0]
         kansai = self.departments[1]
