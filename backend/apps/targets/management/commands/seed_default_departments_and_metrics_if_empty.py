@@ -6,7 +6,6 @@ from apps.targets.models import TargetMetric
 
 DEFAULT_DEPARTMENTS = [
     ("UN", "UN"),
-    ("UN_KANSAI", "UN関西"),
     ("WV", "WV"),
     ("STYLE1", "Style1"),
     ("STYLE2", "Style2"),
@@ -14,7 +13,6 @@ DEFAULT_DEPARTMENTS = [
 
 DEFAULT_METRICS_BY_DEPARTMENT = {
     "UN": [("count", "件数", "件"), ("amount", "金額", "円")],
-    "UN_KANSAI": [("count", "件数", "件"), ("amount", "金額", "円")],
     "WV": [("cs_count", "CS件数", "件"), ("refugee_count", "難民支援件数", "件")],
     "STYLE1": [("amount", "金額", "円")],
     "STYLE2": [("amount", "金額", "円")],

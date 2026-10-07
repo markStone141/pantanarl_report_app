@@ -29,7 +29,6 @@ from .services.report_rows import (
 REPORT_ROUTE_BY_DEPARTMENT_CODE = {
     "UN": "report_un",
     "WV": "report_wv",
-    "UN_KANSAI": "report_un_kansai",
     "STYLE1": "report_style1",
     "STYLE2": "report_style2",
 }
@@ -76,7 +75,7 @@ def report_index(request: HttpRequest) -> HttpResponse:
             "url_name": url_name,
         }
         for code, url_name in REPORT_ROUTE_BY_DEPARTMENT_CODE.items()
-        if code in department_map and code != "STYLE1"
+        if code in department_map
     ]
     context = {
         "department_buttons": department_buttons,
@@ -497,18 +496,6 @@ def report_un(request: HttpRequest) -> HttpResponse:
         request,
         dept_code="UN",
         title=f"{department.name if department else 'UN'} 報告フォーム",
-        location_label="現場",
-        show_location=False,
-    )
-
-
-@require_roles(ROLE_REPORT, ROLE_ADMIN)
-def report_un_kansai(request: HttpRequest) -> HttpResponse:
-    department = _department_by_code("UN_KANSAI")
-    return _render_report_form(
-        request,
-        dept_code="UN_KANSAI",
-        title=f"{department.name if department else 'UN関西'} 報告フォーム",
         location_label="現場",
         show_location=False,
     )

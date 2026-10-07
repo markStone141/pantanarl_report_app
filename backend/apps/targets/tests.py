@@ -941,9 +941,9 @@ class TargetSeedCommandTests(TestCase):
 
         self.assertEqual(
             set(Department.objects.values_list("code", flat=True)),
-            {"UN", "UN_KANSAI", "WV", "STYLE1", "STYLE2"},
+            {"UN", "WV", "STYLE1", "STYLE2"},
         )
-        self.assertEqual(TargetMetric.objects.count(), 8)
+        self.assertEqual(TargetMetric.objects.count(), 6)
 
     def test_seed_command_skips_when_existing_data_present(self):
         Department.objects.create(name="Custom", code="CUSTOM")
