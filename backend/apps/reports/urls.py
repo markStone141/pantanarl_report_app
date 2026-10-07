@@ -9,6 +9,7 @@ from .views import (
     report_style1,
     report_style2,
     report_un,
+    report_un_kansai,
     report_wv,
 )
 
@@ -19,6 +20,7 @@ urlpatterns = [
     path("edit/<int:report_id>/", report_edit, name="report_edit"),
     path("<str:dept_code>/delete/<int:report_id>/", report_delete, name="report_delete"),
     path("un/", report_un, name="report_un"),
+    path("un-kansai/", report_un_kansai, name="report_un_kansai"),
     path("wv/", report_wv, name="report_wv"),
     path("style1/", report_style1, name="report_style1"),
     path("style2/", report_style2, name="report_style2"),
