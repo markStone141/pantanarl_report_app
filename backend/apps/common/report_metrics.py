@@ -8,7 +8,7 @@ STATUS_NOT_SUBMITTED = "未提出"
 
 def is_un_department_code(code: str) -> bool:
     """UI-created UN branches share metrics while retaining separate data."""
-    return code == "UN" or code.startswith("UN_")
+    return code in {"UN", "UNW"} or code.startswith("UN_")
 
 
 def period_status(*, today, start_date, end_date) -> str:

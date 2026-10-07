@@ -26,7 +26,7 @@ class DepartmentSeparationTests(TestCase):
         self.departments = []
         self.members = []
         self.metrics = []
-        for code, name, amount in [("UN", "UN", 2000), ("UN_KANSAI", "UN関西", 7000)]:
+        for code, name, amount in [("UN", "UN", 2000), ("UNW", "UN関西", 7000)]:
             response = self.client.post(reverse("department_settings"), {
                 "action": "save_department", "code": code, "name": name,
                 "show_in_dashboard_submission": "on", "show_in_dashboard_progress": "on",
@@ -131,7 +131,7 @@ class DepartmentSeparationTests(TestCase):
             self.assertEqual(section["daily_amount_text"], ["2,000円", "7,000円"][index])
             self.assertIn(["20,000円", "70,000円"][index], str(section["month_lines"]))
             self.assertIn(["20,000円", "70,000円"][index], str(section["period_lines"]))
-        self.assertEqual(sections["UN_KANSAI"]["heading"], "UN関西")
+        self.assertEqual(sections[self.departments[1].code]["heading"], "UN関西")
 
     def test_hidden_department_is_excluded_from_mail(self):
         department = self.departments[1]
@@ -154,7 +154,7 @@ class DepartmentSeparationTests(TestCase):
             )
         response = self.client.get(reverse("dashboard_index"))
         payload = response.context["mail_template_payload_map"]["today"]
-        self.assertEqual([s["code"] for s in payload["sections"]], ["UN", "UN_KANSAI", "WV", "STYLE2"])
+        self.assertEqual([s["code"] for s in payload["sections"]], ["UN", self.departments[1].code, "WV", "STYLE2"])
         self.assertEqual(payload["un_wv_summary"], {
             "actual_text": "9,000円", "target_text": "100,000円", "rate": "9.0%",
         })
@@ -168,6 +168,12 @@ class DepartmentSeparationTests(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         return Department.objects.get(code=code)
+
+    def test_legacy_kansai_code_keeps_analysis_and_mail_behavior(self):
+        self.departments[1].code = "UN_KANSAI"
+        self.departments[1].save(update_fields=["code"])
+        self.test_analysis_separates_members_amounts_and_keeps_un_rankings()
+        self.test_mail_places_kansai_after_un_and_includes_it_in_un_total()
 
     def test_un_total_without_kansai_and_without_targets(self):
         self.departments[1].show_in_dashboard_submission = False
