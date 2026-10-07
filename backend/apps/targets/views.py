@@ -26,7 +26,6 @@ from .services.target_config import (
     STATUS_FILTER_OPTIONS,
     STATUS_LABELS,
     STATUS_OPTIONS,
-    TARGET_DEPARTMENTS,
     month_status,
     period_label,
     period_name,
@@ -65,18 +64,10 @@ def _to_int(value: str | None) -> int:
     return parsed if parsed > 0 else 0
 
 
-def _department_by_code(*, code: str, label: str) -> Department:
-    department = Department.objects.filter(code=code).first()
-    if department:
-        return department
-    return Department.objects.create(code=code, name=label)
-
-
 def _ensure_default_metrics() -> None:
-    for dept_code, dept_label in TARGET_DEPARTMENTS:
-        department = _department_by_code(code=dept_code, label=dept_label)
+    for department in Department.objects.filter(code__in=DEFAULT_METRICS_BY_DEPT):
         for order, (metric_code, metric_label, metric_unit) in enumerate(
-            DEFAULT_METRICS_BY_DEPT[dept_code],
+            DEFAULT_METRICS_BY_DEPT[department.code],
             start=1,
         ):
             TargetMetric.objects.update_or_create(
@@ -94,8 +85,7 @@ def _ensure_default_metrics() -> None:
 def _department_configs(*, for_history: bool = False):
     _ensure_default_metrics()
     configs = []
-    for code, fallback_label in TARGET_DEPARTMENTS:
-        department = _department_by_code(code=code, label=fallback_label)
+    for department in Department.objects.order_by("code"):
         is_visible = department.show_in_target_history if for_history else department.show_in_dashboard_progress
         if not department.is_active or not is_visible:
             continue
@@ -104,7 +94,7 @@ def _department_configs(*, for_history: bool = False):
         )
         configs.append(
             {
-                "code": code,
+                "code": department.code,
                 "label": department.name,
                 "department": department,
                 "metrics": metrics,

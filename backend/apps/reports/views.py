@@ -61,21 +61,20 @@ def _resolve_report_performance_dashboard_url(request: HttpRequest) -> str | Non
 
 @require_roles(ROLE_REPORT, ROLE_ADMIN)
 def report_index(request: HttpRequest) -> HttpResponse:
-    department_map = {
-        department.code: department.name
-        for department in Department.objects.filter(
-            is_active=True,
-            show_in_dashboard_submission=True,
-            code__in=REPORT_ROUTE_BY_DEPARTMENT_CODE.keys(),
-        )
-    }
+    departments = Department.objects.filter(
+        is_active=True,
+        show_in_dashboard_submission=True,
+    ).order_by("code")
     department_buttons = [
         {
-            "name": department_map.get(code, code),
-            "url_name": url_name,
+            "name": department.name,
+            "url": (
+                reverse(REPORT_ROUTE_BY_DEPARTMENT_CODE[department.code])
+                if department.code in REPORT_ROUTE_BY_DEPARTMENT_CODE
+                else reverse("report_department", kwargs={"dept_code": department.code})
+            ),
         }
-        for code, url_name in REPORT_ROUTE_BY_DEPARTMENT_CODE.items()
-        if code in department_map
+        for department in departments
     ]
     context = {
         "department_buttons": department_buttons,
@@ -107,7 +106,6 @@ def report_history(request: HttpRequest) -> HttpResponse:
     filter_departments = list(
         Department.objects.filter(
             is_active=True,
-            code__in=REPORT_ROUTE_BY_DEPARTMENT_CODE.keys(),
         )
         .order_by("code")
         .values("code", "name")
@@ -209,13 +207,6 @@ def _department_by_code(department_code: str):
     return Department.objects.filter(code=department_code).first()
 
 
-def _resolve_department(*, code: str, label: str) -> Department:
-    department = _department_by_code(code)
-    if department:
-        return department
-    return Department.objects.create(code=code, name=label)
-
-
 def _build_dairymetrics_sync_context(
     *,
     department: Department | None,
@@ -303,7 +294,7 @@ def _render_report_form(
         )
 
         if form.is_valid() and not row_errors:
-            department = _resolve_department(code=dept_code, label=dept_code)
+            department = get_object_or_404(Department, code=dept_code)
             total_count = sum(row["count"] for row in parsed_rows)
             total_amount = sum(row["amount"] for row in parsed_rows)
             fallback_location = next((row["location"] for row in parsed_rows if row["location"]), "")
@@ -383,7 +374,11 @@ def _render_report_form(
 
             if editing_report:
                 return redirect(redirect_target)
-            return redirect(f"{reverse(request.resolver_match.view_name)}?submitted=1&mode={selected_mode}")
+            form_url = reverse(
+                request.resolver_match.view_name,
+                kwargs=request.resolver_match.kwargs,
+            )
+            return redirect(f"{form_url}?submitted=1&mode={selected_mode}")
     else:
         if editing_report:
             form = ReportSubmissionForm(
@@ -486,6 +481,19 @@ def _render_report_form(
             "dairymetrics_active_entries": dairymetrics_sync_context["active_entries"],
             "performance_dashboard_url": _resolve_report_performance_dashboard_url(request),
         },
+    )
+
+
+@require_roles(ROLE_REPORT, ROLE_ADMIN)
+def report_department(request: HttpRequest, dept_code: str) -> HttpResponse:
+    department = get_object_or_404(Department, code=dept_code)
+    return _render_report_form(
+        request,
+        dept_code=department.code,
+        title=f"{department.name} 報告フォーム",
+        location_label="現場",
+        show_location=False,
+        split_counts=department.code in SPLIT_COUNT_CODES,
     )
 
 
