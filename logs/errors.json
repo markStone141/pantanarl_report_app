@@ -897,5 +897,20 @@
     "action": "全421テスト:420成功、既存RoleGuardTests1件失敗",
     "reason": "既存の部署未作成時200期待とリダイレクト実装の不整合。新規失敗なし",
     "next_action": "既存不整合は別作業で対応"
+  },
+  {
+    "timestamp": "2026-10-19T16:02:14+09:00",
+    "expires_at": "2027-01-17T16:02:14+09:00",
+    "retention_days": 90,
+    "run_id": "run-20261019-mail-added-departments",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "初回テストで既定設定解除後のNone期待が失敗",
+    "reason": "既存の共通グループへのフォールバックを確認。既定設定レコードの解除と保存時の宛先解決を分けてテストを修正",
+    "next_action": "関連テスト再実行:162件成功"
   }
 ]

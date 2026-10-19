@@ -132,13 +132,13 @@
             {% csrf_token %}
             <input type="hidden" name="action" value="save_routing" />
 
-            <label for="id_un_group">{{ routing_form.un_group.label }}</label>
-            {{ routing_form.un_group }}
-            {% if routing_form.un_group.errors %}<div class="error-text">{{ routing_form.un_group.errors|striptags }}</div>{% endif %}
-
-            <label for="id_wv_group">{{ routing_form.wv_group.label }}</label>
-            {{ routing_form.wv_group }}
-            {% if routing_form.wv_group.errors %}<div class="error-text">{{ routing_form.wv_group.errors|striptags }}</div>{% endif %}
+            {% for field in routing_form %}
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<div class="error-text">{{ field.errors|striptags }}</div>{% endif %}
+            {% empty %}
+            <p class="muted">部署管理で部署を追加すると、ここで決済報告用グループを設定できます。</p>
+            {% endfor %}
 
             <button type="submit" class="ui-button ui-button--primary mt-12">既定グループを保存</button>
           </form>
