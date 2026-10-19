@@ -626,6 +626,8 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertNotIn('>10,000円<', payload["department_target_html"])
 
     def test_entry_v2_transaction_demo_defaults_to_existing_entry_department_for_day(self):
+        self.member.default_department = None
+        self.member.save(update_fields=["default_department"])
         wv_department = self.create_department("WV")
         MemberDepartment.objects.create(member=self.member, department=wv_department)
         entry_date = timezone.localdate()

@@ -3,7 +3,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.accounts.auth import ROLE_ADMIN, require_roles
-from apps.accounts.models import Department, Member
+from apps.accounts.models import Member
 
 from .forms import (
     MailDepartmentRoutingForm,
@@ -15,17 +15,10 @@ from .models import MailDepartmentRouting, MailIntegrationSetting, MailRecipient
 from .services import active_group_members, send_test_mail
 
 
-def _routing_departments():
-    return {
-        department.code: department
-        for department in Department.objects.filter(code__in=["UN", "WV"], is_active=True)
-    }
-
-
 def _routing_map():
     return {
         routing.department.code: routing.recipient_group_id
-        for routing in MailDepartmentRouting.objects.filter(department__code__in=["UN", "WV"]).select_related("department")
+        for routing in MailDepartmentRouting.objects.filter(department__is_active=True).select_related("department")
     }
 
 
@@ -60,12 +53,7 @@ def _build_group_settings_forms(
     routing_form = (
         MailDepartmentRoutingForm(routing_data)
         if routing_data is not None
-        else MailDepartmentRoutingForm(
-            initial={
-                "un_group": routing_map.get("UN"),
-                "wv_group": routing_map.get("WV"),
-            }
-        )
+        else MailDepartmentRoutingForm(routing_map=routing_map)
     )
     settings_form = (
         MailIntegrationSettingForm(settings_data, instance=setting)
@@ -99,7 +87,6 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
         pk=1,
         defaults={"sender_name": "獲得メール送信"},
     )
-    routing_departments = _routing_departments()
     routing_map = _routing_map()
 
     if request.method == "POST":
@@ -171,10 +158,8 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
                 routing_data=request.POST,
             )
             if routing_form.is_valid():
-                for code, field_name in (("UN", "un_group"), ("WV", "wv_group")):
-                    department = routing_departments.get(code)
-                    if not department:
-                        continue
+                for department in routing_form.departments:
+                    field_name = routing_form.field_name(department)
                     group = routing_form.cleaned_data.get(field_name)
                     if group:
                         MailDepartmentRouting.objects.update_or_create(
@@ -185,12 +170,7 @@ def mail_group_settings(request: HttpRequest) -> HttpResponse:
                         MailDepartmentRouting.objects.filter(department=department).delete()
                 status_message = "決済報告の既定メールグループを更新しました。"
                 routing_map = _routing_map()
-                routing_form = MailDepartmentRoutingForm(
-                    initial={
-                        "un_group": routing_map.get("UN"),
-                        "wv_group": routing_map.get("WV"),
-                    }
-                )
+                routing_form = MailDepartmentRoutingForm(routing_map=routing_map)
             else:
                 status_message = "決済報告グループの設定を確認してください。"
         else:

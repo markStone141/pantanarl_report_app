@@ -144,21 +144,22 @@ class MailRecipientGroupForm(forms.Form):
 
 
 class MailDepartmentRoutingForm(forms.Form):
-    un_group = forms.ModelChoiceField(
-        label="UN決済報告",
-        required=False,
-        queryset=MailRecipientGroup.objects.none(),
-        empty_label="未設定",
-    )
-    wv_group = forms.ModelChoiceField(
-        label="WV決済報告",
-        required=False,
-        queryset=MailRecipientGroup.objects.none(),
-        empty_label="未設定",
-    )
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, routing_map=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.departments = list(Department.objects.filter(is_active=True).order_by("code", "id"))
         group_queryset = MailRecipientGroup.objects.filter(is_active=True).order_by("name")
-        self.fields["un_group"].queryset = group_queryset
-        self.fields["wv_group"].queryset = group_queryset
+        for department in self.departments:
+            self.fields[self.field_name(department)] = forms.ModelChoiceField(
+                label=f"{department.name} ({department.code}) 決済報告",
+                required=False,
+                queryset=group_queryset,
+                empty_label="未設定",
+                initial=(routing_map or {}).get(department.code),
+            )
+
+    @staticmethod
+    def field_name(department):
+        # Preserve existing UN/WV field names; use stable IDs for new departments.
+        return {"UN": "un_group", "WV": "wv_group"}.get(
+            department.code, f"department_{department.pk}_group"
+        )
