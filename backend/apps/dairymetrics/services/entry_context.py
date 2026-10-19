@@ -131,6 +131,9 @@ def _existing_entry_department_code_for_date(*, member, departments, entry_date)
 def default_entry_department_code(*, member, departments, selected_department, entry_date=None):
     if selected_department:
         return selected_department
+    department_codes = [department.code for department in departments]
+    if member.default_department and member.default_department.code in department_codes:
+        return member.default_department.code
     if entry_date is not None:
         existing_entry_department_code = _existing_entry_department_code_for_date(
             member=member,
@@ -139,9 +142,6 @@ def default_entry_department_code(*, member, departments, selected_department, e
         )
         if existing_entry_department_code:
             return existing_entry_department_code
-    department_codes = [department.code for department in departments]
-    if member.default_department and member.default_department.code in department_codes:
-        return member.default_department.code
     return department_codes[0] if department_codes else ""
 
 
