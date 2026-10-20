@@ -4655,5 +4655,20 @@
     "action": "決済入力準備の初期選択をメイン部署優先へ修正。関連95テスト成功",
     "reason": "別部署の当日入力・部署目標よりメイン部署を優先。手動選択と未設定・無効・所属外の代替選択、既存データ保持を確認",
     "next_action": "コミットして報告。PUSH・本番反映は未実施"
+  },
+  {
+    "timestamp": "2026-10-20T17:48:51+09:00",
+    "expires_at": "2026-11-19T17:48:51+09:00",
+    "retention_days": 30,
+    "run_id": "run-20261020-adjustment-columns",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "補正実績の郵送・QR・増額3枠とWV別一覧、入力順変更を検証。関連110テスト成功",
+    "reason": "PC・スマホで配置、追加読込の分離／重複なし、絞り込み、WV入力切替を確認。check・BOM・差分検査成功",
+    "next_action": "コミットして報告。PUSH・本番反映は未実施"
   }
 ]

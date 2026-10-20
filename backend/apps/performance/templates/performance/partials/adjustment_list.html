@@ -1,4 +1,8 @@
-{% if adjustments %}
+<div class="performance-adjustment-columns">
+{% for group in adjustment_groups %}
+<section class="performance-adjustment-column{% if group.code == 'wv' or group.code == 'other' %} performance-adjustment-column--wv{% endif %}" data-source-type="{{ group.code }}" aria-labelledby="adjustment-heading-{{ group.code }}">
+  <h4 id="adjustment-heading-{{ group.code }}">{{ group.label }} <span class="muted">{{ group.count }}件</span></h4>
+{% if group.rows %}
 <div class="table-scroll">
   <table class="mobile-card-table">
     <thead>
@@ -12,7 +16,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for adjustment in adjustments %}
+      {% for adjustment in group.rows %}
       <tr>
         <td data-label="対象日">{{ adjustment.target_date|date:"Y/m/d" }}</td>
         <td data-label="メンバー">{{ adjustment.member_name }}</td>
@@ -22,19 +26,19 @@
           {% if adjustment.location_name %}
           <div>{{ adjustment.location_name }}</div>
           {% endif %}
-          <div class="muted">{{ adjustment.detail_text }}</div>
+          {% if group.code == 'wv' or group.code == 'other' %}<div class="muted">{{ adjustment.detail_text }}</div>{% endif %}
           {{ adjustment.amount }}円
         </td>
         <td data-label="操作">
           {% if adjustment.edit_url %}
-          <a class="ui-icon-button" href="{{ adjustment.edit_url }}" aria-label="{{ adjustment.member_name }}の補正実績を編集" title="編集">
-            <i class="fa-solid fa-pen"></i>
+          <a class="ui-button ui-button--quiet" href="{{ adjustment.edit_url }}" aria-label="{{ adjustment.member_name }}の補正実績を編集" title="編集">
+            編集
           </a>
           {% endif %}
-          <form method="post" action="{{ adjustment.delete_url }}" style="display:inline;" onsubmit="return confirm('この補正実績を削除します。よろしいですか？');">
+          <form method="post" action="{{ adjustment.delete_url }}" class="performance-adjustment-delete-form" onsubmit="return confirm('この補正実績を削除します。よろしいですか？');">
             {% csrf_token %}
-            <button class="ui-icon-button ui-icon-button--danger" type="submit" aria-label="{{ adjustment.member_name }}の補正実績を削除" title="削除">
-              <i class="fa-solid fa-trash"></i>
+            <button class="ui-button ui-button--danger" type="submit" aria-label="{{ adjustment.member_name }}の補正実績を削除" title="削除">
+              削除
             </button>
           </form>
         </td>
@@ -43,11 +47,14 @@
     </tbody>
   </table>
 </div>
-{% if page_obj.has_next %}
-<div class="inline-row mt-12">
-  <button type="button" class="ui-button ui-button--secondary" id="performance-adjustments-load-more-btn" data-next-page="{{ page_obj.next_page_number }}">さらに20件表示</button>
-</div>
-{% endif %}
 {% else %}
 <p class="muted">条件に一致する補正実績はありません。</p>
+{% endif %}
+</section>
+{% endfor %}
+</div>
+{% if adjustments_has_more %}
+<div class="inline-row mt-12">
+  <button type="button" class="ui-button ui-button--secondary" id="performance-adjustments-load-more-btn" data-next-page="{{ adjustments_next_page }}">各種別をさらに20件表示</button>
+</div>
 {% endif %}

@@ -66,6 +66,7 @@ from apps.performance.services.scopes import (
 )
 from apps.performance.services.admin_entries import build_admin_entry_management_page
 from apps.performance.services.adjustments import (
+    adjustment_type_columns,
     combined_adjustment_list_rows,
     filtered_adjustments_queryset,
 )
@@ -1105,6 +1106,7 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
         "adjustments": page_obj.object_list,
         "page_obj": page_obj,
         "paginator": paginator,
+        **adjustment_type_columns(adjustments_queryset, page=page_obj.number),
     }
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return JsonResponse(
@@ -1132,6 +1134,7 @@ def performance_adjustments(request: HttpRequest) -> HttpResponse:
         "adjustments": page_obj.object_list,
         "member_options": member_options,
         "department_code_map": department_code_map,
+        **list_context,
     }
     return render(request, "performance/adjustments.html", context)
 

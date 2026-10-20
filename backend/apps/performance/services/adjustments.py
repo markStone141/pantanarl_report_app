@@ -111,6 +111,7 @@ def _adjustment_list_row(adjustment):
     return {
         "id": adjustment.id,
         "record_type": "adjustment",
+        "source_type": adjustment.source_type,
         "target_date": adjustment.target_date,
         "created_at": adjustment.created_at,
         "member_name": adjustment.member.name,
@@ -128,6 +129,7 @@ def _cancellation_list_row(cancellation):
     return {
         "id": cancellation.id,
         "record_type": "cancellation",
+        "source_type": "cancel",
         "target_date": cancellation.target_date,
         "created_at": cancellation.created_at,
         "member_name": cancellation.member.name,
@@ -155,3 +157,24 @@ def combined_adjustment_list_rows(cleaned_data):
         key=lambda row: (row["target_date"], row["created_at"]),
         reverse=True,
     )
+
+
+def adjustment_type_columns(rows, *, page, per_page=20):
+    labels = dict(MetricAdjustment.SOURCE_CHOICES)
+    primary = [MetricAdjustment.SOURCE_POSTAL, MetricAdjustment.SOURCE_QR, MetricAdjustment.SOURCE_INCREASE]
+    start = (page - 1) * per_page
+    stop = start + per_page
+    groups = []
+    for code in primary:
+        records = [row for row in rows if row["source_type"] == code and row["department_code"] != "WV"]
+        groups.append({"code": code, "label": labels[code], "count": len(records), "rows": records[start:stop]})
+    wv_records = [row for row in rows if row["department_code"] == "WV"]
+    groups.append({"code": "wv", "label": "WV 補正実績一覧", "count": len(wv_records), "rows": wv_records[start:stop]})
+    legacy_records = [row for row in rows if row["department_code"] != "WV" and row["source_type"] not in primary]
+    if legacy_records:
+        groups.append({"code": "other", "label": "その他の補正実績", "count": len(legacy_records), "rows": legacy_records[start:stop]})
+    return {
+        "adjustment_groups": groups,
+        "adjustments_has_more": any(group["count"] > stop for group in groups),
+        "adjustments_next_page": page + 1,
+    }
