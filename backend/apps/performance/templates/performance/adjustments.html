@@ -3,6 +3,10 @@
 
 {% block title %}戻り・増額登録 | 実績管理{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'performance/adjustments.css' %}?v=1">
+{% endblock %}
+
 {% block content %}
 <div class="app-shell">
   {% include "includes/app_navigation.html" with page_title="戻り・増額登録" page_subtitle="戻り・増額・郵送などの後追い補正を管理します。" %}
@@ -13,16 +17,37 @@
     <div class="note mb-10">{{ status_message }}</div>
     {% endif %}
     <h3>{% if edit_adjustment %}戻り・増額を編集{% else %}戻り・増額を追加{% endif %}</h3>
-    <form method="post" class="grid dairymetrics-entry-grid">
+    <form method="post" class="grid dairymetrics-entry-grid performance-adjustment-form">
       {% csrf_token %}
       {% if edit_adjustment %}
       <input type="hidden" name="adjustment_id" value="{{ edit_adjustment.id }}">
       {% endif %}
       <div class="dairymetrics-field">
+        <label for="{{ form.source_type.id_for_label }}">{{ form.source_type.label }}</label>
+        {{ form.source_type }}
+        {% if form.source_type.errors %}
+        <div class="error-text">{{ form.source_type.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="dairymetrics-field">
         <label for="{{ form.department.id_for_label }}">{{ form.department.label }}</label>
         {{ form.department }}
         {% if form.department.errors %}
         <div class="error-text">{{ form.department.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="dairymetrics-field">
+        <label for="{{ form.target_date.id_for_label }}">{{ form.target_date.label }}</label>
+        {{ form.target_date }}
+        {% if form.target_date.errors %}
+        <div class="error-text">{{ form.target_date.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="dairymetrics-field">
+        <label for="{{ form.location_name.id_for_label }}">{{ form.location_name.label }}</label>
+        {{ form.location_name }}
+        {% if form.location_name.errors %}
+        <div class="error-text">{{ form.location_name.errors|striptags }}</div>
         {% endif %}
       </div>
       <div class="dairymetrics-field" id="performance-adjustment-member-field">
@@ -41,20 +66,6 @@
         <div class="error-text">{{ form.member.errors|striptags }}</div>
         {% endif %}
       </div>
-      <div class="dairymetrics-field">
-        <label for="{{ form.target_date.id_for_label }}">{{ form.target_date.label }}</label>
-        {{ form.target_date }}
-        {% if form.target_date.errors %}
-        <div class="error-text">{{ form.target_date.errors|striptags }}</div>
-        {% endif %}
-      </div>
-      <div class="dairymetrics-field">
-        <label for="{{ form.source_type.id_for_label }}">{{ form.source_type.label }}</label>
-        {{ form.source_type }}
-        {% if form.source_type.errors %}
-        <div class="error-text">{{ form.source_type.errors|striptags }}</div>
-        {% endif %}
-      </div>
       <div class="dairymetrics-field" id="performance-adjustment-cancel-result-field">
         <label for="{{ form.cancel_result_type.id_for_label }}">{{ form.cancel_result_type.label }}</label>
         {{ form.cancel_result_type }}
@@ -67,13 +78,6 @@
         {{ form.cancel_cs_count }}
         {% if form.cancel_cs_count.errors %}
         <div class="error-text">{{ form.cancel_cs_count.errors|striptags }}</div>
-        {% endif %}
-      </div>
-      <div class="dairymetrics-field">
-        <label for="{{ form.location_name.id_for_label }}">{{ form.location_name.label }}</label>
-        {{ form.location_name }}
-        {% if form.location_name.errors %}
-        <div class="error-text">{{ form.location_name.errors|striptags }}</div>
         {% endif %}
       </div>
       <div class="dairymetrics-field">
@@ -103,7 +107,7 @@
     <h3>補正実績一覧</h3>
     <div class="dashboard-toolbar mt-12">
       <form method="get" id="performance-adjustments-filter-form" action="{% url 'performance_adjustments' %}" class="member-settings-filter-form">
-        <input type="search" name="q" value="{{ list_filter_form.q.value|default:'' }}" placeholder="メンバー・現場・種別で検索">
+        <input type="search" name="q" value="{{ list_filter_form.q.value|default:'' }}" placeholder="メンバー・現場で検索">
         <select name="department" id="performance-adjustments-department-filter">
           <option value="">すべての部署</option>
           {% for department in list_filter_form.fields.department.queryset %}
@@ -408,6 +412,7 @@
     }
 
     let debounceTimer = null;
+    let listRequestId = 0;
 
     function bindLoadMoreButton() {
       const loadMoreButton = document.getElementById("performance-adjustments-load-more-btn");
@@ -419,11 +424,15 @@
         if (!nextPage) {
           return;
         }
-        fetchAdjustments(nextPage, true);
+        loadMoreButton.disabled = true;
+        fetchAdjustments(nextPage, true).finally(function () {
+          loadMoreButton.disabled = false;
+        });
       });
     }
 
     async function fetchAdjustments(page, append) {
+      const requestId = ++listRequestId;
       const params = new URLSearchParams(new FormData(listForm));
       if (page) {
         params.set("page", String(page));
@@ -435,13 +444,21 @@
         return;
       }
       const payload = await response.json();
+      if (requestId !== listRequestId) return;
       if (append) {
         const nextDoc = document.createElement("div");
         nextDoc.innerHTML = payload.list_html || "";
-        const currentBody = listContainer.querySelector("tbody");
-        const nextRows = nextDoc.querySelectorAll("tbody tr");
-        nextRows.forEach(function (row) {
-          currentBody.appendChild(row);
+        nextDoc.querySelectorAll("[data-source-type]").forEach(function (column) {
+          const currentColumn = listContainer.querySelector(`[data-source-type="${column.dataset.sourceType}"]`);
+          if (!currentColumn) return;
+          const currentBody = currentColumn.querySelector("tbody");
+          if (!currentBody) {
+            if (column.querySelector("tbody")) currentColumn.replaceWith(column);
+            return;
+          }
+          column.querySelectorAll("tbody tr").forEach(function (row) {
+            currentBody.appendChild(row);
+          });
         });
         const currentButton = listContainer.querySelector("#performance-adjustments-load-more-btn");
         if (currentButton) {

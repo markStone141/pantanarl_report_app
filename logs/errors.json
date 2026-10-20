@@ -912,5 +912,20 @@
     "action": "初回テストで既定設定解除後のNone期待が失敗",
     "reason": "既存の共通グループへのフォールバックを確認。既定設定レコードの解除と保存時の宛先解決を分けてテストを修正",
     "next_action": "関連テスト再実行:162件成功"
+  },
+  {
+    "timestamp": "2026-10-20T17:48:51+09:00",
+    "expires_at": "2027-01-18T17:48:51+09:00",
+    "retention_days": 90,
+    "run_id": "run-20261020-adjustment-columns",
+    "loop": 1,
+    "role": "validator",
+    "event": "result_observed",
+    "status": "error",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "初回ブラウザ検証がサンドボックスのソケット制限で起動失敗",
+    "reason": "アプリではなく実行環境の制限。許可された実行で検証用サーバーとブラウザを起動して解消",
+    "next_action": "最終ブラウザ検証はPC・スマホ双方で成功"
   }
 ]

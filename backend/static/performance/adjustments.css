@@ -1,0 +1,76 @@
+.performance-adjustment-form {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.performance-adjustment-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.performance-adjustment-column {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.performance-adjustment-column h4 {
+  margin: 0 0 12px;
+}
+
+.performance-adjustment-column--wv {
+  grid-column: 1 / -1;
+}
+
+.performance-adjustment-delete-form {
+  display: inline;
+}
+
+.performance-adjustment-column .mobile-card-table,
+.performance-adjustment-column .mobile-card-table tbody,
+.performance-adjustment-column .mobile-card-table td {
+  display: block;
+  width: auto;
+  min-width: 0;
+}
+
+.performance-adjustment-column .mobile-card-table thead {
+  display: none;
+}
+
+.performance-adjustment-column .mobile-card-table tr {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0;
+}
+
+.performance-adjustment-column .mobile-card-table td {
+  padding: 2px 0;
+  border: 0;
+  overflow-wrap: anywhere;
+}
+
+.performance-adjustment-column .mobile-card-table td::before {
+  content: attr(data-label) "：";
+  position: static;
+  display: inline;
+  font-weight: 600;
+}
+
+.performance-adjustment-column .mobile-card-table td[data-label="種別"] {
+  display: none;
+}
+
+.performance-adjustment-column--wv .mobile-card-table td[data-label="種別"] {
+  display: block;
+}
+
+@media (max-width: 800px) {
+  .performance-adjustment-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
