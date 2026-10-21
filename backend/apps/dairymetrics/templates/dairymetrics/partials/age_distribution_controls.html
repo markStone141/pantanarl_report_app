@@ -1,0 +1,9 @@
+<div class="ui-chart-card__controls" role="group" aria-label="年代別グラフの対象" data-age-controls
+     data-department="{{ selected_department.code }}" data-scope="{{ scope_value }}"
+     data-month="{{ month_value }}" data-period-id="{{ selected_period_id }}"
+     data-start-date="{{ scope.start_date|date:'Y-m-d' }}" data-end-date="{{ scope.end_date|date:'Y-m-d' }}">
+  <button type="button" class="ui-choice-button" data-age-nationality="overseas" aria-pressed="false">海外のみ</button>
+  <button type="button" class="ui-choice-button" data-age-nationality="domestic" aria-pressed="false">国内のみ</button>
+  <button type="button" class="ui-choice-button is-active" data-age-nationality="all" aria-pressed="true">海外・国内込み</button>
+</div>
+<p class="muted" role="status" aria-live="polite" data-age-status></p>

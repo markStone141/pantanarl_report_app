@@ -180,7 +180,11 @@
     createRateDoughnutChart(canvas, values);
   });
 
-  document.querySelectorAll(".metrics-v2-distribution-chart").forEach(function (canvas) {
+  function renderDistributionChart(canvas) {
+    if (canvas._distributionChart) {
+      canvas._distributionChart.destroy();
+      canvas._distributionChart = null;
+    }
     const labels = (canvas.dataset.chartLabels || "").split("|").filter(Boolean);
     const values = (canvas.dataset.chartValues || "")
       .split(",")
@@ -194,7 +198,7 @@
     if (!context) {
       return;
     }
-    new window.Chart(context, {
+    canvas._distributionChart = new window.Chart(context, {
       type: "doughnut",
       data: {
         labels: labels,
@@ -216,6 +220,81 @@
         },
       },
       plugins: [distributionLabelPlugin],
+    });
+  }
+
+  document.querySelectorAll(".metrics-v2-distribution-chart").forEach(renderDistributionChart);
+
+  document.querySelectorAll("[data-age-distribution]").forEach(function (article) {
+    const canvas = article.querySelector(".metrics-v2-distribution-chart");
+    const status = article.querySelector("[data-age-status]");
+    const buttons = article.querySelectorAll("[data-age-nationality]");
+    const scopeData = article.querySelector("[data-age-controls]").dataset;
+    let requestId = 0;
+    let controller = null;
+    buttons.forEach(function (button) {
+      button.addEventListener("click", async function () {
+        const currentId = ++requestId;
+        if (controller) controller.abort();
+        controller = new AbortController();
+        const url = new URL(window.location.href);
+        url.searchParams.set("age_nationality", button.dataset.ageNationality);
+        url.searchParams.set("department", scopeData.department);
+        url.searchParams.set("scope", scopeData.scope);
+        url.searchParams.set("month", scopeData.month);
+        url.searchParams.set("period_id", scopeData.periodId);
+        url.searchParams.set("start_date", scopeData.startDate);
+        url.searchParams.set("end_date", scopeData.endDate);
+        article.setAttribute("aria-busy", "true");
+        status.textContent = "読み込み中…";
+        try {
+          const response = await fetch(url, {
+            headers: { "X-Requested-With": "XMLHttpRequest" }, signal: controller.signal,
+          });
+          if (!response.ok) throw new Error("request_failed");
+          const result = await response.json();
+          if (currentId !== requestId) return;
+          const card = result.card;
+          canvas.dataset.chartLabels = card.labels.join("|");
+          canvas.dataset.chartValues = card.counts.join(",");
+          renderDistributionChart(canvas);
+          article.querySelector(".ui-chart-card__meta").textContent = card.total_text;
+          let legend = article.querySelector(".metrics-v2-distribution-list");
+          if (!legend) {
+            legend = document.createElement("div");
+            legend.className = "metrics-v2-distribution-list ui-chart-legend";
+            article.querySelector(".ui-chart-card__body").appendChild(legend);
+          }
+          legend.replaceChildren();
+          legend.hidden = !card.has_data;
+          if (card.has_data) card.rows.forEach(function (row, index) {
+            const item = document.createElement("div");
+            item.className = "metrics-v2-distribution-row";
+            const label = document.createElement("span");
+            label.className = "metrics-v2-distribution-label";
+            const swatch = document.createElement("span");
+            swatch.className = `metrics-v2-distribution-swatch metrics-v2-distribution-swatch-${index}`;
+            label.append(swatch, document.createTextNode(row.label));
+            const value = document.createElement("span");
+            value.className = "muted";
+            value.textContent = `${row.count_text} / ${row.percent_text}`;
+            item.append(label, value);
+            legend.appendChild(item);
+          });
+          buttons.forEach(function (item) {
+            const selected = item === button;
+            item.classList.toggle("is-active", selected);
+            item.setAttribute("aria-pressed", selected ? "true" : "false");
+          });
+          status.textContent = `${button.textContent}：${card.total_text}`;
+        } catch (error) {
+          if (currentId === requestId && error.name !== "AbortError") {
+            status.textContent = "取得できませんでした。もう一度ボタンを押してください。";
+          }
+        } finally {
+          if (currentId === requestId) article.removeAttribute("aria-busy");
+        }
+      });
     });
   });
 
