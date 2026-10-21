@@ -1,0 +1,36 @@
+<section class="mt-16" aria-labelledby="normal-work-productivity-title">
+  <header class="ui-chart-card__header">
+    <div class="ui-chart-card__identity">
+      <h3 id="normal-work-productivity-title">1人稼働あたりの通常実績</h3>
+      <p class="ui-chart-card__description">通常実績合計 ÷ 延べ稼働人数。増額・QR・郵送などの補正は含めません。</p>
+    </div>
+    <div class="ui-chart-card__controls">
+      <label for="normal-work-productivity-mode">表示単位
+        <select id="normal-work-productivity-mode"><option value="daily">日別</option><option value="monthly">月別</option></select>
+      </label>
+    </div>
+  </header>
+  <div class="metric-card metrics-v2-stat-card metrics-v2-average-card mt-12">
+    <span class="metrics-v2-stat-label">選択期間の1人稼働あたり</span>
+    <strong class="metrics-v2-stat-value">{{ productivity.summary.average_text }}</strong>
+    <p class="muted">通常実績 {{ productivity.summary.amount_text }} ／ 延べ稼働人数 {{ productivity.summary.workers_text }}人日</p>
+    <p class="muted">日次実績がある人を稼働者として数えます。決済0件も含み、同じ人は1日1人です。月別は選択期間内で集計します。</p>
+  </div>
+  <div class="metrics-v2-chart-frame ui-chart-frame mt-12">
+    <canvas id="normal-work-productivity-chart" aria-label="1人稼働あたりの通常実績の推移"></canvas>
+    <p class="ui-chart-empty" data-chart-empty hidden>選択期間に稼働データがありません。</p>
+  </div>
+  <details class="mt-12">
+    <summary>集計の内訳を見る</summary>
+    <div data-productivity-table="daily"><div class="table-scroll">
+      <table class="mobile-card-table"><thead><tr><th>日付</th><th>通常実績</th><th>稼働人数</th><th>1人あたり</th></tr></thead><tbody>
+        {% for row in productivity.daily %}<tr><td data-label="日付">{{ row.label }}</td><td data-label="通常実績">{{ row.amount_text }}</td><td data-label="稼働人数">{{ row.workers_text }}人</td><td data-label="1人あたり">{{ row.average_text }}</td></tr>{% empty %}<tr><td colspan="4">稼働データがありません。</td></tr>{% endfor %}
+      </tbody></table>
+    </div></div>
+    <div data-productivity-table="monthly" hidden><div class="table-scroll">
+      <table class="mobile-card-table"><thead><tr><th>月</th><th>通常実績</th><th>延べ稼働人数</th><th>1人稼働あたり</th></tr></thead><tbody>
+        {% for row in productivity.monthly %}<tr><td data-label="月">{{ row.label }}</td><td data-label="通常実績">{{ row.amount_text }}</td><td data-label="延べ稼働人数">{{ row.workers_text }}人日</td><td data-label="1人稼働あたり">{{ row.average_text }}</td></tr>{% empty %}<tr><td colspan="4">稼働データがありません。</td></tr>{% endfor %}
+      </tbody></table>
+    </div></div>
+  </details>
+</section>

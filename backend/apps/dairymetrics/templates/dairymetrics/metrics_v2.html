@@ -59,6 +59,7 @@
           </div>
           {% endfor %}
         </div>
+        {% include 'dairymetrics/partials/normal_work_productivity.html' with productivity=metrics_v2_payload.normal_work_productivity %}
         </div>
       </article>
 
@@ -168,6 +169,6 @@
   </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=10"></script>
+<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=11"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 {% endblock %}

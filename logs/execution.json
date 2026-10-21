@@ -4730,5 +4730,20 @@
     "action": "年代別円グラフの海外／国内／込みAJAX切替を追加。関連81テストと実ブラウザ検証成功",
     "reason": "部署・期間・個人の権限制御と、両画面の件数・凡例更新、連打・通信失敗・0件復帰・スマホ表示を確認",
     "next_action": "コミットして報告。PUSH・本番反映は未実施"
+  },
+  {
+    "timestamp": "2026-10-21T16:38:52+09:00",
+    "expires_at": "2026-11-20T16:38:52+09:00",
+    "retention_days": 30,
+    "run_id": "run-20261021-normal-work-productivity",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "通常実績÷延べ稼働人数の全体指標を追加。関連86テスト・ブラウザー検証成功",
+    "reason": "日別／月別・加重集計・補正除外・部署分離・0件稼働・空期間・390px表示・既存AJAX回帰を確認",
+    "next_action": "コミットして報告。PUSH・本番反映は未実施"
   }
 ]

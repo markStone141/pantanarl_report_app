@@ -1,24 +1,24 @@
 # Latest AI Work Summary
 
-- Timestamp: `2026-10-21T16:12:59+09:00`
-- Run ID: `run-20261021-age-nationality-ajax`
+- Timestamp: `2026-10-21T16:38:52+09:00`
+- Run ID: `run-20261021-normal-work-productivity`
 - Loop: `1`
 - Role: `validator`
 - Event: `validation_completed`
 - Status: `success`
 - Event Retention: `30 days`
-- Event Expires At: `2026-11-20T16:12:59+09:00`
+- Event Expires At: `2026-11-20T16:38:52+09:00`
 - Summary Retention: `365 days`
-- Summary Expires At: `2027-10-21T16:12:59+09:00`
+- Summary Expires At: `2027-10-21T16:38:52+09:00`
 - Sensitivity: `normal`
 
 ## Action
 
-年代別円グラフの海外／国内／込みAJAX切替を追加。関連81テストと実ブラウザ検証成功
+通常実績÷延べ稼働人数の全体指標を追加。関連86テスト・ブラウザー検証成功
 
 ## Reason
 
-部署・期間・個人の権限制御と、両画面の件数・凡例更新、連打・通信失敗・0件復帰・スマホ表示を確認
+日別／月別・加重集計・補正除外・部署分離・0件稼働・空期間・390px表示・既存AJAX回帰を確認
 
 ## Next Action
 
