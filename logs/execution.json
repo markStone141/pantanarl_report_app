@@ -4745,5 +4745,20 @@
     "action": "通常実績÷延べ稼働人数の全体指標を追加。関連86テスト・ブラウザー検証成功",
     "reason": "日別／月別・加重集計・補正除外・部署分離・0件稼働・空期間・390px表示・既存AJAX回帰を確認",
     "next_action": "コミットして報告。PUSH・本番反映は未実施"
+  },
+  {
+    "timestamp": "2026-10-21T16:41:15+09:00",
+    "expires_at": "2026-11-20T16:41:15+09:00",
+    "retention_days": 30,
+    "run_id": "run-20261021-reflection-work-productivity",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "振り返りレポートに通常実績÷延べ稼働人数を追加。関連87テスト、拡張後6テスト、ブラウザー確認成功",
+    "reason": "共通集計・表示を再利用。月・路程・任意期間・補正除外・空期間・日別月別切替・スマホ表示を確認",
+    "next_action": "コミットして報告。PUSH・本番反映は未実施"
   }
 ]

@@ -35,6 +35,10 @@
     {% endfor %}
   </section>
 
+  <div class="card mt-16">
+    {% include 'dairymetrics/partials/normal_work_productivity.html' with productivity=report.normal_work_productivity %}
+  </div>
+
   <section class="grid grid-2 mt-16 metrics-report-section-grid">
     <article class="card">
       <h3>目標との差分</h3>

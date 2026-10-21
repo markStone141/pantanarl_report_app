@@ -5,6 +5,7 @@ from django.urls import reverse
 from apps.accounts.models import Department, Member
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjustment
 from apps.dairymetrics.services.work_productivity import build_normal_work_productivity
+from apps.targets.models import Period
 
 
 class NormalWorkProductivityTests(TestCase):
@@ -71,3 +72,28 @@ class NormalWorkProductivityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="normal-work-productivity-mode"')
         self.assertEqual(response.context["metrics_v2_payload"]["normal_work_productivity"]["summary"]["average"], 7000)
+
+    def test_reflection_report_scopes_use_same_productivity_payload(self):
+        self.client.force_login(get_user_model().objects.create_user("report-admin", is_staff=True))
+        period = Period.objects.create(
+            month=date(2026, 1, 1), name="対象路程", status="active",
+            start_date=date(2026, 1, 30), end_date=date(2026, 2, 1),
+        )
+        MetricAdjustment.objects.create(
+            department=self.department, member=self.members[0], target_date=date(2026, 1, 30),
+            source_type="increase", support_amount=90000,
+        )
+        queries = [
+            ({"scope": "custom", "start_date": "2026-01-30", "end_date": "2026-02-01"}, 7000),
+            ({"scope": "period", "period_id": period.pk}, 7000),
+            ({"scope": "month", "month": "2026-01"}, 7500),
+            ({"scope": "month", "month": "2026-03"}, None),
+        ]
+        for query, expected in queries:
+            with self.subTest(query=query):
+                response = self.client.get(reverse("dairymetrics_metrics_report"), {"department": "UNW", **query})
+                self.assertEqual(response.status_code, 200)
+                report = response.context["report"]
+                self.assertEqual(report["normal_work_productivity"]["summary"]["average"], expected)
+                self.assertEqual(report["normal_work_productivity"], report["analysis_chart_payload"]["normal_work_productivity"])
+                self.assertContains(response, 'id="normal-work-productivity-mode"')
