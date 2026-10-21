@@ -5,6 +5,7 @@ from django.db.models import Count, Sum
 from apps.common.report_metrics import is_un_department_code
 
 from apps.dairymetrics.models import MemberDailyMetricEntry, MemberMetricTransaction, MetricAdjustment
+from apps.dairymetrics.services.work_productivity import build_normal_work_productivity
 from apps.dairymetrics.services.final_actuals import (
     ENTRY_METRIC_FIELDS,
     collect_department_final_actual_totals,
@@ -300,7 +301,12 @@ def _adjustment_report_rows(*, department, scope):
 
 
 def _analysis_chart_payload(*, department, scope) -> dict:
-    return build_metrics_v2_distribution_payload(department=department, scope=scope)
+    return {
+        **build_metrics_v2_distribution_payload(department=department, scope=scope),
+        "normal_work_productivity": build_normal_work_productivity(
+            department=department, start_date=scope.start_date, end_date=scope.end_date,
+        ),
+    }
 
 
 def build_metrics_scope_report(*, department, scope):

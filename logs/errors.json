@@ -957,5 +957,20 @@
     "action": "本人画面の増額分類再現テストで2テスト×4カードが失敗",
     "reason": "月／路程カードが増額を通常へ、QR・郵送のみを補正へ分類していた。先行調査は当該カードを確認できていなかった",
     "next_action": "補正金額共通集計を使用する修正後、関連191テスト成功"
+  },
+  {
+    "timestamp": "2026-10-21T16:38:52+09:00",
+    "expires_at": "2027-01-19T16:38:52+09:00",
+    "retention_days": 90,
+    "run_id": "run-20261021-normal-work-productivity",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_failed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "ブラウザー検証で内訳表のhidden競合と空期間canvas表示を検出",
+    "reason": "表の表示用ラッパーとChart.jsのinline displayを修正し再検証で解消",
+    "next_action": "コミットして報告。PUSH・本番反映は未実施"
   }
 ]

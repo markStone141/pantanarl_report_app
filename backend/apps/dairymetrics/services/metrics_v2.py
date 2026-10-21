@@ -35,6 +35,7 @@ from apps.dairymetrics.services.final_actuals import (
 )
 from apps.dairymetrics.services.metrics_v2_ranking import build_ranking_metric_map, ranking_metric_options_for_department
 from apps.common.target_periods import current_active_period
+from apps.dairymetrics.services.work_productivity import build_normal_work_productivity
 
 
 @dataclass(frozen=True)
@@ -853,6 +854,9 @@ def build_metrics_v2_dashboard_payload(
 
     return {
         "scope": scope,
+        "normal_work_productivity": build_normal_work_productivity(
+            department=department, start_date=scope.start_date, end_date=scope.end_date,
+        ),
         "overall_summary": _build_summary_cards(
             title_prefix=f"{department.name} 全体",
             department_code=department.code,

@@ -35,6 +35,10 @@
     {% endfor %}
   </section>
 
+  <div class="card mt-16">
+    {% include 'dairymetrics/partials/normal_work_productivity.html' with productivity=report.normal_work_productivity %}
+  </div>
+
   <section class="grid grid-2 mt-16 metrics-report-section-grid">
     <article class="card">
       <h3>目標との差分</h3>
@@ -346,7 +350,7 @@
 
 {{ report.analysis_chart_payload|json_script:"metrics-v2-dashboard-data" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=10"></script>
+<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=11"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 <script>
   (() => {

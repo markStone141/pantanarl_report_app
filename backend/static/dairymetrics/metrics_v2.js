@@ -390,6 +390,51 @@
   buildComboChart("metrics-v2-month-history-chart", payload.month_history);
   buildComboChart("metrics-v2-period-history-chart", payload.period_history);
 
+  const productivityCanvas = document.getElementById("normal-work-productivity-chart");
+  const productivityMode = document.getElementById("normal-work-productivity-mode");
+  let productivityChart;
+  function renderProductivity() {
+    if (!productivityCanvas || !productivityMode) return;
+    const mode = productivityMode.value;
+    const rows = (payload.normal_work_productivity || {})[mode] || [];
+    document.querySelectorAll("[data-productivity-table]").forEach(function (table) {
+      table.hidden = table.dataset.productivityTable !== mode;
+    });
+    if (productivityChart) productivityChart.destroy();
+    // Chart.js restores an inline display value when destroying a chart.
+    productivityCanvas.style.display = rows.length ? "" : "none";
+    setChartEmptyState(productivityCanvas, rows.length === 0);
+    if (!rows.length) return;
+    productivityChart = new Chart(productivityCanvas, {
+      type: "line",
+      data: {
+        labels: rows.map(row => row.label),
+        datasets: [{
+          label: "1人稼働あたりの通常実績",
+          data: rows.map(row => row.average),
+          borderColor: defaultPalette[0], backgroundColor: defaultPalette[0],
+          tension: 0.15,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, ticks: { callback: value => value.toLocaleString() + "円" } } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: {
+            label: context => rows[context.dataIndex].average_text,
+            afterLabel: function (context) {
+              const row = rows[context.dataIndex];
+              return "通常実績 " + row.amount_text + " ／ " + row.workers_text + (mode === "monthly" ? "人日" : "人");
+            },
+          } },
+        },
+      },
+    });
+  }
+  if (productivityMode) productivityMode.addEventListener("change", renderProductivity);
+  renderProductivity();
+
   const rankingCanvas = document.getElementById("metrics-v2-ranking-chart");
   const rankingSelect = document.querySelector("[data-metrics-v2-ranking-select]");
   let rankingChart = null;
