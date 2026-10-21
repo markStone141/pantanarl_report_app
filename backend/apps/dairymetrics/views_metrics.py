@@ -10,10 +10,21 @@ from apps.common.target_periods import period_options_active_first
 
 from .auth import get_member_profile, require_dairymetrics_member
 from .services.entry_context import parse_month_input, resolve_metrics_v2_department
-from .services.metrics_v2 import build_metrics_v2_dashboard_payload, resolve_metrics_v2_scope
+from .services.metrics_v2 import build_metrics_v2_dashboard_payload, build_metrics_v2_distribution_payload, resolve_metrics_v2_scope
 from .services.report_exports import build_report_ai_text, build_report_export_payload
 from .services.reports import build_metrics_scope_report
 from .view_helpers import login_redirect_url, member_directory_queryset, requested_or_current_period
+
+
+def _age_distribution_response(request, *, department, scope, member=None):
+    nationality = request.GET.get("age_nationality", "all")
+    if nationality not in {"all", "overseas", "domestic"}:
+        return JsonResponse({"error": "invalid_nationality"}, status=400)
+    payload = build_metrics_v2_distribution_payload(
+        department=department, scope=scope, member=member,
+        nationality_type=None if nationality == "all" else nationality,
+    )
+    return JsonResponse({"card": payload["distribution_cards"][0], "nationality": nationality})
 
 
 def _shared_navigation_context(*, request, viewer_member, selected_department, selected_member=None):
@@ -71,6 +82,11 @@ def metrics_v2(request: HttpRequest) -> HttpResponse:
         requested_start_date=requested_start_date,
         requested_end_date=requested_end_date,
     )
+    if "age_nationality" in request.GET:
+        return _age_distribution_response(
+            request, department=selected_department, scope=scope,
+            member=selected_member if request.user.is_staff else viewer_member,
+        )
     payload = build_metrics_v2_dashboard_payload(
         department=selected_department,
         scope=scope,
@@ -122,7 +138,7 @@ def metrics_v2(request: HttpRequest) -> HttpResponse:
     return render(request, "dairymetrics/metrics_v2.html", context)
 
 
-def metrics_report_data(request):
+def metrics_report_data(request, *, include_report=True):
     viewer_member = get_member_profile(request.user)
     departments, selected_department = resolve_metrics_v2_department(request=request, member=viewer_member)
     if not selected_department:
@@ -155,7 +171,7 @@ def metrics_report_data(request):
     if requested_scope == "period" and scope.scope != "period":
         scope = resolve_metrics_v2_scope(today=today, scope="month", requested_month=requested_month)
 
-    report = build_metrics_scope_report(department=selected_department, scope=scope)
+    report = build_metrics_scope_report(department=selected_department, scope=scope) if include_report else None
     export_query = urlencode(
         {
             "department": selected_department.code,
@@ -191,9 +207,13 @@ def metrics_report_data(request):
 
 @require_dairymetrics_member
 def metrics_report(request: HttpRequest) -> HttpResponse:
-    context = metrics_report_data(request)
+    context = metrics_report_data(request, include_report="age_nationality" not in request.GET)
     if context is None:
         return redirect(login_redirect_url(request.user))
+    if "age_nationality" in request.GET:
+        return _age_distribution_response(
+            request, department=context["selected_department"], scope=context["scope"],
+        )
     return render(request, "dairymetrics/metrics_report.html", context)
 
 

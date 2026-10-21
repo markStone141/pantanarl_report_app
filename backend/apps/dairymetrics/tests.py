@@ -1348,7 +1348,7 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
         self.assertContains(response, "決済入力")
         self.assertContains(response, reverse("dairymetrics_entry_v2_transaction_demo"))
         self.assertContains(response, "metrics_v2.js")
-        self.assertContains(response, "?v=9")
+        self.assertContains(response, "?v=10")
         self.assertNotContains(response, 'role="tablist"', html=False)
         self.assertContains(response, reverse("performance_member_insight", args=[self.member.id, self.department.id]))
         ranking_metric = response.context["metrics_v2_payload_json"]["ranking"]["metric_map"]["support_amount"]

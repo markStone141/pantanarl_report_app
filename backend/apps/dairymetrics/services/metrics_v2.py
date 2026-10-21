@@ -573,13 +573,15 @@ def _build_distribution_cards(*, department_code: str, transaction_queryset):
     return cards, average_amount_comparison
 
 
-def build_metrics_v2_distribution_payload(*, department, scope: MetricsV2Scope, member=None) -> dict:
+def build_metrics_v2_distribution_payload(*, department, scope: MetricsV2Scope, member=None, nationality_type=None) -> dict:
     transaction_queryset = MemberMetricTransaction.objects.filter(
         entry__department=department,
         entry__entry_date__range=(scope.start_date, scope.end_date),
     ).select_related("entry")
     if member is not None:
         transaction_queryset = transaction_queryset.filter(entry__member=member)
+    if nationality_type is not None:
+        transaction_queryset = transaction_queryset.filter(nationality_type=nationality_type)
 
     distributions, average_amount_comparison = _build_distribution_cards(
         department_code=department.code,

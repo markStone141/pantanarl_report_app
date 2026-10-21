@@ -284,7 +284,7 @@
     </div>
     <div class="grid grid-3 metrics-v2-distribution-grid mt-12">
       {% for card in report.distribution_cards %}
-      <article class="card ui-chart-card">
+      <article class="card ui-chart-card"{% if forloop.first %} data-age-distribution{% endif %}>
         <header class="ui-chart-card__header">
           <div class="ui-chart-card__identity">
             <span class="ui-chart-card__kicker">Audience mix</span>
@@ -292,7 +292,7 @@
           </div>
           <span class="ui-chart-card__meta">{{ card.total_text }}</span>
         </header>
-        <div class="ui-chart-card__body">
+        <div class="ui-chart-card__body">{% if forloop.first %}{% include 'dairymetrics/partials/age_distribution_controls.html' %}{% endif %}
         <div class="metrics-v2-chart-frame metrics-v2-chart-frame-distribution ui-chart-frame ui-chart-frame--compact">
           <canvas
             class="metrics-v2-distribution-chart"
@@ -346,7 +346,7 @@
 
 {{ report.analysis_chart_payload|json_script:"metrics-v2-dashboard-data" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=9"></script>
+<script src="{% static 'dairymetrics/metrics_v2.js' %}?v=10"></script>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=6"></script>
 <script>
   (() => {
