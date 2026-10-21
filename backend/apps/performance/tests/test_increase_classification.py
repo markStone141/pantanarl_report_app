@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.dairymetrics.models import MemberDailyMetricEntry, MetricAdjustment
+from apps.dairymetrics.models import MemberDailyMetricEntry, MetricAdjustment, MemberMonthMetricTarget, MemberPeriodMetricTarget
 from apps.targets.models import MonthTargetMetricValue, Period, PeriodTargetMetricValue, TargetMetric
 from .base import PerformanceTestBase
 
@@ -78,3 +78,35 @@ class IncreaseAdjustmentClassificationTests(PerformanceTestBase):
         self.assertEqual(card["chart_values"], [0, 6200, 3800])
         self.assertEqual(card["actual_amount"], 6200)
         self.assertEqual(card["base_actual_amount_text"], "0円")
+
+    def assert_individual_progress_separates_all_adjustment_types(self, code):
+        self.prepare_increase(code=code)
+        MetricAdjustment.objects.create(
+            member=self.member, department=self.department, target_date=timezone.localdate(),
+            source_type="qr", return_qr_amount=1500, return_qr_count=1,
+        )
+        MemberMonthMetricTarget.objects.create(
+            member=self.member, department=self.department,
+            target_month=timezone.localdate().replace(day=1), target_amount=10000,
+        )
+        MemberPeriodMetricTarget.objects.create(
+            member=self.member, department=self.department, period=self.period, target_amount=10000,
+        )
+        self.member.user = self.create_user("individual-progress")
+        self.member.save(update_fields=["user"])
+        self.login(self.member.user)
+        response = self.client.get(reverse("performance_member_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        for key in ["member_month_progress", "member_period_progress", "department_month_progress", "department_period_progress"]:
+            with self.subTest(card=key, department=code):
+                card = response.context[key]
+                self.assertEqual(card["actual_amount"], 10700)
+                self.assertEqual(card["base_actual_amount_text"], "3,000円")
+                self.assertEqual(card["adjustment_amount_text"], "7,700円")
+                self.assertEqual(card["chart_values"], [3000, 7700, 0])
+
+    def test_individual_month_and_period_include_increase_and_qr_in_adjustments(self):
+        self.assert_individual_progress_separates_all_adjustment_types("UN")
+
+    def test_unw_individual_progress_uses_same_adjustment_breakdown(self):
+        self.assert_individual_progress_separates_all_adjustment_types("UNW")

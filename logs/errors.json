@@ -942,5 +942,20 @@
     "action": "修正前の再現テスト4件中、増額グラフ表示の2件が失敗",
     "reason": "数値集計は補正として正しく加算されるが、目標達成時に円グラフの補正部分を上限で切り捨てていた",
     "next_action": "通常・補正の実額を円グラフへ渡す修正後、関連184テスト成功"
+  },
+  {
+    "timestamp": "2026-10-21T15:55:12+09:00",
+    "expires_at": "2027-01-19T15:55:12+09:00",
+    "retention_days": 90,
+    "run_id": "run-20261021-individual-increase-breakdown",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "本人画面の増額分類再現テストで2テスト×4カードが失敗",
+    "reason": "月／路程カードが増額を通常へ、QR・郵送のみを補正へ分類していた。先行調査は当該カードを確認できていなかった",
+    "next_action": "補正金額共通集計を使用する修正後、関連191テスト成功"
   }
 ]

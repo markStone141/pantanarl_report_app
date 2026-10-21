@@ -214,16 +214,30 @@ def build_member_dashboard_context(*, request, member, department, is_admin=Fals
     edit_month_target = request.GET.get("edit_month_target") == "1"
     edit_period_target = request.GET.get("edit_period_target") == "1"
 
+    department_month_adjustment = sum_adjustment_amount(
+        department=department, start_date=selected_month, end_date=selectedmonth_end,
+    )
+    department_period_adjustment = sum_adjustment_amount(
+        department=department,
+        start_date=current_period.start_date if current_period else today,
+        end_date=min(current_period.end_date, today) if current_period else today,
+    )
+    member_month_adjustment = sum_adjustment_amount(
+        member=member, department=department, start_date=selected_month, end_date=selectedmonth_end,
+    )
+    member_period_adjustment = sum_adjustment_amount(
+        member=member, department=department,
+        start_date=current_period.start_date if current_period else today,
+        end_date=min(current_period.end_date, today) if current_period else today,
+    )
+
     department_month_progress = build_progress_card(
         label="全体の月目標",
         actual_amount=department_month_actual_amount,
         target_amount=department_month_target_amount,
         summary_text=f"{department.code} 全体の{selected_month:%Y/%m}進捗",
-        base_actual_amount=int(department_month_totals.get("support_amount") or 0),
-        adjustment_amount=(
-            int(department_month_totals.get("return_postal_amount") or 0)
-            + int(department_month_totals.get("return_qr_amount") or 0)
-        ),
+        base_actual_amount=max(department_month_actual_amount - department_month_adjustment, 0),
+        adjustment_amount=department_month_adjustment,
     )
     department_month_progress["contribution"] = build_contribution_summary(
         member_actual_amount=member_month_actual_amount,
@@ -234,11 +248,8 @@ def build_member_dashboard_context(*, request, member, department, is_admin=Fals
         actual_amount=department_period_actual_amount,
         target_amount=department_period_target_amount,
         summary_text=f"{department.code} 全体の{period_display_label(current_period)}進捗",
-        base_actual_amount=int(department_period_totals.get("support_amount") or 0),
-        adjustment_amount=(
-            int(department_period_totals.get("return_postal_amount") or 0)
-            + int(department_period_totals.get("return_qr_amount") or 0)
-        ),
+        base_actual_amount=max(department_period_actual_amount - department_period_adjustment, 0),
+        adjustment_amount=department_period_adjustment,
     )
     department_period_progress["contribution"] = build_contribution_summary(
         member_actual_amount=member_period_actual_amount,
@@ -318,22 +329,16 @@ def build_member_dashboard_context(*, request, member, department, is_admin=Fals
             actual_amount=member_month_actual_amount,
             target_amount=int(member_month_target.target_amount if member_month_target else 0),
             summary_text=f"{member.name} さんの{selected_month:%Y/%m}進捗",
-            base_actual_amount=int(member_month_totals.get("support_amount") or 0),
-            adjustment_amount=(
-                int(member_month_totals.get("return_postal_amount") or 0)
-                + int(member_month_totals.get("return_qr_amount") or 0)
-            ),
+            base_actual_amount=max(member_month_actual_amount - member_month_adjustment, 0),
+            adjustment_amount=member_month_adjustment,
         ),
         "member_period_progress": build_progress_card(
             label="個人の路程目標",
             actual_amount=member_period_actual_amount,
             target_amount=int(member_period_target.target_amount if member_period_target else 0),
             summary_text=f"{member.name} さんの{period_display_label(current_period)}進捗",
-            base_actual_amount=int(member_period_totals.get("support_amount") or 0),
-            adjustment_amount=(
-                int(member_period_totals.get("return_postal_amount") or 0)
-                + int(member_period_totals.get("return_qr_amount") or 0)
-            ),
+            base_actual_amount=max(member_period_actual_amount - member_period_adjustment, 0),
+            adjustment_amount=member_period_adjustment,
         ),
         "month_target_form": MemberScopeTargetForm(
             member=member,
