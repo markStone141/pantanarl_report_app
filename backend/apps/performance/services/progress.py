@@ -112,10 +112,11 @@ def build_progress_card(*, label, actual_amount, target_amount, summary_text, ba
     adjustment_amount = int(adjustment_amount or 0)
     target_amount = int(target_amount or 0)
     if target_amount > 0:
-        capped_base_amount = min(base_actual_amount, target_amount)
-        capped_adjustment_amount = min(max(adjustment_amount, 0), max(target_amount - capped_base_amount, 0))
-        remaining_chart_amount = max(target_amount - capped_base_amount - capped_adjustment_amount, 0)
-        chart_values = [capped_base_amount, capped_adjustment_amount, remaining_chart_amount]
+        # Keep both contributions visible after reaching the target.
+        chart_base_amount = max(base_actual_amount, 0)
+        chart_adjustment_amount = max(adjustment_amount, 0)
+        remaining_chart_amount = max(target_amount - chart_base_amount - chart_adjustment_amount, 0)
+        chart_values = [chart_base_amount, chart_adjustment_amount, remaining_chart_amount]
     else:
         chart_values = [0, 0, 100]
     return {

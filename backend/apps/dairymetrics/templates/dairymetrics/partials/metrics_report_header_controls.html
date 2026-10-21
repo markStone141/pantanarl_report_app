@@ -7,6 +7,7 @@
   <select name="scope" data-metrics-report-scope aria-label="集計単位">
     <option value="month" {% if scope_value == "month" %}selected{% endif %}>月</option>
     <option value="period" {% if scope_value == "period" %}selected{% endif %}>路程</option>
+    <option value="custom" {% if scope_value == "custom" %}selected{% endif %}>期間指定</option>
   </select>
   <span data-metrics-report-field="month">
     <input type="month" name="month" value="{{ month_value }}" aria-label="対象月">
@@ -17,6 +18,12 @@
       <option value="{{ period.id }}" {% if period.id == selected_period_id %}selected{% endif %}>{{ period.name }}（{{ period.start_date|date:"Y/m/d" }} - {{ period.end_date|date:"Y/m/d" }}）</option>
       {% endfor %}
     </select>
+  </span>
+  <span data-metrics-report-field="custom">
+    <input type="date" name="start_date" value="{{ start_date_value }}" aria-label="開始日">
+  </span>
+  <span data-metrics-report-field="custom">
+    <input type="date" name="end_date" value="{{ end_date_value }}" aria-label="終了日">
   </span>
   <button type="submit" class="ui-button ui-button--secondary">表示</button>
 </form>
