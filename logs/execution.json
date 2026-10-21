@@ -4670,5 +4670,20 @@
     "action": "補正実績の郵送・QR・増額3枠とWV別一覧、入力順変更を検証。関連110テスト成功",
     "reason": "PC・スマホで配置、追加読込の分離／重複なし、絞り込み、WV入力切替を確認。check・BOM・差分検査成功",
     "next_action": "コミットして報告。PUSH・本番反映は未実施"
+  },
+  {
+    "timestamp": "2026-10-21T15:47:41+09:00",
+    "expires_at": "2026-11-20T15:47:41+09:00",
+    "retention_days": 30,
+    "run_id": "run-20261021-increase-classification",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "増額分類を検証し、目標超過時の補正グラフ非表示を修正。関連184テスト成功",
+    "reason": "合計9200円=通常3000円+補正6200円、補正1件を入力から表示まで確認。UNW、日次入力なし、月／路程も検証",
+    "next_action": "コミットして報告。PUSH・本番反映は未実施"
   }
 ]
