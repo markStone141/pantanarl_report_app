@@ -130,7 +130,7 @@ def metrics_report_data(request):
 
     today = timezone.localdate()
     requested_scope = (request.GET.get("scope") or "month").strip()
-    if requested_scope not in {"month", "period"}:
+    if requested_scope not in {"month", "period", "custom"}:
         requested_scope = "month"
     requested_month = parse_month_input(request.GET.get("month") or "")
     period_options = period_options_active_first(target_date=today)
@@ -138,11 +138,19 @@ def metrics_report_data(request):
     if requested_scope == "period":
         requested_period = requested_or_current_period(request, today=today)
 
+    def parse_range_date(name):
+        try:
+            return parse_date((request.GET.get(name) or "").strip())
+        except ValueError:
+            return None
+
     scope = resolve_metrics_v2_scope(
         today=today,
         scope=requested_scope,
         requested_month=requested_month,
         requested_period=requested_period,
+        requested_start_date=parse_range_date("start_date"),
+        requested_end_date=parse_range_date("end_date"),
     )
     if requested_scope == "period" and scope.scope != "period":
         scope = resolve_metrics_v2_scope(today=today, scope="month", requested_month=requested_month)
@@ -154,6 +162,8 @@ def metrics_report_data(request):
             "scope": scope.scope,
             "month": (scope.month_start or today.replace(day=1)).strftime("%Y-%m"),
             "period_id": scope.period.id if scope.period else "",
+            "start_date": scope.start_date.isoformat(),
+            "end_date": scope.end_date.isoformat(),
         }
     )
     return {
@@ -168,6 +178,8 @@ def metrics_report_data(request):
         "selected_period_id": scope.period.id if scope.period else "",
         "report": report,
         "report_export_query": export_query,
+        "start_date_value": scope.start_date.isoformat(),
+        "end_date_value": scope.end_date.isoformat(),
         "metrics_report_page_subtitle": f"{selected_department.name} / {scope.label}",
         **_shared_navigation_context(
             request=request,

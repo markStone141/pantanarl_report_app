@@ -4685,5 +4685,20 @@
     "action": "増額分類を検証し、目標超過時の補正グラフ非表示を修正。関連184テスト成功",
     "reason": "合計9200円=通常3000円+補正6200円、補正1件を入力から表示まで確認。UNW、日次入力なし、月／路程も検証",
     "next_action": "コミットして報告。PUSH・本番反映は未実施"
+  },
+  {
+    "timestamp": "2026-10-21T15:52:48+09:00",
+    "expires_at": "2026-11-20T15:52:48+09:00",
+    "retention_days": 30,
+    "run_id": "run-20261021-report-custom-period",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "振り返りレポートに任意期間指定を追加。関連75テストとPC・スマホ操作確認成功",
+    "reason": "境界日・月またぎ・増額等の補正・部署分離・エクスポート一致・日付正規化を確認。既存月・路程も回帰検証",
+    "next_action": "コミットして報告。PUSH・本番反映は未実施"
   }
 ]
