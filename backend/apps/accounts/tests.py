@@ -143,6 +143,9 @@ class RoleGuardTests(TestCase):
         self.assertEqual(self.client.session.get("role"), "admin")
 
     def test_report_allows_authenticated_non_staff_without_session_role(self):
+        from apps.accounts.models import Department
+
+        Department.objects.create(code="UN", name="UN")
         user_model = get_user_model()
         report_user = user_model.objects.create_user(username="report_user", password="x", is_staff=False)
         self.client.force_login(report_user)
