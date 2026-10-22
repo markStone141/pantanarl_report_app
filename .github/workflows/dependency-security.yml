@@ -1,0 +1,101 @@
+name: Dependency Security
+
+on:
+  schedule:
+    # Monday 09:20 JST; independent of production deployment.
+    - cron: "20 0 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "backend/requirements/**"
+      - "backend/Dockerfile"
+      - ".github/dependabot.yml"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: dependency-security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements/*.txt
+      - name: Resolve production dependencies in an isolated environment
+        run: |
+          mkdir -p audit-results
+          python -m venv /tmp/report-audit-app
+          /tmp/report-audit-app/bin/python -m pip install -r backend/requirements/prod.txt
+          /tmp/report-audit-app/bin/python -m pip freeze > audit-results/resolved-requirements.txt
+          python --version > audit-results/python-version.txt
+          python -m pip install 'pip-audit>=2.9,<3'
+      - name: Audit resolved production dependencies
+        run: >-
+          python -m pip_audit
+          --requirement audit-results/resolved-requirements.txt
+          --no-deps --disable-pip
+          --strict
+          --progress-spinner off
+          --format json --output audit-results/pip-audit.json
+      - name: Write investigation summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path('audit-results/pip-audit.json')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('## Dependency audit\n\n')
+              if report.exists():
+                  data = json.loads(report.read_text())
+                  findings = sum(len(item.get('vulns', [])) for item in data.get('dependencies', []))
+                  summary.write(f'脆弱性の検出件数: {findings}\n\n')
+                  skipped = sum('skip_reason' in item for item in data.get('dependencies', []))
+                  summary.write(f'監査できなかったパッケージ数: {skipped}（0以外は詳細確認）\n\n')
+              else:
+                  summary.write('監査結果を作成できませんでした。依存解決・通信・実行ログを確認してください。\n\n')
+              summary.write('対象は今回解決したPythonライブラリです。本番稼働版・Python本体・OSの監査ではありません。\n\n')
+              summary.write('詳細: audit-results artifact / backend/docs/DEPENDENCY_MAINTENANCE.md\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-audit-${{ github.run_id }}-${{ github.run_attempt }}
+          path: audit-results/
+          if-no-files-found: warn
+          retention-days: 30
+
+  dependency-tests:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements/*.txt
+      - name: Install application dependencies
+        run: python -m pip install -r backend/requirements/dev.txt
+      - name: Django check and regression tests
+        working-directory: backend
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test
+          DB_ENGINE: django.db.backends.sqlite3
+          DB_NAME: /tmp/dependency-tests.sqlite3
+        run: |
+          python manage.py check
+          python manage.py test --noinput

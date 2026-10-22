@@ -82,13 +82,14 @@ class MemberSettingsViewTests(TestCase):
             {
                 "dairymetrics/templates/dairymetrics/metrics_report.html",
                 "dairymetrics/templates/dairymetrics/metrics_v2.html",
+                "dairymetrics/templates/dairymetrics/partials/normal_work_productivity.html",
                 "performance/templates/performance/history.html",
                 "performance/templates/performance/index.html",
                 "performance/templates/performance/member_detail.html",
                 "performance/templates/performance/member_history.html",
             },
         )
-        self.assertEqual(sum(count for _content, count in canvas_templates.values()), 19)
+        self.assertEqual(sum(count for _content, count in canvas_templates.values()), 20)
         for content, _count in canvas_templates.values():
             self.assertIn("ui-chart-card", content)
 
