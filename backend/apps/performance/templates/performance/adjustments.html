@@ -217,7 +217,8 @@
     }
 
     function isUnSelected() {
-      return selectedDepartmentCode() === "UN";
+      const code = selectedDepartmentCode();
+      return code === "UN" || code === "UNW" || code.startsWith("UN_");
     }
 
     function isWvSelected() {

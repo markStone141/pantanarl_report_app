@@ -11,6 +11,29 @@ from .base import PerformanceTestBase
 
 
 class AdjustmentsTests(PerformanceTestBase):
+    def test_unw_code_candidates_and_return_registration_stay_in_department(self):
+        department = self.create_department("UNW", name="UN関西")
+        member = self.create_member(name="関西メンバー", department=department)
+        member.un_activity_code = "12345"
+        member.save(update_fields=["un_activity_code"])
+        self.member.un_activity_code = "12346"
+        self.member.save(update_fields=["un_activity_code"])
+        response = self.client.get(reverse("performance_past_entry_member_options"), {
+            "department": department.pk, "un_code": "123",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([row["id"] for row in response.json()["options"]], [member.pk])
+        response = self.client.post(reverse("performance_adjustments"), {
+            "department": department.pk, "member": member.pk,
+            "target_date": "2026-10-26", "source_type": MetricAdjustment.SOURCE_QR,
+            "location_name": "関西", "amount_choice": "direct", "amount": "1500",
+        })
+        self.assertEqual(response.status_code, 302)
+        adjustment = MetricAdjustment.objects.get(member=member, department=department)
+        self.assertEqual(adjustment.return_qr_amount, 1500)
+        response = self.client.get(reverse("performance_adjustments"), {"edit": adjustment.pk})
+        self.assertEqual(response.context["member_options"][str(department.pk)][0]["un_activity_code"], "12345")
+
     def test_performance_adjustments_uses_shared_button_hierarchy(self):
         response = self.client.get(reverse("performance_adjustments"))
 
