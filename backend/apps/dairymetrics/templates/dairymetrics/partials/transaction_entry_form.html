@@ -45,7 +45,7 @@
         </div>
         <div class="dairymetrics-field" id="v2-transaction-refugee-amount-custom-wrap" hidden>
           <label for="v2-transaction-refugee-amount">難民支援金額を直接入力</label>
-          <input id="v2-transaction-refugee-amount" type="number" min="0" step="100" value="{{ transaction_wv_refugee_amount_value }}">
+          <input id="v2-transaction-refugee-amount" type="number" min="0" step="1" value="{{ transaction_wv_refugee_amount_value }}">
         </div>
         {% else %}
         <div class="dairymetrics-field">
@@ -61,7 +61,7 @@
         </div>
         <div class="dairymetrics-field" id="v2-transaction-amount-wrap" hidden>
           <label for="v2-transaction-amount-custom">直接入力金額</label>
-          <input id="v2-transaction-amount-custom" type="number" min="0" step="100" value="{{ transaction_form.support_amount.value|default:1000 }}">
+          <input id="v2-transaction-amount-custom" type="number" min="0" step="1" value="{{ transaction_form.support_amount.value|default:1000 }}">
         </div>
         {% endif %}
         <input id="v2-transaction-location" type="hidden" name="location" value="{{ transaction_form.location.value|default:'' }}">

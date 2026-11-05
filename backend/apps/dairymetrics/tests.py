@@ -412,7 +412,7 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
         self.assertContains(response, "今日の他メンバー決済")
         self.assertContains(response, f'data-transaction-id="{today_transaction.id}"', html=False)
 
-    def test_entry_v2_transaction_demo_can_save_un_transaction(self):
+    def test_entry_v2_transaction_demo_can_save_un_transaction_with_one_yen_precision(self):
         entry_date = timezone.localdate()
         self.client.force_login(self.user)
         MemberDailyMetricEntry.objects.create(
@@ -429,7 +429,7 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
                 "action": "save_transaction",
                 "department_code": self.department.code,
                 "entry_date": entry_date.strftime("%Y-%m-%d"),
-                "support_amount": "3000",
+                "support_amount": "1234",
                 "location": "渋谷駅前",
                 "age_band": MemberMetricTransaction.AGE_BAND_SEVENTIES,
                 "gender": MemberMetricTransaction.GENDER_FEMALE,
@@ -442,6 +442,9 @@ class DairyMetricsLoginTests(AppTestMixin, TestCase):
             response,
             f"{reverse('dairymetrics_entry_v2_transaction_demo')}?department={self.department.code}&date={entry_date.strftime('%Y-%m-%d')}&saved=transaction",
         )
+        transaction = MemberMetricTransaction.objects.get(entry__member=self.member, entry__entry_date=entry_date)
+        self.assertEqual(transaction.support_amount, 1234)
+        self.assertEqual(transaction.entry.support_amount, 1234)
 
     def test_entry_v2_transaction_demo_blocks_duplicate_un_transaction_save(self):
         entry_date = timezone.localdate()
