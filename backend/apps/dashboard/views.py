@@ -154,7 +154,10 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
         )
 
     kpi_cards = []
-    for department in progress_department_objects:
+    submission_by_code = {row["code"]: row for row in submission_rows}
+    for department in all_department_objects:
+        if not (department.show_in_dashboard_progress or department.show_in_dashboard_submission):
+            continue
         code = department.code
         label = department.name
         member_rows = build_member_rows(member_totals=member_totals, codes=[code])
@@ -164,6 +167,7 @@ def _dashboard_index_impl(request: HttpRequest) -> HttpResponse:
             {
                 "code": code,
                 "title": label,
+                "submission": submission_by_code.get(code),
                 "count": daily_totals[code]["count"],
                 "amount": daily_totals[code]["amount"],
                 "amount_text": _format_amount_text(daily_totals[code]["amount"]),

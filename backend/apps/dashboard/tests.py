@@ -818,6 +818,40 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         session["role"] = "admin"
         session.save()
 
+    def test_department_cards_include_submission_status_and_report_edit_link(self):
+        today = timezone.localdate()
+        for mode, report_date, amount in [
+            ("today", today, 3000), ("prev", today - timedelta(days=1), 1234),
+        ]:
+            report = DailyDepartmentReport.objects.create(
+                department=self.depts["UN"], report_date=report_date,
+                reporter=self.reporter, total_count=1, followup_count=amount,
+            )
+            with self.subTest(mode=mode):
+                response = self.client.get(reverse("dashboard_index"), {"mode": mode})
+                cards = {card["code"]: card for card in response.context["kpi_cards"]}
+                submission = cards["UN"]["submission"]
+                self.assertEqual(submission["status"], "提出済み")
+                self.assertEqual(submission["reporter_name"], "Alice")
+                self.assertEqual(submission["submitted_time"], timezone.localtime(report.created_at).strftime("%H:%M"))
+                self.assertEqual(submission["report_id"], report.pk)
+                self.assertEqual(cards["UN"]["amount"], amount)
+                self.assertEqual(cards["WV"]["submission"]["status"], "未提出")
+                self.assertEqual(cards["WV"]["submission"]["submitted_time"], "-")
+                self.assertContains(response, reverse("report_edit", args=[report.pk]))
+                self.assertContains(response, 'dashboard-submission-status is-submitted')
+                self.assertNotContains(response, "提出状況一覧")
+
+    def test_department_cards_preserve_submission_and_progress_display_settings(self):
+        self.depts["UN"].show_in_dashboard_progress = False
+        self.depts["UN"].save(update_fields=["show_in_dashboard_progress"])
+        self.depts["WV"].show_in_dashboard_submission = False
+        self.depts["WV"].save(update_fields=["show_in_dashboard_submission"])
+        response = self.client.get(reverse("dashboard_index"))
+        cards = {card["code"]: card for card in response.context["kpi_cards"]}
+        self.assertEqual(cards["UN"]["submission"]["status"], "未提出")
+        self.assertIsNone(cards["WV"]["submission"])
+
     def test_dashboard_navigation_links_to_daily_and_shared_content(self):
         response = self.client.get(reverse("dashboard_index"))
 
@@ -1412,15 +1446,11 @@ class DashboardTargetAndMailIntegrationTests(TestCase):
         self.assertContains(response, 'class="target-progress-grid"')
         self.assertContains(response, 'class="target-progress-value target-progress-value--actual"')
         content = response.content.decode()
-        self.assertLess(content.index("提出状況一覧"), content.index("本日の部門別実績"))
+        self.assertNotContains(response, "提出状況一覧")
         self.assertLess(content.index("本日の部門別実績"), content.index("メール本文作成"))
-        submission_markup = content.split('class="dashboard-submission-table"', 1)[1].split(
-            'class="card ui-section mt-16 dashboard-department-section"', 1
-        )[0]
-        self.assertIn("<th>部署</th>", submission_markup)
-        self.assertIn("<th>ステータス</th>", submission_markup)
-        self.assertNotIn("<th>件数</th>", submission_markup)
-        self.assertIn("実績詳細を見る", submission_markup)
+        self.assertNotContains(response, 'class="dashboard-submission-table"')
+        self.assertContains(response, "担当者")
+        self.assertContains(response, "提出時刻")
         self.assertContains(response, 'class="dashboard-submission-status is-pending"')
         self.assertContains(response, 'class="dashboard-department-card"')
         self.assertContains(response, "個人成績を見る")

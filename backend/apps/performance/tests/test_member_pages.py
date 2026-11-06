@@ -592,7 +592,8 @@ class MemberPagesTests(PerformanceTestBase):
 
 
     def test_performance_member_history_limits_initial_rows_to_five(self):
-        today = timezone.localdate()
+        # All seven records must belong to the requested month.
+        today = date(2026, 6, 15)
         for offset in range(7):
             MemberDailyMetricEntry.objects.create(
                 member=self.member,
@@ -613,6 +614,22 @@ class MemberPagesTests(PerformanceTestBase):
         self.assertContains(response, "さらに5件表示")
         self.assertContains(response, 'data-performance-history-date-links', html=False)
 
+
+    def test_performance_member_history_at_month_start_excludes_previous_month(self):
+        today = date(2026, 11, 2)
+        for offset in range(7):
+            MemberDailyMetricEntry.objects.create(
+                member=self.member, department=self.department,
+                entry_date=today - timedelta(days=offset), result_count=1,
+                support_amount=1000, activity_closed=True,
+            )
+        response = self.client.get(
+            reverse("performance_member_history_detail", args=[self.member.id, self.department.id]),
+            {"dashboard_scope": "month", "dashboard_month": "2026-11"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["entry_rows"]), 2)
+        self.assertNotContains(response, "さらに5件表示")
 
     def test_performance_history_includes_inactive_member_with_scope_records(self):
         today = timezone.localdate()

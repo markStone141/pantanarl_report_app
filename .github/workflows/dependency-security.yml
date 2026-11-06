@@ -69,7 +69,7 @@ jobs:
               summary.write('対象は今回解決したPythonライブラリです。本番稼働版・Python本体・OSの監査ではありません。\n\n')
               summary.write('詳細: audit-results artifact / backend/docs/DEPENDENCY_MAINTENANCE.md\n')
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: dependency-audit-${{ github.run_id }}-${{ github.run_attempt }}
