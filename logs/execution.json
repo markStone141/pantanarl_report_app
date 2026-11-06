@@ -4820,5 +4820,20 @@
     "action": "金額の直接入力6箇所を100円刻みから1円刻みに変更。関連122テストとpre-commit全項目成功",
     "reason": "通常/WV・過去分・個人/部署目標の金額欄を変更。Chromiumで1/10/99/1234円が有効、負数・小数が無効と確認。POSTの1234円保存・entry集計を確認。履歴一覧の既存失敗は別途記録",
     "next_action": "コミットして報告。PUSH・本番反映は未実施"
+  },
+  {
+    "timestamp": "2026-11-06T10:48:07+09:00",
+    "expires_at": "2026-12-06T10:48:07+09:00",
+    "retention_days": 30,
+    "run_id": "run-20261106-ci-node24-month-boundary",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "upload-artifactをNode24対応v6へ更新し、月初に失敗するレポート・履歴テストを修正。全467テストとpre-commit全項目成功",
+    "reason": "公式action.ymlでv6のnode24と既存入力互換性を確認。レポートの共通日付と履歴の7件データを固定し、前月分を除外する月初ケースも追加。アプリ集計仕様は変更なし",
+    "next_action": "コミットして報告。PUSH・本番反映は未実施"
   }
 ]

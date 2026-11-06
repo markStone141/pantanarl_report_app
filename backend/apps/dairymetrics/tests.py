@@ -657,6 +657,10 @@ class DairyMetricsV2DemoTests(AppTestMixin, TestCase):
     DEFAULT_PASSWORD = "pass123"
 
     def setUp(self):
+        # Keep relative fixture dates in one month, regardless of the CI run date.
+        clock = patch("django.utils.timezone.localdate", return_value=date(2026, 6, 20))
+        clock.start()
+        self.addCleanup(clock.stop)
         self.department = self.create_department("UN")
         self.user, self.member = self.create_member_user(
             username="metrics_member",
