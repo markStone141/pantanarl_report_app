@@ -5,13 +5,19 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from apps.accounts.models import Department, Member
+from apps.accounts.models import Department, Member, MemberDepartment
 from apps.dairymetrics.models import MemberDailyMetricEntry, MetricAdjustment
 from apps.dairymetrics.services.period_comparison import _route_key, build_period_comparison
 from apps.targets.models import DepartmentPeriodTarget, Period, PeriodTargetMetricValue, TargetMetric
 
 
 class PeriodComparisonTests(TestCase):
+    def chart_request(self, metric="1", **overrides):
+        return self.client.get(reverse("dairymetrics_metrics_v2_demo"), {
+            "department": "UN", "scope": "custom", "start_date": "2026-01-01",
+            "end_date": "2026-03-31", "compare_months": "3", "period_metric": metric, **overrides,
+        })
+
     def setUp(self):
         self.department = Department.objects.create(code="UN", name="UN")
         self.other = Department.objects.create(code="UNW", name="UN関西")
@@ -59,7 +65,7 @@ class PeriodComparisonTests(TestCase):
         self.assertEqual(rows["通常実績金額"], ["10,000円", "5,000円"])
         self.assertEqual(rows["対象路程数"], ["2路程", "1路程"])
         self.assertEqual(rows["稼働日合計"], ["3日", "1日"])
-        self.assertEqual(rows["延べ稼働人数"], ["4人日", "1人日"])
+        self.assertEqual(rows["延べ稼働人数"], ["4人/日", "1人/日"])
         self.assertEqual(rows["稼働メンバー実人数"], ["2人", "1人"])
         self.assertEqual(rows["稼働メンバー1人あたりの平均金額"][0], "2,500円")
         self.assertEqual(rows["目標進捗"][0], "50.0%")
@@ -100,7 +106,7 @@ class PeriodComparisonTests(TestCase):
         self.entry(date(2026, 1, 1), 0, department=empty)
         rows = {row["label"]: row["values"] for row in self.build(empty)["rows"]}
         self.assertEqual(rows["通常実績金額"], ["0円"])
-        self.assertEqual(rows["延べ稼働人数"], ["1人日"])
+        self.assertEqual(rows["延べ稼働人数"], ["1人/日"])
         self.assertEqual(rows["稼働メンバー1人あたりの平均金額"], ["0円"])
         with patch("django.utils.timezone.localdate", return_value=self.jan.end_date):
             self.assertEqual(self.build(empty)["columns"], [])
@@ -116,3 +122,43 @@ class PeriodComparisonTests(TestCase):
         self.assertContains(response, "路程ごとの実績比較")
         self.assertContains(response, 'name="department" value="UN"')
         self.assertContains(response, 'name="start_date" value="2026-01-01"')
+
+    def test_ajax_monthly_series_metrics_and_missing_values(self):
+        self.client.force_login(get_user_model().objects.create_user("chart-admin", is_staff=True))
+        with patch("apps.dairymetrics.views_metrics.build_metrics_v2_dashboard_payload") as full_dashboard:
+            response = self.chart_request()
+        full_dashboard.assert_not_called()
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["labels"], ["2026/01", "2026/02", "2026/03"])
+        self.assertEqual(data["datasets"][0], {"label": "第1次路程", "data": [4000, 6000, None]})
+        self.assertEqual(data["datasets"][1]["data"], [5000, None, None])
+        metrics = self.build()["metrics"]
+        for metric in metrics:
+            response = self.chart_request(metric["index"])
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["label"], metric["label"])
+        workers = next(m["index"] for m in metrics if m["label"] == "延べ稼働人数")
+        data = self.chart_request(workers).json()
+        self.assertEqual(data["unit"], "人/日")
+        self.assertEqual(data["datasets"][0]["data"], [3, 1, None])
+
+    def test_ajax_permissions_invalid_values_empty_department_and_wv(self):
+        self.assertEqual(self.chart_request().status_code, 302)
+        user = get_user_model().objects.create_user("chart-member")
+        self.members[0].user = user
+        self.members[0].save(update_fields=["user"])
+        MemberDepartment.objects.create(member=self.members[0], department=self.department)
+        self.client.force_login(user)
+        # Requesting another department retains the viewer's authorized department.
+        self.assertEqual(self.chart_request(department="UNW").json()["datasets"][0]["data"][0], 4000)
+        for invalid in ["-1", "999", "bad"]:
+            self.assertEqual(self.chart_request(invalid).status_code, 400)
+        self.client.force_login(get_user_model().objects.create_user("chart-staff", is_staff=True))
+        empty = Department.objects.create(code="EMPTY", name="empty")
+        self.assertEqual(self.chart_request(department=empty.code).json()["datasets"], [])
+        wv = Department.objects.create(code="WV", name="WV")
+        self.entry(date(2026, 1, 1), 5000, department=wv, cs_count=1, refugee_count=2)
+        metrics = self.build(wv)["metrics"]
+        cs = next(m["index"] for m in metrics if m["label"] == "CS件数")
+        self.assertEqual(self.chart_request(cs, department="WV").json()["datasets"][0]["data"], [1, None, None])

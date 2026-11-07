@@ -13,7 +13,7 @@ from .services.entry_context import parse_month_input, resolve_metrics_v2_depart
 from .services.metrics_v2 import build_metrics_v2_dashboard_payload, build_metrics_v2_distribution_payload, resolve_metrics_v2_scope
 from .services.report_exports import build_report_ai_text, build_report_export_payload
 from .services.reports import build_metrics_scope_report
-from .services.period_comparison import build_period_comparison
+from .services.period_comparison import build_period_comparison, comparison_metrics
 from .view_helpers import login_redirect_url, member_directory_queryset, requested_or_current_period
 
 
@@ -83,6 +83,17 @@ def metrics_v2(request: HttpRequest) -> HttpResponse:
         requested_start_date=requested_start_date,
         requested_end_date=requested_end_date,
     )
+    comparison_months = request.GET.get("compare_months", "6")
+    comparison_months = int(comparison_months) if comparison_months in {"3", "6", "12"} else 6
+    if "period_metric" in request.GET:
+        metric = request.GET["period_metric"]
+        if metric not in {m["index"] for m in comparison_metrics(selected_department.code)}:
+            return JsonResponse({"error": "invalid_period_metric"}, status=400)
+        comparison = build_period_comparison(
+            department=selected_department, reference_date=scope.end_date,
+            months=comparison_months, metric_index=int(metric),
+        )
+        return JsonResponse(comparison["chart"])
     if "age_nationality" in request.GET:
         return _age_distribution_response(
             request, department=selected_department, scope=scope,
@@ -105,8 +116,6 @@ def metrics_v2(request: HttpRequest) -> HttpResponse:
             detail_urls.append(detail_url)
         metric_payload["detail_urls"] = detail_urls
     payload_json = {**payload, "scope": {"scope": scope.scope, "label": scope.label}}
-    comparison_months = request.GET.get("compare_months", "6")
-    comparison_months = int(comparison_months) if comparison_months in {"3", "6", "12"} else 6
     if request.user.is_staff:
         metrics_page_subtitle = (
             f"{selected_member.name}さん / {selected_department.name} の分析"
@@ -134,6 +143,11 @@ def metrics_v2(request: HttpRequest) -> HttpResponse:
             department=selected_department, reference_date=scope.end_date, months=comparison_months,
         ),
         "comparison_query": [(key, value) for key, value in request.GET.items() if key != "compare_months"],
+        "period_chart_url": request.path + "?" + urlencode({
+            "department": selected_department.code, "scope": "custom",
+            "start_date": scope.start_date.isoformat(), "end_date": scope.end_date.isoformat(),
+            "compare_months": comparison_months,
+        }),
         "metrics_page_subtitle": metrics_page_subtitle,
         **_shared_navigation_context(
             request=request,
