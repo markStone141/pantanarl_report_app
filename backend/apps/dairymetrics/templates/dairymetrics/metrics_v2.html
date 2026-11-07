@@ -4,7 +4,7 @@
 {% block title %}分析する | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=28" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=29" />
 {% endblock %}
 
 {% block content %}
@@ -119,6 +119,8 @@
       </div></div>
     </article>
   </section>
+
+  {% include 'dairymetrics/partials/period_comparison.html' %}
 
   <section class="card ui-chart-card mt-16">
     <header class="ui-chart-card__header"><div class="ui-chart-card__identity"><span class="ui-chart-card__kicker">Member ranking</span><h2 class="ui-chart-card__title">ランキングモード</h2><p class="ui-chart-card__description">他メンバーとの比較を客観的に確認できます。</p></div><div class="ui-chart-card__controls"><label for="metrics-v2-ranking-metric">指標<select id="metrics-v2-ranking-metric" data-metrics-v2-ranking-select>{% for option in metrics_v2_payload.ranking.options %}<option value="{{ option.key }}" {% if option.key == metrics_v2_payload.ranking.default_metric %}selected{% endif %}>{{ option.label }}</option>{% endfor %}</select></label></div></header>
