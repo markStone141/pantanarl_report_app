@@ -1,4 +1,4 @@
-<section class="card ui-section mt-16" aria-labelledby="period-comparison-title">
+<section class="card ui-section mt-16" aria-labelledby="period-comparison-title" data-period-comparison data-chart-url="{{ period_chart_url }}">
   <header class="ui-chart-card__header">
     <div class="ui-chart-card__identity">
       <h2 id="period-comparison-title">路程ごとの実績比較</h2>
@@ -18,6 +18,21 @@
   </header>
   <p class="muted">対象月：{{ period_comparison.start|date:"Y/m" }}〜{{ scope.end_date|date:"Y/m" }}。表示期間の終了日を基準に、終了日を過ぎた路程の通常実績のみを比較します。増額・QR・郵送・キャンセルは含みません。「第○次」をまとめ、次数がない路程は同じ名前ごとに比較します。</p>
   {% if period_comparison.columns %}
+  <div class="ui-button-group mt-12" aria-label="路程比較の表示モード">
+    <button type="button" class="ui-choice-button is-active" data-period-mode="table" aria-pressed="true">比較表</button>
+    <button type="button" class="ui-choice-button" data-period-mode="graph" aria-pressed="false">グラフ</button>
+  </div>
+  <div data-period-panel="graph" hidden>
+    <label for="period-chart-metric">比較する項目
+      <select id="period-chart-metric">{% for metric in period_comparison.metrics %}<option value="{{ metric.index }}"{% if metric.index == '1' %} selected{% endif %}>{{ metric.label }}</option>{% endfor %}</select>
+    </label>
+    <p class="muted">横軸は路程の登録月、線の色は路程の次数です。データのない月は線を途切れさせ、0件・0円とは区別します。</p>
+    <p role="status" aria-live="polite" data-period-status></p>
+    <span data-period-retry hidden><button type="button" class="ui-button ui-button--secondary">再試行</button></span>
+    <div id="period-comparison-frame" class="metrics-v2-chart-frame ui-chart-frame mt-12"></div>
+    <p class="muted" data-period-chart-empty hidden>この項目のグラフデータがありません。</p>
+  </div>
+  <div data-period-panel="table">
   <div class="period-comparison-scroll mt-12" role="region" aria-label="路程別比較表（横にスクロールできます）" tabindex="0">
     <table class="period-comparison-table">
       <caption class="muted">同じ次数の路程の累計。期間・人数の差も合わせて確認してください。</caption>
@@ -25,7 +40,9 @@
       <tbody>{% for row in period_comparison.rows %}<tr><th scope="row">{{ row.label }}</th>{% for value in row.values %}<td>{{ value }}</td>{% endfor %}</tr>{% endfor %}</tbody>
     </table>
   </div>
-  <p class="muted mt-12">稼働日は日次実績のある日数、延べ稼働人数は毎日の人数の合計です（3人×2日＝6人日）。決済0件の人も含みます。日次実績がない路程は集計対象外です。実人数は同じ人を1人と数えます。1稼働あたりの件数・金額は稼働日数で、AP・CMは延べ稼働人数で割る既存の分析と同じ計算です。</p>
+  </div>
+  {{ period_comparison.chart|json_script:"period-comparison-chart-data" }}
+  <p class="muted mt-12">稼働日は日次実績のある日数、延べ稼働人数（人/日）は毎日の人数の合計です（3人×2日＝延べ6人）。決済0件の人も含みます。日次実績がない路程は集計対象外です。実人数は同じ人を1人と数えます。1稼働あたりの件数・金額は稼働日数で、AP・CMは延べ稼働人数で割る既存の分析と同じ計算です。</p>
   <details class="mt-12"><summary>集計対象の路程を見る</summary>{% for column in period_comparison.columns %}<h3>{{ column.label }}</h3><ul>{% for period in column.periods %}<li>{{ period }}</li>{% endfor %}</ul>{% endfor %}</details>
   {% else %}<p class="muted mt-12">この期間には、日次実績のある終了済み路程がありません。</p>{% endif %}
 </section>

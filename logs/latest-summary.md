@@ -1,25 +1,25 @@
 # Latest AI Work Summary
 
-- Timestamp: `2026-11-07T10:54:17+09:00`
-- Run ID: `run-20261107-period-ordinal-comparison`
+- Timestamp: `2026-11-07T11:30:58+09:00`
+- Run ID: `run-20261107-period-chart-ajax`
 - Loop: `1`
 - Role: `validator`
 - Event: `validation_completed`
 - Status: `success`
 - Event Retention: `30 days`
-- Event Expires At: `2026-12-07T10:54:17+09:00`
+- Event Expires At: `2026-12-07T11:30:58+09:00`
 - Summary Retention: `365 days`
-- Summary Expires At: `2027-11-07T10:54:17+09:00`
+- Summary Expires At: `2027-11-07T11:30:58+09:00`
 - Sensitivity: `normal`
 
 ## Action
 
-各部署の分析ページへ次数ごとの路程累計比較を追加。全475テスト・pre-commit・実ブラウザー確認成功
+路程比較に月別折れ線グラフと項目AJAX切替を追加。延べ稼働人数の単位を人/日に変更。全477テスト・実ブラウザー検証成功
 
 ## Reason
 
-3/6/12か月で終了済み通常実績を比較。次数の数字/全角/漢数字を正規化し、稼働日・延べ人数・実人数・加重平均・既存率/平均/目標を表示。UN/UNW/WV等の分離、終了日当日/予定/未入力の除外、決済0件、目標新旧形式、4クエリ固定、期間条件保持、空データとスマホ固定列を確認
+表とグラフの数値生成を共有し、登録月ごとの路程別線を表示。欠損月はnull、0と区別。既存認証・部署・期間制約でAJAX集計し全体集計を回避。8件の対象テスト、実Chart.jsの値/色/連続切替/503再試行/空データ復帰/表切替/390px/URL不変を確認。再試行ボタンのhidden競合もラッパーで解消
 
 ## Next Action
 
-コミットして報告。PUSH・本番反映は未実施
+最終品質チェック後にコミットして報告。PUSH・本番反映は未実施

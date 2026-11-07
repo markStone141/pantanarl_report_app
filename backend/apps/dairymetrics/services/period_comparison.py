@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from apps.dairymetrics.models import MemberDailyMetricEntry
 from apps.targets.models import DepartmentPeriodTarget, Period, PeriodTargetMetricValue
-from .metrics_v2 import _build_summary_cards, _count_value
+from .metrics_v2 import _count_value, _format_number, _percentage, _safe_average
 
 
 def _route_key(name):
@@ -30,14 +30,47 @@ def _route_key(name):
     return (0, number), f"第{number}次路程"
 
 
-def build_period_comparison(*, department, reference_date, months=6):
+def comparison_metrics(department_code):
+    fields = [("対象路程数", "路程"), ("通常実績金額", "円"), ("通常実績件数", "件")]
+    if department_code == "WV":
+        fields += [("CS件数", "件"), ("難民件数", "件")]
+    fields += [("AP合計", ""), ("CM合計", ""), ("稼働日合計", "日"),
+               ("延べ稼働人数", "人/日"), ("稼働メンバー実人数", "人"),
+               ("稼働メンバー1人あたりの平均金額", "円"), ("決済率", "%"),
+               ("コミュニケーション率", "%"), ("1稼働あたりの平均AP", ""),
+               ("1稼働あたりの平均CM", ""), ("1稼働あたりの平均件数", ""),
+               ("1稼働あたりの平均金額", "円"), ("1決済あたりの平均金額", "円"), ("目標進捗", "%")]
+    return [{"index": str(i), "label": label, "unit": unit} for i, (label, unit) in enumerate(fields)]
+
+
+def _values(group, department_code):
+    data = list(group["entries"].values())
+    total = {field: sum(e[field] for e in data) for field in
+             ("support_amount", "result_count", "approach_count", "communication_count", "cs_count", "refugee_count")}
+    days = len({e["entry_date"] for e in data})
+    workers = len(data)
+    count = _count_value(department_code, total)
+    amount, ap, cm = total["support_amount"], total["approach_count"], total["communication_count"]
+    values = [len(group["periods"]), amount, count]
+    if department_code == "WV":
+        values += [total["cs_count"], total["refugee_count"]]
+    return values + [ap, cm, days, workers, len({e["member_id"] for e in data}),
+                     amount / workers, _percentage(count, cm), _percentage(cm, ap),
+                     _safe_average(ap, workers), _safe_average(cm, workers), _safe_average(count, days),
+                     _safe_average(amount, days), _safe_average(amount, count), _percentage(amount, group["target"])]
+
+
+def build_period_comparison(*, department, reference_date, months=6, metric_index=1):
     end = min(reference_date, timezone.localdate() - timedelta(days=1))
     index = reference_date.year * 12 + reference_date.month - months
     start = reference_date.replace(year=index // 12, month=index % 12 + 1, day=1)
     periods = list(Period.objects.filter(
         month__gte=start, month__lte=reference_date.replace(day=1), end_date__lte=end,
     ).exclude(status="planned").order_by("month", "start_date", "id"))
-    result = {"months": months, "start": start, "end": end, "columns": [], "rows": []}
+    metrics = comparison_metrics(department.code)
+    labels = [f"{(index + offset) // 12:04d}/{(index + offset) % 12 + 1:02d}" for offset in range(months)]
+    result = {"months": months, "start": start, "end": end, "columns": [], "rows": [], "metrics": metrics,
+              "chart": {"labels": labels, "datasets": [], **metrics[metric_index]}}
     if not periods:
         return result
     entries = MemberDailyMetricEntry.objects.filter(
@@ -55,8 +88,6 @@ def build_period_comparison(*, department, reference_date, months=6):
         department=department, period__in=periods, metric__code="amount",
     ).values_list("period_id", "value")))
     groups = {}
-    fields = ("support_amount", "result_count", "approach_count", "communication_count",
-              "cs_count", "refugee_count")
     for period in periods:
         route_entries = []
         day = period.start_date
@@ -66,39 +97,21 @@ def build_period_comparison(*, department, reference_date, months=6):
         if not route_entries:
             continue
         key, label = _route_key(period.name)
-        group = groups.setdefault(key, {"label": label, "entries": {}, "periods": [], "target": 0})
-        group["entries"].update({(e["entry_date"], e["member_id"]): e for e in route_entries})
-        group["periods"].append(f"{period.month:%Y/%m} {period.name}")
-        group["target"] += targets.get(period.pk, 0)
+        group = groups.setdefault(key, {"label": label, "entries": {}, "periods": [], "target": 0, "monthly": {}})
+        monthly = group["monthly"].setdefault(f"{period.month:%Y/%m}", {"entries": {}, "periods": [], "target": 0})
+        for bucket in (group, monthly):
+            bucket["entries"].update({(e["entry_date"], e["member_id"]): e for e in route_entries})
+            bucket["periods"].append(f"{period.month:%Y/%m} {period.name}")
+            bucket["target"] += targets.get(period.pk, 0)
     for key in sorted(groups):
         group = groups[key]
-        data = list(group["entries"].values())
-        totals = {field: sum(e[field] for e in data) for field in fields}
-        days = len({e["entry_date"] for e in data})
-        workers = len(data)
-        members = len({e["member_id"] for e in data})
-        summary = _build_summary_cards(
-            title_prefix="", department_code=department.code, totals=totals,
-            target_amount=group["target"], active_days=days,
-            average_work_count=workers, average_member_count=members,
-        )
-        values = [f"{len(group['periods'])}路程", f"{totals['support_amount']:,}円",
-                  f"{_count_value(department.code, totals):,}件"]
-        if department.code == "WV":
-            values += [f"{totals['cs_count']:,}件", f"{totals['refugee_count']:,}件"]
-        values += [f"{totals['approach_count']:,}", f"{totals['communication_count']:,}",
-                   f"{days}日", f"{workers}人日", f"{members}人",
-                   f"{totals['support_amount'] / workers:,.0f}円"]
-        values += [r["value"] for r in summary["rates"]]
-        values += [r["value"] for r in summary["averages"]]
+        values = [_format_number(value, metric["unit"]) for value, metric in zip(_values(group, department.code), metrics)]
         result["columns"].append({"label": group["label"], "periods": group["periods"], "values": values})
-    labels = ["対象路程数", "通常実績金額", "通常実績件数"]
-    if department.code == "WV":
-        labels += ["CS件数", "難民件数"]
-    labels += ["AP合計", "CM合計", "稼働日合計", "延べ稼働人数", "稼働メンバー実人数",
-               "稼働メンバー1人あたりの平均金額", "決済率", "コミュニケーション率"]
-    labels += ["1稼働あたりの平均AP", "1稼働あたりの平均CM", "1稼働あたりの平均件数",
-               "1稼働あたりの平均金額", "1決済あたりの平均金額", "目標進捗"]
-    result["rows"] = [{"label": label, "values": [c["values"][i] for c in result["columns"]]}
-                      for i, label in enumerate(labels)]
+        result["chart"]["datasets"].append({
+            "label": group["label"],
+            "data": [_values(group["monthly"][month], department.code)[metric_index]
+                     if month in group["monthly"] else None for month in labels],
+        })
+    result["rows"] = [{"label": metric["label"], "values": [c["values"][i] for c in result["columns"]]}
+                      for i, metric in enumerate(metrics)]
     return result
