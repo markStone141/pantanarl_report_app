@@ -3237,3 +3237,15 @@
     min-width: 0;
   }
 }
+.period-comparison-scroll { max-width: 100%; overflow-x: auto; }
+.period-comparison-table { min-width: 100%; width: max-content; overflow: visible; }
+.period-comparison-table th, .period-comparison-table td { white-space: nowrap; }
+.period-comparison-table th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface, #fff);
+  min-width: 150px;
+  max-width: 210px;
+  white-space: normal;
+}

@@ -987,5 +987,20 @@
     "action": "関連204テスト中、履歴一覧の初期表示5件テストが1件失敗",
     "reason": "変更前HEADの隔離worktreeでも同じテストが失敗。今回の金額入力変更とは独立した既存不具合。対象: apps.performance.tests.test_member_pages.MemberPagesTests.test_performance_member_history_limits_initial_rows_to_five",
     "next_action": "コミットして報告。PUSH・本番反映は未実施"
+  },
+  {
+    "timestamp": "2026-11-07T10:53:42+09:00",
+    "expires_at": "2027-02-05T10:53:42+09:00",
+    "retention_days": 90,
+    "run_id": "run-20261107-period-ordinal-comparison",
+    "loop": 1,
+    "role": "validator",
+    "event": "result_observed",
+    "status": "fail",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "初回検証で比率の期待表示とスマホ固定列の不整合を検出",
+    "reason": "比率は既存仕様50.0%へ期待値を修正。固定列は共通tableのoverflow:hiddenが原因と特定し比較表のみoverflow:visibleで解消。EOF自動修正も反映し再検証成功",
+    "next_action": "全体テストと最終チェック後にコミット"
   }
 ]

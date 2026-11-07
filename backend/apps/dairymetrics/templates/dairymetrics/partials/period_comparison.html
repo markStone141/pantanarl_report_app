@@ -1,0 +1,31 @@
+<section class="card ui-section mt-16" aria-labelledby="period-comparison-title">
+  <header class="ui-chart-card__header">
+    <div class="ui-chart-card__identity">
+      <h2 id="period-comparison-title">路程ごとの実績比較</h2>
+      <p class="muted">{{ selected_department.name }}の終了済み路程を、月をまたいで同じ次数ごとに合算します。</p>
+    </div>
+    <form method="get" class="inline-row">
+      {% for key, value in comparison_query %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+      <label for="compare-months">比較期間
+        <select id="compare-months" name="compare_months">
+          <option value="3"{% if period_comparison.months == 3 %} selected{% endif %}>3か月</option>
+          <option value="6"{% if period_comparison.months == 6 %} selected{% endif %}>6か月</option>
+          <option value="12"{% if period_comparison.months == 12 %} selected{% endif %}>12か月</option>
+        </select>
+      </label>
+      <button class="ui-button ui-button--secondary" type="submit">比較する</button>
+    </form>
+  </header>
+  <p class="muted">対象月：{{ period_comparison.start|date:"Y/m" }}〜{{ scope.end_date|date:"Y/m" }}。表示期間の終了日を基準に、終了日を過ぎた路程の通常実績のみを比較します。増額・QR・郵送・キャンセルは含みません。「第○次」をまとめ、次数がない路程は同じ名前ごとに比較します。</p>
+  {% if period_comparison.columns %}
+  <div class="period-comparison-scroll mt-12" role="region" aria-label="路程別比較表（横にスクロールできます）" tabindex="0">
+    <table class="period-comparison-table">
+      <caption class="muted">同じ次数の路程の累計。期間・人数の差も合わせて確認してください。</caption>
+      <thead><tr><th scope="col">項目</th>{% for column in period_comparison.columns %}<th scope="col">{{ column.label }}</th>{% endfor %}</tr></thead>
+      <tbody>{% for row in period_comparison.rows %}<tr><th scope="row">{{ row.label }}</th>{% for value in row.values %}<td>{{ value }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  <p class="muted mt-12">稼働日は日次実績のある日数、延べ稼働人数は毎日の人数の合計です（3人×2日＝6人日）。決済0件の人も含みます。日次実績がない路程は集計対象外です。実人数は同じ人を1人と数えます。1稼働あたりの件数・金額は稼働日数で、AP・CMは延べ稼働人数で割る既存の分析と同じ計算です。</p>
+  <details class="mt-12"><summary>集計対象の路程を見る</summary>{% for column in period_comparison.columns %}<h3>{{ column.label }}</h3><ul>{% for period in column.periods %}<li>{{ period }}</li>{% endfor %}</ul>{% endfor %}</details>
+  {% else %}<p class="muted mt-12">この期間には、日次実績のある終了済み路程がありません。</p>{% endif %}
+</section>
