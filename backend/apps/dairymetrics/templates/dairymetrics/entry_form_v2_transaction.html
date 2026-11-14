@@ -63,6 +63,23 @@
 
     {% include "dairymetrics/partials/transaction_entry_form.html" %}
 
+    {% if entry and not entry.activity_closed %}
+    <section class="card dairymetrics-v2-status-message">
+      <form method="post" class="dairymetrics-v2-status-message-form" data-submit-lock data-submit-label="更新中…">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_start_comment">
+        <input type="hidden" name="department_code" value="{{ selected_department_code }}">
+        <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
+        <label for="v2-quick-start-comment"><strong>今日のひとこと</strong> <span class="muted">（任意・100文字以内）</span></label>
+        <div class="dairymetrics-v2-status-message-controls">
+          <input id="v2-quick-start-comment" type="text" name="start_comment" maxlength="100" placeholder="いまの気持ちを一言" value="{{ entry.start_comment }}">
+          <button type="submit" class="ui-button ui-button--secondary">更新</button>
+        </div>
+        <small class="muted">活動中に何度でも変更できます。空欄で更新すると削除されます。</small>
+      </form>
+    </section>
+    {% endif %}
+
     <section class="dairymetrics-v2-progress-board">
       <article class="metric-card dairymetrics-v2-progress-card">
         <div class="dairymetrics-v2-progress-head">
@@ -147,6 +164,7 @@
                   <span>{{ row.amount_value|intcomma }}円 / {{ row.target_amount_value|intcomma }}円</span>
                 </div>
                 <div class="dairymetrics-subtext">{{ row.location_name|default:"現場未入力" }}</div>
+                {% if row.start_comment %}<div class="dairymetrics-v2-activity-status-message">{{ row.start_comment }}</div>{% endif %}
               </a>
               {% endfor %}
             {% else %}
