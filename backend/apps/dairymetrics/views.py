@@ -93,11 +93,18 @@ def entry_v2_personal_setup_fields(request: HttpRequest) -> HttpResponse:
     selected_department_code = selected_department_obj.code if selected_department_obj else ""
     entry_date = parse_date((request.GET.get("entry_date") or "").strip()) or timezone.localdate()
     department_entry_date = parse_date((request.GET.get("department_entry_date") or "").strip()) or entry_date
+    saved_comment = ""
+    if selected_department_obj:
+        saved_comment = (
+            MemberDailyMetricEntry.objects.filter(
+                member=member, department=selected_department_obj, entry_date=entry_date
+            ).values_list("start_comment", flat=True).first() or ""
+        )
     form_initial = {
         "department": selected_department_obj,
         "entry_date": entry_date,
         "location_name": (request.GET.get("location_name") or "").strip(),
-        "start_comment": (request.GET.get("start_comment") or "").strip(),
+        "start_comment": request.GET.get("start_comment", saved_comment),
         "daily_target_count": (request.GET.get("daily_target_count") or "").strip() or 0,
         "daily_target_cs_count": (request.GET.get("daily_target_cs_count") or "").strip() or 0,
         "daily_target_refugee_count": (request.GET.get("daily_target_refugee_count") or "").strip() or 0,
