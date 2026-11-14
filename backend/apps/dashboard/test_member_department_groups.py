@@ -17,6 +17,12 @@ class DepartmentGroupedMemberListTests(TestCase):
         MemberDepartment.objects.create(member=self.shared, department=self.wv)
         self.unassigned = Member.objects.create(name="未所属メンバー")
 
+    def test_add_member_button_is_prominent_and_links_to_creation(self):
+        response = self.client.get(reverse("member_settings"))
+        self.assertContains(response, "member-settings-add-button")
+        self.assertContains(response, "fa-user-plus")
+        self.assertContains(response, 'href="' + reverse("member_create") + '"')
+
     def test_default_groups_are_collapsed_and_shared_member_is_in_both(self):
         response = self.client.get(reverse("member_settings"))
         self.assertEqual(response.status_code, 200)
