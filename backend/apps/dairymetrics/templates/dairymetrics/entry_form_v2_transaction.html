@@ -43,7 +43,7 @@
           <p class="muted">{{ member.name }}さんの活動準備です。</p>
         </div>
         <div id="dairymetrics-v2-personal-setup-form-root">
-          {% include "dairymetrics/partials/personal_setup_form.html" with department_select_id="v2-personal-department" entry_date_id="v2-personal-date" location_id="v2-personal-location" cs_count_id="v2-personal-target-cs-count" refugee_count_id="v2-personal-target-refugee-count" count_select_id="v2-personal-target-count-select" count_hidden_id="v2-personal-target-count-hidden" count_wrap_id="v2-personal-target-count-wrap" count_custom_id="v2-personal-target-count-custom" amount_select_id="v2-personal-target-amount-select" amount_hidden_id="v2-personal-target-amount-hidden" amount_wrap_id="v2-personal-target-amount-wrap" amount_custom_id="v2-personal-target-amount-custom" submit_label="個人の準備を保存" close_button_label="" close_button_attr="" %}
+          {% include "dairymetrics/partials/personal_setup_form.html" with department_select_id="v2-personal-department" entry_date_id="v2-personal-date" location_id="v2-personal-location" start_comment_id="v2-personal-comment" cs_count_id="v2-personal-target-cs-count" refugee_count_id="v2-personal-target-refugee-count" count_select_id="v2-personal-target-count-select" count_hidden_id="v2-personal-target-count-hidden" count_wrap_id="v2-personal-target-count-wrap" count_custom_id="v2-personal-target-count-custom" amount_select_id="v2-personal-target-amount-select" amount_hidden_id="v2-personal-target-amount-hidden" amount_wrap_id="v2-personal-target-amount-wrap" amount_custom_id="v2-personal-target-amount-custom" submit_label="個人の準備を保存" close_button_label="" close_button_attr="" %}
         </div>
       </div>
       {% endif %}
@@ -101,7 +101,7 @@
         </div>
         <section class="dairymetrics-v2-entry-panel" id="dairymetrics-v2-personal-target-panel" {% if not open_personal_target_panel %}hidden{% endif %}>
           <div id="dairymetrics-v2-inline-personal-setup-form-root">
-            {% include "dairymetrics/partials/personal_setup_form.html" with department_select_id="v2-inline-personal-department" entry_date_id="v2-inline-personal-date" location_id="v2-inline-personal-location" cs_count_id="v2-inline-personal-cs-count" refugee_count_id="v2-inline-personal-refugee-count" count_select_id="v2-inline-personal-count-select" count_hidden_id="v2-inline-personal-count-hidden" count_wrap_id="v2-inline-personal-count-wrap" count_custom_id="v2-inline-personal-count-custom" amount_select_id="v2-inline-personal-amount-select" amount_hidden_id="v2-inline-personal-amount-hidden" amount_wrap_id="v2-inline-personal-amount-wrap" amount_custom_id="v2-inline-personal-amount-custom" submit_label="修正内容を保存" close_button_label="閉じる" close_button_attr='data-close-personal-target-edit' %}
+            {% include "dairymetrics/partials/personal_setup_form.html" with department_select_id="v2-inline-personal-department" entry_date_id="v2-inline-personal-date" location_id="v2-inline-personal-location" start_comment_id="v2-inline-personal-comment" cs_count_id="v2-inline-personal-cs-count" refugee_count_id="v2-inline-personal-refugee-count" count_select_id="v2-inline-personal-count-select" count_hidden_id="v2-inline-personal-count-hidden" count_wrap_id="v2-inline-personal-count-wrap" count_custom_id="v2-inline-personal-count-custom" amount_select_id="v2-inline-personal-amount-select" amount_hidden_id="v2-inline-personal-amount-hidden" amount_wrap_id="v2-inline-personal-amount-wrap" amount_custom_id="v2-inline-personal-amount-custom" submit_label="修正内容を保存" close_button_label="閉じる" close_button_attr='data-close-personal-target-edit' %}
           </div>
         </section>
         {% endif %}
@@ -454,6 +454,7 @@
         "department",
         "entry_date",
         "location_name",
+        "start_comment",
         "daily_target_count",
         "daily_target_cs_count",
         "daily_target_refugee_count",
