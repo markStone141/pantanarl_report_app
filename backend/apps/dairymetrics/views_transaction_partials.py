@@ -8,6 +8,7 @@ def render_personal_setup_form_partial(request: HttpRequest, context: dict, *, i
         "department_select_id": "v2-inline-personal-department" if inline else "v2-personal-department",
         "entry_date_id": "v2-inline-personal-date" if inline else "v2-personal-date",
         "location_id": "v2-inline-personal-location" if inline else "v2-personal-location",
+        "start_comment_id": "v2-inline-personal-comment" if inline else "v2-personal-comment",
         "cs_count_id": "v2-inline-personal-cs-count" if inline else "v2-personal-target-cs-count",
         "refugee_count_id": "v2-inline-personal-refugee-count" if inline else "v2-personal-target-refugee-count",
         "count_select_id": "v2-inline-personal-count-select" if inline else "v2-personal-target-count-select",
