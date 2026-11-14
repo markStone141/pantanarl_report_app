@@ -131,9 +131,13 @@
               {% if form.mail_groups.errors %}<span class="error-text">{{ form.mail_groups.errors|striptags }}</span>{% endif %}
             </div>
             <div class="member-editor-field">
-              <label for="id_send_confirmation_mail">
-                {{ form.send_confirmation_mail }} {{ form.send_confirmation_mail.label }}
-              </label>
+              <div class="selection-card-grid member-department-selection-grid">
+                <label class="selection-card" for="id_send_confirmation_mail">
+                  <input class="selection-card__input" type="checkbox" name="send_confirmation_mail" id="id_send_confirmation_mail" {% if form.send_confirmation_mail.value %}checked{% endif %}/>
+                  <span class="selection-card__check"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+                  <span class="selection-card__title">{{ form.send_confirmation_mail.label }}</span>
+                </label>
+              </div>
               <small class="member-editor-help">選択時は登録完了後、入力したメールアドレス宛てにGmail連携テストメールを1通送信します。メール送信に失敗しても登録は保持されます。</small>
               {% if form.send_confirmation_mail.errors %}<span class="error-text">{{ form.send_confirmation_mail.errors|striptags }}</span>{% endif %}
             </div>
