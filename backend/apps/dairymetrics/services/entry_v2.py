@@ -349,6 +349,7 @@ def build_transaction_mail_preview(*, member, department_code, transaction_obj, 
             "栄光在天✨全体精誠に感謝です！",
             "",
             f"{personal_card['current_amount']:,}/{personal_card['target_amount']:,}円",
+            *([f"今日の意気込み：{transaction_obj.entry.start_comment.strip()}"] if (transaction_obj.entry.start_comment or "").strip() else []),
         ]
     ).strip()
     return {
