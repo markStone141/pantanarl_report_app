@@ -20,7 +20,8 @@ from apps.common.report_metrics import (
     format_metric_triples,
     format_yen,
 )
-from apps.mail.models import MailRecipientGroupMember
+from apps.mail.models import MailRecipientGroupMember, MailSendHistory
+from apps.mail.services import send_test_mail
 from apps.targets.models import TargetMetric
 
 from .services.departments import (
@@ -641,6 +642,21 @@ def member_create(request: HttpRequest) -> HttpResponse:
         form = member_form(data=request.POST)
         member, status_message = save_member_form(form=form)
         if member and not form.errors:
+            groups = form.cleaned_data["mail_groups"]
+            for group in groups:
+                MailRecipientGroupMember.objects.get_or_create(group=group, member=member)
+            group_notice = f" メールグループ{len(groups)}件に追加しました。" if groups else ""
+            status_message += group_notice
+            if form.cleaned_data["send_confirmation_mail"]:
+                try:
+                    history = send_test_mail(target_member=member)
+                    if history.status == MailSendHistory.STATUS_SENT:
+                        status_message += " 本人への確認メールを送信しました。"
+                    else:
+                        status_message += " メンバー登録は完了しましたが、確認メールの送信に失敗しました。メール送信履歴を確認してください。"
+                except Exception:
+                    logger.exception("Member registration confirmation mail failed: member_id=%s", member.pk)
+                    status_message += " メンバー登録は完了しましたが、確認メールを送信できませんでした。"
             form = member_form()
     else:
         form = member_form()
@@ -654,6 +670,8 @@ def member_create(request: HttpRequest) -> HttpResponse:
             "edit_member": None,
             "department_choices": department_choices,
             "selected_department_ids": selected_department_ids,
+            "mail_group_choices": form.fields["mail_groups"].queryset,
+            "selected_mail_group_ids": {str(group_id) for group_id in (form["mail_groups"].value() or [])},
             "page_title": "新規メンバー追加",
             "page_subtitle": "名前・所属部署・ログイン情報を設定します。",
             "submit_label": "メンバーを登録",
