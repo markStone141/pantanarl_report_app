@@ -52,3 +52,17 @@
 .mail-settings-panel[hidden] { display: none !important; }
 .mail-settings-panel { margin-top: 16px; }
 .mail-settings-panel .mail-group-section-title { margin-top: 0; }
+
+@media (max-width: 640px) {
+  .mail-settings-tabs {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    overflow-x: visible;
+  }
+  .mail-settings-tabs > .ui-tab {
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+  }
+}
