@@ -4055,3 +4055,22 @@ th {
 .member-quick-info > span { overflow-wrap: anywhere; }
 .member-quick-info strong { font-weight: 600; }
 .member-quick-info .is-missing { opacity: .7; }
+
+/* Prominent member creation action on the management list. */
+.member-settings-heading-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.member-settings-heading-actions > .ui-section-heading { flex: 1 1 260px; }
+.member-settings-add-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .member-settings-add-button { width: 100%; justify-content: center; }
+}
