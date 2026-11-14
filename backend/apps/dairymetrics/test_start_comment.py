@@ -51,6 +51,35 @@ class ActivityStartCommentTests(AppTestMixin, TestCase):
         entry.refresh_from_db()
         self.assertEqual(entry.start_comment, "")
 
+    def test_quick_status_can_be_updated_repeatedly_without_changing_targets(self):
+        self._save_setup("最初のひとこと")
+        url = reverse("dairymetrics_entry_v2_transaction_demo")
+        for comment in ("2件目を目指す", "あと少し！", ""):
+            response = self.client.post(url, {
+                "action": "save_start_comment",
+                "department_code": self.department.code,
+                "entry_date": self.today.isoformat(),
+                "start_comment": comment,
+            })
+            self.assertEqual(response.status_code, 302)
+            entry = MemberDailyMetricEntry.objects.get(
+                member=self.member, department=self.department, entry_date=self.today
+            )
+            self.assertEqual(entry.start_comment, comment)
+            self.assertEqual(entry.daily_target_amount, 9000)
+            self.assertEqual(entry.daily_target_count, 3)
+
+    def test_overlong_status_is_rejected(self):
+        self._save_setup("")
+        response = self.client.post(reverse("dairymetrics_entry_v2_transaction_demo"), {
+            "action": "save_start_comment",
+            "department_code": self.department.code,
+            "entry_date": self.today.isoformat(),
+            "start_comment": "あ" * 101,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "100文字以内")
+
     def test_comment_displays_only_on_active_dashboard_card(self):
         self._save_setup("今日は3件を目指す")
         self.client.force_login(self.admin)
