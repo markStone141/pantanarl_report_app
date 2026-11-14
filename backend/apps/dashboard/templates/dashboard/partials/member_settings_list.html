@@ -1,6 +1,15 @@
-{% if members %}
-<div class="member-settings-grid" data-member-settings-items>
-  {% for member in members %}
+{% if member_sections %}
+<div class="member-department-groups">
+  <p class="muted">対象 {{ member_count }}名・{{ member_sections|length }}グループ。部署名を押すとメンバーを表示します。検索中は該当部署を自動で展開します。</p>
+  {% for section in member_sections %}
+  <details class="member-department-group card" {% if expand_groups %}open{% endif %}>
+    <summary class="member-department-group-summary">
+      <span class="member-department-group-label">{% if section.department %}{{ section.department.name }}{% else %}未所属・非表示部署{% endif %}</span>
+      <span class="member-department-group-count">{{ section.members|length }}名</span>
+      <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+    </summary>
+    <div class="member-settings-grid member-department-group-cards">
+      {% for member in section.members %}
   <article class="member-settings-card{% if not member.is_active %} is-inactive{% endif %}">
     <header class="member-settings-card-head">
       <div>
@@ -63,13 +72,11 @@
       {% endif %}
     </footer>
   </article>
+      {% endfor %}
+    </div>
+  </details>
   {% endfor %}
 </div>
-{% if page_obj.has_next %}
-<div class="inline-row mt-12 member-settings-load-more">
-  <button type="button" class="ui-button ui-button--secondary" id="member-settings-load-more-btn" data-next-page="{{ page_obj.next_page_number }}">さらに20件表示</button>
-</div>
-{% endif %}
 {% else %}
 <div class="member-settings-empty">
   <i class="fa-solid fa-user-group" aria-hidden="true"></i>
