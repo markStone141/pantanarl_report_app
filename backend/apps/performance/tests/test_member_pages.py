@@ -35,12 +35,17 @@ class MemberPagesTests(PerformanceTestBase):
                 self.assertContains(response, '<div class="app-shell">', html=False)
                 self.assertContains(response, '<main class="container app-shell-content">', html=False)
                 self.assertContains(response, 'class="app-side-nav dashboard-drawer-nav"', html=False)
-                self.assertContains(
-                    response,
-                    f'href="{current_url}" class="is-current" aria-current="page"',
-                    html=False,
-                )
-                self.assertEqual(response.content.count(b'aria-current="page"'), 1)
+                if page_url == reverse("performance_history"):
+                    # The history view remains available by URL, but no longer has a sidebar item.
+                    self.assertNotContains(response, f'href="{page_url}"', html=False)
+                    self.assertEqual(response.content.count(b'aria-current="page"'), 0)
+                else:
+                    self.assertContains(
+                        response,
+                        f'href="{current_url}" class="is-current" aria-current="page"',
+                        html=False,
+                    )
+                    self.assertEqual(response.content.count(b'aria-current="page"'), 1)
 
     def test_member_dashboard_and_history_use_shared_context_navigation(self):
         self.client.logout()
