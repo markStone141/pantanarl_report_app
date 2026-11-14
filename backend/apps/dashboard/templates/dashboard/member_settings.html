@@ -69,65 +69,26 @@
     const missingLoginInput = document.getElementById("member-settings-missing-login-input");
     const missingLoginButton = document.getElementById("member-settings-missing-login-btn");
 
-    function bindLoadMoreButton() {
-      const loadMoreButton = document.getElementById("member-settings-load-more-btn");
-      if (!loadMoreButton) {
-        return;
-      }
-      loadMoreButton.addEventListener("click", function () {
-        const nextPage = loadMoreButton.dataset.nextPage;
-        if (!nextPage) {
-          return;
-        }
-        fetchMembers(nextPage, true);
-      });
-    }
-
-    async function fetchMembers(page, append) {
-      if (feedback) {
-        feedback.hidden = true;
-      }
+    let requestId = 0;
+    async function fetchMembers() {
+      const currentRequest = ++requestId;
+      if (feedback) feedback.hidden = true;
       const params = new URLSearchParams(new FormData(form));
-      if (page) {
-        params.set("page", String(page));
-      }
-      let payload;
       try {
         const response = await fetch(`${form.action}?${params.toString()}`, {
           headers: { "X-Requested-With": "XMLHttpRequest" },
         });
-        if (!response.ok) {
-          throw new Error("member search failed");
-        }
-        payload = await response.json();
+        if (!response.ok) throw new Error("member search failed");
+        const payload = await response.json();
+        if (currentRequest !== requestId) return;
+        listContainer.innerHTML = payload.list_html || "";
       } catch (error) {
+        if (currentRequest !== requestId) return;
         if (feedback) {
           feedback.textContent = "一覧を更新できませんでした。通信状況を確認して、もう一度お試しください。";
           feedback.hidden = false;
         }
-        return;
       }
-      if (append) {
-        const nextDoc = document.createElement("div");
-        nextDoc.innerHTML = payload.list_html || "";
-        const currentItems = listContainer.querySelector("[data-member-settings-items]");
-        const nextCards = nextDoc.querySelectorAll(".member-settings-card");
-        nextCards.forEach(function (card) {
-          currentItems.appendChild(card);
-        });
-        const currentButton = listContainer.querySelector("#member-settings-load-more-btn");
-        if (currentButton) {
-          currentButton.remove();
-        }
-        const nextButton = nextDoc.querySelector("#member-settings-load-more-btn");
-        if (nextButton) {
-          const cardGrid = listContainer.querySelector("[data-member-settings-items]");
-          cardGrid.insertAdjacentElement("afterend", nextButton.parentElement);
-        }
-      } else {
-        listContainer.innerHTML = payload.list_html || "";
-      }
-      bindLoadMoreButton();
     }
 
     form.addEventListener("input", function (event) {
@@ -169,7 +130,6 @@
       });
     }
 
-    bindLoadMoreButton();
   })();
 </script>
 {% endblock %}
