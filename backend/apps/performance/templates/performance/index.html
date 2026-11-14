@@ -52,6 +52,7 @@
               <span>現場: {{ row.location_name|default:"未入力" }}</span>
             </div>
             <strong class="performance-activity-member-result">{{ row.count_text }} <span aria-hidden="true">/</span> {{ row.amount_text }}</strong>
+            {% if row.start_comment %}<p class="performance-activity-start-comment"><strong>今日の意気込み：</strong>{{ row.start_comment|linebreaksbr }}</p>{% endif %}
           </div>
           {% endfor %}
         </div>
