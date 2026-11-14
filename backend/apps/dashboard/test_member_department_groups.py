@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
@@ -33,6 +34,19 @@ class DepartmentGroupedMemberListTests(TestCase):
         self.assertTrue(response.context["expand_groups"])
         self.assertEqual(len(response.context["member_sections"]), 2)
         self.assertContains(response, 'class="member-department-group card" open', count=2)
+
+    def test_member_identity_and_status_are_visible_in_group(self):
+        user = get_user_model().objects.create_user(
+            username="shared-login", password="test-password"
+        )
+        self.shared.email = "shared@example.com"
+        self.shared.user = user
+        self.shared.save(update_fields=["email", "user"])
+        response = self.client.get(reverse("member_settings"))
+        self.assertContains(response, "shared@example.com", count=2)
+        self.assertContains(response, "shared-login", count=2)
+        self.assertContains(response, "ログインID")
+        self.assertContains(response, "有効")
 
     def test_ajax_refresh_returns_group_html(self):
         response = self.client.get(reverse("member_settings"), {"q": "未所属"}, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
