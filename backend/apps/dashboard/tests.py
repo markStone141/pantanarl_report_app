@@ -303,7 +303,7 @@ class MemberSettingsViewTests(TestCase):
         self.assertContains(response, "ID未登録")
         self.assertContains(response, "アドレス未登録")
         self.assertContains(response, 'class="member-settings-card"')
-        self.assertContains(response, 'data-member-settings-items')
+        self.assertContains(response, 'class="member-department-groups"')
         self.assertNotContains(response, 'class="mobile-card-table"')
 
     def test_member_create_page_renders(self):
@@ -313,7 +313,8 @@ class MemberSettingsViewTests(TestCase):
         self.assertContains(response, "UN活動コード")
         self.assertContains(response, "メールアドレス")
         self.assertContains(response, 'class="member-editor-form"')
-        self.assertContains(response, 'class="member-editor-card"', count=3)
+        self.assertContains(response, 'class="member-editor-card"', count=4)
+        self.assertContains(response, "メールグループ・確認メール")
         self.assertContains(response, "基本情報")
         self.assertContains(response, "所属部署")
         self.assertContains(response, "ログイン情報")
@@ -356,7 +357,8 @@ class MemberSettingsViewTests(TestCase):
         response = self.client.get(reverse("member_settings"), {"sort": "name", "active_only": "0"})
 
         self.assertEqual(response.status_code, 200)
-        members = list(response.context["members"])
+        sections = response.context["member_sections"]
+        members = [member for section in sections for member in section["members"]]
         self.assertGreaterEqual(len(members), 2)
         self.assertEqual(members[0].name, "Alpha User")
 
@@ -427,24 +429,18 @@ class MemberSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Ajax Inactive", response.json()["list_html"])
 
-    def test_member_settings_paginates_members_by_twenty(self):
+    def test_member_settings_displays_all_members_without_pagination(self):
         for index in range(21):
-            Member.objects.create(
-                name=f"Member {index:02d}",
-                login_id=f"member_page_{index:02d}",
-                password="",
-            )
+            Member.objects.create(name=f"Member {index:02d}")
 
         response = self.client.get(reverse("member_settings"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context["members"]), 20)
-        self.assertEqual(response.context["paginator"].count, 21)
-        self.assertContains(response, "さらに20件表示")
-
-        response_page_2 = self.client.get(reverse("member_settings"), {"page": 2})
-        self.assertEqual(response_page_2.status_code, 200)
-        self.assertEqual(len(response_page_2.context["members"]), 1)
+        self.assertEqual(response.context["member_count"], 21)
+        self.assertEqual(sum(len(section["members"]) for section in response.context["member_sections"]), 21)
+        self.assertContains(response, "Member 00")
+        self.assertContains(response, "Member 20")
+        self.assertNotContains(response, "さらに20件表示")
 
     def test_register_member_with_auth_credentials_links_user(self):
         response = self.client.post(

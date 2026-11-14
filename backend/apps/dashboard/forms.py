@@ -1,6 +1,7 @@
 from django import forms
 
 from apps.accounts.models import Department, Member
+from apps.mail.models import MailRecipientGroup
 
 
 class MemberRegistrationForm(forms.Form):
@@ -32,6 +33,17 @@ class MemberRegistrationForm(forms.Form):
         queryset=Department.objects.none(),
         empty_label="未設定",
     )
+    mail_groups = forms.ModelMultipleChoiceField(
+        label="追加するメールグループ",
+        required=False,
+        queryset=MailRecipientGroup.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+    )
+    send_confirmation_mail = forms.BooleanField(
+        label="登録後に本人へテストメールを送信する",
+        required=False,
+        initial=False,
+    )
     auth_login_id = forms.CharField(
         label="ログインID",
         required=False,
@@ -47,6 +59,12 @@ class MemberRegistrationForm(forms.Form):
             render_value=False,
         ),
     )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get("send_confirmation_mail") and not cleaned_data.get("email"):
+            self.add_error("email", "確認メールを送信する場合はメールアドレスを入力してください。")
+        return cleaned_data
 
     def clean_un_activity_code(self):
         code = (self.cleaned_data.get("un_activity_code") or "").strip()

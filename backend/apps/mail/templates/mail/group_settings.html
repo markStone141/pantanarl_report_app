@@ -11,19 +11,22 @@
 <div class="app-shell">
   {% include "includes/app_navigation.html" with page_title="メール設定" page_subtitle="送信先グループ、決済報告の振り分け、Gmail連携を管理します。" %}
   <main class="container app-shell-content">
-  <nav class="ui-tabs mt-16" aria-label="メール設定メニュー">
-    <a class="ui-tab is-active" aria-current="page" href="{% url 'mail_group_settings' %}">設定</a>
+  <nav class="ui-tabs mt-16 mail-settings-tabs" aria-label="メール設定メニュー" role="tablist">
+    <button type="button" class="ui-tab is-active" id="mail-tab-groups" role="tab" aria-controls="mail-panel-groups" aria-selected="true" data-mail-tab="groups">グループ一覧</button>
+    <button type="button" class="ui-tab" id="mail-tab-edit" role="tab" aria-controls="mail-panel-edit" aria-selected="false" data-mail-tab="edit">グループ追加・編集</button>
+    <button type="button" class="ui-tab" id="mail-tab-routing" role="tab" aria-controls="mail-panel-routing" aria-selected="false" data-mail-tab="routing">決済報告グループ</button>
+    <button type="button" class="ui-tab" id="mail-tab-gmail" role="tab" aria-controls="mail-panel-gmail" aria-selected="false" data-mail-tab="gmail">Gmail連携</button>
+    <button type="button" class="ui-tab" id="mail-tab-test" role="tab" aria-controls="mail-panel-test" aria-selected="false" data-mail-tab="test">テスト送信</button>
+    <button type="button" class="ui-tab" id="mail-tab-test-history" role="tab" aria-controls="mail-panel-test-history" aria-selected="false" data-mail-tab="test-history">テスト送信履歴</button>
     <a class="ui-tab" href="{% url 'mail_history' %}">送信履歴</a>
   </nav>
-
   {% if status_message %}
   <div class="ui-feedback mt-12" role="status">{{ status_message }}</div>
   {% endif %}
 
   <section class="mt-16">
-    <article class="card ui-section mt-16">
-      <details>
-        <summary class="summary-clickable mail-group-section-title">メールグループ一覧</summary>
+    <article class="card ui-section mail-settings-panel" id="mail-panel-groups" role="tabpanel" aria-labelledby="mail-tab-groups" data-mail-panel="groups">
+        <h3 class="mail-group-section-title">メールグループ一覧</h3>
         <div class="mt-12">
           {% if groups %}
           <div class="table-scroll">
@@ -71,12 +74,10 @@
           <div class="ui-state">まだメールグループはありません。</div>
           {% endif %}
         </div>
-      </details>
     </article>
 
-    <article class="card ui-section">
-      <details{% if edit_group or form.errors %} open{% endif %}>
-        <summary class="summary-clickable mail-group-section-title">{% if edit_group %}メールグループ編集{% else %}新規メールグループ追加{% endif %}</summary>
+    <article class="card ui-section mail-settings-panel" id="mail-panel-edit" role="tabpanel" aria-labelledby="mail-tab-edit" data-mail-panel="edit">
+        <h3 class="mail-group-section-title">{% if edit_group %}メールグループ編集{% else %}新規メールグループ追加{% endif %}</h3>
         <div class="mt-12">
           <form method="post">
             {% csrf_token %}
@@ -121,12 +122,10 @@
             {% endif %}
           </form>
         </div>
-      </details>
     </article>
 
-    <article class="card ui-section">
-      <details>
-        <summary class="summary-clickable mail-group-section-title">決済報告用メールグループ設定</summary>
+    <article class="card ui-section mail-settings-panel" id="mail-panel-routing" role="tabpanel" aria-labelledby="mail-tab-routing" data-mail-panel="routing">
+        <h3 class="mail-group-section-title">決済報告用メールグループ設定</h3>
         <div class="mt-12">
           <form method="post">
             {% csrf_token %}
@@ -143,12 +142,10 @@
             <button type="submit" class="ui-button ui-button--primary mt-12">既定グループを保存</button>
           </form>
         </div>
-      </details>
     </article>
 
-    <article class="card ui-section">
-      <details>
-        <summary class="summary-clickable mail-group-section-title">Gmail連携設定</summary>
+    <article class="card ui-section mail-settings-panel" id="mail-panel-gmail" role="tabpanel" aria-labelledby="mail-tab-gmail" data-mail-panel="gmail">
+        <h3 class="mail-group-section-title">Gmail連携設定</h3>
         <div class="mt-12">
           <form method="post">
             {% csrf_token %}
@@ -186,12 +183,10 @@
             <button type="submit" class="ui-button ui-button--primary mt-12">設定を保存</button>
           </form>
         </div>
-      </details>
     </article>
 
-    <article class="card ui-section">
-      <details>
-        <summary class="summary-clickable mail-group-section-title">テスト送信先プレビュー</summary>
+    <article class="card ui-section mail-settings-panel" id="mail-panel-test" role="tabpanel" aria-labelledby="mail-tab-test" data-mail-panel="test">
+        <h3 class="mail-group-section-title">テスト送信先プレビュー</h3>
         <div class="mt-12">
           <form method="post">
             {% csrf_token %}
@@ -224,12 +219,10 @@
           </ul>
           {% endif %}
         </div>
-      </details>
     </article>
 
-    <article class="card ui-section">
-      <details>
-        <summary class="summary-clickable mail-group-section-title">最近のテスト送信履歴</summary>
+    <article class="card ui-section mail-settings-panel" id="mail-panel-test-history" role="tabpanel" aria-labelledby="mail-tab-test-history" data-mail-panel="test-history">
+        <h3 class="mail-group-section-title">最近のテスト送信履歴</h3>
         <div class="mt-12">
           {% if recent_test_histories %}
           <div class="table-scroll">
@@ -254,12 +247,49 @@
           <div class="ui-state">まだテスト送信履歴はありません。</div>
           {% endif %}
         </div>
-      </details>
     </article>
   </section>
   </main>
 </div>
 <script src="{% static 'dashboard/mobile_drawer.js' %}?v=4"></script>
+<script>
+  (function () {
+    const tabs = Array.from(document.querySelectorAll("[data-mail-tab]"));
+    const panels = Array.from(document.querySelectorAll("[data-mail-panel]"));
+    if (!tabs.length || !panels.length) return;
+    const validIds = tabs.map((tab) => tab.dataset.mailTab);
+    const postedAction = "{{ request.POST.action|default:''|escapejs }}";
+    const suggestedTab = {% if edit_group or form.errors %}"edit"{% else %}"groups"{% endif %};
+    const actionTabs = {
+      save_settings: "gmail",
+      save_routing: "routing",
+      test_preview: "test",
+      test_send: "test"
+    };
+    const initialTab = actionTabs[postedAction] || (postedAction ? "edit" : suggestedTab);
+    function selectTab(id, focus) {
+      tabs.forEach((tab) => {
+        const active = tab.dataset.mailTab === id;
+        tab.classList.toggle("is-active", active);
+        tab.setAttribute("aria-selected", String(active));
+        tab.tabIndex = active ? 0 : -1;
+        if (active && focus) tab.focus();
+      });
+      panels.forEach((panel) => { panel.hidden = panel.dataset.mailPanel !== id; });
+    }
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => selectTab(tab.dataset.mailTab, false));
+      tab.addEventListener("keydown", (event) => {
+        if (event.key !== "ArrowRight" && event.key !== "ArrowLeft" && event.key !== "Home" && event.key !== "End") return;
+        event.preventDefault();
+        const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 :
+          (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+        selectTab(tabs[next].dataset.mailTab, true);
+      });
+    });
+    selectTab(validIds.includes(initialTab) ? initialTab : "groups", false);
+  })();
+</script>
 <script>
   (function () {
     const departmentWrap = document.getElementById("mail-group-departments");

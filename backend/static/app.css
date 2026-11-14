@@ -4024,3 +4024,53 @@ th {
 
   .member-editor-actions .ui-button { width: 100%; }
 }
+
+/* Department accordion for member management */
+.member-department-groups { display: grid; gap: 12px; }
+.member-department-group { overflow: hidden; }
+.member-department-group-summary {
+  display: flex; align-items: center; gap: 12px; padding: 16px;
+  cursor: pointer; list-style: none; font-weight: 700;
+}
+.member-department-group-summary::-webkit-details-marker { display: none; }
+.member-department-group-summary:focus-visible { outline: 2px solid var(--brand, #2563eb); outline-offset: -3px; }
+.member-department-group-label { flex: 1; }
+.member-department-group-count { font-size: .875rem; font-weight: 500; opacity: .75; }
+.member-department-group-summary .fa-chevron-down { transition: transform .16s ease; }
+.member-department-group[open] .fa-chevron-down { transform: rotate(180deg); }
+.member-department-group-cards { padding: 0 16px 16px; }
+@media (prefers-reduced-motion: reduce) {
+  .member-department-group-summary .fa-chevron-down { transition: none; }
+}
+
+/* Member identity is visible without opening an edit page. */
+.member-quick-info {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: .875rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+.member-quick-info > span { overflow-wrap: anywhere; }
+.member-quick-info strong { font-weight: 600; }
+.member-quick-info .is-missing { opacity: .7; }
+
+/* Prominent member creation action on the management list. */
+.member-settings-heading-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.member-settings-heading-actions > .ui-section-heading { flex: 1 1 260px; }
+.member-settings-add-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .member-settings-add-button { width: 100%; justify-content: center; }
+}
