@@ -116,7 +116,7 @@ class ActivityStartCommentTests(AppTestMixin, TestCase):
             member=self.member, department_code="UN",
             transaction_obj=transaction, progress_cards=cards,
         )
-        self.assertTrue(payload["body"].endswith("3,000/9,000円\n今日の意気込み：今日も一歩ずつ！"))
+        self.assertTrue(payload["body"].endswith("3,000/9,000円\n今日も一歩ずつ！"))
         entry.start_comment = ""
         entry.save(update_fields=["start_comment"])
         payload = build_transaction_mail_preview(
