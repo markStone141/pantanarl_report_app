@@ -13,6 +13,7 @@
       <a class="ui-tab is-active" aria-current="page" href="{% if edit_member %}{% url 'member_edit' edit_member.id %}{% else %}{% url 'member_create' %}{% endif %}">{% if edit_member %}メンバー編集{% else %}新規メンバー追加{% endif %}</a>
       <a class="ui-tab" href="{% url 'member_auth_bulk_settings' %}">ID・パスワード一括管理</a>
       <a class="ui-tab" href="{% url 'department_settings' %}">部署管理</a>
+      <a class="ui-tab" href="{% url 'mail_group_settings' %}">メールグループ管理</a>
     </nav>
 
     <section class="card ui-section mt-16 member-editor-section">
