@@ -18,6 +18,7 @@ class MemberRegistrationMailTests(TestCase):
     def test_registration_shows_mail_options(self):
         response = self.client.get(reverse("member_create"))
         self.assertContains(response, "メールグループ・確認メール")
+        self.assertContains(response, "実績管理アプリログイン時のIDとパスワードです。")
         self.assertContains(response, self.group.name)
         self.assertContains(response, "send_confirmation_mail")
 
