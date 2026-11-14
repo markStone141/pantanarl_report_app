@@ -183,7 +183,30 @@ def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
             member_links__member=member,
         ).distinct().first()
 
-        if action == "save_personal_setup":
+        if action == "save_start_comment":
+            # The quick editor only updates an existing daily entry; it never changes targets.
+            if not selected_department_obj:
+                status_message = "部署を選択してください。"
+            elif len((request.POST.get("start_comment") or "").strip()) > 100:
+                status_message = "今日のひとことは100文字以内で入力してください。"
+            else:
+                updated = MemberDailyMetricEntry.objects.filter(
+                    member=member,
+                    department=selected_department_obj,
+                    entry_date=entry_date,
+                    input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+                    activity_closed=False,
+                ).update(start_comment=(request.POST.get("start_comment") or "").strip())
+                if updated:
+                    return redirect(
+                        build_v2_redirect_url(
+                            department_code=selected_department,
+                            entry_date=entry_date,
+                            saved="start_comment",
+                        )
+                    )
+                status_message = "活動準備を保存してから、ひとことを更新してください。"
+        elif action == "save_personal_setup":
             personal_setup_form = DairymetricsV2PersonalSetupForm(request.POST, member=member)
             if personal_setup_form.is_valid():
                 selected_department_obj = personal_setup_form.cleaned_data["department"]
@@ -521,6 +544,7 @@ def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
         saved = (request.GET.get("saved") or "").strip()
         status_message = {
             "personal_setup": "個人の日目標を保存しました。",
+            "start_comment": "今日のひとことを更新しました。",
             "department_target": "部署全体の日目標を保存しました。",
             "transaction": "決済明細を登録しました。",
             "transaction_deleted": "決済明細を削除しました。",
