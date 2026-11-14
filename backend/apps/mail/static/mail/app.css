@@ -29,12 +29,26 @@
 }
 
 /* Mail settings: one panel at a time, with the existing tab visual language. */
-.mail-settings-tabs { flex-wrap: wrap; gap: 4px; }
-.mail-settings-tabs .ui-tab { cursor: pointer; }
+.mail-settings-tabs {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.mail-settings-tabs > .ui-tab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: auto;
+  white-space: nowrap;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
 .mail-settings-panel[hidden] { display: none !important; }
 .mail-settings-panel { margin-top: 16px; }
 .mail-settings-panel .mail-group-section-title { margin-top: 0; }
-@media (max-width: 640px) {
-  .mail-settings-tabs { overflow-x: auto; flex-wrap: nowrap; }
-  .mail-settings-tabs .ui-tab { flex: 0 0 auto; white-space: nowrap; }
-}
