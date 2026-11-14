@@ -21,6 +21,8 @@ class MailSettingsTabTests(TestCase):
         self.assertIn("flex-direction: row;", css)
         self.assertIn("flex-wrap: nowrap;", css)
         self.assertIn("overflow-x: auto;", css)
+        self.assertIn("@media (max-width: 640px)", css)
+        self.assertIn("flex-direction: column;", css)
 
     def test_all_existing_sections_are_tabs(self):
         response = self.client.get(reverse("mail_group_settings"))
