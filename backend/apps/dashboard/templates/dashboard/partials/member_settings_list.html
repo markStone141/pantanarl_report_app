@@ -15,6 +15,10 @@
       <div>
         <span>メンバー</span>
         <h3>{{ member.name }}</h3>
+        <div class="member-quick-info">
+          <span><i class="fa-regular fa-envelope" aria-hidden="true"></i> メール: {% if member.email %}<strong>{{ member.email }}</strong>{% else %}<strong class="is-missing">未登録</strong>{% endif %}</span>
+          <span><i class="fa-regular fa-id-badge" aria-hidden="true"></i> ログインID: {% if member.user %}<strong>{{ member.user.username }}</strong>{% else %}<strong class="is-missing">未登録</strong>{% endif %}</span>
+        </div>
       </div>
       <span class="member-status-badge{% if member.is_active %} is-active{% else %} is-inactive{% endif %}">
         {% if member.is_active %}有効{% else %}無効{% endif %}
@@ -32,17 +36,6 @@
           {% empty %}
           <span class="member-department-chip is-empty">未所属</span>
           {% endfor %}
-        </div>
-      </div>
-
-      <div class="member-settings-account-grid">
-        <div>
-          <span>メール</span>
-          {% if member.email %}<strong>{{ member.email }}</strong>{% else %}<strong class="is-missing">未登録</strong>{% endif %}
-        </div>
-        <div>
-          <span>ログインID</span>
-          {% if member.user %}<strong>{{ member.user.username }}</strong>{% else %}<strong class="is-missing">未登録</strong>{% endif %}
         </div>
       </div>
 
