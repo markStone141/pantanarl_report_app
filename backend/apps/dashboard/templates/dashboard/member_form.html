@@ -107,6 +107,39 @@
           </div>
         </section>
 
+        {% if not edit_member %}
+        <section class="member-editor-card">
+          <header>
+            <span>MAIL</span>
+            <div><h3>メールグループ・確認メール</h3><p>登録と同時に送信先グループへ追加できます。</p></div>
+          </header>
+          <div class="member-editor-fields">
+            <div class="member-editor-field">
+              <span>{{ form.mail_groups.label }}</span>
+              <div class="selection-card-grid member-department-selection-grid">
+                {% for group in mail_group_choices %}
+                <label class="selection-card" for="mail_group_choice_{{ group.id }}">
+                  <input class="selection-card__input" type="checkbox" name="mail_groups" value="{{ group.id }}" id="mail_group_choice_{{ group.id }}" {% if group.id|stringformat:"s" in selected_mail_group_ids %}checked{% endif %}/>
+                  <span class="selection-card__check"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+                  <span class="selection-card__title">{{ group.name }}</span>
+                </label>
+                {% empty %}
+                <p class="muted">有効なメールグループがありません。メール管理画面から作成できます。</p>
+                {% endfor %}
+              </div>
+              {% if form.mail_groups.errors %}<span class="error-text">{{ form.mail_groups.errors|striptags }}</span>{% endif %}
+            </div>
+            <div class="member-editor-field">
+              <label for="id_send_confirmation_mail">
+                {{ form.send_confirmation_mail }} {{ form.send_confirmation_mail.label }}
+              </label>
+              <small class="member-editor-help">選択時は登録完了後、入力したメールアドレス宛てにGmail連携テストメールを1通送信します。メール送信に失敗しても登録は保持されます。</small>
+              {% if form.send_confirmation_mail.errors %}<span class="error-text">{{ form.send_confirmation_mail.errors|striptags }}</span>{% endif %}
+            </div>
+          </div>
+        </section>
+        {% endif %}
+
         <div class="member-editor-actions">
           <a href="{% url 'member_settings' %}" class="ui-button ui-button--quiet">一覧へ戻る</a>
           <button type="submit" class="ui-button ui-button--primary">{{ submit_label }}</button>
