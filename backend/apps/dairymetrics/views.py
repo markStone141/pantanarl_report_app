@@ -97,6 +97,7 @@ def entry_v2_personal_setup_fields(request: HttpRequest) -> HttpResponse:
         "department": selected_department_obj,
         "entry_date": entry_date,
         "location_name": (request.GET.get("location_name") or "").strip(),
+        "start_comment": (request.GET.get("start_comment") or "").strip(),
         "daily_target_count": (request.GET.get("daily_target_count") or "").strip() or 0,
         "daily_target_cs_count": (request.GET.get("daily_target_cs_count") or "").strip() or 0,
         "daily_target_refugee_count": (request.GET.get("daily_target_refugee_count") or "").strip() or 0,
@@ -192,6 +193,7 @@ def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
                 entry.daily_target_refugee_count = personal_setup_form.cleaned_data.get("daily_target_refugee_count") or 0
                 entry.daily_target_amount = personal_setup_form.cleaned_data["daily_target_amount"]
                 entry.location_name = personal_setup_form.cleaned_data["location_name"]
+                entry.start_comment = personal_setup_form.cleaned_data["start_comment"].strip()
                 entry.input_source = MemberDailyMetricEntry.SOURCE_MEMBER
                 entry.save(
                     update_fields=[
@@ -200,6 +202,7 @@ def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
                         "daily_target_refugee_count",
                         "daily_target_amount",
                         "location_name",
+                        "start_comment",
                         "input_source",
                         "updated_at",
                     ]
