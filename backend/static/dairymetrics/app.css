@@ -3249,3 +3249,14 @@
   max-width: 210px;
   white-space: normal;
 }
+
+
+/* Compact profile-style daily status, editable without changing targets. */
+.dairymetrics-v2-status-message { margin: 12px 0; padding: 14px; }
+.dairymetrics-v2-status-message-form { display: grid; gap: 8px; }
+.dairymetrics-v2-status-message-controls { display: flex; align-items: center; gap: 8px; }
+.dairymetrics-v2-status-message-controls input { flex: 1; min-width: 0; }
+.dairymetrics-v2-activity-status-message { margin-top: 7px; font-size: .84rem; color: var(--ink-soft, #475569); overflow-wrap: anywhere; }
+@media (max-width: 520px) {
+  .dairymetrics-v2-status-message-controls { flex-direction: column; align-items: stretch; }
+}
