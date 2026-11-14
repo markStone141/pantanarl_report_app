@@ -50,6 +50,7 @@ def _build_activity_member_rows(entries):
                 "department_id": entry.department_id,
                 "updated_at": timezone.localtime(entry.updated_at).strftime("%H:%M"),
                 "location_name": (entry.location_name or "").strip(),
+                "start_comment": (entry.start_comment or "").strip(),
                 "amount_text": f"{support_amount:,}円 / {daily_target_amount:,}円",
                 "count_text": (
                     f"CS {int(entry.cs_count or 0)} / 難民 {int(entry.refugee_count or 0)}"
