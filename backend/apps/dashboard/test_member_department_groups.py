@@ -17,6 +17,13 @@ class DepartmentGroupedMemberListTests(TestCase):
         MemberDepartment.objects.create(member=self.shared, department=self.wv)
         self.unassigned = Member.objects.create(name="未所属メンバー")
 
+    def test_member_pages_link_to_existing_mail_group_management(self):
+        for page in ("member_settings", "member_create"):
+            with self.subTest(page=page):
+                response = self.client.get(reverse(page))
+                self.assertContains(response, "メールグループ管理")
+                self.assertContains(response, 'href="' + reverse("mail_group_settings") + '"')
+
     def test_add_member_button_is_prominent_and_links_to_creation(self):
         response = self.client.get(reverse("member_settings"))
         self.assertContains(response, "member-settings-add-button")
