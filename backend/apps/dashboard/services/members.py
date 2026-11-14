@@ -6,6 +6,7 @@ from django.db.models import Q
 from apps.accounts.models import Department, Member, MemberDepartment
 
 from apps.dashboard.forms import MemberRegistrationForm
+from apps.mail.models import MailRecipientGroup
 
 User = get_user_model()
 
@@ -15,6 +16,7 @@ def member_form(*, data=None, initial=None) -> MemberRegistrationForm:
     active_departments = Department.objects.filter(is_active=True)
     form.fields["departments"].queryset = active_departments
     form.fields["default_department"].queryset = active_departments
+    form.fields["mail_groups"].queryset = MailRecipientGroup.objects.filter(is_active=True).order_by("name")
     form.fields["auth_login_id"].widget.attrs["placeholder"] = ""
     return form
 
