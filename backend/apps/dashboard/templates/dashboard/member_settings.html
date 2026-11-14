@@ -10,7 +10,13 @@
   <main class="container app-shell-content">
   <section class="mt-16">
     <article class="card ui-section">
-      {% include "includes/ui_section_heading.html" with kicker="MEMBERS" title="メンバー一覧" description="検索や登録状況で絞り込み、必要な設定へ進めます。" %}
+      <div class="member-settings-heading-actions">
+        {% include "includes/ui_section_heading.html" with kicker="MEMBERS" title="メンバー一覧" description="検索や登録状況で絞り込み、必要な設定へ進めます。" %}
+        <a class="ui-button ui-button--primary member-settings-add-button" href="{% url 'member_create' %}">
+          <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+          <span>メンバー追加</span>
+        </a>
+      </div>
       <div class="ui-tabs mb-10" aria-label="メンバー管理メニュー">
         <a class="ui-tab is-active" aria-current="page" href="{% url 'member_settings' %}">一覧</a>
         <a class="ui-tab" href="{% url 'member_create' %}">新規メンバー追加</a>
