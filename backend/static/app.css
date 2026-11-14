@@ -4042,3 +4042,16 @@ th {
 @media (prefers-reduced-motion: reduce) {
   .member-department-group-summary .fa-chevron-down { transition: none; }
 }
+
+/* Member identity is visible without opening an edit page. */
+.member-quick-info {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: .875rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+.member-quick-info > span { overflow-wrap: anywhere; }
+.member-quick-info strong { font-weight: 600; }
+.member-quick-info .is-missing { opacity: .7; }
