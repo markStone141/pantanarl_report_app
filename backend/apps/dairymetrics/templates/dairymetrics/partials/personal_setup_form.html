@@ -32,8 +32,8 @@
       {% if personal_setup_form.location_name.errors %}<div class="error-text">{{ personal_setup_form.location_name.errors|striptags }}</div>{% endif %}
     </div>
     <div class="dairymetrics-field">
-      <label for="{{ start_comment_id }}">今日の意気込み（任意）</label>
-      <textarea id="{{ start_comment_id }}" name="start_comment" rows="2" maxlength="300" placeholder="今日の目標や意気込みを一言で">{{ personal_start_comment_value }}</textarea>
+      <label for="{{ start_comment_id }}">今日のひとこと（任意）</label>
+      <textarea id="{{ start_comment_id }}" name="start_comment" rows="2" maxlength="100" placeholder="いまの気持ちを一言">{{ personal_start_comment_value }}</textarea>
       {% if personal_setup_form.start_comment.errors %}<div class="error-text">{{ personal_setup_form.start_comment.errors|striptags }}</div>{% endif %}
     </div>
     {% if selected_department_is_wv %}
