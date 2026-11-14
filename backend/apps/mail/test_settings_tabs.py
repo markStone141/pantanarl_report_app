@@ -11,6 +11,17 @@ class MailSettingsTabTests(TestCase):
         session["role"] = "admin"
         session.save()
 
+    def test_horizontal_tabs_stylesheet_is_loaded(self):
+        response = self.client.get(reverse("mail_group_settings"))
+        self.assertContains(response, "mail-settings-tabs")
+        self.assertContains(response, "/static/mail/app.css?v=2")
+        from pathlib import Path
+        from django.conf import settings
+        css = (Path(settings.BASE_DIR) / "apps/mail/static/mail/app.css").read_text(encoding="utf-8")
+        self.assertIn("flex-direction: row;", css)
+        self.assertIn("flex-wrap: nowrap;", css)
+        self.assertIn("overflow-x: auto;", css)
+
     def test_all_existing_sections_are_tabs(self):
         response = self.client.get(reverse("mail_group_settings"))
         self.assertEqual(response.status_code, 200)
