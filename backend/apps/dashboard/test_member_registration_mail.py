@@ -21,6 +21,13 @@ class MemberRegistrationMailTests(TestCase):
         self.assertContains(response, self.group.name)
         self.assertContains(response, "send_confirmation_mail")
 
+    def test_confirmation_mail_uses_same_selection_card_as_mail_groups(self):
+        response = self.client.get(reverse("member_create"))
+        self.assertContains(response, 'class="selection-card__input" type="checkbox" name="send_confirmation_mail"')
+        self.assertContains(response, 'for="id_send_confirmation_mail"')
+        self.assertContains(response, 'class="selection-card__check"')
+        self.assertContains(response, 'class="selection-card__title"')
+
     @patch("apps.dashboard.views.send_test_mail")
     def test_registers_member_and_group_without_sending_by_default(self, send_mail):
         response = self.client.post(reverse("member_create"), {
