@@ -82,6 +82,42 @@ class ActivityStartCommentTests(AppTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "100文字以内")
 
+    def test_comment_renders_on_today_member_status_card_after_updates(self):
+        self._save_setup("笑顔で声をかける")
+        url = reverse("dairymetrics_entry_v2_transaction_demo")
+        params = {"department": self.department.code, "date": self.today.isoformat()}
+        response = self.client.get(url, params)
+        self.assertContains(
+            response,
+            'class="dairymetrics-v2-activity-status-message">笑顔で声をかける</div>',
+        )
+        self.assertEqual(
+            response.context["department_activity_rows"]["active"][0]["start_comment"],
+            "笑顔で声をかける",
+        )
+
+        self.client.post(url, {
+            "action": "save_start_comment",
+            "department_code": self.department.code,
+            "entry_date": self.today.isoformat(),
+            "start_comment": "午後は集中する",
+        })
+        response = self.client.get(url, params)
+        self.assertContains(
+            response,
+            'class="dairymetrics-v2-activity-status-message">午後は集中する</div>',
+        )
+        self.assertNotContains(response, 'class="dairymetrics-v2-activity-status-message">笑顔で声をかける')
+
+        self.client.post(url, {
+            "action": "save_start_comment",
+            "department_code": self.department.code,
+            "entry_date": self.today.isoformat(),
+            "start_comment": "",
+        })
+        response = self.client.get(url, params)
+        self.assertNotContains(response, 'class="dairymetrics-v2-activity-status-message">')
+
     def test_comment_displays_only_on_active_dashboard_card(self):
         self._save_setup("今日は3件を目指す")
         self.client.force_login(self.admin)
