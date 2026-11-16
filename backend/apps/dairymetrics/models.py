@@ -29,6 +29,7 @@ class MemberDailyMetricEntry(models.Model):
     cs_count = models.PositiveIntegerField(default=0)
     refugee_count = models.PositiveIntegerField(default=0)
     location_name = models.CharField(max_length=128, blank=True)
+    start_comment = models.TextField(blank=True, default="")
     memo = models.TextField(blank=True)
     activity_closed = models.BooleanField(default=False)
     activity_closed_at = models.DateTimeField(null=True, blank=True)

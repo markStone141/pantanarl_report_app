@@ -342,6 +342,7 @@ class DairymetricsV2PersonalSetupForm(forms.Form):
         widget=forms.DateInput(attrs={"type": "date", "class": "dairymetrics-native-date dairymetrics-date-input"}),
     )
     location_name = forms.CharField(label="今日の活動現場", max_length=128, required=False)
+    start_comment = forms.CharField(label="今日のひとこと", max_length=100, required=False, widget=forms.Textarea(attrs={"rows": 2, "placeholder": "いまの気持ちを一言"}))
     daily_target_count = forms.IntegerField(label="個人の件数目標", min_value=0, initial=0)
     daily_target_cs_count = forms.IntegerField(label="個人のCS件数目標", min_value=0, initial=0, required=False)
     daily_target_refugee_count = forms.IntegerField(label="個人の難民件数目標", min_value=0, initial=0, required=False)

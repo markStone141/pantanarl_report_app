@@ -4074,3 +4074,14 @@ th {
 @media (max-width: 520px) {
   .member-settings-add-button { width: 100%; justify-content: center; }
 }
+
+
+.performance-activity-start-comment {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--ui-surface-subtle, #f5f8fa);
+  font-size: .86rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}

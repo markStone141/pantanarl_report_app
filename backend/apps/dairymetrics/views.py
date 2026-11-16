@@ -93,10 +93,18 @@ def entry_v2_personal_setup_fields(request: HttpRequest) -> HttpResponse:
     selected_department_code = selected_department_obj.code if selected_department_obj else ""
     entry_date = parse_date((request.GET.get("entry_date") or "").strip()) or timezone.localdate()
     department_entry_date = parse_date((request.GET.get("department_entry_date") or "").strip()) or entry_date
+    saved_comment = ""
+    if selected_department_obj:
+        saved_comment = (
+            MemberDailyMetricEntry.objects.filter(
+                member=member, department=selected_department_obj, entry_date=entry_date
+            ).values_list("start_comment", flat=True).first() or ""
+        )
     form_initial = {
         "department": selected_department_obj,
         "entry_date": entry_date,
         "location_name": (request.GET.get("location_name") or "").strip(),
+        "start_comment": request.GET.get("start_comment", saved_comment),
         "daily_target_count": (request.GET.get("daily_target_count") or "").strip() or 0,
         "daily_target_cs_count": (request.GET.get("daily_target_cs_count") or "").strip() or 0,
         "daily_target_refugee_count": (request.GET.get("daily_target_refugee_count") or "").strip() or 0,
@@ -175,7 +183,30 @@ def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
             member_links__member=member,
         ).distinct().first()
 
-        if action == "save_personal_setup":
+        if action == "save_start_comment":
+            # The quick editor only updates an existing daily entry; it never changes targets.
+            if not selected_department_obj:
+                status_message = "部署を選択してください。"
+            elif len((request.POST.get("start_comment") or "").strip()) > 100:
+                status_message = "今日のひとことは100文字以内で入力してください。"
+            else:
+                updated = MemberDailyMetricEntry.objects.filter(
+                    member=member,
+                    department=selected_department_obj,
+                    entry_date=entry_date,
+                    input_source=MemberDailyMetricEntry.SOURCE_MEMBER,
+                    activity_closed=False,
+                ).update(start_comment=(request.POST.get("start_comment") or "").strip())
+                if updated:
+                    return redirect(
+                        build_v2_redirect_url(
+                            department_code=selected_department,
+                            entry_date=entry_date,
+                            saved="start_comment",
+                        )
+                    )
+                status_message = "活動準備を保存してから、ひとことを更新してください。"
+        elif action == "save_personal_setup":
             personal_setup_form = DairymetricsV2PersonalSetupForm(request.POST, member=member)
             if personal_setup_form.is_valid():
                 selected_department_obj = personal_setup_form.cleaned_data["department"]
@@ -192,6 +223,7 @@ def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
                 entry.daily_target_refugee_count = personal_setup_form.cleaned_data.get("daily_target_refugee_count") or 0
                 entry.daily_target_amount = personal_setup_form.cleaned_data["daily_target_amount"]
                 entry.location_name = personal_setup_form.cleaned_data["location_name"]
+                entry.start_comment = personal_setup_form.cleaned_data["start_comment"].strip()
                 entry.input_source = MemberDailyMetricEntry.SOURCE_MEMBER
                 entry.save(
                     update_fields=[
@@ -200,6 +232,7 @@ def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
                         "daily_target_refugee_count",
                         "daily_target_amount",
                         "location_name",
+                        "start_comment",
                         "input_source",
                         "updated_at",
                     ]
@@ -511,6 +544,7 @@ def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
         saved = (request.GET.get("saved") or "").strip()
         status_message = {
             "personal_setup": "個人の日目標を保存しました。",
+            "start_comment": "今日のひとことを更新しました。",
             "department_target": "部署全体の日目標を保存しました。",
             "transaction": "決済明細を登録しました。",
             "transaction_deleted": "決済明細を削除しました。",

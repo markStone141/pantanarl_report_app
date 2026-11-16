@@ -4,7 +4,7 @@
 {% block title %}決済登録 | DairyMetrics{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=26" />
+<link rel="stylesheet" href="{% static 'dairymetrics/app.css' %}?v=27" />
 {% endblock %}
 
 {% block content %}
@@ -43,7 +43,7 @@
           <p class="muted">{{ member.name }}さんの活動準備です。</p>
         </div>
         <div id="dairymetrics-v2-personal-setup-form-root">
-          {% include "dairymetrics/partials/personal_setup_form.html" with department_select_id="v2-personal-department" entry_date_id="v2-personal-date" location_id="v2-personal-location" cs_count_id="v2-personal-target-cs-count" refugee_count_id="v2-personal-target-refugee-count" count_select_id="v2-personal-target-count-select" count_hidden_id="v2-personal-target-count-hidden" count_wrap_id="v2-personal-target-count-wrap" count_custom_id="v2-personal-target-count-custom" amount_select_id="v2-personal-target-amount-select" amount_hidden_id="v2-personal-target-amount-hidden" amount_wrap_id="v2-personal-target-amount-wrap" amount_custom_id="v2-personal-target-amount-custom" submit_label="個人の準備を保存" close_button_label="" close_button_attr="" %}
+          {% include "dairymetrics/partials/personal_setup_form.html" with department_select_id="v2-personal-department" entry_date_id="v2-personal-date" location_id="v2-personal-location" start_comment_id="v2-personal-comment" cs_count_id="v2-personal-target-cs-count" refugee_count_id="v2-personal-target-refugee-count" count_select_id="v2-personal-target-count-select" count_hidden_id="v2-personal-target-count-hidden" count_wrap_id="v2-personal-target-count-wrap" count_custom_id="v2-personal-target-count-custom" amount_select_id="v2-personal-target-amount-select" amount_hidden_id="v2-personal-target-amount-hidden" amount_wrap_id="v2-personal-target-amount-wrap" amount_custom_id="v2-personal-target-amount-custom" submit_label="個人の準備を保存" close_button_label="" close_button_attr="" %}
         </div>
       </div>
       {% endif %}
@@ -62,6 +62,23 @@
     {% endif %}
 
     {% include "dairymetrics/partials/transaction_entry_form.html" %}
+
+    {% if entry and not entry.activity_closed %}
+    <section class="card dairymetrics-v2-status-message">
+      <form method="post" class="dairymetrics-v2-status-message-form" data-submit-lock data-submit-label="更新中…">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_start_comment">
+        <input type="hidden" name="department_code" value="{{ selected_department_code }}">
+        <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
+        <label for="v2-quick-start-comment"><strong>今日のひとこと</strong> <span class="muted">（任意・100文字以内）</span></label>
+        <div class="dairymetrics-v2-status-message-controls">
+          <input id="v2-quick-start-comment" type="text" name="start_comment" maxlength="100" placeholder="いまの気持ちを一言" value="{{ entry.start_comment }}">
+          <button type="submit" class="ui-button ui-button--secondary">更新</button>
+        </div>
+        <small class="muted">活動中に何度でも変更できます。空欄で更新すると削除されます。</small>
+      </form>
+    </section>
+    {% endif %}
 
     <section class="dairymetrics-v2-progress-board">
       <article class="metric-card dairymetrics-v2-progress-card">
@@ -101,7 +118,7 @@
         </div>
         <section class="dairymetrics-v2-entry-panel" id="dairymetrics-v2-personal-target-panel" {% if not open_personal_target_panel %}hidden{% endif %}>
           <div id="dairymetrics-v2-inline-personal-setup-form-root">
-            {% include "dairymetrics/partials/personal_setup_form.html" with department_select_id="v2-inline-personal-department" entry_date_id="v2-inline-personal-date" location_id="v2-inline-personal-location" cs_count_id="v2-inline-personal-cs-count" refugee_count_id="v2-inline-personal-refugee-count" count_select_id="v2-inline-personal-count-select" count_hidden_id="v2-inline-personal-count-hidden" count_wrap_id="v2-inline-personal-count-wrap" count_custom_id="v2-inline-personal-count-custom" amount_select_id="v2-inline-personal-amount-select" amount_hidden_id="v2-inline-personal-amount-hidden" amount_wrap_id="v2-inline-personal-amount-wrap" amount_custom_id="v2-inline-personal-amount-custom" submit_label="修正内容を保存" close_button_label="閉じる" close_button_attr='data-close-personal-target-edit' %}
+            {% include "dairymetrics/partials/personal_setup_form.html" with department_select_id="v2-inline-personal-department" entry_date_id="v2-inline-personal-date" location_id="v2-inline-personal-location" start_comment_id="v2-inline-personal-comment" cs_count_id="v2-inline-personal-cs-count" refugee_count_id="v2-inline-personal-refugee-count" count_select_id="v2-inline-personal-count-select" count_hidden_id="v2-inline-personal-count-hidden" count_wrap_id="v2-inline-personal-count-wrap" count_custom_id="v2-inline-personal-count-custom" amount_select_id="v2-inline-personal-amount-select" amount_hidden_id="v2-inline-personal-amount-hidden" amount_wrap_id="v2-inline-personal-amount-wrap" amount_custom_id="v2-inline-personal-amount-custom" submit_label="修正内容を保存" close_button_label="閉じる" close_button_attr='data-close-personal-target-edit' %}
           </div>
         </section>
         {% endif %}
@@ -147,6 +164,7 @@
                   <span>{{ row.amount_value|intcomma }}円 / {{ row.target_amount_value|intcomma }}円</span>
                 </div>
                 <div class="dairymetrics-subtext">{{ row.location_name|default:"現場未入力" }}</div>
+                {% if row.start_comment %}<div class="dairymetrics-v2-activity-status-message">{{ row.start_comment }}</div>{% endif %}
               </a>
               {% endfor %}
             {% else %}
@@ -454,6 +472,7 @@
         "department",
         "entry_date",
         "location_name",
+        "start_comment",
         "daily_target_count",
         "daily_target_cs_count",
         "daily_target_refugee_count",

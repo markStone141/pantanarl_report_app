@@ -301,6 +301,7 @@ def build_transaction_entry_context(
     personal_target_refugee_count = int(getattr(existing_entry, "daily_target_refugee_count", 0) or 0)
     personal_total_amount = int(getattr(existing_entry, "support_amount", 0) or 0)
     current_location_name = getattr(existing_entry, "location_name", "") or ""
+    current_start_comment = getattr(existing_entry, "start_comment", "") or ""
     department_day_total = int(getattr(department_summary, "support_amount", 0) or 0)
     department_day_target = int(getattr(department_summary, "daily_target_amount", 0) or 0)
 
@@ -532,6 +533,7 @@ def build_transaction_entry_context(
             "department": selected_department_obj,
             "entry_date": entry_date,
             "location_name": current_location_name,
+            "start_comment": current_start_comment,
             "daily_target_count": personal_target_count or previous_personal_target_count,
             "daily_target_cs_count": personal_target_cs_count or previous_personal_target_cs_count,
             "daily_target_refugee_count": personal_target_refugee_count or previous_personal_target_refugee_count,
@@ -588,6 +590,9 @@ def build_transaction_entry_context(
         personal_target_refugee_count_value = "0"
     personal_target_amount_value = str(personal_setup_form["daily_target_amount"].value() or previous_personal_target_amount)
     personal_location_name_value = str(personal_setup_form["location_name"].value() or current_location_name)
+    personal_start_comment_value = personal_setup_form["start_comment"].value()
+    if personal_start_comment_value is None:
+        personal_start_comment_value = current_start_comment
     department_target_amount_value = str(department_target_form["daily_target_amount"].value() or previous_department_target_amount)
     transaction_amount_value = str(transaction_form["support_amount"].value() or "3000")
     transaction_form_is_wv = is_wv_department(selected_department_obj)
@@ -671,6 +676,7 @@ def build_transaction_entry_context(
         "personal_target_refugee_count_value": personal_target_refugee_count_value,
         "personal_target_amount_value": personal_target_amount_value,
         "personal_location_name_value": personal_location_name_value,
+        "personal_start_comment_value": personal_start_comment_value,
         "department_target_amount_value": department_target_amount_value,
         "transaction_amount_value": transaction_amount_value,
         "transaction_form_is_wv": transaction_form_is_wv,
