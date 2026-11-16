@@ -188,7 +188,7 @@ def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
             if not selected_department_obj:
                 status_message = "部署を選択してください。"
             elif len((request.POST.get("start_comment") or "").strip()) > 100:
-                status_message = "今日のひとことは100文字以内で入力してください。"
+                status_message = "今日の意気込みは100文字以内で入力してください。"
             else:
                 updated = MemberDailyMetricEntry.objects.filter(
                     member=member,
@@ -544,7 +544,7 @@ def entry_form_v2_transaction(request: HttpRequest) -> HttpResponse:
         saved = (request.GET.get("saved") or "").strip()
         status_message = {
             "personal_setup": "個人の日目標を保存しました。",
-            "start_comment": "今日のひとことを更新しました。",
+            "start_comment": "今日の意気込みを更新しました。",
             "department_target": "部署全体の日目標を保存しました。",
             "transaction": "決済明細を登録しました。",
             "transaction_deleted": "決済明細を削除しました。",

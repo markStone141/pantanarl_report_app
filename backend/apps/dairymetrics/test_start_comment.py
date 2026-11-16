@@ -45,6 +45,8 @@ class ActivityStartCommentTests(AppTestMixin, TestCase):
         self.assertEqual(entry.memo, "")
         response = self.client.get(reverse("dairymetrics_entry_v2_transaction_demo"))
         self.assertContains(response, "まずは声かけを頑張る！")
+        self.assertContains(response, "今日の意気込み")
+        self.assertContains(response, "内的目標など")
 
         response = self._save_setup("")
         self.assertEqual(response.status_code, 302)

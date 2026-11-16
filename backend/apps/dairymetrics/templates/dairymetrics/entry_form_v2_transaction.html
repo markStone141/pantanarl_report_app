@@ -70,12 +70,12 @@
         <input type="hidden" name="action" value="save_start_comment">
         <input type="hidden" name="department_code" value="{{ selected_department_code }}">
         <input type="hidden" name="entry_date" value="{{ entry_date|date:'Y-m-d' }}">
-        <label for="v2-quick-start-comment"><strong>今日のひとこと</strong> <span class="muted">（任意・100文字以内）</span></label>
+        <label for="v2-quick-start-comment"><strong>今日の意気込み</strong> <span class="muted">（任意・100文字以内）</span></label>
         <div class="dairymetrics-v2-status-message-controls">
-          <input id="v2-quick-start-comment" type="text" name="start_comment" maxlength="100" placeholder="いまの気持ちを一言" value="{{ entry.start_comment }}">
+          <input id="v2-quick-start-comment" type="text" name="start_comment" maxlength="100" placeholder="内的目標など" value="{{ entry.start_comment }}">
           <button type="submit" class="ui-button ui-button--secondary">更新</button>
         </div>
-        <small class="muted">活動中に何度でも変更できます。空欄で更新すると削除されます。</small>
+        <small class="muted">内的目標など。活動中に何度でも変更できます。空欄で更新すると削除されます。</small>
       </form>
     </section>
     {% endif %}
