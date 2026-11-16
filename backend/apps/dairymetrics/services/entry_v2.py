@@ -211,6 +211,7 @@ def build_v2_department_activity_rows(*, department, entry_date):
                 "amount_value": int(today_entry.support_amount or 0),
                 "target_amount_value": int(today_entry.daily_target_amount or 0),
                 "location_name": today_entry.location_name or "",
+                "start_comment": (today_entry.start_comment or "").strip(),
             }
         )
     return {
