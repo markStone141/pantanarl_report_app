@@ -132,7 +132,7 @@ class ActivityStartCommentTests(AppTestMixin, TestCase):
         response = self.client.get(reverse("performance_index"))
         self.assertNotContains(response, "今日の意気込み：")
 
-    def test_acquisition_mail_adds_comment_after_target_amount(self):
+    def test_acquisition_mail_excludes_start_comment(self):
         entry = MemberDailyMetricEntry.objects.create(
             member=self.member, department=self.department, entry_date=self.today,
             daily_target_amount=9000, start_comment="今日も一歩ずつ！",
@@ -154,15 +154,16 @@ class ActivityStartCommentTests(AppTestMixin, TestCase):
             member=self.member, department_code="UN",
             transaction_obj=transaction, progress_cards=cards,
         )
-        self.assertTrue(payload["body"].endswith("3,000/9,000円\n今日も一歩ずつ！"))
+        self.assertTrue(payload["body"].endswith("3,000/9,000円"))
+        self.assertNotIn("今日も一歩ずつ！", payload["body"])
+        self.assertNotIn("今日の意気込み", payload["body"])
         entry.start_comment = ""
         entry.save(update_fields=["start_comment"])
-        payload = build_transaction_mail_preview(
+        payload_without_comment = build_transaction_mail_preview(
             member=self.member, department_code="UN",
             transaction_obj=transaction, progress_cards=cards,
         )
-        self.assertTrue(payload["body"].endswith("3,000/9,000円"))
-        self.assertNotIn("今日の意気込み", payload["body"])
+        self.assertEqual(payload, payload_without_comment)
 
     def test_new_entries_default_to_blank_comment(self):
         entry = MemberDailyMetricEntry.objects.create(
