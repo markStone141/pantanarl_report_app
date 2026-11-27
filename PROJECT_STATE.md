@@ -86,7 +86,6 @@
 - 工程9「認証・全体横断画面」を完了し、6つのログイン画面と403／404／500画面を共通規則へ統一した。
 - 工程10「全体統合監査」を完了し、アプリURL 108件、全394テスト、権限・操作・状態・CSS／JavaScriptを横断確認した。
 - 共通NAV移行後に未参照となった `talks` 専用ドロワーCSS／JavaScriptを削除した。
-- GitHubへ直接PUSHできない場合の標準工程を `backend/docs/GIT_BUNDLE_PUSH_WORKFLOW.md` に明文化した。
 - `reports` の報告フォームに送信中表示と連続送信防止を追加し、入力と保存報告一覧を画面内タブで接続した。
 - `dairymetrics` の決済入力に活動準備・決済入力・活動終了の段階表示を追加し、非同期差し替え後のフォームにも連続送信防止を適用した。
 
@@ -209,20 +208,12 @@
 - 利用者に `docs/ui-shell-desktop.png` と `docs/ui-shell-mobile.png` の見た目を確認してもらう。
 - 次の実装工程は14-1。総合管理の月目標・路程目標テーブルと「未提出」「提出済み」等の状態バッジを基準UIへ再設計する。
 
-## 工程12の開始判定
-
-- 入力: 工程11までの54コミットと、チャット確認用SVGに対する利用者の見た目承認。
-- 対象: 全398テスト、Django check、migration、BOM、Git差分、bundle完全性、収録ブランチ。
-- 対象外: GitHubへのPUSH、Pull Request作成、`main`へのマージ、デプロイ、公開環境の操作。
-- 完了条件: 最新コミットを含む作業ブランチのbundleを作成し、`git bundle verify`と`git bundle list-heads`が成功する。
-- 公開判定: bundle作成は公開ではない。公開完了はPUSH・PR・CI・マージ・デプロイ後のPC／モバイル主要導線確認を条件とする。
-
 ## 工程12の終了判定
 
 - 承認: チャット確認用SVGの見た目は利用者確認済み。
 - 検証: 全398テスト、Django check、migration差分、BOM、Git差分が成功した。
 - 引き渡し: 作業ブランチだけを収録するGit bundleの完全性と収録参照を確認した。
-- 残作業: 利用者のPCからのPUSH、Pull Request、CI、`main`へのマージ、デプロイ、公開環境のPC／モバイル確認。
+- 残作業: GitHubへのPUSH、Pull Request、CI、`main`へのマージ、デプロイ、公開環境のPC／モバイル確認。
 - PUSH／公開: 未実施。
 
 ## 工程11-1の終了判定
@@ -273,7 +264,6 @@
 - `backend/docs/TABLE_UI_ROLLOUT_PLAN.md`
 - `backend/docs/BUTTON_UI_ROLLOUT_PLAN.md`
 - `backend/docs/BUTTON_UI_INVENTORY.md`
-- `backend/docs/GIT_BUNDLE_PUSH_WORKFLOW.md`
 - `logs/latest-summary.md`
 
 ## グラフカード刷新 工程1の終了判定（2026-08-14）

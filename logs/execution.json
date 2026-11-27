@@ -4910,5 +4910,20 @@
     "action": "獲得メール本文から今日の意気込みを除外",
     "reason": "関連テスト132件が成功し、BOMと差分を確認",
     "next_action": "対象ファイルをコミット"
+  },
+  {
+    "timestamp": "2026-11-27T15:10:50+09:00",
+    "expires_at": "2026-12-27T15:10:50+09:00",
+    "retention_days": 30,
+    "run_id": "run-retire-bundle-workflow",
+    "loop": 1,
+    "role": "validator",
+    "event": "validation_completed",
+    "status": "success",
+    "sensitivity": "normal",
+    "sensitive_match_count": 0,
+    "action": "旧Git bundle手順と参照を削除",
+    "reason": "差分とBOMを確認",
+    "next_action": "作業ブランチを直接PUSH"
   }
 ]
